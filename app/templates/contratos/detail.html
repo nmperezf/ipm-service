@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ contrato.nombre }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('instalaciones.detalle', instalacion_id=contrato.instalacion_id) }}">&larr; {{ contrato.instalacion.nombre }}</a></p>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>{{ contrato.nombre }}</h1>
+    <a href="{{ url_for('contratos.editar', contrato_id=contrato.id) }}" class="btn btn-outline-secondary">Editar</a>
+</div>
+<p>
+    Vigencia: <strong>{{ contrato.fecha_inicio.strftime('%m/%Y') }}</strong> a <strong>{{ contrato.fecha_fin.strftime('%m/%Y') }}</strong>
+    &nbsp;|&nbsp; Estado: <span class="badge badge-{{ contrato.estado.replace(' ', '.') }}">{{ contrato.estado }}</span>
+</p>
+
+<h4 class="mt-4">Servicios contratados</h4>
+<table class="table table-sm data-table">
+    <thead><tr><th>Servicio</th><th>Frecuencia</th><th>Empieza a contar</th><th>Ejecuciones en el año</th><th></th></tr></thead>
+    <tbody>
+        {% for s in contrato.servicios %}
+        <tr>
+            <td>{{ s.nombre }}</td>
+            <td class="text-capitalize">{{ s.frecuencia }}</td>
+            <td>
+                {{ s.fecha_base.strftime('%m/%Y') }}
+                {% if not s.fecha_inicio %}<span class="text-muted small">(mismo mes del contrato)</span>{% endif %}
+            </td>
+            <td>{{ s.fechas_ocurrencia()|length }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('contratos.eliminar_servicio', servicio_id=s.id) }}"
+                      onsubmit="return confirm('¿Eliminar este servicio? Se regenerarán las visitas del contrato.');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-muted text-center py-3">Todavía no agregaste servicios a este contrato.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h5 class="mt-3">Agregar servicio</h5>
+<form method="POST" action="{{ url_for('contratos.nuevo_servicio', contrato_id=contrato.id) }}" class="row g-2 align-items-end mb-4">
+    <div class="col-md-5">
+        <label class="form-label">Nombre del servicio</label>
+        <input type="text" name="nombre" class="form-control" required placeholder="Ej: Inspección visual de sprinklers">
+    </div>
+    <div class="col-md-3">
+        <label class="form-label">Frecuencia</label>
+        <select name="frecuencia" class="form-select" required>
+            {% for f in frecuencias %}
+            <option value="{{ f }}">{{ f|capitalize }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Mes de inicio</label>
+        <input type="month" name="mes_inicio" class="form-control">
+        <div class="form-text">Vacío = mismo mes del contrato</div>
+    </div>
+    <div class="col-md-2">
+        <button type="submit" class="btn btn-primary w-100">Agregar</button>
+    </div>
+</form>
+
+<h4 class="mt-4">Visitas generadas automáticamente</h4>
+<p class="text-muted">Cuando varios servicios coinciden en fecha, aparecen agrupados en la misma visita.</p>
+<table class="table table-sm data-table">
+    <thead><tr><th>Fecha</th><th>Servicios incluidos</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+        {% for visita in visitas %}
+        <tr>
+            <td>{{ visita.fecha.strftime('%d/%m/%Y') }}</td>
+            <td>{{ visita.items|map(attribute='servicio.nombre')|join(', ') }}</td>
+            <td><span class="badge badge-{{ visita.estado.replace(' ', '.') }}">{{ visita.estado }}</span></td>
+            <td>
+                <a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a>
+                <a href="{{ url_for('visitas.editar', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-muted text-center py-3">Agregá al menos un servicio para generar las visitas.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<form method="POST" action="{{ url_for('contratos.eliminar', contrato_id=contrato.id) }}"
+      onsubmit="return confirm('¿Eliminar este contrato y todas sus visitas?');">
+    <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar contrato</button>
+</form>
+{% endblock %}

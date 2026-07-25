@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Órdenes de trabajo{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Órdenes de trabajo</h1>
+    {% if current_user.rol in ('Administrador', 'Jefe') %}
+    <a href="{{ url_for('ordenes.nueva') }}" class="btn btn-primary">+ Nueva OT correctiva</a>
+    {% endif %}
+</div>
+
+<div class="mb-3">
+    <div class="btn-group flex-wrap">
+        <a href="{{ url_for('ordenes.listar') }}" class="btn btn-sm {{ 'btn-dark' if not estado_filtro else 'btn-outline-dark' }}">Todas</a>
+        {% for e in estados %}
+        <a href="{{ url_for('ordenes.listar', estado=e) }}" class="btn btn-sm {{ 'btn-dark' if estado_filtro == e else 'btn-outline-dark' }}">{{ e }}</a>
+        {% endfor %}
+    </div>
+</div>
+
+<table class="table table-hover data-table">
+    <thead><tr><th>N°</th><th>Tipo</th><th>Cliente</th><th>Instalación</th><th>Técnico</th><th>Prioridad</th><th>Fecha apertura</th><th>Estado</th></tr></thead>
+    <tbody>
+        {% for ot in ordenes %}
+        <tr>
+            <td><a href="{{ url_for('ordenes.detalle', ot_id=ot.id) }}">{{ ot.numero }}</a></td>
+            <td>{{ ot.tipo }}</td>
+            <td><a href="{{ url_for('clientes.detalle', cliente_id=ot.instalacion.cliente_id) }}">{{ ot.instalacion.cliente.nombre }}</a></td>
+            <td>{{ ot.instalacion.nombre }}</td>
+            <td>{{ ot.nombre_tecnico }}</td>
+            <td>{{ ot.prioridad }}</td>
+            <td>{{ ot.fecha_apertura.strftime('%d/%m/%Y') }}</td>
+            <td><span class="badge badge-{{ ot.estado.replace(' ', '.') }}">{{ ot.estado }}</span></td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="text-center text-muted py-4">No hay órdenes de trabajo cargadas.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

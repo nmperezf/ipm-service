@@ -1,0 +1,311 @@
+# IPM Service
+
+CMMS especializado en gestión técnica de mantenimiento e inspecciones de
+sistemas de protección contra incendio.
+
+## Filosofía del sistema
+
+```
+Cliente ──▶ Instalación ──▶ Contrato (1 año) ──▶ Servicio contratado (con su frecuencia)
+                  │                 └──▶ Visita (agrupa servicios que coinciden en fecha)
+                  │                         └──▶ Item de visita (por servicio, cumplido/pendiente)
+                  │                                 ├──▶ Formulario (tipo dinámico)
+                  │                                 ├──▶ Fotos (evidencia)
+                  │                                 └──▶ Observaciones (deficiencias/desactivaciones)
+                  └──▶ Observaciones cargadas a mano (migración de historial)
+```
+
+- Un **contrato dura 1 año**. Cada **servicio contratado** tiene su propia
+  frecuencia y genera automáticamente sus fechas dentro del año, contando
+  **desde su propio mes de inicio inclusive** (una frecuencia anual que
+  arranca junto con el contrato genera una sola fecha, la de inicio).
+- Servicios de distinta frecuencia que coinciden en fecha se **agrupan en
+  una única visita**; cada servicio se marca cumplido/pendiente por separado.
+- Cada visita se puede **editar o eliminar**. Cada servicio admite
+  **formularios dinámicos**, **fotos** y **observaciones**.
+
+## Pantallas principales
+
+- **Inicio (dashboard, para Administrador/Jefe/Técnico):** tarjetas de
+  deficiencias/comentarios aprobados por clasificación, visitas vencidas,
+  visitas en revisión, OT pendientes, repuestos en nivel crítico, % de
+  cumplimiento del mes, agenda de la semana, buscador de cliente y
+  recordatorios (solo Administrador/Jefe).
+- **Clientes → ficha del cliente:** tarjetas de deficiencias/comentarios
+  scoped a ese cliente, hoja de ruta (todas sus visitas por mes), y acceso
+  a "Formularios" (tipos de checklist propios de ese cliente).
+- **Calendario:** grilla mensual, solo clientes con servicios contratados.
+- **Órdenes de trabajo:** cola de trabajo (preventivo/correctivo/predictivo/
+  visita técnica). El Técnico ve solo las suyas; Administrador/Jefe ven
+  todas las de su empresa.
+- **Inventario:** repuestos con stock actual/mínimo y aviso de nivel crítico.
+- **Portal de cliente:** pantalla propia para el rol Cliente — ver la
+  sección "Login, roles y multiempresa" más abajo.
+
+## Observaciones (deficiencias / desactivaciones / comentarios)
+
+Cuatro clasificaciones: **Deficiencia crítica**, **Deficiencia no crítica**,
+**Desactivación** y **Comentario** (para lo que no encaja en las otras tres).
+Se cargan por instalación — a mano (para migrar tu historial actual de
+clientes) o ligadas a un servicio/equipo puntual dentro de una visita. Al
+marcarse **resueltas, no se borran**: salen del conteo pero quedan
+visibles en el histórico técnico, con fecha de carga y fecha de
+resolución. Además tienen un **estado de revisión** (Pendiente/Aprobada)
+como control de calidad — ver la sección "Login, roles y multiempresa"
+para el detalle completo del circuito.
+
+## Órdenes de trabajo en PDF
+
+Cada OT se puede descargar en PDF (botón "Descargar PDF" en su detalle):
+datos generales, el checklist de servicios si es preventiva, los repuestos
+usados, y espacio para firma de técnico y cliente. Se genera con
+`reportlab` (ya incluido en `requirements.txt`), sin dependencias del
+sistema operativo.
+
+## Constructor de tipos de formulario (sin tocar código)
+
+Desde "Formularios" en la barra de navegación se pueden crear checklists
+nuevos: nombre, campos (texto, texto largo, número, fecha, sí/no, selección
+única, checklist de opciones múltiples), y si el checklist se completa por
+equipo (ej. una vez por cada BIE o ECA) en vez de una sola vez por servicio.
+El checklist de BIE (Boca de Incendio Equipada) viene cargado como ejemplo:
+prueba de válvula, presión estática, manguera y puntero, compatibilidad,
+llave Storz, estado y cantidad de mangueras, identificación y última fecha
+de prueba.
+
+## Carga masiva (instalaciones con muchos equipos)
+
+Para checklists "por equipo" con decenas o cientos de unidades (típico en
+BIE), además de cargar equipo por equipo hay una vista de **carga masiva**:
+una sola grilla con una fila por equipo y todas las columnas del checklist
+editables ahí mismo, un solo botón para guardar todo. Las filas que se
+dejan en blanco no se guardan; si un equipo ya tenía datos de esa visita,
+se actualizan en vez de duplicarse. Desde la misma pantalla se descarga el
+**reporte en PDF** con el detalle de cada equipo, listo para mandarle al
+cliente.
+
+## Órdenes de trabajo: tipos y navegación desde el calendario
+
+Cada OT tiene un tipo: **Preventivo** (reservado para las que genera solo
+un contrato, ligadas a una visita), **Correctivo**, **Predictivo** o
+**Visita técnica** (estos tres últimos elegibles al cargar una OT a mano).
+Desde el calendario, la pastilla de cada visita lleva directo a su OT (y
+desde la OT se accede al detalle de la visita/servicio).
+
+## Ficha de equipo (histórico y trazabilidad)
+
+Cada equipo (ECA, BIE, Bomba) tiene su propia página con el historial de
+cada campo de su checklist a través del tiempo — tabla para texto/fecha/
+selección, gráfico de línea simple (SVG, sin dependencias) para campos
+numéricos como presión. También muestra las deficiencias abiertas y
+resueltas de ese equipo puntual. Se accede desde la carga masiva o desde
+la lista de "elegir equipo".
+
+## Formularios agrupados por sistema
+
+Al completar formularios dentro de una visita, los checklists por equipo
+se agrupan en tres categorías de navegación (no son tablas nuevas, es
+solo cómo se organizan los tipos de equipo ya existentes): **Sala de
+bombas** (Bomba), **Estaciones de control y alarma** (ECA y Manifold), y
+**Bocas de incendio** (BIE). El acceso por defecto de cada categoría es la
+carga masiva; cargar equipo por equipo sigue disponible como alternativa.
+
+## Actualizar la base de datos ya desplegada (Railway)
+
+El proyecto todavía no usa migraciones (Alembic), así que `db.create_all()`
+solo crea tablas nuevas — nunca agrega columnas a una tabla que ya existe
+en Postgres. Desde que armamos el multiempresa hasta esta vuelta del
+cierre de visita, se acumularon bastantes cambios de esquema (empresa_id,
+cliente_id, tecnico_id, y ahora los campos de cierre en `visitas` y
+`estado_revision` en `observaciones`, entre otros).
+
+Como seguís trabajando en local sin haber vuelto a tocar Railway, no te
+dejo una lista de `ALTER TABLE` — ya no sería confiable sin saber
+exactamente qué versión quedó pusheada. Cuando decidas volver a subir a
+Railway, avisame en qué momento estás y te arreglo la base a mano en ese
+momento (lo más simple, si no te importan los datos de prueba que haya
+ahí, es resetearla entera y dejar que `db.create_all()` + `seed_demo.py`
+la reconstruyan al día).
+
+## Tablas ordenables y filtrables
+
+Todas las tablas de listado de la app (clientes, contratos, visitas,
+histórico, órdenes de trabajo, inventario, etc.) se pueden ordenar
+haciendo clic en cualquier encabezado de columna (alterna ascendente/
+descendente, entiende fechas dd/mm/yyyy, números y texto en español), y
+filtrar con la fila de casillas que aparece debajo de cada encabezado
+(cada casilla filtra su propia columna, en simultáneo con las demás).
+Es un único script (`app/static/js/tablas.js`) que se aplica solo con
+la clase `data-table` en el `<table>` — no requiere backend ni recarga
+de página.
+
+## Arquitectura
+
+- **Backend:** Python + Flask + SQLAlchemy
+- **Base de datos:** SQLite en desarrollo (migrable a PostgreSQL cambiando
+  la variable de entorno `DATABASE_URL`)
+- **Frontend:** HTML + Bootstrap 5 (server-rendered con Jinja2)
+- **Patrón:** MVC con blueprints desacoplados por módulo
+
+```
+app/
+  models.py               -> Cliente, Instalacion, Contrato, ServicioContrato,
+                              Visita, ItemVisita, TipoFormulario, Formulario,
+                              Foto, Observacion, Equipo, OrdenTrabajo,
+                              Repuesto, RepuestoUsado, Recordatorio
+  utils.py                 -> actualización compartida de estados vencidos
+  routes/
+    dashboard.py            -> pantalla principal
+    clientes.py              -> CRUD + hoja de ruta + deficiencias por cliente
+    instalaciones.py
+    equipos.py                -> ECA / manifolds / bombas por instalación
+    contratos.py                -> motor de planificación (genera visitas + OT)
+    visitas.py                   -> editar/eliminar, marcar items cumplido/pendiente
+    formularios.py                 -> formularios dinámicos por servicio/equipo
+    fotos.py                        -> evidencia fotográfica
+    observaciones.py                 -> deficiencias/desactivaciones
+    historial.py                      -> histórico técnico por instalación + export CSV
+    planificacion.py                   -> calendario mensual
+    ordenes_trabajo.py                  -> cola de OT preventivas y correctivas
+    inventario.py                        -> repuestos y niveles críticos
+    recordatorios.py                      -> notas rápidas del dashboard
+  templates/
+  static/uploads/           -> fotos subidas (no versionar en git)
+run.py
+seed_demo.py                -> carga cliente/contrato/OT/repuestos de ejemplo
+```
+
+## Login, roles y multiempresa (Fases 1 a 4, completas)
+
+Sistema de usuario/contraseña simple (sin email obligatorio), con 5 roles,
+y aislamiento real de datos por empresa:
+
+- **Super Admin**: crea empresas y su primer usuario Administrador
+  ("Empresas" en la navbar). Ve los datos de cualquier empresa, y tiene
+  acceso a "Usuarios" de todas las empresas (para resetear una contraseña
+  ante un problema puntual). No ve el dashboard operativo — su "Inicio"
+  redirige directo a "Empresas".
+- **Administrador**: puede haber **varios por empresa** — cualquier
+  Administrador puede crear a otro. Gestiona los usuarios de su empresa
+  en "Usuarios" (contraseña puesta a mano, reset manual — sin
+  recuperación por mail todavía). Crea/edita Clientes, Instalaciones,
+  Contratos, Equipos, tipos de formulario. Asigna técnico y repuestos a
+  cada OT, aprueba observaciones, cierra visitas.
+- **Jefe**: mismo permiso operativo que Administrador en todo (aprueba
+  observaciones, asigna OT/repuestos, cierra visitas, etc.) — la única
+  diferencia es que **no puede crear Administradores ni otros Jefes**,
+  solo Técnicos y Clientes.
+- **Técnico**: ve **solo las OT que tiene asignadas**. Puede **consultar**
+  (solo lectura) instalaciones, históricos, contratos, equipos, visitas,
+  formularios, fotos y tipos de formulario de cualquier cliente de su
+  empresa, para buscar información en campo aunque no sea suyo. Pero solo
+  puede **crear, editar o eliminar** dentro del/los cliente(s) donde
+  tiene una OT asignada. El calendario le muestra las visitas de todos
+  los clientes del mes, sin el link (Administrador/Jefe sí lo tienen).
+- **Cliente**: un usuario por Cliente, con su propio **portal** de solo
+  lectura (ver más abajo).
+
+### Circuito de una visita: Abierta → En revisión → Cerrada
+
+El técnico completa checklists, fotos y observaciones normalmente
+mientras la visita está **Abierta**. Cuando termina, la manda a
+**"Enviar a revisión"** — esto funciona aunque haya observaciones sin
+aprobar (es justamente lo que dispara que el Jefe las mire). A partir de
+ahí la visita queda **congelada para el técnico**: no puede tocar nada
+más. Si el Jefe/Administrador encuentra algo para corregir, lo edita él
+mismo directamente (lo discute con el técnico aparte, no hay botón de
+devolución).
+
+Solo Administrador/Jefe puede **"Cerrar visita"** — bloqueado si quedan
+observaciones sin aprobar. Ahí también se captura la **firma digital del
+cliente** (canvas táctil, funciona con el dedo en tablet/celular), que
+queda embebida en el PDF de devolución. Recién con la visita **Cerrada**
+el cliente puede verla en su portal.
+
+### Observaciones: control de calidad antes de mostrarlas al cliente
+
+Cada observación que carga un técnico queda **Pendiente de revisión**.
+Mientras esté así, el técnico la puede editar. El Administrador/Jefe la
+aprueba tal cual, la edita y aprueba, o la elimina — una vez **Aprobada**,
+ya nadie la puede editar (si hace falta corregirla, se borra y se carga
+de nuevo). Solo lo Aprobado llega al portal del cliente.
+
+### Dos PDF distintos, para momentos distintos
+
+- **PDF de la OT** (botón en el detalle de la orden de trabajo): para
+  imprimir/entregar en el momento, sin depender de ningún cierre. Tiene
+  una columna "Completado" con casilleros ☐Sí/☐No por servicio, y espacio
+  para la firma del técnico únicamente.
+- **PDF de devolución** (botón en la visita, solo cuando está Cerrada):
+  resumen ejecutivo por área + deficiencias aprobadas de esa visita +
+  notas de cierre + firma del técnico y del cliente (embebida).
+
+### Portal de cliente
+
+Con "Inicio" y "Histórico técnico" en la navbar (visibles solo para el
+rol Cliente). Muestra:
+- Las mismas 4 tarjetas de deficiencias/comentarios, pero contando **solo
+  lo Aprobado** por el Jefe/Administrador.
+- Próximas visitas: fecha, servicios de cada una, y la "Nota para el
+  cliente" que haya dejado el Administrador/Jefe (con fecha de escritura,
+  para que quede registro de cuándo se avisó).
+- Histórico técnico: solo observaciones **Aprobadas** y solo visitas
+  **Cerradas** — nada que todavía esté en revisión o pendiente de
+  aprobación.
+
+> **Si ya tenías una base local de antes de esta vuelta** (`ipm_service.db`),
+> borrala antes de levantar la app — esta ronda agrega varias columnas y
+> el rol Jefe, y `db.create_all()` no altera tablas que ya existen. Correr
+> `seed_demo.py` de nuevo la recrea entera con los datos de ejemplo al día
+> (incluye ahora `admin1`/`jefe1`/`tecnico1`/`cliente1`, todos `demo123`).
+
+Cada Cliente pertenece a una Empresa; el Inventario de repuestos y los
+Recordatorios pertenecen directo a la Empresa; los tipos de formulario
+pertenecen a un Cliente puntual (cada instalación es distinta — se cargan
+desde "Formularios" dentro de la ficha del cliente, ya no hay una lista
+global).
+
+**Usuario por defecto** (se crea solo la primera vez que arranca la app, si no hay ningún usuario todavía):
+```
+usuario: admin
+contraseña: admin123
+```
+Cambiala apenas entres. Si corrés `seed_demo.py`, además se cargan una
+empresa de ejemplo y un usuario de cada rol (`jefe`, `tecnico1`,
+`cliente1`, todos con contraseña `demo123`).
+
+## Instalación
+
+**Windows (CMD):**
+```cmd
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+python seed_demo.py
+python run.py
+```
+
+**macOS/Linux:**
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+python seed_demo.py
+python run.py
+```
+
+Abrí http://localhost:5000
+
+> En macOS, si el puerto 5000 aparece ocupado por AirPlay Receiver, cambiá
+> el puerto en `run.py` (`port=5001`) o desactivá AirPlay Receiver en
+> Preferencias del Sistema → General → AirDrop y Handoff.
+
+## Qué falta (a propósito, para no romper la base actual)
+
+- Autenticación y roles (técnico / supervisor / administrador)
+- Firmas digitales, informes/PDF automáticos, notificaciones, app móvil, QR
+- Exportación a PDF del histórico (por ahora solo CSV, sin dependencias extra)
+
+La arquitectura actual (blueprints desacoplados, servicios basados en
+esquema, contratos independientes por instalación) está pensada para
+incorporar todo esto sin rehacer lo existente.

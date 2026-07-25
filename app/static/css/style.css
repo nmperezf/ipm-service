@@ -1,0 +1,280 @@
+/* ==========================================================================
+   IPM Service — sistema de diseño
+   Paleta: acero industrial (marca) + ember (acento reservado para lo crítico)
+   Tipografía: Space Grotesk (títulos) / Inter (texto) / JetBrains Mono (datos)
+   ========================================================================== */
+
+:root {
+    --ink: #1A2233;
+    --ink-muted: #5B6673;
+    --surface: #FFFFFF;
+    --surface-muted: #F4F6F8;
+    --border: #E1E5EA;
+
+    --brand: #1B3A5C;
+    --brand-dark: #12283F;
+    --accent: #C1440E;
+    --accent-soft: #FBEAE7;
+
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
+
+    /* Overrides de variables de Bootstrap 5.3: esto retiñe botones, links,
+       badges, focus rings y bordes en TODA la app sin tocar cada plantilla. */
+    --bs-primary: #1B3A5C;
+    --bs-primary-rgb: 27, 58, 92;
+    --bs-secondary: #5B6673;
+    --bs-secondary-rgb: 91, 102, 115;
+    --bs-success: #1F8A54;
+    --bs-danger: #C1440E;
+    --bs-danger-rgb: 193, 68, 14;
+    --bs-warning: #B5730A;
+    --bs-info: #2C6E8C;
+    --bs-dark: #1A2233;
+    --bs-light: #F4F6F8;
+    --bs-link-color: #1B3A5C;
+    --bs-link-hover-color: #12283F;
+    --bs-border-radius: .5rem;
+    --bs-border-radius-sm: .375rem;
+    --bs-border-radius-lg: .65rem;
+    --bs-body-font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    --bs-body-color: #1A2233;
+    --bs-body-bg: #F4F6F8;
+    --bs-border-color: #E1E5EA;
+}
+
+body {
+    font-family: var(--font-body);
+    color: var(--ink);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+}
+
+h1 {
+    display: inline-block;
+    padding-bottom: .4rem;
+    border-bottom: 3px solid var(--accent);
+    margin-bottom: 1.25rem;
+    font-size: 1.85rem;
+}
+
+small, .small, .text-muted {
+    color: var(--ink-muted) !important;
+}
+
+/* ---- Navbar ------------------------------------------------------------ */
+
+.navbar.ipm-navbar {
+    background: var(--brand);
+    box-shadow: 0 1px 0 rgba(0,0,0,.08);
+}
+.ipm-navbar .navbar-brand {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+.ipm-navbar .brand-mark {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    background: var(--accent);
+    display: inline-block;
+    transform: rotate(45deg);
+}
+.ipm-navbar .nav-link {
+    font-size: .82rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: rgba(255,255,255,.75) !important;
+}
+.ipm-navbar .nav-link:hover {
+    color: #fff !important;
+}
+
+/* ---- Cards --------------------------------------------------------------- */
+
+.card {
+    border: 1px solid var(--border);
+    border-radius: var(--bs-border-radius-lg);
+    box-shadow: 0 1px 2px rgba(20,30,45,.04);
+}
+
+/* Los botones outline-* de Bootstrap ya marcan la categoría del dashboard
+   (border-danger, border-warning, border-secondary); los convertimos de
+   borde completo a un acento lateral, más discreto. */
+.card.border-danger,
+.card.border-warning,
+.card.border-secondary {
+    border-color: var(--border) !important;
+    border-left-width: 4px !important;
+}
+.card.border-danger { border-left-color: var(--bs-danger) !important; }
+.card.border-warning { border-left-color: var(--bs-warning) !important; }
+.card.border-secondary { border-left-color: var(--ink-muted) !important; }
+
+.card-indicador {
+    text-align: center;
+    padding: 1.1rem 1rem;
+}
+.card-indicador .valor {
+    font-family: var(--font-mono);
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.dashboard-card {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    transition: transform .12s ease, box-shadow .12s ease;
+}
+.dashboard-card:hover {
+    transform: translateY(-2px);
+}
+.dashboard-card:hover .card {
+    box-shadow: 0 6px 16px rgba(20,30,45,.10);
+}
+
+/* ---- Tablas -------------------------------------------------------------- */
+
+.table thead th {
+    font-size: .72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: var(--ink-muted);
+    border-bottom-width: 1px;
+    background: var(--surface-muted);
+}
+.table > :not(caption) > * > * {
+    padding: .65rem .75rem;
+}
+.table-hover > tbody > tr:hover > * {
+    background-color: rgba(27,58,92,.04);
+}
+
+/* ---- Píldoras de estado ---------------------------------------------------
+   Mismo marcado que antes (span.badge.badge-Estado), solo se retiñe: en vez
+   de un bloque sólido, una píldora suave con un punto de color — el mismo
+   lenguaje visual para visitas, servicios, contratos y observaciones. */
+
+.badge {
+    display: inline-flex !important;
+    align-items: center;
+    gap: .4rem;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: .72rem;
+    letter-spacing: .02em;
+    text-transform: uppercase;
+    padding: .38em .75em .38em .6em;
+    border-radius: 999px;
+}
+.badge::before {
+    content: "";
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: currentColor;
+    flex-shrink: 0;
+}
+
+.badge-Pendiente { background: #EEF1F4; color: #5B6673; }
+.badge-Programado { background: #EAF1FA; color: #1B3A5C; }
+.badge-En.proceso, .badge-En\ proceso { background: #FDF2E3; color: #A8630A; }
+.badge-Realizado, .badge-Cumplido { background: #E5F4EC; color: #1F8A54; }
+.badge-Vencido { background: #FBEAE7; color: #C1440E; }
+.badge-Cancelado { background: #F1F2F4; color: #7A828C; }
+.badge-Reprogramado { background: #F1EAFB; color: #6B32C9; }
+
+.badge-Asignada { background: #EAF1FA; color: #1B3A5C; }
+.badge-Pausada { background: #FDF2E3; color: #A8630A; }
+.badge-Finalizada { background: #E5F4EC; color: #1F8A54; }
+.badge-Cancelada { background: #F1F2F4; color: #7A828C; }
+
+.badge-Deficiencia\.crítica { background: #FBEAE7; color: #C1440E; }
+.badge-Deficiencia\.no\.crítica { background: #FDF2E3; color: #A8630A; }
+.badge-Desactivación { background: #F1F2F4; color: #5B6673; }
+.badge-Comentario { background: #EAF1FA; color: #1B3A5C; }
+
+.badge-Urgente { background: #FBEAE7; color: #C1440E; }
+.badge-Alta { background: #FDF2E3; color: #A8630A; }
+.badge-Media { background: #EAF1FA; color: #1B3A5C; }
+.badge-Baja { background: #F1F2F4; color: #7A828C; }
+
+/* ---- Calendario mensual --------------------------------------------------- */
+
+.calendario-grilla {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+.calendario-dia {
+    min-height: 92px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 5px;
+    font-size: 0.8rem;
+    background: var(--surface);
+}
+.calendario-dia.fuera-de-mes {
+    background-color: var(--surface-muted);
+    color: #B7BDC6;
+}
+.calendario-dia .numero-dia {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 0.75rem;
+    color: var(--ink-muted);
+}
+.chip-cliente {
+    display: block;
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 0.68rem;
+    padding: 2px 6px;
+    border-radius: 5px;
+    margin-top: 3px;
+    text-decoration: none;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.chip-success { background: #E5F4EC; color: #1F8A54; }
+.chip-primary { background: #EAF1FA; color: #1B3A5C; }
+.chip-danger { background: #FBEAE7; color: #C1440E; }
+.chip-secondary { background: #F1F2F4; color: #7A828C; }
+
+/* ---- Tablas ordenables/filtrables (data-table) --------------------------- */
+
+.th-ordenable {
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+.th-ordenable:hover {
+    color: var(--brand);
+}
+.indicador-orden {
+    font-size: .65rem;
+    margin-left: 2px;
+}
+.tabla-filtros th {
+    background: var(--surface);
+    padding: .35rem .5rem !important;
+    border-top: none;
+}
+.tabla-filtros input {
+    font-size: .78rem;
+}

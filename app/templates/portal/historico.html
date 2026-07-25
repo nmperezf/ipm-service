@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Histórico técnico{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('portal.inicio') }}">&larr; {{ cliente.nombre }}</a></p>
+<h1>Histórico técnico</h1>
+
+<h4 class="mt-4">Visitas</h4>
+<table class="table table-sm data-table">
+    <thead><tr><th>Fecha</th><th>Instalación</th><th>Servicios</th><th>Cerrada el</th></tr></thead>
+    <tbody>
+        {% for visita in visitas %}
+        <tr>
+            <td>{{ visita.fecha.strftime('%d/%m/%Y') }}</td>
+            <td>{{ visita.instalacion.nombre }}</td>
+            <td>{{ visita.items|map(attribute='servicio.nombre')|join(', ') if visita.items else '-' }}</td>
+            <td>{{ visita.fecha_cierre.strftime('%d/%m/%Y') if visita.fecha_cierre else '-' }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center text-muted py-4">Todavía no hay visitas cerradas.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h4 class="mt-4">Observaciones</h4>
+<table class="table table-sm data-table">
+    <thead><tr><th>Fecha carga</th><th>Instalación</th><th>Clasificación</th><th>Descripción</th><th>Estado</th></tr></thead>
+    <tbody>
+        {% for obs in observaciones %}
+        <tr>
+            <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+            <td>{{ obs.instalacion.nombre }}</td>
+            <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+            <td>{{ obs.descripcion }}</td>
+            <td>
+                {% if obs.resuelto %}<span class="badge bg-success">Resuelta ({{ obs.fecha_resolucion.strftime('%d/%m/%Y') if obs.fecha_resolucion else '' }})</span>
+                {% else %}<span class="badge bg-secondary">Abierta</span>{% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-4">Sin observaciones cargadas.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

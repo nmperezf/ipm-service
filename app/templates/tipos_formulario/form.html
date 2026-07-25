@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if tipo else 'Nuevo' }} tipo de formulario{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('tipos_formulario.listar', cliente_id=cliente.id) }}">&larr; Formularios de {{ cliente.nombre }}</a></p>
+<h1>{{ 'Editar tipo de formulario' if tipo else 'Nuevo tipo de formulario' }} <small class="text-muted fs-6">{{ cliente.nombre }}</small></h1>
+<p class="text-muted">Armá el checklist agregando los campos que necesites. Cada campo se guarda con la etiqueta que le pongas.</p>
+
+<form method="POST">
+    <div class="mb-3">
+        <label class="form-label">Nombre</label>
+        <input type="text" name="nombre" class="form-control" required
+               placeholder="Ej: Checklist de BIE"
+               value="{{ tipo.nombre if tipo else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Descripción (opcional)</label>
+        <input type="text" name="descripcion" class="form-control" value="{{ tipo.descripcion if tipo else '' }}">
+    </div>
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="form-check mb-2">
+                <input type="checkbox" name="por_equipo" class="form-check-input" id="por_equipo"
+                       {% if tipo and tipo.por_equipo %}checked{% endif %} onchange="toggleTipoEquipo()">
+                <label class="form-check-label" for="por_equipo">
+                    Se completa una vez por cada equipo (ej: un checklist por cada BIE, por cada ECA)
+                </label>
+            </div>
+            <div id="tipo-equipo-wrapper" style="display:none;">
+                <label class="form-label">Tipo de equipo al que aplica</label>
+                <select name="tipo_equipo_aplicable" class="form-select" style="max-width: 300px;">
+                    {% for t in tipos_equipo %}
+                    <option value="{{ t }}" {% if tipo and tipo.tipo_equipo_aplicable == t %}selected{% endif %}>{{ t }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <h5>Campos del formulario</h5>
+    <table class="table table-sm align-middle" id="tabla-campos">
+        <thead>
+            <tr>
+                <th style="width: 35%">Etiqueta (lo que ve el técnico)</th>
+                <th style="width: 20%">Tipo de campo</th>
+                <th style="width: 35%">Opciones (solo para selección/checklist, separadas por coma)</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="cuerpo-campos"></tbody>
+    </table>
+    <button type="button" class="btn btn-sm btn-outline-primary mb-4" onclick="agregarFila()">+ Agregar campo</button>
+
+    <div>
+        <button type="submit" class="btn btn-primary">Guardar tipo de formulario</button>
+        <a href="{{ url_for('tipos_formulario.listar', cliente_id=cliente.id) }}" class="btn btn-link">Cancelar</a>
+    </div>
+</form>
+
+<script type="application/json" id="campos-iniciales">{{ (tipo.campos() if tipo else [])|tojson }}</script>
+<script type="application/json" id="tipos-campo-disponibles">{{ tipos_campo|tojson }}</script>
+
+<script>
+function toggleTipoEquipo() {
+    const checked = document.getElementById('por_equipo').checked;
+    document.getElementById('tipo-equipo-wrapper').style.display = checked ? 'block' : 'none';
+}
+
+function opcionesTiposCampo() {
+    const tipos = JSON.parse(document.getElementById('tipos-campo-disponibles').textContent);
+    return tipos.map(function (t) { return '<option value="' + t[0] + '">' + t[1] + '</option>'; }).join('');
+}
+
+function agregarFila(campo) {
+    campo = campo || { campo: '', tipo: 'texto', label: '', opciones: [] };
+    const tbody = document.getElementById('cuerpo-campos');
+    const fila = document.createElement('tr');
+    fila.innerHTML =
+        '<td><input type="text" name="campo_label" class="form-control form-control-sm" required value="' +
+        (campo.label || '').replace(/"/g, '&quot;') + '"></td>' +
+        '<td><select name="campo_tipo" class="form-select form-select-sm" onchange="toggleOpciones(this)">' +
+        opcionesTiposCampo() + '</select></td>' +
+        '<td><input type="text" name="campo_opciones" class="form-control form-control-sm" placeholder="opción 1, opción 2..." value="' +
+        ((campo.opciones || []).join(', ')).replace(/"/g, '&quot;') + '"></td>' +
+        '<td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest(\'tr\').remove()">Quitar</button></td>';
+    tbody.appendChild(fila);
+    fila.querySelector('select[name="campo_tipo"]').value = campo.tipo || 'texto';
+    toggleOpciones(fila.querySelector('select[name="campo_tipo"]'));
+}
+
+function toggleOpciones(select) {
+    const fila = select.closest('tr');
+    const inputOpciones = fila.querySelector('input[name="campo_opciones"]');
+    const necesitaOpciones = select.value === 'seleccion' || select.value === 'multi_seleccion';
+    inputOpciones.style.display = necesitaOpciones ? 'block' : 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    toggleTipoEquipo();
+    const iniciales = JSON.parse(document.getElementById('campos-iniciales').textContent);
+    if (iniciales.length) {
+        iniciales.forEach(agregarFila);
+    } else {
+        agregarFila();
+    }
+});
+</script>
+{% endblock %}

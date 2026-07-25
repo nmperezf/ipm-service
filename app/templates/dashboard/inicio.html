@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}Inicio - IPM Service{% endblock %}
+{% block content %}
+
+<form method="GET" action="{{ url_for('dashboard.inicio') }}" class="mb-4">
+    <div class="input-group input-group-lg">
+        <input type="text" name="q" class="form-control" placeholder="Buscar cliente por nombre..." value="{{ q }}">
+        <button type="submit" class="btn btn-dark">Buscar</button>
+    </div>
+</form>
+
+{% if q %}
+<h5>Resultados para "{{ q }}"</h5>
+<div class="list-group mb-4">
+    {% for c in resultados_busqueda %}
+    <a href="{{ url_for('clientes.detalle', cliente_id=c.id) }}" class="list-group-item list-group-item-action">{{ c.nombre }}</a>
+    {% else %}
+    <p class="text-muted">No se encontraron clientes.</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="row g-2 mb-3">
+    <div class="col-md-3">
+        <a href="{{ url_for('dashboard.clientes_con_novedad_lista', clasificacion='Deficiencia crítica') }}" class="dashboard-card">
+            <div class="card border-danger card-indicador">
+                <div class="valor text-danger">{{ clientes_con_novedad['Deficiencia crítica'] }}</div>
+                <div class="text-muted small">Clientes con críticas abiertas</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('dashboard.clientes_con_novedad_lista', clasificacion='Deficiencia no crítica') }}" class="dashboard-card">
+            <div class="card border-warning card-indicador">
+                <div class="valor text-warning">{{ clientes_con_novedad['Deficiencia no crítica'] }}</div>
+                <div class="text-muted small">Clientes con no críticas abiertas</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('dashboard.clientes_con_novedad_lista', clasificacion='Desactivación') }}" class="dashboard-card">
+            <div class="card border-secondary card-indicador">
+                <div class="valor">{{ clientes_con_novedad['Desactivación'] }}</div>
+                <div class="text-muted small">Clientes con desactivaciones</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('dashboard.clientes_con_novedad_lista', clasificacion='Comentario') }}" class="dashboard-card">
+            <div class="card card-indicador">
+                <div class="valor">{{ clientes_con_novedad['Comentario'] }}</div>
+                <div class="text-muted small">Clientes con comentarios</div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <a href="{{ url_for('dashboard.visitas_vencidas_lista') }}" class="dashboard-card">
+            <div class="card border-danger">
+                <div class="card-body card-indicador">
+                    <div class="valor text-danger">{{ visitas_vencidas }}</div>
+                    <div class="text-muted small">Visitas vencidas</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('dashboard.visitas_en_revision_lista') }}" class="dashboard-card">
+            <div class="card">
+                <div class="card-body card-indicador">
+                    <div class="valor">{{ visitas_en_revision }}</div>
+                    <div class="text-muted small">Visitas en revisión</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('ordenes.listar') }}" class="dashboard-card">
+            <div class="card">
+                <div class="card-body card-indicador">
+                    <div class="valor">{{ ot_pendientes }}</div>
+                    <div class="text-muted small">OT pendientes</div>
+                </div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{{ url_for('inventario.criticos_lista') }}" class="dashboard-card">
+            <div class="card border-warning">
+                <div class="card-body card-indicador">
+                    <div class="valor text-warning">{{ repuestos_criticos }}</div>
+                    <div class="text-muted small">Repuestos en nivel crítico</div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <a href="{{ url_for('dashboard.cumplimiento_mensual') }}" class="dashboard-card">
+            <div class="card">
+                <div class="card-body card-indicador">
+                    <div class="valor text-success">{{ cumplimiento_pct }}%</div>
+                    <div class="text-muted">Cumplimiento de {{ titulo_mes }} ({{ cumplidos_mes }}/{{ total_mes }} servicios)</div>
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<div class="row g-4 mb-4">
+    <div class="col-md-12">
+        <h4>Agenda de esta semana</h4>
+        <table class="table table-sm data-table">
+            <thead><tr><th>Fecha</th><th>Cliente</th><th>Instalación</th><th>Estado</th></tr></thead>
+            <tbody>
+                {% for visita in agenda_semana %}
+                <tr>
+                    <td>{{ visita.fecha.strftime('%d/%m') }}</td>
+                    <td><a href="{{ url_for('clientes.detalle', cliente_id=visita.instalacion.cliente_id) }}">{{ visita.instalacion.cliente.nombre }}</a></td>
+                    <td>{{ visita.instalacion.nombre }}</td>
+                    <td><a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}"><span class="badge badge-{{ visita.estado.replace(' ', '.') }}">{{ visita.estado }}</span></a></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="4" class="text-muted text-center py-3">No hay visitas programadas para los próximos 7 días.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="row g-4">
+    {% if current_user.rol in ('Administrador', 'Super Admin') %}
+    <div class="col-md-12">
+        <h4>Recordatorios</h4>
+        <form method="POST" action="{{ url_for('recordatorios.nuevo') }}" class="row g-2 align-items-end mb-3">
+            <div class="col-md-5">
+                <input type="text" name="titulo" class="form-control" placeholder="Ej: Llamar a fulano por renovación de contrato" required>
+            </div>
+            <div class="col-md-3">
+                <select name="cliente_id" class="form-select">
+                    <option value="">-- Sin cliente asociado --</option>
+                    {% for c in clientes_para_recordatorio %}
+                    <option value="{{ c.id }}">{{ c.nombre }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <select name="prioridad" class="form-select">
+                    {% for p in prioridades %}
+                    <option value="{{ p }}" {% if p == 'Media' %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-outline-dark w-100">Agregar</button>
+            </div>
+        </form>
+
+        <div class="list-group">
+            {% for r in recordatorios_abiertos %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+                <span>
+                    <span class="badge badge-{{ r.prioridad }}">{{ r.prioridad }}</span>
+                    {{ r.titulo }}
+                    {% if r.cliente %} — <a href="{{ url_for('clientes.detalle', cliente_id=r.cliente_id) }}">{{ r.cliente.nombre }}</a>{% endif %}
+                    <small class="text-muted">({{ r.fecha_carga.strftime('%d/%m/%Y') }})</small>
+                </span>
+                <span>
+                    <form method="POST" action="{{ url_for('recordatorios.resolver', recordatorio_id=r.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-success">Resuelto</button>
+                    </form>
+                    <form method="POST" action="{{ url_for('recordatorios.eliminar', recordatorio_id=r.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                    </form>
+                </span>
+            </div>
+            {% else %}
+            <p class="text-muted">No hay recordatorios cargados.</p>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

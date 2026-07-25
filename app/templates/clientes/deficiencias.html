@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ clasificacion }} - {{ cliente.nombre }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}">&larr; {{ cliente.nombre }}</a></p>
+<h1>{{ clasificacion }} <span class="text-muted fs-6">({{ observaciones|length }} abiertas)</span></h1>
+
+<table class="table table-hover data-table">
+    <thead><tr><th>Fecha</th><th>Instalación</th><th>Descripción</th><th></th></tr></thead>
+    <tbody>
+        {% for obs in observaciones %}
+        <tr>
+            <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+            <td><a href="{{ url_for('instalaciones.detalle', instalacion_id=obs.instalacion_id) }}">{{ obs.instalacion.nombre }}</a></td>
+            <td>{{ obs.descripcion }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}">
+                    <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center text-muted py-4">Sin observaciones abiertas de este tipo.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

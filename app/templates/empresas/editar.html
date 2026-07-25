@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Editar {{ empresa.nombre }}{% endblock %}
+{% block content %}
+<h1>Editar empresa</h1>
+
+<form method="POST" class="mt-3">
+    <div class="mb-3">
+        <label class="form-label">Nombre</label>
+        <input type="text" name="nombre" class="form-control" required value="{{ empresa.nombre }}">
+    </div>
+    <div class="form-check mb-3">
+        <input type="checkbox" name="activo" class="form-check-input" id="activo" {% if empresa.activo %}checked{% endif %}>
+        <label class="form-check-label" for="activo">Activa</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a href="{{ url_for('empresas.listar') }}" class="btn btn-link">Cancelar</a>
+</form>
+
+<h5 class="mt-4">Usuarios de esta empresa</h5>
+<table class="table table-sm data-table">
+    <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th></tr></thead>
+    <tbody>
+        {% for u in empresa.usuarios %}
+        <tr>
+            <td>{{ u.username }}</td>
+            <td>{{ u.nombre_completo or '-' }}</td>
+            <td>{{ u.rol }}</td>
+            <td>{% if u.activo %}<span class="badge bg-success">Activo</span>{% else %}<span class="badge bg-secondary">Inactivo</span>{% endif %}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center text-muted py-3">Sin usuarios todavía.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

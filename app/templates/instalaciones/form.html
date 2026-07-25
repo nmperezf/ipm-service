@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if instalacion else 'Nueva' }} instalación{% endblock %}
+{% block content %}
+<h1>{{ 'Editar instalación' if instalacion else 'Nueva instalación' }} <small class="text-muted fs-6">{{ cliente.nombre }}</small></h1>
+
+<form method="POST" class="mt-3">
+    <div class="mb-3">
+        <label class="form-label">Nombre de la instalación</label>
+        <input type="text" name="nombre" class="form-control" required value="{{ instalacion.nombre if instalacion else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Dirección</label>
+        <input type="text" name="direccion" class="form-control" value="{{ instalacion.direccion if instalacion else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Observaciones</label>
+        <textarea name="observaciones" class="form-control" rows="3">{{ instalacion.observaciones if instalacion else '' }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}" class="btn btn-link">Cancelar</a>
+</form>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Hoja de ruta - {{ cliente.nombre }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}">&larr; {{ cliente.nombre }}</a></p>
+<h1>Hoja de ruta</h1>
+<p class="text-muted">Todas las visitas de {{ cliente.nombre }} — cumplidas y pendientes/futuras — agrupadas por mes.</p>
+
+{% for bloque in bloques %}
+<h4 class="mt-4">{{ bloque.titulo }}</h4>
+<table class="table table-sm data-table">
+    <thead><tr><th>Fecha</th><th>Instalación</th><th>Servicios</th><th>Estado</th><th></th></tr></thead>
+    <tbody>
+        {% for visita in bloque.visitas %}
+        <tr>
+            <td>{{ visita.fecha.strftime('%d/%m/%Y') }}</td>
+            <td><a href="{{ url_for('instalaciones.detalle', instalacion_id=visita.instalacion_id) }}">{{ visita.instalacion.nombre }}</a></td>
+            <td>{{ visita.items|map(attribute='servicio.nombre')|join(', ') if visita.items else 'Visita manual' }}</td>
+            <td><span class="badge badge-{{ visita.estado.replace(' ', '.') }}">{{ visita.estado }}</span></td>
+            <td><a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a></td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p class="text-muted text-center py-5">Este cliente todavía no tiene visitas programadas. Cargá un contrato con sus servicios en alguna instalación para empezar.</p>
+{% endfor %}
+{% endblock %}
