@@ -1,0 +1,283 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: admin\ot_repuestos.spec.ts >> Administrador - Crear OT y registrar repuestos >> Crear OT manual y registrar repuestos usados
+- Location: tests\admin\ot_repuestos.spec.ts:11:7
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded.
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=f2e1]:
+  - navigation [ref=f2e2]:
+    - generic [ref=f2e3]:
+      - link "IPM Service" [ref=f2e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f2e6]:
+        - list [ref=f2e7]:
+          - listitem [ref=f2e8]:
+            - link "Inicio" [ref=f2e9] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=f2e10]:
+            - link "Clientes" [ref=f2e11] [cursor=pointer]:
+              - /url: /clientes/
+          - listitem [ref=f2e12]:
+            - link "Calendario" [ref=f2e13] [cursor=pointer]:
+              - /url: /planificacion/calendario
+          - listitem [ref=f2e14]:
+            - link "Órdenes de trabajo" [ref=f2e15] [cursor=pointer]:
+              - /url: /ordenes-trabajo/
+          - listitem [ref=f2e16]:
+            - link "Inventario" [ref=f2e17] [cursor=pointer]:
+              - /url: /inventario/
+          - listitem [ref=f2e18]:
+            - link "Usuarios" [ref=f2e19] [cursor=pointer]:
+              - /url: /usuarios/
+        - list [ref=f2e20]:
+          - listitem [ref=f2e21]:
+            - generic [ref=f2e22]: Nicolás (Administrador) (Administrador)
+          - listitem [ref=f2e23]:
+            - link "Cerrar sesión" [ref=f2e24] [cursor=pointer]:
+              - /url: /logout
+  - generic [ref=f2e25]:
+    - generic [ref=f2e26]:
+      - heading "Órdenes de trabajo" [level=1] [ref=f2e27]
+      - link "+ Nueva OT correctiva" [ref=f2e28] [cursor=pointer]:
+        - /url: /ordenes-trabajo/nueva
+    - generic [ref=f2e30]:
+      - link "Todas" [ref=f2e31] [cursor=pointer]:
+        - /url: /ordenes-trabajo/
+      - link "Pendiente" [ref=f2e32] [cursor=pointer]:
+        - /url: /ordenes-trabajo/?estado=Pendiente
+      - link "Asignada" [ref=f2e33] [cursor=pointer]:
+        - /url: /ordenes-trabajo/?estado=Asignada
+      - link "En proceso" [ref=f2e34] [cursor=pointer]:
+        - /url: /ordenes-trabajo/?estado=En+proceso
+      - link "Pausada" [ref=f2e35] [cursor=pointer]:
+        - /url: /ordenes-trabajo/?estado=Pausada
+      - link "Finalizada" [ref=f2e36] [cursor=pointer]:
+        - /url: /ordenes-trabajo/?estado=Finalizada
+      - link "Cancelada" [ref=f2e37] [cursor=pointer]:
+        - /url: /ordenes-trabajo/?estado=Cancelada
+    - table [ref=f2e38]:
+      - rowgroup [ref=f2e39]:
+        - row [ref=f2e40]:
+          - columnheader "N°" [ref=f2e41] [cursor=pointer]
+          - columnheader "Tipo" [ref=f2e42] [cursor=pointer]
+          - columnheader "Cliente" [ref=f2e43] [cursor=pointer]
+          - columnheader "Instalación" [ref=f2e44] [cursor=pointer]
+          - columnheader "Técnico" [ref=f2e45] [cursor=pointer]
+          - columnheader "Prioridad" [ref=f2e46] [cursor=pointer]
+          - columnheader "Fecha apertura" [ref=f2e47] [cursor=pointer]
+          - columnheader "Estado" [ref=f2e48] [cursor=pointer]
+        - row [ref=f2e49]:
+          - columnheader [ref=f2e50]:
+            - textbox "Filtrar…" [ref=f2e51]
+          - columnheader [ref=f2e52]:
+            - textbox "Filtrar…" [ref=f2e53]
+          - columnheader [ref=f2e54]:
+            - textbox "Filtrar…" [ref=f2e55]
+          - columnheader [ref=f2e56]:
+            - textbox "Filtrar…" [ref=f2e57]
+          - columnheader [ref=f2e58]:
+            - textbox "Filtrar…" [ref=f2e59]
+          - columnheader [ref=f2e60]:
+            - textbox "Filtrar…" [ref=f2e61]
+          - columnheader [ref=f2e62]:
+            - textbox "Filtrar…" [ref=f2e63]
+          - columnheader [ref=f2e64]:
+            - textbox "Filtrar…" [ref=f2e65]
+      - rowgroup [ref=f2e66]:
+        - row [ref=f2e67]:
+          - cell [ref=f2e68]:
+            - link "OT-00025" [ref=f2e69] [cursor=pointer]:
+              - /url: /ordenes-trabajo/25
+          - cell "Preventivo" [ref=f2e70]
+          - cell [ref=f2e71]:
+            - link "Shopping Costa Azul" [ref=f2e72] [cursor=pointer]:
+              - /url: /clientes/1
+          - cell "Edificio Central" [ref=f2e73]
+          - cell "-" [ref=f2e74]
+          - cell "Media" [ref=f2e75]
+          - cell "01/02/2027" [ref=f2e76]
+          - cell "Pendiente" [ref=f2e77]
+        - row [ref=f2e79]:
+          - cell [ref=f2e80]:
+            - link "OT-00024" [ref=f2e81] [cursor=pointer]:
+              - /url: /ordenes-trabajo/24
+          - cell "Preventivo" [ref=f2e82]
+          - cell [ref=f2e83]:
+            - link "Shopping Costa Azul" [ref=f2e84] [cursor=pointer]:
+              - /url: /clientes/1
+          - cell "Edificio Central" [ref=f2e85]
+          - cell "-" [ref=f2e86]
+          - cell "Media" [ref=f2e87]
+          - cell "01/01/2027" [ref=f2e88]
+          - cell "Pendiente" [ref=f2e89]
+        - row [ref=f2e91]:
+          - cell [ref=f2e92]:
+            - link "OT-00023" [ref=f2e93] [cursor=pointer]:
+              - /url: /ordenes-trabajo/23
+          - cell "Preventivo" [ref=f2e94]
+          - cell [ref=f2e95]:
+            - link "Shopping Costa Azul" [ref=f2e96] [cursor=pointer]:
+              - /url: /clientes/1
+          - cell "Edificio Central" [ref=f2e97]
+          - cell "-" [ref=f2e98]
+          - cell "Media" [ref=f2e99]
+          - cell "01/12/2026" [ref=f2e100]
+          - cell "Pendiente" [ref=f2e101]
+        - row [ref=f2e103]:
+          - cell [ref=f2e104]:
+            - link "OT-00022" [ref=f2e105] [cursor=pointer]:
+              - /url: /ordenes-trabajo/22
+          - cell "Preventivo" [ref=f2e106]
+          - cell [ref=f2e107]:
+            - link "Shopping Costa Azul" [ref=f2e108] [cursor=pointer]:
+              - /url: /clientes/1
+          - cell "Edificio Central" [ref=f2e109]
+          - cell "-" [ref=f2e110]
+          - cell "Media" [ref=f2e111]
+          - cell "01/11/2026" [ref=f2e112]
+          - cell "Pendiente" [ref=f2e113]
+        - row [ref=f2e115]:
+          - cell [ref=f2e116]:
+            - link "OT-00021" [ref=f2e117] [cursor=pointer]:
+              - /url: /ordenes-trabajo/21
+          - cell "Preventivo" [ref=f2e118]
+          - cell [ref=f2e119]:
+            - link "Shopping Costa Azul" [ref=f2e120] [cursor=pointer]:
+              - /url: /clientes/1
+          - cell "Edificio Central" [ref=f2e121]
+          - cell "-" [ref=f2e122]
+          - cell "Media" [ref=f2e123]
+          - cell "01/10/2026" [ref=f2e124]
+          - cell "Pendiente" [ref=f2e125]
+        - row [ref=f2e127]:
+          - cell [ref=f2e128]:
+            - link "OT-00020" [ref=f2e129] [cursor=pointer]:
+              - /url: /ordenes-trabajo/20
+          - cell "Preventivo" [ref=f2e130]
+          - cell [ref=f2e131]:
+            - link "Shopping Costa Azul" [ref=f2e132] [cursor=pointer]:
+              - /url: /clientes/1
+          - cell "Edificio Central" [ref=f2e133]
+          - cell "Carlos Gómez (Técnico)" [ref=f2e134]
+          - cell "Media" [ref=f2e135]
+          - cell "01/09/2026" [ref=f2e136]
+          - cell "Pendiente" [ref=f2e137]
+        - row [ref=f2e139]:
+          - cell [ref=f2e140]:
+            - link "OT-00019" [ref=f2e141] [cursor=pointer]:
+              - /url: /ordenes-trabajo/19
+          - cell "Preventivo" [ref=f2e142]
+          - cell [ref=f2e143]:
+            - link "Shopping Costa Azul" [ref=f2e144] [cursor=pointer]:
+              - /url: /clientes/1
+          - cell "Edificio Central" [ref=f2e145]
+          - cell "Carlos Gómez (Técnico)" [ref=f2e146]
+          - cell "Media" [ref=f2e147]
+          - cell "01/08/2026" [ref=f2e148]
+          - cell "Asignada" [ref=f2e149]
+        - row [ref=f2e151]:
+          - cell [ref=f2e152]:
+            - link "OT-00005" [ref=f2e153] [cursor=pointer]:
+              - /url: /ordenes-trabajo/5
+          - cell "Preventivo" [ref=f2e154]
+          - cell [ref=f2e155]:
+            - link "Shopping Costa Azul" [ref=f2e156] [cursor=pointer]:
+              - /url: /clientes/1
+          - cell "Edificio Central" [ref=f2e157]
+          - cell "Carlos Gómez (Técnico)" [ref=f2e158]
+          - cell "Media" [ref=f2e159]
+          - cell "01/07/2026" [ref=f2e160]
+          - cell "Asignada" [ref=f2e161]
+        - row [ref=f2e163]:
+          - cell [ref=f2e164]:
+            - link "OT-00018" [ref=f2e165] [cursor=pointer]:
+              - /url: /ordenes-trabajo/18
+          - cell "Preventivo" [ref=f2e166]
+          - cell [ref=f2e167]:
+            - link "Shopping Costa Azul" [ref=f2e168] [cursor=pointer]:
+              - /url: /clientes/1
+          - cell "Edificio Central" [ref=f2e169]
+          - cell "Carlos Gómez (Técnico)" [ref=f2e170]
+          - cell "Media" [ref=f2e171]
+          - cell "01/07/2026" [ref=f2e172]
+          - cell "Pendiente" [ref=f2e173]
+        - row [ref=f2e175]:
+          - cell [ref=f2e176]:
+            - link "OT-00013" [ref=f2e177] [cursor=pointer]:
+              - /url: /ordenes-trabajo/13
+          - cell "Correctivo" [ref=f2e178]
+          - cell [ref=f2e179]:
+            - link "Shopping Costa Azul" [ref=f2e180] [cursor=pointer]:
+              - /url: /clientes/1
+          - cell "Edificio Central" [ref=f2e181]
+          - cell "Carlos Gómez (Técnico)" [ref=f2e182]
+          - cell "Alta" [ref=f2e183]
+          - cell "10/06/2026" [ref=f2e184]
+          - cell "Finalizada" [ref=f2e185]
+        - row [ref=f2e187]:
+          - cell [ref=f2e188]:
+            - link "OT-00017" [ref=f2e189] [cursor=pointer]:
+              - /url: /ordenes-trabajo/17
+          - cell "Preventivo" [ref=f2e190]
+          - cell [ref=f2e191]:
+            - link "Shopping Costa Azul" [ref=f2e192] [cursor=pointer]:
+              - /url: /clientes/1
+          - cell "Edificio Central" [ref=f2e193]
+          - cell "Carlos Gómez (Técnico)" [ref=f2e194]
+          - cell "Media" [ref=f2e195]
+          - cell "01/06/2026" [ref=f2e196]
+          - cell "Finalizada" [ref=f2e197]
+        - row [ref=f2e199]:
+          - cell [ref=f2e200]:
+            - link "OT-00016" [ref=f2e201] [cursor=pointer]:
+              - /url: /ordenes-trabajo/16
+          - cell "Preventivo" [ref=f2e202]
+          - cell [ref=f2e203]:
+            - link "Shopping Costa Azul" [ref=f2e204] [cursor=pointer]:
+              - /url: /clientes/1
+          - cell "Edificio Central" [ref=f2e205]
+          - cell "Carlos Gómez (Técnico)" [ref=f2e206]
+          - cell "Media" [ref=f2e207]
+          - cell "01/05/2026" [ref=f2e208]
+          - cell "Finalizada" [ref=f2e209]
+        - row [ref=f2e211]:
+          - cell [ref=f2e212]:
+            - link "OT-00015" [ref=f2e213] [cursor=pointer]:
+              - /url: /ordenes-trabajo/15
+          - cell "Preventivo" [ref=f2e214]
+          - cell [ref=f2e215]:
+            - link "Shopping Costa Azul" [ref=f2e216] [cursor=pointer]:
+              - /url: /clientes/1
+          - cell "Edificio Central" [ref=f2e217]
+          - cell "Carlos Gómez (Técnico)" [ref=f2e218]
+          - cell "Media" [ref=f2e219]
+          - cell "01/04/2026" [ref=f2e220]
+          - cell "Finalizada" [ref=f2e221]
+        - row [ref=f2e223]:
+          - cell [ref=f2e224]:
+            - link "OT-00014" [ref=f2e225] [cursor=pointer]:
+              - /url: /ordenes-trabajo/14
+          - cell "Preventivo" [ref=f2e226]
+          - cell [ref=f2e227]:
+            - link "Shopping Costa Azul" [ref=f2e228] [cursor=pointer]:
+              - /url: /clientes/1
+          - cell "Edificio Central" [ref=f2e229]
+          - cell "Carlos Gómez (Técnico)" [ref=f2e230]
+          - cell "Media" [ref=f2e231]
+          - cell "01/03/2026" [ref=f2e232]
+          - cell "Finalizada" [ref=f2e233]
+```

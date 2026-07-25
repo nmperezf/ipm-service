@@ -1,0 +1,167 @@
+# Instructions
+
+- Following Playwright test failed.
+- Explain why, be concise, respect Playwright best practices.
+- Provide a snippet of code with the fix, if possible.
+
+# Test info
+
+- Name: inventario\recordatorio.spec.ts >> Inventario - Recordatorios >> Crear y resolver Recordatorio (esqueleto)
+- Location: tests\inventario\recordatorio.spec.ts:11:7
+
+# Error details
+
+```
+Test timeout of 30000ms exceeded.
+```
+
+# Page snapshot
+
+```yaml
+- generic [active] [ref=f1e1]:
+  - navigation [ref=f1e2]:
+    - generic [ref=f1e3]:
+      - link "IPM Service" [ref=f1e4] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f1e6]:
+        - list [ref=f1e7]:
+          - listitem [ref=f1e8]:
+            - link "Inicio" [ref=f1e9] [cursor=pointer]:
+              - /url: /
+          - listitem [ref=f1e10]:
+            - link "Clientes" [ref=f1e11] [cursor=pointer]:
+              - /url: /clientes/
+          - listitem [ref=f1e12]:
+            - link "Calendario" [ref=f1e13] [cursor=pointer]:
+              - /url: /planificacion/calendario
+          - listitem [ref=f1e14]:
+            - link "Órdenes de trabajo" [ref=f1e15] [cursor=pointer]:
+              - /url: /ordenes-trabajo/
+          - listitem [ref=f1e16]:
+            - link "Inventario" [ref=f1e17] [cursor=pointer]:
+              - /url: /inventario/
+          - listitem [ref=f1e18]:
+            - link "Usuarios" [ref=f1e19] [cursor=pointer]:
+              - /url: /usuarios/
+        - list [ref=f1e20]:
+          - listitem [ref=f1e21]:
+            - generic [ref=f1e22]: Nicolás (Administrador) (Administrador)
+          - listitem [ref=f1e23]:
+            - link "Cerrar sesión" [ref=f1e24] [cursor=pointer]:
+              - /url: /logout
+  - generic [ref=f1e25]:
+    - alert [ref=f1e26]:
+      - text: Bienvenido, Nicolás (Administrador).
+      - button [ref=f1e27] [cursor=pointer]
+    - generic [ref=f1e29]:
+      - textbox "Buscar cliente por nombre..." [ref=f1e30]
+      - button "Buscar" [ref=f1e31] [cursor=pointer]
+    - generic [ref=f1e32]:
+      - link "0 Clientes con críticas abiertas" [ref=f1e34] [cursor=pointer]:
+        - /url: /clientes-con-novedad/Deficiencia%20cr%C3%ADtica
+        - generic [ref=f1e35]:
+          - generic [ref=f1e36]: "0"
+          - generic [ref=f1e37]: Clientes con críticas abiertas
+      - link "1 Clientes con no críticas abiertas" [ref=f1e39] [cursor=pointer]:
+        - /url: /clientes-con-novedad/Deficiencia%20no%20cr%C3%ADtica
+        - generic [ref=f1e40]:
+          - generic [ref=f1e41]: "1"
+          - generic [ref=f1e42]: Clientes con no críticas abiertas
+      - link "0 Clientes con desactivaciones" [ref=f1e44] [cursor=pointer]:
+        - /url: /clientes-con-novedad/Desactivaci%C3%B3n
+        - generic [ref=f1e45]:
+          - generic [ref=f1e46]: "0"
+          - generic [ref=f1e47]: Clientes con desactivaciones
+      - link "0 Clientes con comentarios" [ref=f1e49] [cursor=pointer]:
+        - /url: /clientes-con-novedad/Comentario
+        - generic [ref=f1e50]:
+          - generic [ref=f1e51]: "0"
+          - generic [ref=f1e52]: Clientes con comentarios
+    - generic [ref=f1e53]:
+      - link "4 Visitas vencidas" [ref=f1e55] [cursor=pointer]:
+        - /url: /visitas-vencidas
+        - generic [ref=f1e57]:
+          - generic [ref=f1e58]: "4"
+          - generic [ref=f1e59]: Visitas vencidas
+      - link "0 Visitas en revisión" [ref=f1e61] [cursor=pointer]:
+        - /url: /visitas-en-revision
+        - generic [ref=f1e63]:
+          - generic [ref=f1e64]: "0"
+          - generic [ref=f1e65]: Visitas en revisión
+      - link "9 OT pendientes" [ref=f1e67] [cursor=pointer]:
+        - /url: /ordenes-trabajo/
+        - generic [ref=f1e69]:
+          - generic [ref=f1e70]: "9"
+          - generic [ref=f1e71]: OT pendientes
+      - link "1 Repuestos en nivel crítico" [ref=f1e73] [cursor=pointer]:
+        - /url: /inventario/criticos
+        - generic [ref=f1e75]:
+          - generic [ref=f1e76]: "1"
+          - generic [ref=f1e77]: Repuestos en nivel crítico
+    - link "100.0% Cumplimiento de July 2026 (2/2 servicios)" [ref=f1e80] [cursor=pointer]:
+      - /url: /cumplimiento-mensual
+      - generic [ref=f1e82]:
+        - generic [ref=f1e83]: 100.0%
+        - generic [ref=f1e84]: Cumplimiento de July 2026 (2/2 servicios)
+    - generic [ref=f1e86]:
+      - heading "Agenda de esta semana" [level=4] [ref=f1e87]
+      - table [ref=f1e88]:
+        - rowgroup [ref=f1e89]:
+          - row [ref=f1e90]:
+            - columnheader "Fecha" [ref=f1e91] [cursor=pointer]
+            - columnheader "Cliente" [ref=f1e92] [cursor=pointer]
+            - columnheader "Instalación" [ref=f1e93] [cursor=pointer]
+            - columnheader "Estado" [ref=f1e94] [cursor=pointer]
+          - row [ref=f1e95]:
+            - columnheader [ref=f1e96]:
+              - textbox "Filtrar…" [ref=f1e97]
+            - columnheader [ref=f1e98]:
+              - textbox "Filtrar…" [ref=f1e99]
+            - columnheader [ref=f1e100]:
+              - textbox "Filtrar…" [ref=f1e101]
+            - columnheader [ref=f1e102]:
+              - textbox "Filtrar…" [ref=f1e103]
+        - rowgroup [ref=f1e104]:
+          - row [ref=f1e105]:
+            - cell "27/07" [ref=f1e106]
+            - cell [ref=f1e107]:
+              - link "Shopping Costa Azul" [ref=f1e108] [cursor=pointer]:
+                - /url: /clientes/1
+            - cell "Edificio Central" [ref=f1e109]
+            - cell [ref=f1e110]:
+              - link "Realizado" [ref=f1e111] [cursor=pointer]:
+                - /url: /visitas/5
+          - row [ref=f1e113]:
+            - cell "27/07" [ref=f1e114]
+            - cell [ref=f1e115]:
+              - link "Shopping Costa Azul" [ref=f1e116] [cursor=pointer]:
+                - /url: /clientes/1
+            - cell "Edificio Central" [ref=f1e117]
+            - cell [ref=f1e118]:
+              - link "Realizado" [ref=f1e119] [cursor=pointer]:
+                - /url: /visitas/10
+    - generic [ref=f1e122]:
+      - heading "Recordatorios" [level=4] [ref=f1e123]
+      - generic [ref=f1e124]:
+        - 'textbox "Ej: Llamar a fulano por renovación de contrato" [ref=f1e126]'
+        - combobox [ref=f1e128]:
+          - option "-- Sin cliente asociado --" [selected]
+          - option "Shopping Costa Azul"
+          - option "Cliente E2E"
+        - combobox [ref=f1e130]:
+          - option "Baja"
+          - option "Media" [selected]
+          - option "Alta"
+          - option "Urgente"
+        - button "Agregar" [ref=f1e132] [cursor=pointer]
+      - generic [ref=f1e134]:
+        - generic [ref=f1e135]:
+          - generic [ref=f1e136]: Urgente
+          - text: Coordinar con el cliente la renovación del contrato antes de marzo —
+          - link "Shopping Costa Azul" [ref=f1e137] [cursor=pointer]:
+            - /url: /clientes/1
+          - text: (25/07/2026)
+        - generic [ref=f1e138]:
+          - button "Resuelto" [ref=f1e140] [cursor=pointer]
+          - button "Eliminar" [ref=f1e142] [cursor=pointer]
+```
