@@ -1,6 +1,6 @@
 /* ==========================================================================
    IPM Service — sistema de diseño
-   Paleta: acero industrial (marca) + ember (acento reservado para lo crítico)
+   Paleta: negro/carbón (marca, acciones primarias) + rojo (acento y crítico)
    Tipografía: Space Grotesk (títulos) / Inter (texto) / JetBrains Mono (datos)
    ========================================================================== */
 
@@ -11,30 +11,38 @@
     --surface-muted: #F4F6F8;
     --border: #E1E5EA;
 
-    --brand: #1B3A5C;
-    --brand-dark: #12283F;
-    --accent: #C1440E;
+    --brand: #1A2233;
+    --brand-dark: #000000;
+    --accent: #E2131D;
     --accent-soft: #FBEAE7;
 
     --font-display: 'Space Grotesk', system-ui, sans-serif;
     --font-body: 'Inter', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
-    /* Overrides de variables de Bootstrap 5.3: esto retiñe botones, links,
-       badges, focus rings y bordes en TODA la app sin tocar cada plantilla. */
-    --bs-primary: #1B3A5C;
-    --bs-primary-rgb: 27, 58, 92;
+    /* Overrides de variables de Bootstrap 5.3: esto retiñe utilidades como
+       .text-primary/.bg-danger/.border-danger en toda la app, porque esas sí
+       leen estas variables (via su versión -rgb). Los botones (.btn-*) NO
+       las leen — Bootstrap los compila con sus propios colores fijos por
+       variante, así que van recableados aparte más abajo. */
+    --bs-primary: #1A2233;
+    --bs-primary-rgb: 26, 34, 51;
     --bs-secondary: #5B6673;
     --bs-secondary-rgb: 91, 102, 115;
     --bs-success: #1F8A54;
-    --bs-danger: #C1440E;
-    --bs-danger-rgb: 193, 68, 14;
+    --bs-success-rgb: 31, 138, 84;
+    --bs-danger: #E2131D;
+    --bs-danger-rgb: 226, 19, 29;
     --bs-warning: #B5730A;
+    --bs-warning-rgb: 181, 115, 10;
     --bs-info: #2C6E8C;
+    --bs-info-rgb: 44, 110, 140;
     --bs-dark: #1A2233;
     --bs-light: #F4F6F8;
-    --bs-link-color: #1B3A5C;
-    --bs-link-hover-color: #12283F;
+    --bs-link-color: #1A2233;
+    --bs-link-color-rgb: 26, 34, 51;
+    --bs-link-hover-color: #000000;
+    --bs-link-hover-color-rgb: 0, 0, 0;
     --bs-border-radius: .5rem;
     --bs-border-radius-sm: .375rem;
     --bs-border-radius-lg: .65rem;
@@ -42,6 +50,107 @@
     --bs-body-color: #1A2233;
     --bs-body-bg: #F4F6F8;
     --bs-border-color: #E1E5EA;
+}
+
+/* ---- Recableado de botones ------------------------------------------------
+   Cada variante .btn-* de Bootstrap trae sus propios colores fijos
+   (--bs-btn-bg, --bs-btn-hover-bg, etc.), sin heredar de --bs-primary ni de
+   nada de lo de arriba. Sin esto, la paleta de la app no llega a los
+   botones — quedan con el azul/verde/amarillo por defecto de Bootstrap. */
+
+.btn-primary {
+    --bs-btn-bg: var(--brand);
+    --bs-btn-border-color: var(--brand);
+    --bs-btn-hover-bg: var(--brand-dark);
+    --bs-btn-hover-border-color: var(--brand-dark);
+    --bs-btn-active-bg: var(--brand-dark);
+    --bs-btn-active-border-color: var(--brand-dark);
+    --bs-btn-disabled-bg: var(--brand);
+    --bs-btn-disabled-border-color: var(--brand);
+}
+.btn-outline-primary {
+    --bs-btn-color: var(--brand);
+    --bs-btn-border-color: var(--brand);
+    --bs-btn-hover-bg: var(--brand);
+    --bs-btn-hover-border-color: var(--brand);
+    --bs-btn-active-bg: var(--brand);
+    --bs-btn-active-border-color: var(--brand);
+}
+.btn-dark {
+    --bs-btn-bg: var(--brand);
+    --bs-btn-border-color: var(--brand);
+    --bs-btn-hover-bg: var(--brand-dark);
+    --bs-btn-hover-border-color: var(--brand-dark);
+    --bs-btn-active-bg: var(--brand-dark);
+    --bs-btn-active-border-color: var(--brand-dark);
+    --bs-btn-disabled-bg: var(--brand);
+    --bs-btn-disabled-border-color: var(--brand);
+}
+.btn-outline-dark {
+    --bs-btn-color: var(--brand);
+    --bs-btn-border-color: var(--brand);
+    --bs-btn-hover-bg: var(--brand);
+    --bs-btn-hover-border-color: var(--brand);
+    --bs-btn-active-bg: var(--brand);
+    --bs-btn-active-border-color: var(--brand);
+}
+.btn-danger {
+    --bs-btn-bg: var(--accent);
+    --bs-btn-border-color: var(--accent);
+    --bs-btn-hover-bg: #B00E17;
+    --bs-btn-hover-border-color: #B00E17;
+    --bs-btn-active-bg: #B00E17;
+    --bs-btn-active-border-color: #B00E17;
+    --bs-btn-disabled-bg: var(--accent);
+    --bs-btn-disabled-border-color: var(--accent);
+}
+.btn-outline-danger {
+    --bs-btn-color: var(--accent);
+    --bs-btn-border-color: var(--accent);
+    --bs-btn-hover-bg: var(--accent);
+    --bs-btn-hover-border-color: var(--accent);
+    --bs-btn-active-bg: var(--accent);
+    --bs-btn-active-border-color: var(--accent);
+}
+.btn-outline-secondary {
+    --bs-btn-color: var(--bs-secondary);
+    --bs-btn-border-color: var(--bs-secondary);
+    --bs-btn-hover-bg: var(--bs-secondary);
+    --bs-btn-hover-border-color: var(--bs-secondary);
+    --bs-btn-active-bg: var(--bs-secondary);
+    --bs-btn-active-border-color: var(--bs-secondary);
+}
+.btn-success {
+    --bs-btn-bg: var(--bs-success);
+    --bs-btn-border-color: var(--bs-success);
+    --bs-btn-hover-bg: #166B41;
+    --bs-btn-hover-border-color: #166B41;
+    --bs-btn-active-bg: #166B41;
+    --bs-btn-active-border-color: #166B41;
+}
+.btn-outline-success {
+    --bs-btn-color: var(--bs-success);
+    --bs-btn-border-color: var(--bs-success);
+    --bs-btn-hover-bg: var(--bs-success);
+    --bs-btn-hover-border-color: var(--bs-success);
+    --bs-btn-active-bg: var(--bs-success);
+    --bs-btn-active-border-color: var(--bs-success);
+}
+.btn-outline-info {
+    --bs-btn-color: var(--bs-info);
+    --bs-btn-border-color: var(--bs-info);
+    --bs-btn-hover-bg: var(--bs-info);
+    --bs-btn-hover-border-color: var(--bs-info);
+    --bs-btn-active-bg: var(--bs-info);
+    --bs-btn-active-border-color: var(--bs-info);
+}
+.btn-outline-warning {
+    --bs-btn-color: var(--bs-warning);
+    --bs-btn-border-color: var(--bs-warning);
+    --bs-btn-hover-bg: var(--bs-warning);
+    --bs-btn-hover-border-color: var(--bs-warning);
+    --bs-btn-active-bg: var(--bs-warning);
+    --bs-btn-active-border-color: var(--bs-warning);
 }
 
 body {
@@ -166,7 +275,7 @@ small, .small, .text-muted {
     padding: .65rem .75rem;
 }
 .table-hover > tbody > tr:hover > * {
-    background-color: rgba(27,58,92,.04);
+    background-color: rgba(26,34,51,.04);
 }
 
 /* Columna congelada: para tablas anchas que scrollean horizontal en
@@ -215,26 +324,26 @@ small, .small, .text-muted {
 }
 
 .badge-Pendiente { background: #EEF1F4; color: #5B6673; }
-.badge-Programado { background: #EAF1FA; color: #1B3A5C; }
+.badge-Programado { background: #EAF1FA; color: #1A2233; }
 .badge-En.proceso, .badge-En\ proceso { background: #FDF2E3; color: #A8630A; }
 .badge-Realizado, .badge-Cumplido { background: #E5F4EC; color: #1F8A54; }
-.badge-Vencido { background: #FBEAE7; color: #C1440E; }
+.badge-Vencido { background: #FBEAE7; color: #E2131D; }
 .badge-Cancelado { background: #F1F2F4; color: #7A828C; }
 .badge-Reprogramado { background: #F1EAFB; color: #6B32C9; }
 
-.badge-Asignada { background: #EAF1FA; color: #1B3A5C; }
+.badge-Asignada { background: #EAF1FA; color: #1A2233; }
 .badge-Pausada { background: #FDF2E3; color: #A8630A; }
 .badge-Finalizada { background: #E5F4EC; color: #1F8A54; }
 .badge-Cancelada { background: #F1F2F4; color: #7A828C; }
 
-.badge-Deficiencia\.crítica { background: #FBEAE7; color: #C1440E; }
+.badge-Deficiencia\.crítica { background: #FBEAE7; color: #E2131D; }
 .badge-Deficiencia\.no\.crítica { background: #FDF2E3; color: #A8630A; }
 .badge-Desactivación { background: #F1F2F4; color: #5B6673; }
-.badge-Comentario { background: #EAF1FA; color: #1B3A5C; }
+.badge-Comentario { background: #EAF1FA; color: #1A2233; }
 
-.badge-Urgente { background: #FBEAE7; color: #C1440E; }
+.badge-Urgente { background: #FBEAE7; color: #E2131D; }
 .badge-Alta { background: #FDF2E3; color: #A8630A; }
-.badge-Media { background: #EAF1FA; color: #1B3A5C; }
+.badge-Media { background: #EAF1FA; color: #1A2233; }
 .badge-Baja { background: #F1F2F4; color: #7A828C; }
 
 /* ---- Calendario mensual --------------------------------------------------- */
@@ -276,8 +385,8 @@ small, .small, .text-muted {
     text-overflow: ellipsis;
 }
 .chip-success { background: #E5F4EC; color: #1F8A54; }
-.chip-primary { background: #EAF1FA; color: #1B3A5C; }
-.chip-danger { background: #FBEAE7; color: #C1440E; }
+.chip-primary { background: #EAF1FA; color: #1A2233; }
+.chip-danger { background: #FBEAE7; color: #E2131D; }
 .chip-secondary { background: #F1F2F4; color: #7A828C; }
 
 /* ---- Tablas ordenables/filtrables (data-table) --------------------------- */
