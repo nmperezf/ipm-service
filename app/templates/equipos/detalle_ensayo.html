@@ -5,7 +5,12 @@
 
 <div class="d-flex justify-content-between align-items-center mb-2">
     <h1 class="mb-0">Ensayo del {{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}</h1>
-    <a href="{{ url_for('curvas.ensayo_pdf', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn btn-outline-dark" target="_blank">Descargar PDF</a>
+    <div>
+        <a href="{{ url_for('curvas.ensayo_pdf', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn btn-outline-dark" target="_blank">Descargar PDF</a>
+        {% if current_user.rol in ('Administrador', 'Jefe') %}
+        <a href="{{ url_for('curvas.ensayo_editar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn btn-outline-secondary">Editar</a>
+        {% endif %}
+    </div>
 </div>
 <p class="text-muted">
     {{ equipo.nombre }}{% if equipo.modelo %} &middot; Modelo {{ equipo.modelo }}{% endif %}{% if equipo.serie %} &middot; N° serie {{ equipo.serie }}{% endif %}
@@ -14,11 +19,38 @@
 
 {% if resultado is not none %}
 <div class="alert {{ 'alert-success' if resultado else 'alert-danger' }} fw-bold text-center fs-5">
-    {{ '✓ APROBADO' if resultado else '✗ RECHAZADO' }}
+    NFPA 25: {{ '✓ APROBADO' if resultado else '✗ RECHAZADO' }}
 </div>
 {% else %}
 <div class="alert alert-warning">Este equipo no tiene curva de fábrica cargada, así que no se puede validar contra NFPA 25.</div>
 {% endif %}
+
+<div class="card mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <strong>Validación del Jefe/Administrador:</strong>
+            {% if ensayo.estado_revision == 'Validado' %}
+            <span class="badge badge-Cumplido">Validado</span>
+            <span class="text-muted small">por {{ ensayo.validado_por.nombre_completo or ensayo.validado_por.username }} el {{ ensayo.fecha_validacion.strftime('%d/%m/%Y') }}</span>
+            {% elif ensayo.estado_revision == 'Rechazado' %}
+            <span class="badge badge-Vencido">Rechazado</span>
+            <span class="text-muted small">por {{ ensayo.validado_por.nombre_completo or ensayo.validado_por.username }} el {{ ensayo.fecha_validacion.strftime('%d/%m/%Y') }}</span>
+            {% else %}
+            <span class="badge badge-Pendiente">Pendiente de revisión</span>
+            {% endif %}
+        </div>
+        {% if current_user.rol in ('Administrador', 'Jefe') %}
+        <div>
+            <form method="POST" action="{{ url_for('curvas.ensayo_validar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-success">Validar</button>
+            </form>
+            <form method="POST" action="{{ url_for('curvas.ensayo_rechazar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Rechazar</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
 
 <h4 class="mt-4">Comparativa</h4>
 <div class="table-responsive">
@@ -49,6 +81,15 @@
 </div>
 {% endif %}
 
+{% if grafico %}
+<h4 class="mt-4">Gráfico: fábrica vs ensayo</h4>
+<div class="card mb-4">
+    <div class="card-body">
+        <canvas id="grafico-ensayo" height="110"></canvas>
+    </div>
+</div>
+{% endif %}
+
 {% if validacion %}
 <h4 class="mt-4">Validación NFPA 25</h4>
 <div class="table-responsive">
@@ -66,5 +107,70 @@
     </tbody>
 </table>
 </div>
+{% endif %}
+
+{% if current_user.rol in ('Administrador', 'Jefe') %}
+<form method="POST" action="{{ url_for('curvas.ensayo_eliminar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}"
+      onsubmit="return confirm('¿Eliminar este ensayo? Esta acción no se puede deshacer.');">
+    <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar ensayo</button>
+</form>
+{% endif %}
+
+{% if grafico %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+const grafico = {{ grafico|tojson }};
+new Chart(document.getElementById('grafico-ensayo'), {
+    type: 'line',
+    data: {
+        datasets: [
+            {
+                label: 'Curva de fábrica',
+                data: grafico.fabrica.suave_x.map(function (x, i) { return { x: x, y: grafico.fabrica.suave_y[i] }; }),
+                borderColor: '#1A2233',
+                backgroundColor: '#1A2233',
+                pointRadius: 0,
+                borderWidth: 2,
+            },
+            {
+                label: 'Fábrica (puntos)',
+                data: grafico.caudales.map(function (c, i) { return { x: c, y: grafico.fabrica.puntos[i] }; }),
+                borderColor: '#1A2233',
+                backgroundColor: '#1A2233',
+                showLine: false,
+                pointRadius: 4,
+            },
+            {
+                label: 'Ensayo (ajustado a RPM nominal)',
+                data: grafico.ensayo.suave_x.map(function (x, i) { return { x: x, y: grafico.ensayo.suave_y[i] }; }),
+                borderColor: '#E2131D',
+                backgroundColor: '#E2131D',
+                pointRadius: 0,
+                borderWidth: 2,
+            },
+            {
+                label: 'Ensayo (puntos)',
+                data: grafico.caudales.map(function (c, i) { return { x: c, y: grafico.ensayo.puntos[i] }; }),
+                borderColor: '#E2131D',
+                backgroundColor: '#E2131D',
+                showLine: false,
+                pointRadius: 4,
+            },
+        ],
+    },
+    options: {
+        parsing: false,
+        scales: {
+            x: { type: 'linear', title: { display: true, text: 'Caudal (%)' }, ticks: { stepSize: 50 } },
+            y: { title: { display: true, text: 'Presión neta (PSI)' } },
+        },
+        plugins: {
+            legend: {
+                labels: { filter: function (item) { return item.text.indexOf('(puntos)') === -1; } },
+            },
+        },
+    },
+});
+</script>
 {% endif %}
 {% endblock %}

@@ -179,6 +179,21 @@ def validar_nfpa25(presiones_netas_ajustadas, presiones_netas_fabrica):
     }
 
 
+def curva_suavizada(caudales, presiones, n_puntos=40):
+    """Ajusta una parábola (P = A + B·Q + C·Q², la forma típica de la curva
+    de una bomba centrífuga) a los 4 puntos reales (0/50/100/150%) y
+    devuelve (xs, ys) muestreados densamente, para dibujar una curva suave
+    en vez de unir los puntos con líneas rectas. Se usa tanto en el PDF
+    (matplotlib) como en los gráficos web (Chart.js le recibe estos mismos
+    puntos ya calculados)."""
+    import numpy as np
+
+    coeficientes = np.polyfit(caudales, presiones, 2)
+    xs = np.linspace(min(caudales), max(caudales), n_puntos)
+    ys = np.polyval(coeficientes, xs)
+    return xs.tolist(), [round(float(y), 2) for y in ys]
+
+
 def _ultimo_ensayo(equipo):
     if not equipo.ensayos_caudal:
         return None
@@ -261,6 +276,7 @@ def obtener_ultimos_ensayos_por_bomba(sala_id, limit=3):
                     "presion_100": ensayo.presion_neta_punto_100,
                     "var_pct": var_pct,
                     "estado": estado,
+                    "estado_revision": ensayo.estado_revision,
                     "ensayo_id": ensayo.id,
                 }
             )
@@ -268,34 +284,37 @@ def obtener_ultimos_ensayos_por_bomba(sala_id, limit=3):
     return resultado
 
 
-def obtener_datos_grafico_evolucion(sala_id):
-    """Serie por bomba de la presión neta @100% por año (el último ensayo
-    de cada año, si hubo más de uno), para el gráfico de tendencia."""
-    from app.models import SalaBombas
+COLORES_POR_AÑO = ["#1A2233", "#E2131D", "#2C6E8C", "#B5730A", "#1F8A54", "#6B32C9"]
 
-    sala = SalaBombas.query.get(sala_id)
-    if not sala:
-        return {"bombas": [], "años": [], "datos": {}}
 
-    años = set()
-    por_bomba = {}
-    for equipo in sala.bombas:
-        por_año = {}
-        for ensayo in equipo.ensayos_caudal:
-            año = ensayo.fecha_ensayo.year
-            if año not in por_año or ensayo.fecha_ensayo > por_año[año].fecha_ensayo:
-                por_año[año] = ensayo
-        if not por_año:
-            continue
-        por_bomba[equipo.nombre] = por_año
-        años.update(por_año.keys())
+def obtener_curvas_superpuestas_equipo(equipo, limit=3):
+    """Últimos `limit` ensayos de un equipo (Bomba), cada uno con sus 4
+    puntos (0/50/100/150%) ajustados a RPM nominal y ya suavizados (ver
+    curva_suavizada) — para el mini-gráfico de tendencia de cada tarjeta de
+    equipo en la ficha de sala: curvas completas superpuestas, una por año,
+    coloreadas de forma distinta. Si no hay curva de fábrica, se muestran
+    las presiones netas medidas tal cual (sin ajuste posible)."""
+    caudales = [0, 50, 100, 150]
+    ensayos_ordenados = sorted(equipo.ensayos_caudal, key=lambda e: e.fecha_ensayo, reverse=True)[:limit]
 
-    años_ordenados = sorted(años)
-    datos = {
-        nombre: [por_año[a].presion_neta_punto_100 if a in por_año else None for a in años_ordenados]
-        for nombre, por_año in por_bomba.items()
-    }
-    return {"bombas": list(por_bomba.keys()), "años": años_ordenados, "datos": datos}
+    curvas = []
+    for i, ensayo in enumerate(ensayos_ordenados):
+        if equipo.curva_fabrica:
+            puntos = ensayo.puntos_ajustados(equipo.curva_fabrica.rpm_nominal)
+        else:
+            puntos = [round(n, 1) for n in ensayo.puntos_netos()]
+        xs, ys = curva_suavizada(caudales, puntos)
+        curvas.append(
+            {
+                "año": ensayo.fecha_ensayo.year,
+                "fecha": ensayo.fecha_ensayo,
+                "puntos": puntos,
+                "suave_x": xs,
+                "suave_y": ys,
+                "color": COLORES_POR_AÑO[i % len(COLORES_POR_AÑO)],
+            }
+        )
+    return {"caudales": caudales, "curvas": curvas}
 
 
 def obtener_acciones_recomendadas(sala_id):

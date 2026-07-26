@@ -868,13 +868,32 @@ class EnsayoCaudal(db.Model):
     creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
+    # Firma del Jefe/Administrador, independiente del cálculo NFPA25 (ver
+    # resultado_nfpa25): el técnico carga el ensayo como Pendiente, y solo
+    # Administrador/Jefe puede validarlo o rechazarlo — mismo patrón que
+    # Observacion.estado_revision.
+    estado_revision = db.Column(db.String(20), default="Pendiente", nullable=False)  # Pendiente/Validado/Rechazado
+    validado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    fecha_validacion = db.Column(db.DateTime, nullable=True)
+
     equipo = db.relationship(
         "Equipo",
         backref=db.backref(
             "ensayos_caudal", lazy=True, cascade="all, delete-orphan", order_by="EnsayoCaudal.fecha_ensayo"
         ),
     )
-    creado_por = db.relationship("Usuario")
+    creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
+    validado_por = db.relationship("Usuario", foreign_keys=[validado_por_id])
+
+    def validar(self, usuario_id):
+        self.estado_revision = "Validado"
+        self.validado_por_id = usuario_id
+        self.fecha_validacion = datetime.utcnow()
+
+    def rechazar(self, usuario_id):
+        self.estado_revision = "Rechazado"
+        self.validado_por_id = usuario_id
+        self.fecha_validacion = datetime.utcnow()
 
     def puntos_netos(self):
         return [self.presion_neta_punto_0, self.presion_neta_punto_50, self.presion_neta_punto_100, self.presion_neta_punto_150]

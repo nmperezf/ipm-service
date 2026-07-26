@@ -1,8 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Nuevo ensayo - {{ equipo.nombre }}{% endblock %}
+{% block title %}{{ 'Editar' if ensayo else 'Nuevo' }} ensayo - {{ equipo.nombre }}{% endblock %}
 {% block content %}
 <p><a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}">&larr; Ensayos de {{ equipo.nombre }}</a></p>
-<h1>Nuevo ensayo de curva de caudal <small class="text-muted fs-6">{{ equipo.nombre }}</small></h1>
+<h1>{{ 'Editar' if ensayo else 'Nuevo' }} ensayo de curva de caudal <small class="text-muted fs-6">{{ equipo.nombre }}</small></h1>
+{% if ensayo %}
+<p class="text-muted small">Corregir un ensayo lo vuelve a dejar pendiente de revisión.</p>
+{% endif %}
 
 <div class="card mb-4">
     <div class="card-body">
@@ -31,7 +34,8 @@
 <form method="POST" id="form-ensayo">
     <div class="mb-3" style="max-width: 260px;">
         <label class="form-label">Fecha de ensayo</label>
-        <input type="date" name="fecha_ensayo" class="form-control form-control-lg" required>
+        <input type="date" name="fecha_ensayo" class="form-control form-control-lg" required
+               value="{{ ensayo.fecha_ensayo.isoformat() if ensayo else '' }}">
     </div>
 
     <div class="row g-3 mb-3">
@@ -43,21 +47,25 @@
                     <div class="mb-2">
                         <label class="form-label small mb-0">RPM</label>
                         <input type="number" class="form-control punto-input" data-punto="{{ p }}" data-campo="rpm"
-                               name="rpm_punto_{{ p }}" required>
+                               name="rpm_punto_{{ p }}" required
+                               value="{{ ensayo['rpm_punto_' ~ p] if ensayo else '' }}">
                     </div>
                     <div class="mb-2">
                         <label class="form-label small mb-0">Presión descarga (PSI)</label>
                         <input type="number" step="any" class="form-control punto-input" data-punto="{{ p }}" data-campo="descarga"
-                               name="presion_descarga_punto_{{ p }}" required>
+                               name="presion_descarga_punto_{{ p }}" required
+                               value="{{ ensayo['presion_descarga_punto_' ~ p] if ensayo else '' }}">
                     </div>
                     <div class="mb-2">
                         <label class="form-label small mb-0">Presión succión (PSI)</label>
                         <input type="number" step="any" class="form-control punto-input" data-punto="{{ p }}" data-campo="succion"
-                               name="presion_succion_punto_{{ p }}" required placeholder="ej: -5 si es vacío">
+                               name="presion_succion_punto_{{ p }}" required placeholder="ej: -5 si es vacío"
+                               value="{{ ensayo['presion_succion_punto_' ~ p] if ensayo else '' }}">
                     </div>
                     <div>
                         <label class="form-label small mb-0">Presión neta (PSI)</label>
-                        <input type="text" class="form-control-plaintext fw-bold" id="neta-{{ p }}" readonly value="-">
+                        <input type="text" class="form-control-plaintext fw-bold neta-display" id="neta-{{ p }}" readonly
+                               value="{{ ensayo['presion_neta_punto_' ~ p] if ensayo else '-' }}">
                     </div>
                 </div>
             </div>
@@ -81,7 +89,7 @@
     </div>
 
     <div class="mt-4">
-        <button type="submit" class="btn btn-primary" id="btn-guardar" disabled>Guardar ensayo</button>
+        <button type="submit" class="btn btn-primary" id="btn-guardar" disabled>{{ 'Actualizar' if ensayo else 'Guardar' }} ensayo</button>
         <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-link">Cancelar</a>
     </div>
     <p class="text-muted small mt-2" id="ayuda-guardar">Calculá y validá el ensayo antes de guardar.</p>

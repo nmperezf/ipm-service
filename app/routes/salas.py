@@ -5,7 +5,7 @@ from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_es
 from app.models import Instalacion, SalaBombas
 from app.utils import (
     obtener_acciones_recomendadas,
-    obtener_datos_grafico_evolucion,
+    obtener_curvas_superpuestas_equipo,
     obtener_resumen_sala,
     obtener_ultimos_ensayos_por_bomba,
 )
@@ -83,7 +83,7 @@ def detalle(sala_id):
 
     resumen = obtener_resumen_sala(sala.id)
     ensayos_por_bomba = {item["bomba_id"]: item["ensayos"] for item in obtener_ultimos_ensayos_por_bomba(sala.id)}
-    grafico = obtener_datos_grafico_evolucion(sala.id)
+    curvas_por_bomba = {equipo.id: obtener_curvas_superpuestas_equipo(equipo) for equipo in sala.bombas}
 
     deficiencias_abiertas = [
         obs for bomba in sala.bombas for obs in bomba.deficiencias if not obs.resuelto
@@ -96,7 +96,7 @@ def detalle(sala_id):
         sala=sala,
         resumen=resumen,
         ensayos_por_bomba=ensayos_por_bomba,
-        grafico=grafico,
+        curvas_por_bomba=curvas_por_bomba,
         criticas=criticas,
         no_criticas=no_criticas,
         acciones=obtener_acciones_recomendadas(sala.id),

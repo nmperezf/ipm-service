@@ -14,7 +14,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
 from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
-from app.utils import calcular_presion_ajustada, validar_nfpa25
+from app.utils import calcular_presion_ajustada, curva_suavizada
 
 AZUL = colors.HexColor("#1A2233")
 GRIS = colors.HexColor("#5B6673")
@@ -26,11 +26,18 @@ ROJO_SUAVE = colors.HexColor("#FBEAE7")
 
 
 def _grafico_curvas(caudales, presiones_fabrica, presiones_ensayo_ajustadas):
+    """Dispersión (los 4 puntos reales) + curva suavizada (parábola
+    ajustada, ver utils.curva_suavizada) para fábrica y ensayo, superpuestas."""
     fig, ax = plt.subplots(figsize=(6.4, 3.6), dpi=150)
-    ax.plot(caudales, presiones_fabrica, marker="o", color="#1A2233", linewidth=2, label="Curva de fábrica")
-    ax.plot(
-        caudales, presiones_ensayo_ajustadas, marker="o", color="#E2131D", linewidth=2, label="Ensayo (ajustado a RPM nominal)"
-    )
+
+    xs_fabrica, ys_fabrica = curva_suavizada(caudales, presiones_fabrica)
+    ax.plot(xs_fabrica, ys_fabrica, color="#1A2233", linewidth=2, label="Curva de fábrica")
+    ax.scatter(caudales, presiones_fabrica, color="#1A2233", zorder=3)
+
+    xs_ensayo, ys_ensayo = curva_suavizada(caudales, presiones_ensayo_ajustadas)
+    ax.plot(xs_ensayo, ys_ensayo, color="#E2131D", linewidth=2, label="Ensayo (ajustado a RPM nominal)")
+    ax.scatter(caudales, presiones_ensayo_ajustadas, color="#E2131D", zorder=3)
+
     ax.set_xlabel("Caudal (%)")
     ax.set_ylabel("Presión neta (PSI)")
     ax.set_xticks(caudales)
@@ -187,6 +194,22 @@ def generar_pdf_ensayo(ensayo):
         elementos.append(
             Paragraph("No se puede validar contra NFPA 25 sin una curva de fábrica cargada.", styles["Normal"])
         )
+
+    # ---- Validación del Jefe/Administrador (independiente del cálculo) ----
+    elementos.append(Spacer(1, 0.4 * cm))
+    if ensayo.estado_revision == "Validado":
+        texto_revision = f"Validado por {ensayo.validado_por.nombre_completo or ensayo.validado_por.username}"
+        color_revision = VERDE
+    elif ensayo.estado_revision == "Rechazado":
+        texto_revision = f"Rechazado por {ensayo.validado_por.nombre_completo or ensayo.validado_por.username}"
+        color_revision = ROJO
+    else:
+        texto_revision = "Pendiente de revisión por Administrador/Jefe"
+        color_revision = GRIS
+    if ensayo.fecha_validacion:
+        texto_revision += f" el {ensayo.fecha_validacion.strftime('%d/%m/%Y')}"
+    estilo_revision = ParagraphStyle("Revision", parent=styles["Normal"], fontSize=9, textColor=color_revision, alignment=1)
+    elementos.append(Paragraph(texto_revision, estilo_revision))
 
     doc.build(elementos)
     return buffer.getvalue()

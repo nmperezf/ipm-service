@@ -7,7 +7,7 @@ from app import db
 from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_escritura_cliente
 from app.models import CurvaFabrica, EnsayoCaudal, Equipo
 from app.pdf_curva_caudal import generar_pdf_ensayo
-from app.utils import calcular_presion_ajustada, validar_nfpa25
+from app.utils import calcular_presion_ajustada, curva_suavizada, validar_nfpa25
 
 curvas_bp = Blueprint("curvas", __name__, url_prefix="/equipos")
 
@@ -21,6 +21,28 @@ def _verificar_es_bomba(equipo):
 
 def _parse_fecha(valor):
     return datetime.strptime(valor, "%Y-%m-%d").date()
+
+
+def _parse_puntos_ensayo(form):
+    """Levanta los 4 puntos (RPM, descarga, succión) del form y calcula la
+    presión neta de cada uno. Lanza (KeyError, ValueError) si falta o hay
+    algún valor no numérico — el caller decide qué hacer con eso."""
+    datos_puntos = {}
+    for p in PUNTOS:
+        rpm = int(form[f"rpm_punto_{p}"])
+        descarga = float(form[f"presion_descarga_punto_{p}"])
+        succion = float(form[f"presion_succion_punto_{p}"])
+        datos_puntos[p] = {"rpm": rpm, "descarga": descarga, "succion": succion, "neta": descarga - succion}
+    return datos_puntos
+
+
+def _aplicar_puntos_ensayo(ensayo, datos_puntos):
+    for p in PUNTOS:
+        d = datos_puntos[p]
+        setattr(ensayo, f"rpm_punto_{p}", d["rpm"])
+        setattr(ensayo, f"presion_descarga_punto_{p}", d["descarga"])
+        setattr(ensayo, f"presion_succion_punto_{p}", d["succion"])
+        setattr(ensayo, f"presion_neta_punto_{p}", d["neta"])
 
 
 @curvas_bp.route("/<int:equipo_id>/curva-fabrica", methods=["GET", "POST"])
@@ -97,47 +119,116 @@ def ensayo_nuevo(equipo_id):
     if request.method == "POST":
         try:
             fecha_ensayo = _parse_fecha(request.form["fecha_ensayo"])
-            datos_puntos = {}
-            for p in PUNTOS:
-                rpm = int(request.form[f"rpm_punto_{p}"])
-                descarga = float(request.form[f"presion_descarga_punto_{p}"])
-                succion = float(request.form[f"presion_succion_punto_{p}"])
-                datos_puntos[p] = {"rpm": rpm, "descarga": descarga, "succion": succion, "neta": descarga - succion}
+            datos_puntos = _parse_puntos_ensayo(request.form)
         except (KeyError, ValueError):
             flash("Completá los 4 puntos (RPM, presión de descarga y succión) con valores numéricos.", "danger")
-            return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica)
+            return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica, ensayo=None)
 
         if EnsayoCaudal.query.filter_by(equipo_id=equipo.id, fecha_ensayo=fecha_ensayo).first():
             flash(f"Ya hay un ensayo cargado para '{equipo.nombre}' con fecha {fecha_ensayo.strftime('%d/%m/%Y')}.", "danger")
-            return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica)
+            return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica, ensayo=None)
 
-        ensayo = EnsayoCaudal(
-            equipo_id=equipo.id,
-            fecha_ensayo=fecha_ensayo,
-            rpm_punto_0=datos_puntos["0"]["rpm"],
-            presion_descarga_punto_0=datos_puntos["0"]["descarga"],
-            presion_succion_punto_0=datos_puntos["0"]["succion"],
-            presion_neta_punto_0=datos_puntos["0"]["neta"],
-            rpm_punto_50=datos_puntos["50"]["rpm"],
-            presion_descarga_punto_50=datos_puntos["50"]["descarga"],
-            presion_succion_punto_50=datos_puntos["50"]["succion"],
-            presion_neta_punto_50=datos_puntos["50"]["neta"],
-            rpm_punto_100=datos_puntos["100"]["rpm"],
-            presion_descarga_punto_100=datos_puntos["100"]["descarga"],
-            presion_succion_punto_100=datos_puntos["100"]["succion"],
-            presion_neta_punto_100=datos_puntos["100"]["neta"],
-            rpm_punto_150=datos_puntos["150"]["rpm"],
-            presion_descarga_punto_150=datos_puntos["150"]["descarga"],
-            presion_succion_punto_150=datos_puntos["150"]["succion"],
-            presion_neta_punto_150=datos_puntos["150"]["neta"],
-            creado_por_id=current_user.id,
-        )
+        ensayo = EnsayoCaudal(equipo_id=equipo.id, fecha_ensayo=fecha_ensayo, creado_por_id=current_user.id)
+        _aplicar_puntos_ensayo(ensayo, datos_puntos)
         db.session.add(ensayo)
         db.session.commit()
         flash(f"Ensayo del {fecha_ensayo.strftime('%d/%m/%Y')} guardado para '{equipo.nombre}'.", "success")
         return redirect(url_for("curvas.ensayo_detalle", equipo_id=equipo.id, ensayo_id=ensayo.id))
 
-    return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica)
+    return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica, ensayo=None)
+
+
+@curvas_bp.route("/<int:equipo_id>/ensayo/<int:ensayo_id>/editar", methods=["GET", "POST"])
+@rol_requerido("Administrador", "Jefe")
+def ensayo_editar(equipo_id, ensayo_id):
+    """Solo Administrador/Jefe puede corregir un ensayo ya cargado por un
+    técnico — un técnico que se equivocó tiene que pedirle a su Jefe que lo
+    corrija, no lo edita directamente."""
+    equipo = Equipo.query.get_or_404(equipo_id)
+    _verificar_es_bomba(equipo)
+    verificar_escritura_cliente(equipo.instalacion.cliente)
+    ensayo = EnsayoCaudal.query.get_or_404(ensayo_id)
+    if ensayo.equipo_id != equipo.id:
+        abort(404)
+
+    if request.method == "POST":
+        try:
+            fecha_ensayo = _parse_fecha(request.form["fecha_ensayo"])
+            datos_puntos = _parse_puntos_ensayo(request.form)
+        except (KeyError, ValueError):
+            flash("Completá los 4 puntos (RPM, presión de descarga y succión) con valores numéricos.", "danger")
+            return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica, ensayo=ensayo)
+
+        conflicto = EnsayoCaudal.query.filter(
+            EnsayoCaudal.equipo_id == equipo.id,
+            EnsayoCaudal.fecha_ensayo == fecha_ensayo,
+            EnsayoCaudal.id != ensayo.id,
+        ).first()
+        if conflicto:
+            flash(f"Ya hay otro ensayo cargado para '{equipo.nombre}' con fecha {fecha_ensayo.strftime('%d/%m/%Y')}.", "danger")
+            return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica, ensayo=ensayo)
+
+        ensayo.fecha_ensayo = fecha_ensayo
+        _aplicar_puntos_ensayo(ensayo, datos_puntos)
+        # Corregir los datos vuelve a dejar el ensayo pendiente de revisión
+        # — la validación anterior era sobre valores que ya no son estos.
+        ensayo.estado_revision = "Pendiente"
+        ensayo.validado_por_id = None
+        ensayo.fecha_validacion = None
+        db.session.commit()
+        flash(f"Ensayo del {fecha_ensayo.strftime('%d/%m/%Y')} actualizado. Queda pendiente de revisión otra vez.", "success")
+        return redirect(url_for("curvas.ensayo_detalle", equipo_id=equipo.id, ensayo_id=ensayo.id))
+
+    return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica, ensayo=ensayo)
+
+
+@curvas_bp.route("/<int:equipo_id>/ensayo/<int:ensayo_id>/eliminar", methods=["POST"])
+@rol_requerido("Administrador", "Jefe")
+def ensayo_eliminar(equipo_id, ensayo_id):
+    equipo = Equipo.query.get_or_404(equipo_id)
+    _verificar_es_bomba(equipo)
+    verificar_escritura_cliente(equipo.instalacion.cliente)
+    ensayo = EnsayoCaudal.query.get_or_404(ensayo_id)
+    if ensayo.equipo_id != equipo.id:
+        abort(404)
+
+    fecha = ensayo.fecha_ensayo
+    db.session.delete(ensayo)
+    db.session.commit()
+    flash(f"Ensayo del {fecha.strftime('%d/%m/%Y')} eliminado.", "info")
+    return redirect(url_for("curvas.ensayos", equipo_id=equipo.id))
+
+
+@curvas_bp.route("/<int:equipo_id>/ensayo/<int:ensayo_id>/validar", methods=["POST"])
+@rol_requerido("Administrador", "Jefe")
+def ensayo_validar(equipo_id, ensayo_id):
+    equipo = Equipo.query.get_or_404(equipo_id)
+    _verificar_es_bomba(equipo)
+    verificar_escritura_cliente(equipo.instalacion.cliente)
+    ensayo = EnsayoCaudal.query.get_or_404(ensayo_id)
+    if ensayo.equipo_id != equipo.id:
+        abort(404)
+
+    ensayo.validar(current_user.id)
+    db.session.commit()
+    flash(f"Ensayo del {ensayo.fecha_ensayo.strftime('%d/%m/%Y')} validado.", "success")
+    return redirect(url_for("curvas.ensayo_detalle", equipo_id=equipo.id, ensayo_id=ensayo.id))
+
+
+@curvas_bp.route("/<int:equipo_id>/ensayo/<int:ensayo_id>/rechazar", methods=["POST"])
+@rol_requerido("Administrador", "Jefe")
+def ensayo_rechazar(equipo_id, ensayo_id):
+    equipo = Equipo.query.get_or_404(equipo_id)
+    _verificar_es_bomba(equipo)
+    verificar_escritura_cliente(equipo.instalacion.cliente)
+    ensayo = EnsayoCaudal.query.get_or_404(ensayo_id)
+    if ensayo.equipo_id != equipo.id:
+        abort(404)
+
+    ensayo.rechazar(current_user.id)
+    db.session.commit()
+    flash(f"Ensayo del {ensayo.fecha_ensayo.strftime('%d/%m/%Y')} rechazado.", "info")
+    return redirect(url_for("curvas.ensayo_detalle", equipo_id=equipo.id, ensayo_id=ensayo.id))
 
 
 @curvas_bp.route("/<int:equipo_id>/ensayo/<int:ensayo_id>")
@@ -153,6 +244,18 @@ def ensayo_detalle(equipo_id, ensayo_id):
     validacion = ensayo.validacion_nfpa25()
     ajustadas = ensayo.puntos_ajustados(equipo.curva_fabrica.rpm_nominal) if equipo.curva_fabrica else None
 
+    grafico = None
+    if equipo.curva_fabrica:
+        caudales = [0, 50, 100, 150]
+        _, presiones_fabrica = equipo.curva_fabrica.puntos()
+        xs_fabrica, ys_fabrica = curva_suavizada(caudales, presiones_fabrica)
+        xs_ensayo, ys_ensayo = curva_suavizada(caudales, ajustadas)
+        grafico = {
+            "caudales": caudales,
+            "fabrica": {"puntos": presiones_fabrica, "suave_x": xs_fabrica, "suave_y": ys_fabrica},
+            "ensayo": {"puntos": ajustadas, "suave_x": xs_ensayo, "suave_y": ys_ensayo},
+        }
+
     return render_template(
         "equipos/detalle_ensayo.html",
         equipo=equipo,
@@ -161,6 +264,7 @@ def ensayo_detalle(equipo_id, ensayo_id):
         ajustadas=ajustadas,
         validacion=validacion,
         resultado=ensayo.resultado_nfpa25(),
+        grafico=grafico,
     )
 
 
