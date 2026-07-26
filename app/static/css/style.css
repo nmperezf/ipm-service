@@ -90,11 +90,19 @@ small, .small, .text-muted {
     display: inline-block;
     transform: rotate(45deg);
 }
+.ipm-navbar .navbar-nav {
+    flex-wrap: wrap;
+    row-gap: .3rem;
+}
+.ipm-navbar .nav-item {
+    flex-shrink: 0;
+}
 .ipm-navbar .nav-link {
     font-size: .82rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: .04em;
+    white-space: nowrap;
     color: rgba(255,255,255,.75) !important;
 }
 .ipm-navbar .nav-link:hover {
