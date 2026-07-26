@@ -35,15 +35,16 @@ test.describe('Administrador - CRUD Cliente → Instalación → Contrato → Se
     await expect(page.locator('table')).toContainText('Cliente E2E');
 
     // 3. Abrir la ficha del Cliente y crear una Instalación
-    await page.locator('a', { hasText: 'Cliente E2E' }).click();
+    await page.locator('a', { hasText: 'Cliente E2E' }).first().click();
     await page.locator('a', { hasText: 'Nueva instalación' }).click();
     await page.fill('input[name="nombre"]', 'Instalacion E2E');
     await page.fill('input[name="direccion"]', 'Calle Instal 45');
     await page.click('button[type="submit"]');
-    await expect(page.locator('h1')).toContainText('Instalacion E2E');
+    await expect(page.locator('.alert.alert-success')).toContainText('Instalacion E2E');
 
     // 4. Dentro de la Instalación, crear un Contrato con fecha_inicio y duración 1 año
-    await page.locator('a', { hasText: 'Nuevo contrato' }).click();
+    await page.locator('div .list-group-item').first().click();
+    await page.locator('a[href="/contratos/nuevo/2"]').click();
     await page.fill('input[name="nombre"]', 'Contrato E2E 2026');
     await page.fill('input[name="mes_inicio"]', monthInputValueOffset(0));
     await page.click('button[type="submit"]');
@@ -56,6 +57,6 @@ test.describe('Administrador - CRUD Cliente → Instalación → Contrato → Se
     await page.click('button[type="submit"]');
 
     // Expected: Servicio agregado al contrato y disponible para generar visitas
-    await expect(page.locator('table')).toContainText('Servicio mensual E2E');
+    await expect(page.locator('table').first()).toContainText('Servicio mensual E2E');
   });
 });

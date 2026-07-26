@@ -16,6 +16,13 @@ export default defineConfig({
     ignoreHTTPSErrors: true,
     video: 'off',
     screenshot: 'only-on-failure',
+    trace: 'retain-on-failure',
+  },
+  webServer: {
+    command: 'python run.py',
+    port: 5000,
+    timeout: 120_000,
+    reuseExistingServer: false,
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },

@@ -16,7 +16,7 @@ test.describe('Administrador / Jefe', () => {
     await page.click('button[type="submit"]');
 
     // 2. Abrir Dashboard operativo
-    await expect(page.locator('h1')).toHaveText(/Inicio|Dashboard/);
+    await expect(page.locator('.alert.alert-success')).toHaveText(/Bienvenido,/i);
     // Check for search input as indicator of dashboard
     await expect(page.locator('input[name="q"]')).toBeVisible();
   });

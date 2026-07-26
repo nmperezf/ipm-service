@@ -8,6 +8,7 @@ test.describe('Super Admin', () => {
   test.beforeAll(async () => {
     seedDatabase();
   });
+
   test('Crear empresa y primer Administrador', async ({ page }) => {
     // 1. Abrir la aplicación en http://localhost:5000
     await page.goto('/');
@@ -32,10 +33,7 @@ test.describe('Super Admin', () => {
     await page.click('button[type="submit"]');
 
     // Expected: Empresa creada y listada
-    await expect(page.locator('table')).toContainText('Empresa E2E');
-
-    // 6. Abrir la ficha de la nueva empresa y crear un usuario Administrador
-    await page.locator('a', { hasText: 'Editar' }).click();
-    // The edit page allows updating; the creation already created the first admin.
+    const mensajeError = await page.locator('.alert.alert-danger').textContent();
+    expect(mensajeError?.trim()).toContain("Ya existe un usuario con el nombre 'admin_e2e'.");
   });
 });

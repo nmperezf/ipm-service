@@ -1,0 +1,7 @@
+node_modules
+playwright-report
+test-results
+app/__pycache__
+app/static/__pycache__
+app/templates/__pycache__
+app/routes/__pycache__

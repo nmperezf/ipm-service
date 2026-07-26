@@ -4,17 +4,39 @@ import * as path from 'path';
 
 export function seedDatabase() {
   const dbPath = path.join(process.cwd(), 'ipm_service.db');
-  try {
-    if (fs.existsSync(dbPath)) {
-      fs.unlinkSync(dbPath);
-      console.log('Existing database removed:', dbPath);
-    }
-  } catch (err) {
-    console.warn('Could not remove DB file:', err);
-  }
+  const marker = path.join(process.cwd(), 'tests', '.seeded');
 
-  console.log('Running seed_demo.py to populate test data...');
-  execSync('python seed_demo.py', { stdio: 'inherit' });
+  // Try to create a marker file atomically so only one process runs the seeding.
+  try {
+    const fd = fs.openSync(marker, 'wx');
+    fs.closeSync(fd);
+
+    try {
+      if (fs.existsSync(dbPath)) {
+        fs.unlinkSync(dbPath);
+        console.log('Existing database removed:', dbPath);
+      }
+    } catch (err) {
+      console.warn('Could not remove DB file:', err);
+    }
+
+    console.log('Running seed_demo.py to populate test data...');
+    execSync('python seed_demo.py', { stdio: 'inherit' });
+
+    // mark as seeded
+    try {
+      fs.writeFileSync(marker, 'seeded');
+    } catch (e) {
+      console.warn('Could not write seed marker file:', e);
+    }
+  } catch (err: any) {
+    // If marker exists, another process is seeding or seeding already done. Skip.
+    if (err && (err.code === 'EEXIST' || err.code === 'EACCES')) {
+      console.log('Seeding already in progress or completed; skipping.');
+    } else {
+      console.warn('Unexpected error while attempting to create seed marker:', err);
+    }
+  }
 }
 
 export function runCommand(cmd: string) {

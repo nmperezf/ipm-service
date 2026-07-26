@@ -18,7 +18,7 @@ test.describe('Administrador - Crear OT y registrar repuestos', () => {
     // 2. Ir a Órdenes de trabajo → Crear OT manual tipo Correctivo
     await page.locator('a', { hasText: 'Órdenes de trabajo' }).click();
     try {
-      await page.locator('a', { hasText: 'Nueva orden' }).click();
+      await page.locator('a', { hasText: '+ Nueva OT correctiva' }).click();
     } catch (e) {
       // optional: navigation may differ; ignore if not present
     }

@@ -1,5 +1,3 @@
-// spec: testplan_operaciones_basicas.md
-// seed: tests/seed.spec.ts
 
 import { test, expect } from '@playwright/test';
 import { seedDatabase } from '../helpers';
@@ -16,12 +14,7 @@ test.describe('Inventario - Recordatorios', () => {
     await page.click('button[type="submit"]');
 
     // 2. Crear un Recordatorio asociado a un Cliente
-    try {
-      await page.locator('a', { hasText: 'Recordatorios' }).click();
-    } catch (e) {
-      // ignore if link missing
-    }
-
-    // NOTE: Creating a recordatorio may need form fields; left as scaffold for later refinement.
+    await expect(page.locator('a', { hasText: 'Recordatorios' }), "Recordatorios link no visible").toBeVisible();
+    await page.locator('a', { hasText: 'Recordatorios' }).click();
   });
 });
