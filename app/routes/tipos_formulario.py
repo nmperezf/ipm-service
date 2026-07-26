@@ -2,7 +2,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app import db
 from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_escritura_cliente
-from app.models import Cliente, Formulario, TipoFormulario, nombres_tipos_equipo
+from app.models import Cliente, DatosEquipoBase, Formulario, TipoFormulario, nombres_tipos_equipo
 from app.utils import TIPOS_CAMPO, armar_campos_desde_formulario
 
 tipos_formulario_bp = Blueprint("tipos_formulario", __name__, url_prefix="/tipos-formulario")
@@ -37,12 +37,14 @@ def nuevo(cliente_id):
                 "tipos_formulario/form.html", tipo=None, cliente=cliente, tipos_equipo=nombres_tipos_equipo(), tipos_campo=TIPOS_CAMPO
             )
 
+        es_dato_base = bool(request.form.get("es_dato_base"))
         tipo_formulario = TipoFormulario(
             cliente_id=cliente.id,
             nombre=request.form["nombre"],
             descripcion=request.form.get("descripcion"),
-            por_equipo=bool(request.form.get("por_equipo")),
+            por_equipo=False if es_dato_base else bool(request.form.get("por_equipo")),
             tipo_equipo_aplicable=request.form.get("tipo_equipo_aplicable") or None,
+            es_dato_base=es_dato_base,
             schema_json=json.dumps(campos),
         )
         db.session.add(tipo_formulario)
@@ -67,10 +69,12 @@ def editar(tipo_id):
             flash("Agregá al menos un campo antes de guardar.", "danger")
             return redirect(url_for("tipos_formulario.editar", tipo_id=tipo_id))
 
+        es_dato_base = bool(request.form.get("es_dato_base"))
         tipo_formulario.nombre = request.form["nombre"]
         tipo_formulario.descripcion = request.form.get("descripcion")
-        tipo_formulario.por_equipo = bool(request.form.get("por_equipo"))
+        tipo_formulario.por_equipo = False if es_dato_base else bool(request.form.get("por_equipo"))
         tipo_formulario.tipo_equipo_aplicable = request.form.get("tipo_equipo_aplicable") or None
+        tipo_formulario.es_dato_base = es_dato_base
         tipo_formulario.schema_json = json.dumps(campos)
         db.session.commit()
         flash(f"Tipo de formulario '{tipo_formulario.nombre}' actualizado.", "success")
@@ -91,9 +95,11 @@ def eliminar(tipo_id):
     tipo_formulario = TipoFormulario.query.get_or_404(tipo_id)
     verificar_escritura_cliente(tipo_formulario.cliente)
     cliente_id = tipo_formulario.cliente_id
-    if Formulario.query.filter_by(tipo_formulario_id=tipo_id).first():
+    if Formulario.query.filter_by(tipo_formulario_id=tipo_id).first() or DatosEquipoBase.query.filter_by(
+        tipo_formulario_id=tipo_id
+    ).first():
         flash(
-            f"'{tipo_formulario.nombre}' ya tiene formularios completados con este esquema; no se puede "
+            f"'{tipo_formulario.nombre}' ya tiene datos cargados con este esquema; no se puede "
             "eliminar sin perder esos datos.",
             "danger",
         )

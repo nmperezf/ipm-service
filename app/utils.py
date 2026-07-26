@@ -200,22 +200,15 @@ def _ultimo_ensayo(equipo):
     return max(equipo.ensayos_caudal, key=lambda e: e.fecha_ensayo)
 
 
-def obtener_resumen_sala(sala_id):
-    """Tarjetas superiores de la ficha de sala: cuenta cada bomba una sola
-    vez, según el resultado NFPA 25 de su ensayo más reciente."""
-    from app.models import SalaBombas
+def _bombas_de(instalacion):
+    return [e for e in instalacion.equipos if e.tipo == "Bomba"]
 
-    sala = SalaBombas.query.get(sala_id)
-    if not sala:
-        return {
-            "total_equipos": 0,
-            "equipos_aprobados": 0,
-            "equipos_rechazados": 0,
-            "deficiencias_abiertas": 0,
-            "fecha_ultima_inspeccion": None,
-        }
 
-    equipos = sala.bombas
+def obtener_resumen_bombas(instalacion):
+    """Tarjetas superiores de 'Información de Instalación': cuenta cada
+    bomba una sola vez, según el resultado NFPA 25 de su ensayo más
+    reciente."""
+    equipos = _bombas_de(instalacion)
     aprobados = 0
     rechazados = 0
     for equipo in equipos:
@@ -237,20 +230,14 @@ def obtener_resumen_sala(sala_id):
         "equipos_aprobados": aprobados,
         "equipos_rechazados": rechazados,
         "deficiencias_abiertas": deficiencias_abiertas,
-        "fecha_ultima_inspeccion": sala.fecha_ultima_inspeccion,
     }
 
 
-def obtener_ultimos_ensayos_por_bomba(sala_id, limit=3):
-    """Para la tabla de histórico de cada bomba en la ficha de sala."""
-    from app.models import SalaBombas
-
-    sala = SalaBombas.query.get(sala_id)
-    if not sala:
-        return []
-
+def obtener_ultimos_ensayos_por_bomba(instalacion, limit=3):
+    """Para la tabla de histórico de cada bomba en 'Información de
+    Instalación'."""
     resultado = []
-    for equipo in sala.bombas:
+    for equipo in _bombas_de(instalacion):
         ensayos_ordenados = sorted(equipo.ensayos_caudal, key=lambda e: e.fecha_ensayo, reverse=True)[:limit]
         lista_ensayos = []
         for ensayo in ensayos_ordenados:
@@ -317,20 +304,14 @@ def obtener_curvas_superpuestas_equipo(equipo, limit=3):
     return {"caudales": caudales, "curvas": curvas}
 
 
-def obtener_acciones_recomendadas(sala_id):
-    """Heurística simple para la sección "Acciones recomendadas" de la
-    ficha de sala: no hay un modelo de "acción" separado, se infiere de los
-    ensayos/curvas ya cargados (rechazado -> urgente, sin ensayo este año
-    -> programar, sin curva de fábrica -> revisión)."""
-    from app.models import SalaBombas
-
-    sala = SalaBombas.query.get(sala_id)
-    if not sala:
-        return {"urgentes": [], "programadas": [], "en_revision": []}
-
+def obtener_acciones_recomendadas(instalacion):
+    """Heurística simple para la sección "Acciones recomendadas" de
+    'Información de Instalación': no hay un modelo de "acción" separado, se
+    infiere de los ensayos/curvas ya cargados (rechazado -> urgente, sin
+    ensayo este año -> programar, sin curva de fábrica -> revisión)."""
     hoy = date.today()
     urgentes, programadas, en_revision = [], [], []
-    for equipo in sala.bombas:
+    for equipo in _bombas_de(instalacion):
         if not equipo.curva_fabrica:
             en_revision.append(
                 {
@@ -359,6 +340,28 @@ def obtener_acciones_recomendadas(sala_id):
                 }
             )
     return {"urgentes": urgentes, "programadas": programadas, "en_revision": en_revision}
+
+
+def obtener_resumen_checklists_instalacion(instalacion):
+    """Para la sección de histórico de checklists de 'Información de
+    Instalación': todos los equipos de la instalación (ECA, BIE, Bomba,
+    etc), agrupados por tipo, con cuántos checklists tiene cada uno
+    cargados y la fecha del último — el detalle completo de cada uno sigue
+    viviendo en su propia ficha (equipos.detalle)."""
+    from app.models import Formulario
+
+    grupos = {}
+    for equipo in instalacion.equipos:
+        formularios_equipo = Formulario.query.filter_by(equipo_id=equipo.id).order_by(Formulario.fecha_creacion.desc())
+        ultimo = formularios_equipo.first()
+        grupos.setdefault(equipo.tipo, []).append(
+            {
+                "equipo": equipo,
+                "cantidad_checklists": formularios_equipo.count(),
+                "ultima_fecha": ultimo.fecha_creacion if ultimo else None,
+            }
+        )
+    return grupos
 
 
 def armar_campos_desde_formulario(form):

@@ -2,8 +2,8 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app import db
 from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_escritura_cliente
-from app.models import Equipo, Formulario, Instalacion, SalaBombas, nombres_tipos_equipo
-from app.utils import construir_secciones_historico, obtener_ultimos_ensayos_por_bomba
+from app.models import Equipo, Formulario, Instalacion, nombres_tipos_equipo
+from app.utils import construir_secciones_historico
 
 equipos_bp = Blueprint("equipos", __name__, url_prefix="/equipos")
 
@@ -13,7 +13,6 @@ def _aplicar_datos_bomba(equipo, form):
     guardan igual si vienen en el form (el toggle es solo visual), pero
     quedan en None para cualquier otro tipo de equipo."""
     if form.get("tipo") != "Bomba":
-        equipo.sala_id = None
         equipo.modelo = None
         equipo.serie = None
         equipo.caudal_nominal = None
@@ -21,8 +20,6 @@ def _aplicar_datos_bomba(equipo, form):
         equipo.anio_fabricacion = None
         return
 
-    sala_id = form.get("sala_id") or None
-    equipo.sala_id = int(sala_id) if sala_id else None
     equipo.modelo = form.get("modelo") or None
     equipo.serie = form.get("serie") or None
     caudal = form.get("caudal_nominal") or None
@@ -39,7 +36,6 @@ def nuevo(instalacion_id):
     instalacion = Instalacion.query.get_or_404(instalacion_id)
     verificar_escritura_cliente(instalacion.cliente)
     manifolds = [e for e in instalacion.equipos if e.tipo == "Manifold" and e.activo]
-    salas = SalaBombas.query.filter_by(instalacion_id=instalacion.id).order_by(SalaBombas.nombre).all()
 
     if request.method == "POST":
         manifold_id = request.form.get("manifold_id") or None
@@ -62,7 +58,6 @@ def nuevo(instalacion_id):
         equipo=None,
         tipos=nombres_tipos_equipo(),
         manifolds=manifolds,
-        salas=salas,
     )
 
 
@@ -74,7 +69,6 @@ def editar(equipo_id):
     manifolds = [
         e for e in equipo.instalacion.equipos if e.tipo == "Manifold" and e.activo and e.id != equipo.id
     ]
-    salas = SalaBombas.query.filter_by(instalacion_id=equipo.instalacion_id).order_by(SalaBombas.nombre).all()
 
     if request.method == "POST":
         manifold_id = request.form.get("manifold_id") or None
@@ -94,7 +88,6 @@ def editar(equipo_id):
         equipo=equipo,
         tipos=nombres_tipos_equipo(),
         manifolds=manifolds,
-        salas=salas,
     )
 
 

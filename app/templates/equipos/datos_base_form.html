@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ tipo.nombre }} - {{ equipo.nombre }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('datos_motor.listar', equipo_id=equipo.id) }}">&larr; Datos de base de {{ equipo.nombre }}</a></p>
+<h1>{{ tipo.nombre }} <small class="text-muted fs-6">{{ equipo.nombre }}</small></h1>
+<p class="text-muted">{{ tipo.descripcion }}</p>
+{% if registro %}
+<p class="text-muted small">Ya había datos cargados acá — al guardar se actualizan, no se duplican.</p>
+{% endif %}
+
+{% set datos = registro.datos() if registro else {} %}
+<form method="POST" class="mt-3">
+    {% for campo in tipo.campos() %}
+    {% set valor_actual = datos.get(campo.campo) %}
+    <div class="mb-3">
+        <label class="form-label">{{ campo.label }}</label>
+        {% if campo.tipo == 'texto_largo' %}
+            <textarea name="{{ campo.campo }}" class="form-control" rows="3">{{ valor_actual or '' }}</textarea>
+        {% elif campo.tipo == 'numero' %}
+            <input type="number" step="any" name="{{ campo.campo }}" class="form-control" value="{{ valor_actual if valor_actual is not none else '' }}">
+        {% elif campo.tipo == 'fecha' %}
+            <input type="date" name="{{ campo.campo }}" class="form-control" value="{{ valor_actual or '' }}">
+        {% elif campo.tipo == 'booleano' %}
+            <select name="{{ campo.campo }}" class="form-select">
+                <option value="Sí" {% if valor_actual == 'Sí' %}selected{% endif %}>Sí</option>
+                <option value="No" {% if valor_actual == 'No' %}selected{% endif %}>No</option>
+            </select>
+        {% elif campo.tipo == 'seleccion' %}
+            <select name="{{ campo.campo }}" class="form-select">
+                {% for opcion in campo.opciones %}
+                <option value="{{ opcion }}" {% if valor_actual == opcion %}selected{% endif %}>{{ opcion }}</option>
+                {% endfor %}
+            </select>
+        {% elif campo.tipo == 'multi_seleccion' %}
+            <div>
+                {% for opcion in campo.opciones %}
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" name="{{ campo.campo }}" value="{{ opcion }}" id="{{ campo.campo }}_{{ loop.index }}" {% if valor_actual and opcion in valor_actual %}checked{% endif %}>
+                    <label class="form-check-label" for="{{ campo.campo }}_{{ loop.index }}">{{ opcion }}</label>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <input type="text" name="{{ campo.campo }}" class="form-control" value="{{ valor_actual or '' }}">
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <button type="submit" class="btn btn-primary">{{ 'Actualizar' if registro else 'Guardar' }}</button>
+    <a href="{{ url_for('datos_motor.listar', equipo_id=equipo.id) }}" class="btn btn-link">Cancelar</a>
+</form>
+{% endblock %}

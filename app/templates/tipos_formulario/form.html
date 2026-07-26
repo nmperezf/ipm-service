@@ -20,6 +20,14 @@
     <div class="card mb-3">
         <div class="card-body">
             <div class="form-check mb-2">
+                <input type="checkbox" name="es_dato_base" class="form-check-input" id="es_dato_base"
+                       {% if tipo and tipo.es_dato_base %}checked{% endif %} onchange="toggleModo()">
+                <label class="form-check-label" for="es_dato_base">
+                    Es un dato de base del equipo (ej: datos de motor eléctrico/diesel) — se carga una sola vez
+                    por equipo y se puede editar después, en vez de repetirse en cada visita
+                </label>
+            </div>
+            <div class="form-check mb-2" id="por-equipo-wrapper">
                 <input type="checkbox" name="por_equipo" class="form-check-input" id="por_equipo"
                        {% if tipo and tipo.por_equipo %}checked{% endif %} onchange="toggleTipoEquipo()">
                 <label class="form-check-label" for="por_equipo">
@@ -65,8 +73,16 @@
 
 <script>
 function toggleTipoEquipo() {
-    const checked = document.getElementById('por_equipo').checked;
-    document.getElementById('tipo-equipo-wrapper').style.display = checked ? 'block' : 'none';
+    const esDatoBase = document.getElementById('es_dato_base').checked;
+    const porEquipo = document.getElementById('por_equipo').checked;
+    document.getElementById('tipo-equipo-wrapper').style.display = (esDatoBase || porEquipo) ? 'block' : 'none';
+}
+
+function toggleModo() {
+    const esDatoBase = document.getElementById('es_dato_base').checked;
+    document.getElementById('por-equipo-wrapper').style.display = esDatoBase ? 'none' : 'block';
+    if (esDatoBase) document.getElementById('por_equipo').checked = false;
+    toggleTipoEquipo();
 }
 
 function opcionesTiposCampo() {
@@ -99,7 +115,7 @@ function toggleOpciones(select) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    toggleTipoEquipo();
+    toggleModo();
     const iniciales = JSON.parse(document.getElementById('campos-iniciales').textContent);
     if (iniciales.length) {
         iniciales.forEach(agregarFila);

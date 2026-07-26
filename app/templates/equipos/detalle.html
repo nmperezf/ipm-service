@@ -6,6 +6,7 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1>{{ equipo.nombre }} <span class="badge bg-secondary fs-6">{{ equipo.tipo }}</span></h1>
     <div>
+        <a href="{{ url_for('datos_motor.listar', equipo_id=equipo.id) }}" class="btn btn-outline-dark btn-sm">Datos de base{% if equipo.datos_base %} ({{ equipo.datos_base|length }}){% endif %}</a>
         <a href="{{ url_for('observaciones.nueva', instalacion_id=equipo.instalacion_id, equipo_id=equipo.id) }}" class="btn btn-outline-warning btn-sm">+ Observación</a>
         <a href="{{ url_for('equipos.editar', equipo_id=equipo.id) }}" class="btn btn-outline-secondary btn-sm">Editar equipo</a>
     </div>
@@ -25,7 +26,6 @@
             <div class="col-auto">Caudal nominal: <strong class="text-body">{{ equipo.caudal_nominal if equipo.caudal_nominal else '-' }} GPM</strong></div>
             <div class="col-auto">RPM nominal: <strong class="text-body">{{ equipo.rpm_nominal or '-' }}</strong></div>
             <div class="col-auto">Año fabricación: <strong class="text-body">{{ equipo.anio_fabricacion or '-' }}</strong></div>
-            {% if equipo.sala %}<div class="col-auto">Sala: <strong class="text-body"><a href="{{ url_for('salas.detalle', sala_id=equipo.sala_id) }}">{{ equipo.sala.nombre }}</a></strong></div>{% endif %}
         </div>
 
         <div class="mb-3">

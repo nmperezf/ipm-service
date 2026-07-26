@@ -527,7 +527,14 @@ class TipoFormulario(db.Model):
     Si por_equipo=True, este formulario se completa una vez por cada equipo
     de la instalación (ej: un checklist de ECA se llena por cada ECA),
     en vez de una sola vez para toda la visita. tipo_equipo_aplicable filtra
-    qué tipo de equipo corresponde (ej: "ECA")."""
+    qué tipo de equipo corresponde (ej: "ECA").
+
+    Si es_dato_base=True, este tipo NO es un checklist que se repite en
+    cada visita: es una plantilla de datos de base de un equipo (ej. "Motor
+    eléctrico", "Motor diesel") que el técnico completa una sola vez por
+    equipo, se guarda en DatosEquipoBase (no en Formulario/item_visita) y
+    se puede volver a editar después. por_equipo no aplica en ese caso —
+    ya es implícitamente "por equipo"."""
 
     __tablename__ = "tipos_formulario"
     __table_args__ = (db.UniqueConstraint("cliente_id", "nombre", name="uq_tipo_formulario_cliente_nombre"),)
@@ -539,6 +546,7 @@ class TipoFormulario(db.Model):
     schema_json = db.Column(db.Text, nullable=False)  # lista de campos: [{campo, tipo, label, opciones?}]
     por_equipo = db.Column(db.Boolean, default=False, nullable=False)
     tipo_equipo_aplicable = db.Column(db.String(40), nullable=True)  # nombre de un TipoEquipo
+    es_dato_base = db.Column(db.Boolean, default=False, nullable=False)
 
     cliente = db.relationship("Cliente", backref=db.backref("tipos_formulario", cascade="all, delete-orphan"))
 
@@ -724,34 +732,6 @@ def categorias_equipo_agrupadas():
 
 
 # ---------------------------------------------------------------------------
-# Sala de bombas — agrupa las Bomba (Equipo con tipo='Bomba') de una
-# instalación para la ficha consolidada (curvas de caudal, tendencias).
-# ---------------------------------------------------------------------------
-
-
-class SalaBombas(db.Model):
-    """Agrupación física de bombas dentro de una instalación (ej. "Sala de
-    bombas - subsuelo"). Cuelga de Instalacion, no de Cliente directamente,
-    igual que Contrato/Equipo/Visita — un cliente con varios edificios puede
-    tener una sala de bombas por edificio."""
-
-    __tablename__ = "salas_bombas"
-
-    id = db.Column(db.Integer, primary_key=True)
-    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False)
-    nombre = db.Column(db.String(150), nullable=False)
-    descripcion = db.Column(db.Text)
-    ubicacion = db.Column(db.String(250))
-    fecha_ultima_inspeccion = db.Column(db.Date, nullable=True)
-    creado_en = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-
-    instalacion = db.relationship("Instalacion", backref=db.backref("salas_bombas", cascade="all, delete-orphan"))
-
-    def __repr__(self):
-        return f"<SalaBombas {self.nombre}>"
-
-
-# ---------------------------------------------------------------------------
 # Equipos (ECA, manifolds, bombas) — registro físico por instalación
 # ---------------------------------------------------------------------------
 
@@ -776,7 +756,6 @@ class Equipo(db.Model):
     # Datos de placa, solo aplican cuando tipo == "Bomba" (ver módulo de
     # curva de caudal). Quedan nullable porque no tienen sentido para el
     # resto de los tipos de equipo.
-    sala_id = db.Column(db.Integer, db.ForeignKey("salas_bombas.id"), nullable=True)
     modelo = db.Column(db.String(150), nullable=True)
     serie = db.Column(db.String(150), nullable=True)
     caudal_nominal = db.Column(db.Float, nullable=True)  # GPM
@@ -786,10 +765,49 @@ class Equipo(db.Model):
     equipos_hijos = db.relationship(
         "Equipo", backref=db.backref("manifold", remote_side=[id]), lazy=True
     )
-    sala = db.relationship("SalaBombas", backref="bombas")
 
     def __repr__(self):
         return f"<Equipo {self.tipo}: {self.nombre}>"
+
+
+# ---------------------------------------------------------------------------
+# Datos de base de un equipo (ej. datos de motor eléctrico/diesel): a
+# diferencia de Formulario (que se completa en cada visita), esto se carga
+# una sola vez por equipo y se puede editar después. El esquema de campos
+# lo define un TipoFormulario con es_dato_base=True — el técnico elige cuál
+# usar (ej. "Motor eléctrico" o "Motor diesel").
+# ---------------------------------------------------------------------------
+
+
+class DatosEquipoBase(db.Model):
+    __tablename__ = "datos_equipo_base"
+    __table_args__ = (db.UniqueConstraint("equipo_id", "tipo_formulario_id", name="uq_datos_equipo_base_tipo"),)
+
+    id = db.Column(db.Integer, primary_key=True)
+    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=False)
+    tipo_formulario_id = db.Column(db.Integer, db.ForeignKey("tipos_formulario.id"), nullable=False)
+    datos_json = db.Column(db.Text)
+    cargado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    fecha_carga = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    equipo = db.relationship("Equipo", backref=db.backref("datos_base", cascade="all, delete-orphan"))
+    tipo_formulario = db.relationship(
+        "TipoFormulario", backref=db.backref("datos_equipo_base", cascade="all, delete-orphan")
+    )
+    cargado_por = db.relationship("Usuario")
+
+    def datos(self):
+        import json
+
+        return json.loads(self.datos_json) if self.datos_json else {}
+
+    def set_datos(self, dict_datos):
+        import json
+
+        self.datos_json = json.dumps(dict_datos)
+
+    def __repr__(self):
+        return f"<DatosEquipoBase equipo={self.equipo_id} tipo={self.tipo_formulario_id}>"
 
 
 # ---------------------------------------------------------------------------
