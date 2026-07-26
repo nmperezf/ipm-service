@@ -82,8 +82,6 @@ CLASE_CALENDARIO = {
     "Cancelado": "secondary",
 }
 
-TIPOS_EQUIPO = ["ECA", "Manifold", "Bomba", "BIE", "Otro"]
-
 TIPOS_OT = ["Preventivo", "Correctivo", "Predictivo", "Visita técnica"]
 
 # Tipos elegibles al cargar una OT a mano (Preventivo queda reservado para
@@ -94,15 +92,10 @@ ESTADOS_OT = ["Pendiente", "Asignada", "En proceso", "Pausada", "Finalizada", "C
 
 PRIORIDADES_OT = ["Baja", "Media", "Alta", "Urgente"]
 
-# Agrupación de navegación para cargar formularios por equipo: no es una
-# entidad nueva en la base, solo cómo se organizan los TIPOS_EQUIPO ya
-# existentes al elegir qué checklist completar dentro de una visita.
-CATEGORIAS_EQUIPO = [
-    ("Sala de bombas", ["Bomba"]),
-    ("Estaciones de control y alarma", ["ECA", "Manifold"]),
-    ("Bocas de incendio", ["BIE"]),
-    ("Otros equipos", ["Otro"]),
-]
+# Orden preferido de las categorías de equipo en la navegación (portal de
+# cliente, elegir equipo dentro de una visita). Las categorías que se creen
+# a mano desde TipoEquipo y no estén en esta lista van al final, alfabético.
+CATEGORIAS_EQUIPO_ORDEN = ["Sala de bombas", "Estaciones de control y alarma", "Bocas de incendio", "Otros equipos"]
 
 ESTADOS_CANERIA = [
     "Buen estado",
@@ -545,7 +538,7 @@ class TipoFormulario(db.Model):
     descripcion = db.Column(db.Text)
     schema_json = db.Column(db.Text, nullable=False)  # lista de campos: [{campo, tipo, label, opciones?}]
     por_equipo = db.Column(db.Boolean, default=False, nullable=False)
-    tipo_equipo_aplicable = db.Column(db.String(40), nullable=True)  # ver TIPOS_EQUIPO
+    tipo_equipo_aplicable = db.Column(db.String(40), nullable=True)  # nombre de un TipoEquipo
 
     cliente = db.relationship("Cliente", backref="tipos_formulario")
 
@@ -576,7 +569,7 @@ class ServicioTipo(db.Model):
     descripcion = db.Column(db.Text)
     schema_json = db.Column(db.Text, nullable=False)
     por_equipo = db.Column(db.Boolean, default=False, nullable=False)
-    tipo_equipo_aplicable = db.Column(db.String(40), nullable=True)  # ver TIPOS_EQUIPO
+    tipo_equipo_aplicable = db.Column(db.String(40), nullable=True)  # nombre de un TipoEquipo
 
     empresa = db.relationship("Empresa", backref="servicios_tipo")
 
@@ -688,6 +681,49 @@ class Observacion(db.Model):
 
 
 # ---------------------------------------------------------------------------
+# Tipos de equipo (catálogo editable) — ECA, manifold, bomba, etc.
+# ---------------------------------------------------------------------------
+
+
+class TipoEquipo(db.Model):
+    """Catálogo de tipos de equipo disponibles al cargar un Equipo nuevo y
+    al definir a qué tipo de equipo aplica un TipoFormulario/ServicioTipo
+    (tipo_equipo_aplicable). Arranca con ECA/Manifold/Bomba/BIE/Otro (ver
+    _seed_tipos_equipo en app/__init__.py), pero cualquier Administrador,
+    Jefe o Técnico puede sumar tipos nuevos desde la pantalla de equipos.
+
+    categoria agrupa los tipos en la navegación del portal de cliente y al
+    elegir equipo dentro de una visita (ver categorias_equipo_agrupadas)."""
+
+    __tablename__ = "tipos_equipo"
+
+    id = db.Column(db.Integer, primary_key=True)
+    nombre = db.Column(db.String(40), unique=True, nullable=False)
+    categoria = db.Column(db.String(80), nullable=False, default="Otros equipos")
+
+    def __repr__(self):
+        return f"<TipoEquipo {self.nombre}>"
+
+
+def nombres_tipos_equipo():
+    """Nombres de tipo de equipo disponibles, para los desplegables de
+    Equipo.tipo y de tipo_equipo_aplicable (TipoFormulario/ServicioTipo)."""
+    return [t.nombre for t in TipoEquipo.query.order_by(TipoEquipo.nombre).all()]
+
+
+def categorias_equipo_agrupadas():
+    """Tipos de equipo agrupados por categoría: las categorías base
+    (CATEGORIAS_EQUIPO_ORDEN) primero, en ese orden, y cualquier categoría
+    nueva escrita a mano al final, en orden alfabético."""
+    grupos = {}
+    for t in TipoEquipo.query.order_by(TipoEquipo.nombre).all():
+        grupos.setdefault(t.categoria, []).append(t.nombre)
+    orden = [c for c in CATEGORIAS_EQUIPO_ORDEN if c in grupos]
+    orden += sorted(c for c in grupos if c not in CATEGORIAS_EQUIPO_ORDEN)
+    return [(categoria, grupos[categoria]) for categoria in orden]
+
+
+# ---------------------------------------------------------------------------
 # Equipos (ECA, manifolds, bombas) — registro físico por instalación
 # ---------------------------------------------------------------------------
 
@@ -703,7 +739,7 @@ class Equipo(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False)
-    tipo = db.Column(db.String(40), nullable=False)  # ver TIPOS_EQUIPO
+    tipo = db.Column(db.String(40), nullable=False)  # nombre de un TipoEquipo
     nombre = db.Column(db.String(150), nullable=False)  # ej: "ECA 3° piso ala norte"
     ubicacion = db.Column(db.String(250))
     manifold_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True)

@@ -12,7 +12,6 @@ from app.auth_utils import (
 )
 from app import db
 from app.models import (
-    CATEGORIAS_EQUIPO,
     ESTADOS_VISITA,
     Formulario,
     Instalacion,
@@ -22,6 +21,7 @@ from app.models import (
     TipoFormulario,
     Usuario,
     Visita,
+    categorias_equipo_agrupadas,
 )
 from app.pdf_devolucion import generar_pdf_devolucion
 
@@ -38,12 +38,13 @@ def _agrupar_tipos_formulario(tipos):
     (Sala de bombas / Estaciones de control y alarma / Bocas de incendio /
     Otros equipos) según a qué tipo de equipo aplican, y deja aparte los
     que no son por equipo (checklists generales del servicio)."""
-    grupos = {nombre: [] for nombre, _ in CATEGORIAS_EQUIPO}
+    categorias = categorias_equipo_agrupadas()
+    grupos = {nombre: [] for nombre, _ in categorias}
     generales = []
     for tipo in tipos:
         if tipo.por_equipo and tipo.tipo_equipo_aplicable:
             ubicado = False
-            for nombre_categoria, tipos_equipo in CATEGORIAS_EQUIPO:
+            for nombre_categoria, tipos_equipo in categorias:
                 if tipo.tipo_equipo_aplicable in tipos_equipo:
                     grupos[nombre_categoria].append(tipo)
                     ubicado = True
@@ -69,7 +70,7 @@ def _resumen_por_categoria(visita):
     formularios = Formulario.query.filter(Formulario.item_visita_id.in_(ids_items)).all() if ids_items else []
 
     resumen = []
-    for nombre_categoria, tipos_equipo in CATEGORIAS_EQUIPO:
+    for nombre_categoria, tipos_equipo in categorias_equipo_agrupadas():
         equipos_ids = {
             f.equipo_id for f in formularios if f.equipo and f.equipo.tipo in tipos_equipo
         }

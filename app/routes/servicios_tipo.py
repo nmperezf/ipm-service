@@ -5,7 +5,7 @@ from flask_login import current_user
 
 from app import db
 from app.auth_utils import rol_requerido
-from app.models import ServicioTipo, TIPOS_EQUIPO
+from app.models import ServicioTipo, nombres_tipos_equipo
 from app.utils import TIPOS_CAMPO, armar_campos_desde_formulario
 
 servicios_tipo_bp = Blueprint("servicios_tipo", __name__, url_prefix="/servicios-tipo")
@@ -32,11 +32,11 @@ def nuevo():
         campos = armar_campos_desde_formulario(request.form)
         if not campos:
             flash("Agregá al menos un campo antes de guardar.", "danger")
-            return render_template("servicios_tipo/form.html", servicio=None, tipos_equipo=TIPOS_EQUIPO, tipos_campo=TIPOS_CAMPO)
+            return render_template("servicios_tipo/form.html", servicio=None, tipos_equipo=nombres_tipos_equipo(), tipos_campo=TIPOS_CAMPO)
 
         if ServicioTipo.query.filter_by(empresa_id=current_user.empresa_id, nombre=request.form["nombre"]).first():
             flash(f"Ya existe un servicio tipo llamado '{request.form['nombre']}' en tu empresa.", "danger")
-            return render_template("servicios_tipo/form.html", servicio=None, tipos_equipo=TIPOS_EQUIPO, tipos_campo=TIPOS_CAMPO)
+            return render_template("servicios_tipo/form.html", servicio=None, tipos_equipo=nombres_tipos_equipo(), tipos_campo=TIPOS_CAMPO)
 
         servicio = ServicioTipo(
             empresa_id=current_user.empresa_id,
@@ -51,7 +51,7 @@ def nuevo():
         flash(f"Servicio tipo '{servicio.nombre}' creado con {len(campos)} campo(s).", "success")
         return redirect(url_for("servicios_tipo.listar"))
 
-    return render_template("servicios_tipo/form.html", servicio=None, tipos_equipo=TIPOS_EQUIPO, tipos_campo=TIPOS_CAMPO)
+    return render_template("servicios_tipo/form.html", servicio=None, tipos_equipo=nombres_tipos_equipo(), tipos_campo=TIPOS_CAMPO)
 
 
 @servicios_tipo_bp.route("/<int:servicio_id>/editar", methods=["GET", "POST"])
@@ -79,7 +79,7 @@ def editar(servicio_id):
         )
         return redirect(url_for("servicios_tipo.listar"))
 
-    return render_template("servicios_tipo/form.html", servicio=servicio, tipos_equipo=TIPOS_EQUIPO, tipos_campo=TIPOS_CAMPO)
+    return render_template("servicios_tipo/form.html", servicio=servicio, tipos_equipo=nombres_tipos_equipo(), tipos_campo=TIPOS_CAMPO)
 
 
 @servicios_tipo_bp.route("/<int:servicio_id>/eliminar", methods=["POST"])

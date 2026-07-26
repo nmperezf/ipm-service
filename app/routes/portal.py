@@ -4,7 +4,7 @@ from flask import Blueprint, abort, render_template
 from flask_login import current_user
 
 from app.auth_utils import rol_requerido
-from app.models import CATEGORIAS_EQUIPO, CLASIFICACIONES_OBSERVACION, Equipo, Visita
+from app.models import CLASIFICACIONES_OBSERVACION, Equipo, Visita, categorias_equipo_agrupadas
 from app.utils import checklists_aprobados_de_equipo, construir_secciones_historico
 
 portal_bp = Blueprint("portal", __name__, url_prefix="/portal")
@@ -158,13 +158,14 @@ def equipos():
     recién instalado es válido que aparezca vacío)."""
     cliente = _cliente_actual()
 
+    categorias = categorias_equipo_agrupadas()
     instalaciones_data = []
     for inst in cliente.instalaciones:
-        grupos = {nombre: [] for nombre, _ in CATEGORIAS_EQUIPO}
+        grupos = {nombre: [] for nombre, _ in categorias}
         for equipo in inst.equipos:
             if not equipo.activo:
                 continue
-            for nombre_categoria, tipos in CATEGORIAS_EQUIPO:
+            for nombre_categoria, tipos in categorias:
                 if equipo.tipo in tipos:
                     grupos[nombre_categoria].append(equipo)
                     break

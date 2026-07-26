@@ -2,7 +2,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app import db
 from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_escritura_cliente
-from app.models import Cliente, Formulario, TipoFormulario, TIPOS_EQUIPO
+from app.models import Cliente, Formulario, TipoFormulario, nombres_tipos_equipo
 from app.utils import TIPOS_CAMPO, armar_campos_desde_formulario
 
 tipos_formulario_bp = Blueprint("tipos_formulario", __name__, url_prefix="/tipos-formulario")
@@ -28,13 +28,13 @@ def nuevo(cliente_id):
         if not campos:
             flash("Agregá al menos un campo antes de guardar.", "danger")
             return render_template(
-                "tipos_formulario/form.html", tipo=None, cliente=cliente, tipos_equipo=TIPOS_EQUIPO, tipos_campo=TIPOS_CAMPO
+                "tipos_formulario/form.html", tipo=None, cliente=cliente, tipos_equipo=nombres_tipos_equipo(), tipos_campo=TIPOS_CAMPO
             )
 
         if TipoFormulario.query.filter_by(cliente_id=cliente.id, nombre=request.form["nombre"]).first():
             flash(f"Este cliente ya tiene un tipo de formulario llamado '{request.form['nombre']}'.", "danger")
             return render_template(
-                "tipos_formulario/form.html", tipo=None, cliente=cliente, tipos_equipo=TIPOS_EQUIPO, tipos_campo=TIPOS_CAMPO
+                "tipos_formulario/form.html", tipo=None, cliente=cliente, tipos_equipo=nombres_tipos_equipo(), tipos_campo=TIPOS_CAMPO
             )
 
         tipo_formulario = TipoFormulario(
@@ -51,7 +51,7 @@ def nuevo(cliente_id):
         return redirect(url_for("tipos_formulario.listar", cliente_id=cliente.id))
 
     return render_template(
-        "tipos_formulario/form.html", tipo=None, cliente=cliente, tipos_equipo=TIPOS_EQUIPO, tipos_campo=TIPOS_CAMPO
+        "tipos_formulario/form.html", tipo=None, cliente=cliente, tipos_equipo=nombres_tipos_equipo(), tipos_campo=TIPOS_CAMPO
     )
 
 
@@ -80,7 +80,7 @@ def editar(tipo_id):
         "tipos_formulario/form.html",
         tipo=tipo_formulario,
         cliente=tipo_formulario.cliente,
-        tipos_equipo=TIPOS_EQUIPO,
+        tipos_equipo=nombres_tipos_equipo(),
         tipos_campo=TIPOS_CAMPO,
     )
 

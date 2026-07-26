@@ -40,6 +40,7 @@ def create_app():
     from app.routes.clientes import clientes_bp
     from app.routes.instalaciones import instalaciones_bp
     from app.routes.equipos import equipos_bp
+    from app.routes.tipos_equipo import tipos_equipo_bp
     from app.routes.contratos import contratos_bp
     from app.routes.visitas import visitas_bp
     from app.routes.formularios import formularios_bp
@@ -62,6 +63,7 @@ def create_app():
     app.register_blueprint(clientes_bp)
     app.register_blueprint(instalaciones_bp)
     app.register_blueprint(equipos_bp)
+    app.register_blueprint(tipos_equipo_bp)
     app.register_blueprint(contratos_bp)
     app.register_blueprint(visitas_bp)
     app.register_blueprint(formularios_bp)
@@ -81,6 +83,7 @@ def create_app():
     with app.app_context():
         db.create_all()
         _seed_super_admin()
+        _seed_tipos_equipo()
 
     return app
 
@@ -99,4 +102,25 @@ def _seed_super_admin():
     db.session.add(admin)
     db.session.commit()
     print("Usuario Super Admin creado por defecto -> usuario: admin / contraseña: admin123 (cambiala)")
+
+
+def _seed_tipos_equipo():
+    """Carga el catálogo base de tipos de equipo la primera vez que se
+    levanta la app. De ahí en más, los tipos nuevos se agregan a mano
+    desde la pantalla de Tipos de equipo."""
+    from app.models import TipoEquipo
+
+    if TipoEquipo.query.first():
+        return
+
+    base = [
+        ("ECA", "Estaciones de control y alarma"),
+        ("Manifold", "Estaciones de control y alarma"),
+        ("Bomba", "Sala de bombas"),
+        ("BIE", "Bocas de incendio"),
+        ("Otro", "Otros equipos"),
+    ]
+    for nombre, categoria in base:
+        db.session.add(TipoEquipo(nombre=nombre, categoria=categoria))
+    db.session.commit()
 

@@ -2,7 +2,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app import db
 from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_escritura_cliente
-from app.models import Equipo, Formulario, Instalacion, TIPOS_EQUIPO
+from app.models import Equipo, Formulario, Instalacion, nombres_tipos_equipo
 from app.utils import construir_secciones_historico
 
 equipos_bp = Blueprint("equipos", __name__, url_prefix="/equipos")
@@ -30,7 +30,7 @@ def nuevo(instalacion_id):
         return redirect(url_for("instalaciones.detalle", instalacion_id=instalacion.id))
 
     return render_template(
-        "equipos/form.html", instalacion=instalacion, equipo=None, tipos=TIPOS_EQUIPO, manifolds=manifolds
+        "equipos/form.html", instalacion=instalacion, equipo=None, tipos=nombres_tipos_equipo(), manifolds=manifolds
     )
 
 
@@ -55,7 +55,7 @@ def editar(equipo_id):
         return redirect(url_for("instalaciones.detalle", instalacion_id=equipo.instalacion_id))
 
     return render_template(
-        "equipos/form.html", instalacion=equipo.instalacion, equipo=equipo, tipos=TIPOS_EQUIPO, manifolds=manifolds
+        "equipos/form.html", instalacion=equipo.instalacion, equipo=equipo, tipos=nombres_tipos_equipo(), manifolds=manifolds
     )
 
 
