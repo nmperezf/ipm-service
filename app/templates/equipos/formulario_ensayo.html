@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}Nuevo ensayo - {{ equipo.nombre }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}">&larr; Ensayos de {{ equipo.nombre }}</a></p>
+<h1>Nuevo ensayo de curva de caudal <small class="text-muted fs-6">{{ equipo.nombre }}</small></h1>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h6 class="text-muted">Curva de fábrica (referencia)</h6>
+        <div class="table-responsive">
+        <table class="table table-sm mb-0">
+            <thead><tr><th>Caudal</th><th>0%</th><th>50%</th><th>100%</th><th>150%</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>RPM</td>
+                    <td colspan="4">{{ curva.rpm_nominal }}</td>
+                </tr>
+                <tr>
+                    <td>Presión neta (PSI)</td>
+                    <td>{{ curva.punto_0_presion }}</td>
+                    <td>{{ curva.punto_50_presion }}</td>
+                    <td>{{ curva.punto_100_presion }}</td>
+                    <td>{{ curva.punto_150_presion }}</td>
+                </tr>
+            </tbody>
+        </table>
+        </div>
+    </div>
+</div>
+
+<form method="POST" id="form-ensayo">
+    <div class="mb-3" style="max-width: 260px;">
+        <label class="form-label">Fecha de ensayo</label>
+        <input type="date" name="fecha_ensayo" class="form-control form-control-lg" required>
+    </div>
+
+    <div class="row g-3 mb-3">
+        {% for p in ['0', '50', '100', '150'] %}
+        <div class="col-md-6 col-lg-3">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6>Caudal {{ p }}%</h6>
+                    <div class="mb-2">
+                        <label class="form-label small mb-0">RPM</label>
+                        <input type="number" class="form-control punto-input" data-punto="{{ p }}" data-campo="rpm"
+                               name="rpm_punto_{{ p }}" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small mb-0">Presión descarga (PSI)</label>
+                        <input type="number" step="any" class="form-control punto-input" data-punto="{{ p }}" data-campo="descarga"
+                               name="presion_descarga_punto_{{ p }}" required>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label small mb-0">Presión succión (PSI)</label>
+                        <input type="number" step="any" class="form-control punto-input" data-punto="{{ p }}" data-campo="succion"
+                               name="presion_succion_punto_{{ p }}" required placeholder="ej: -5 si es vacío">
+                    </div>
+                    <div>
+                        <label class="form-label small mb-0">Presión neta (PSI)</label>
+                        <input type="text" class="form-control-plaintext fw-bold" id="neta-{{ p }}" readonly value="-">
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    <button type="button" class="btn btn-outline-primary" id="btn-calcular">Calcular y validar</button>
+
+    <div id="resultado-validacion" class="card mt-3" style="display:none;">
+        <div class="card-body">
+            <h5>Validación NFPA 25</h5>
+            <div class="table-responsive">
+            <table class="table table-sm mb-2">
+                <thead><tr><th>Criterio</th><th>Valor del ensayo</th><th>Límite</th><th>Resultado</th></tr></thead>
+                <tbody id="cuerpo-validacion"></tbody>
+            </table>
+            </div>
+            <div id="resultado-general" class="fs-5 fw-bold text-center py-2"></div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary" id="btn-guardar" disabled>Guardar ensayo</button>
+        <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-link">Cancelar</a>
+    </div>
+    <p class="text-muted small mt-2" id="ayuda-guardar">Calculá y validá el ensayo antes de guardar.</p>
+</form>
+
+<script>
+const curvaFabrica = {
+    rpmNominal: {{ curva.rpm_nominal }},
+    presiones: [{{ curva.punto_0_presion }}, {{ curva.punto_50_presion }}, {{ curva.punto_100_presion }}, {{ curva.punto_150_presion }}]
+};
+const PUNTOS = ['0', '50', '100', '150'];
+
+function round1(x) {
+    return Math.round(x * 10) / 10;
+}
+
+function presionAjustada(neta, rpmEnsayada, rpmFabrica) {
+    if (!rpmEnsayada) return round1(neta);
+    const factor = Math.pow(rpmFabrica / rpmEnsayada, 2);
+    return round1(neta * factor);
+}
+
+function validarNfpa25(ajustadas, fabrica) {
+    const [p0, , p100, p150] = ajustadas;
+    const [, , f100] = fabrica;
+    const limite1 = round1(1.4 * p100);
+    const limite2 = round1(0.95 * f100);
+    const limite3 = round1(0.65 * p100);
+    return [
+        { descripcion: 'P@0% ≤ 1.4 × P@100%', valor: p0, limite: limite1, paso: p0 <= limite1 },
+        { descripcion: 'P@100% ≥ 0.95 × P_fábrica@100%', valor: p100, limite: limite2, paso: p100 >= limite2 },
+        { descripcion: 'P@150% ≥ 0.65 × P@100%', valor: p150, limite: limite3, paso: p150 >= limite3 },
+    ];
+}
+
+function actualizarNeta(punto) {
+    const descarga = parseFloat(document.querySelector(`[data-punto="${punto}"][data-campo="descarga"]`).value);
+    const succion = parseFloat(document.querySelector(`[data-punto="${punto}"][data-campo="succion"]`).value);
+    const el = document.getElementById(`neta-${punto}`);
+    if (isNaN(descarga) || isNaN(succion)) {
+        el.value = '-';
+        return null;
+    }
+    const neta = round1(descarga - succion);
+    el.value = neta;
+    return neta;
+}
+
+document.querySelectorAll('.punto-input').forEach(function (input) {
+    input.addEventListener('input', function () {
+        actualizarNeta(this.dataset.punto);
+    });
+});
+
+document.getElementById('btn-calcular').addEventListener('click', function () {
+    const netas = [];
+    const rpms = [];
+    let faltaDato = false;
+    PUNTOS.forEach(function (p) {
+        const neta = actualizarNeta(p);
+        const rpm = parseFloat(document.querySelector(`[data-punto="${p}"][data-campo="rpm"]`).value);
+        if (neta === null || isNaN(rpm)) faltaDato = true;
+        netas.push(neta);
+        rpms.push(rpm);
+    });
+    if (faltaDato) {
+        alert('Completá RPM, presión de descarga y succión de los 4 puntos antes de calcular.');
+        return;
+    }
+
+    const ajustadas = netas.map(function (neta, i) { return presionAjustada(neta, rpms[i], curvaFabrica.rpmNominal); });
+    const criterios = validarNfpa25(ajustadas, curvaFabrica.presiones);
+    const aprobado = criterios.every(function (c) { return c.paso; });
+
+    const cuerpo = document.getElementById('cuerpo-validacion');
+    cuerpo.innerHTML = '';
+    criterios.forEach(function (c) {
+        const fila = document.createElement('tr');
+        fila.innerHTML =
+            '<td>' + c.descripcion + '</td>' +
+            '<td>' + c.valor.toFixed(1) + '</td>' +
+            '<td>' + c.limite.toFixed(1) + '</td>' +
+            '<td class="fw-bold ' + (c.paso ? 'text-success' : 'text-danger') + '">' + (c.paso ? 'APRUEBA' : 'NO APRUEBA') + '</td>';
+        cuerpo.appendChild(fila);
+    });
+
+    const resultadoGeneral = document.getElementById('resultado-general');
+    resultadoGeneral.textContent = aprobado ? '✓ APROBADO' : '✗ RECHAZADO';
+    resultadoGeneral.className = 'fs-5 fw-bold text-center py-2 ' + (aprobado ? 'text-success' : 'text-danger');
+
+    document.getElementById('resultado-validacion').style.display = 'block';
+    document.getElementById('btn-guardar').disabled = false;
+    document.getElementById('ayuda-guardar').style.display = 'none';
+});
+</script>
+{% endblock %}

@@ -10,6 +10,7 @@
         <a href="{{ url_for('historial.ver', instalacion_id=instalacion.id) }}" class="btn btn-outline-dark">Histórico técnico</a>
         <a href="{{ url_for('observaciones.nueva', instalacion_id=instalacion.id) }}" class="btn btn-outline-warning">+ Observación</a>
         <a href="{{ url_for('equipos.nuevo', instalacion_id=instalacion.id) }}" class="btn btn-outline-info">+ Equipo</a>
+        <a href="{{ url_for('salas.listar', instalacion_id=instalacion.id) }}" class="btn btn-outline-info">Salas de bombas</a>
         <a href="{{ url_for('contratos.nuevo', instalacion_id=instalacion.id) }}" class="btn btn-outline-primary">+ Contrato</a>
         <a href="{{ url_for('visitas.nueva', instalacion_id=instalacion.id) }}" class="btn btn-primary">+ Visita manual</a>
     </div>

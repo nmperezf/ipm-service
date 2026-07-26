@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Salas de bombas - {{ instalacion.nombre }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}">&larr; {{ instalacion.nombre }}</a></p>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="mb-0">Salas de bombas <small class="text-muted fs-6">{{ instalacion.nombre }}</small></h1>
+    {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+    <a href="{{ url_for('salas.nueva', instalacion_id=instalacion.id) }}" class="btn btn-primary">+ Nueva sala</a>
+    {% endif %}
+</div>
+
+<div class="list-group">
+    {% for sala in salas %}
+    <a href="{{ url_for('salas.detalle', sala_id=sala.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+        <span>
+            {{ sala.nombre }}
+            {% if sala.ubicacion %}<small class="text-muted">{{ sala.ubicacion }}</small>{% endif %}
+        </span>
+        <span class="badge bg-secondary">{{ sala.bombas|length }} bomba(s)</span>
+    </a>
+    {% else %}
+    <p class="text-muted">Esta instalación todavía no tiene salas de bombas cargadas.</p>
+    {% endfor %}
+</div>
+{% endblock %}

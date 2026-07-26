@@ -1,0 +1,192 @@
+"""Generación de PDF del ensayo de curva de caudal (NFPA 25): tabla de la
+curva de fábrica, tabla del ensayo, gráfico superpuesto y el resultado de
+la validación de los 3 criterios."""
+
+import io
+
+import matplotlib
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.units import cm
+from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+from app.utils import calcular_presion_ajustada, validar_nfpa25
+
+AZUL = colors.HexColor("#1A2233")
+GRIS = colors.HexColor("#5B6673")
+BORDE = colors.HexColor("#D9DEE3")
+VERDE = colors.HexColor("#1F8A54")
+ROJO = colors.HexColor("#E2131D")
+VERDE_SUAVE = colors.HexColor("#E5F4EC")
+ROJO_SUAVE = colors.HexColor("#FBEAE7")
+
+
+def _grafico_curvas(caudales, presiones_fabrica, presiones_ensayo_ajustadas):
+    fig, ax = plt.subplots(figsize=(6.4, 3.6), dpi=150)
+    ax.plot(caudales, presiones_fabrica, marker="o", color="#1A2233", linewidth=2, label="Curva de fábrica")
+    ax.plot(
+        caudales, presiones_ensayo_ajustadas, marker="o", color="#E2131D", linewidth=2, label="Ensayo (ajustado a RPM nominal)"
+    )
+    ax.set_xlabel("Caudal (%)")
+    ax.set_ylabel("Presión neta (PSI)")
+    ax.set_xticks(caudales)
+    ax.grid(True, linestyle="--", alpha=0.4)
+    ax.legend(loc="upper right", fontsize=8)
+    fig.tight_layout()
+
+    buffer = io.BytesIO()
+    fig.savefig(buffer, format="png")
+    plt.close(fig)
+    buffer.seek(0)
+    return buffer
+
+
+def generar_pdf_ensayo(ensayo):
+    """ensayo: EnsayoCaudal (con equipo y equipo.curva_fabrica ya cargados).
+    Devuelve los bytes del PDF."""
+    equipo = ensayo.equipo
+    curva_fabrica = equipo.curva_fabrica
+    instalacion = equipo.instalacion
+    empresa = instalacion.cliente.empresa
+
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=A4, topMargin=1.5 * cm, bottomMargin=1.5 * cm, leftMargin=1.5 * cm, rightMargin=1.5 * cm
+    )
+
+    styles = getSampleStyleSheet()
+    titulo = ParagraphStyle("Titulo", parent=styles["Title"], textColor=AZUL, fontSize=17, spaceAfter=2)
+    subtitulo = ParagraphStyle("Subtitulo", parent=styles["Normal"], textColor=GRIS, fontSize=10)
+    h2 = ParagraphStyle("H2", parent=styles["Heading2"], textColor=AZUL, fontSize=12, spaceBefore=14, spaceAfter=6)
+
+    elementos = []
+    elementos.append(Paragraph(empresa.nombre if empresa else "IPM Service", subtitulo))
+    elementos.append(Paragraph("Ensayo de curva de caudal — NFPA 25", titulo))
+    elementos.append(
+        Paragraph(
+            f"{instalacion.cliente.nombre} &middot; {instalacion.nombre} &middot; "
+            f"Bomba: {equipo.nombre}"
+            + (f" &middot; Modelo {equipo.modelo}" if equipo.modelo else "")
+            + (f" &middot; N&deg; serie {equipo.serie}" if equipo.serie else ""),
+            subtitulo,
+        )
+    )
+    elementos.append(Paragraph(f"Fecha de ensayo: {ensayo.fecha_ensayo.strftime('%d/%m/%Y')}", subtitulo))
+    elementos.append(Spacer(1, 0.4 * cm))
+
+    estilo_tabla_base = [
+        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F4F6F8")),
+        ("TEXTCOLOR", (0, 0), (-1, 0), AZUL),
+        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+        ("FONTSIZE", (0, 0), (-1, -1), 9),
+        ("GRID", (0, 0), (-1, -1), 0.4, BORDE),
+        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+        ("ALIGN", (1, 0), (-1, -1), "CENTER"),
+    ]
+
+    caudales = [0, 50, 100, 150]
+
+    # ---- Curva de fábrica ----
+    elementos.append(Paragraph("Curva de fábrica", h2))
+    if curva_fabrica:
+        _, presiones_fabrica = curva_fabrica.puntos()
+        filas_fabrica = [["Caudal (%)", "0%", "50%", "100%", "150%"], ["RPM"] + [curva_fabrica.rpm_nominal] * 4]
+        filas_fabrica.append(["Presión neta (PSI)"] + presiones_fabrica)
+        tabla_fabrica = Table(filas_fabrica, colWidths=[3.5 * cm] + [3.2 * cm] * 4)
+        tabla_fabrica.setStyle(TableStyle(estilo_tabla_base))
+        elementos.append(tabla_fabrica)
+    else:
+        presiones_fabrica = None
+        elementos.append(Paragraph("Este equipo todavía no tiene curva de fábrica cargada.", styles["Normal"]))
+
+    # ---- Ensayo ----
+    elementos.append(Paragraph("Ensayo", h2))
+    rpm = ensayo.puntos_rpm()
+    netas = ensayo.puntos_netos()
+    descargas = [
+        ensayo.presion_descarga_punto_0,
+        ensayo.presion_descarga_punto_50,
+        ensayo.presion_descarga_punto_100,
+        ensayo.presion_descarga_punto_150,
+    ]
+    succiones = [
+        ensayo.presion_succion_punto_0,
+        ensayo.presion_succion_punto_50,
+        ensayo.presion_succion_punto_100,
+        ensayo.presion_succion_punto_150,
+    ]
+
+    if curva_fabrica:
+        ajustadas = ensayo.puntos_ajustados(curva_fabrica.rpm_nominal)
+        variaciones = [
+            round((aj - fab) / fab * 100, 1) if fab else None for aj, fab in zip(ajustadas, presiones_fabrica)
+        ]
+    else:
+        ajustadas = [calcular_presion_ajustada(n, r, r) for n, r in zip(netas, rpm)]
+        variaciones = [None] * 4
+
+    filas_ensayo = [
+        ["Caudal (%)", "0%", "50%", "100%", "150%"],
+        ["RPM ensayada"] + rpm,
+        ["Presión descarga (PSI)"] + descargas,
+        ["Presión succión (PSI)"] + succiones,
+        ["Presión neta (PSI)"] + [round(n, 1) for n in netas],
+        ["Presión neta ajustada (PSI)"] + ajustadas,
+        ["Variación vs fábrica"] + [f"{v:+.1f}%" if v is not None else "-" for v in variaciones],
+    ]
+    tabla_ensayo = Table(filas_ensayo, colWidths=[4 * cm] + [2.85 * cm] * 4)
+    tabla_ensayo.setStyle(TableStyle(estilo_tabla_base))
+    elementos.append(tabla_ensayo)
+    elementos.append(Spacer(1, 0.4 * cm))
+
+    # ---- Gráfico ----
+    if curva_fabrica:
+        grafico_buffer = _grafico_curvas(caudales, presiones_fabrica, ajustadas)
+        elementos.append(Image(grafico_buffer, width=15 * cm, height=8.4 * cm))
+
+    # ---- Validación NFPA 25 ----
+    elementos.append(Paragraph("Validación NFPA 25", h2))
+    validacion = ensayo.validacion_nfpa25()
+    if validacion:
+        filas_validacion = [["Criterio", "Valor del ensayo", "Límite", "Resultado"]]
+        for criterio in validacion.values():
+            filas_validacion.append(
+                [
+                    criterio["descripcion"],
+                    f"{criterio['valor_ensayo']:.1f}",
+                    f"{criterio['limite']:.1f}",
+                    "APRUEBA" if criterio["paso"] else "NO APRUEBA",
+                ]
+            )
+        tabla_validacion = Table(filas_validacion, colWidths=[7 * cm] + [3 * cm] * 3)
+        estilo_validacion = list(estilo_tabla_base)
+        for i, criterio in enumerate(validacion.values(), start=1):
+            color_fondo = VERDE_SUAVE if criterio["paso"] else ROJO_SUAVE
+            color_texto = VERDE if criterio["paso"] else ROJO
+            estilo_validacion.append(("BACKGROUND", (3, i), (3, i), color_fondo))
+            estilo_validacion.append(("TEXTCOLOR", (3, i), (3, i), color_texto))
+            estilo_validacion.append(("FONTNAME", (3, i), (3, i), "Helvetica-Bold"))
+        tabla_validacion.setStyle(TableStyle(estilo_validacion))
+        elementos.append(tabla_validacion)
+
+        aprobado = all(c["paso"] for c in validacion.values())
+        elementos.append(Spacer(1, 0.6 * cm))
+        estilo_resultado = ParagraphStyle(
+            "Resultado",
+            parent=styles["Title"],
+            fontSize=20,
+            alignment=1,
+            textColor=VERDE if aprobado else ROJO,
+        )
+        elementos.append(Paragraph("RESULTADO: ✓ APROBADO" if aprobado else "RESULTADO: ✗ RECHAZADO", estilo_resultado))
+    else:
+        elementos.append(
+            Paragraph("No se puede validar contra NFPA 25 sin una curva de fábrica cargada.", styles["Normal"])
+        )
+
+    doc.build(elementos)
+    return buffer.getvalue()

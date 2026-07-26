@@ -37,6 +37,44 @@
             {% endfor %}
         </select>
     </div>
+
+    <div id="bomba-wrapper" class="card mb-3">
+        <div class="card-body">
+            <h6 class="text-muted">Datos de placa (para curva de caudal / NFPA 25)</h6>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Sala de bombas (opcional)</label>
+                    <select name="sala_id" class="form-select">
+                        <option value="">-- Sin asignar --</option>
+                        {% for s in salas %}
+                        <option value="{{ s.id }}" {% if equipo and equipo.sala_id == s.id %}selected{% endif %}>{{ s.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Modelo</label>
+                    <input type="text" name="modelo" class="form-control" value="{{ equipo.modelo if equipo else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">N° de serie</label>
+                    <input type="text" name="serie" class="form-control" value="{{ equipo.serie if equipo else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Caudal nominal (GPM)</label>
+                    <input type="number" step="any" name="caudal_nominal" class="form-control" value="{{ equipo.caudal_nominal if equipo else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">RPM nominal</label>
+                    <input type="number" name="rpm_nominal" class="form-control" value="{{ equipo.rpm_nominal if equipo else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Año de fabricación</label>
+                    <input type="number" name="anio_fabricacion" class="form-control" value="{{ equipo.anio_fabricacion if equipo else '' }}">
+                </div>
+            </div>
+        </div>
+    </div>
+
     {% if equipo %}
     <div class="form-check mb-3">
         <input type="checkbox" name="activo" class="form-check-input" id="activo" {% if equipo.activo %}checked{% endif %}>
@@ -59,6 +97,7 @@
 function toggleManifold() {
     const tipo = document.getElementById('tipo').value;
     document.getElementById('manifold-wrapper').style.display = (tipo === 'ECA') ? 'block' : 'none';
+    document.getElementById('bomba-wrapper').style.display = (tipo === 'Bomba') ? 'block' : 'none';
 }
 document.addEventListener('DOMContentLoaded', toggleManifold);
 </script>

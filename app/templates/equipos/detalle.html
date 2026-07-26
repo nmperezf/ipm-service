@@ -15,6 +15,59 @@
     {% if equipo.manifold %} &middot; Depende de: {{ equipo.manifold.nombre }}{% endif %}
 </p>
 
+{% if equipo.tipo == 'Bomba' %}
+<h4 class="mt-4">Curva de caudal</h4>
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="row g-2 mb-3 small text-muted">
+            <div class="col-auto">Modelo: <strong class="text-body">{{ equipo.modelo or '-' }}</strong></div>
+            <div class="col-auto">N° serie: <strong class="text-body">{{ equipo.serie or '-' }}</strong></div>
+            <div class="col-auto">Caudal nominal: <strong class="text-body">{{ equipo.caudal_nominal if equipo.caudal_nominal else '-' }} GPM</strong></div>
+            <div class="col-auto">RPM nominal: <strong class="text-body">{{ equipo.rpm_nominal or '-' }}</strong></div>
+            <div class="col-auto">Año fabricación: <strong class="text-body">{{ equipo.anio_fabricacion or '-' }}</strong></div>
+            {% if equipo.sala %}<div class="col-auto">Sala: <strong class="text-body"><a href="{{ url_for('salas.detalle', sala_id=equipo.sala_id) }}">{{ equipo.sala.nombre }}</a></strong></div>{% endif %}
+        </div>
+
+        <div class="mb-3">
+            {% if current_user.rol in ('Administrador', 'Jefe') %}
+            <a href="{{ url_for('curvas.curva_fabrica', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-secondary">
+                {{ 'Editar' if equipo.curva_fabrica else 'Cargar' }} curva de fábrica
+            </a>
+            {% endif %}
+            {% if equipo.curva_fabrica %}
+            <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-primary">+ Nuevo ensayo</a>
+            {% endif %}
+            <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-dark">Ver todos los ensayos</a>
+        </div>
+
+        {% if not equipo.curva_fabrica %}
+        <p class="text-muted small mb-0">Todavía no tiene curva de fábrica cargada.</p>
+        {% elif not ultimos_ensayos %}
+        <p class="text-muted small mb-0">Todavía no tiene ensayos de curva de caudal cargados.</p>
+        {% else %}
+        <div class="table-responsive">
+        <table class="table table-sm mb-0">
+            <thead><tr><th>Fecha</th><th>Presión @ 100%</th><th>Resultado</th></tr></thead>
+            <tbody>
+                {% for ensayo in ultimos_ensayos %}
+                {% set resultado = ensayo.resultado_nfpa25() %}
+                <tr>
+                    <td><a href="{{ url_for('curvas.ensayo_detalle', equipo_id=equipo.id, ensayo_id=ensayo.id) }}">{{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}</a></td>
+                    <td>{{ ensayo.presion_neta_punto_100 }} PSI</td>
+                    <td>
+                        {% if resultado %}<span class="badge badge-Cumplido">Aprobado</span>
+                        {% else %}<span class="badge badge-Vencido">Rechazado</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
 {% if deficiencias_abiertas %}
 <h4 class="mt-4">Deficiencias abiertas</h4>
 <div class="table-responsive">

@@ -724,6 +724,34 @@ def categorias_equipo_agrupadas():
 
 
 # ---------------------------------------------------------------------------
+# Sala de bombas — agrupa las Bomba (Equipo con tipo='Bomba') de una
+# instalación para la ficha consolidada (curvas de caudal, tendencias).
+# ---------------------------------------------------------------------------
+
+
+class SalaBombas(db.Model):
+    """Agrupación física de bombas dentro de una instalación (ej. "Sala de
+    bombas - subsuelo"). Cuelga de Instalacion, no de Cliente directamente,
+    igual que Contrato/Equipo/Visita — un cliente con varios edificios puede
+    tener una sala de bombas por edificio."""
+
+    __tablename__ = "salas_bombas"
+
+    id = db.Column(db.Integer, primary_key=True)
+    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False)
+    nombre = db.Column(db.String(150), nullable=False)
+    descripcion = db.Column(db.Text)
+    ubicacion = db.Column(db.String(250))
+    fecha_ultima_inspeccion = db.Column(db.Date, nullable=True)
+    creado_en = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    instalacion = db.relationship("Instalacion", backref=db.backref("salas_bombas", cascade="all, delete-orphan"))
+
+    def __repr__(self):
+        return f"<SalaBombas {self.nombre}>"
+
+
+# ---------------------------------------------------------------------------
 # Equipos (ECA, manifolds, bombas) — registro físico por instalación
 # ---------------------------------------------------------------------------
 
@@ -745,12 +773,146 @@ class Equipo(db.Model):
     manifold_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True)
     activo = db.Column(db.Boolean, default=True, nullable=False)
 
+    # Datos de placa, solo aplican cuando tipo == "Bomba" (ver módulo de
+    # curva de caudal). Quedan nullable porque no tienen sentido para el
+    # resto de los tipos de equipo.
+    sala_id = db.Column(db.Integer, db.ForeignKey("salas_bombas.id"), nullable=True)
+    modelo = db.Column(db.String(150), nullable=True)
+    serie = db.Column(db.String(150), nullable=True)
+    caudal_nominal = db.Column(db.Float, nullable=True)  # GPM
+    rpm_nominal = db.Column(db.Integer, nullable=True)
+    anio_fabricacion = db.Column(db.Integer, nullable=True)
+
     equipos_hijos = db.relationship(
         "Equipo", backref=db.backref("manifold", remote_side=[id]), lazy=True
     )
+    sala = db.relationship("SalaBombas", backref="bombas")
 
     def __repr__(self):
         return f"<Equipo {self.tipo}: {self.nombre}>"
+
+
+# ---------------------------------------------------------------------------
+# Curva de caudal — ensayo de bombas contra incendio según NFPA 25
+# ---------------------------------------------------------------------------
+
+
+class CurvaFabrica(db.Model):
+    """Curva de referencia del fabricante para una bomba puntual (Equipo con
+    tipo='Bomba'): presión neta a 0/50/100/150% del caudal nominal, todas
+    medidas a la misma RPM (rpm_nominal). Es 1 a 1 con el equipo — cargarla
+    de nuevo sobrescribe la anterior, no se versiona."""
+
+    __tablename__ = "curvas_fabrica"
+
+    id = db.Column(db.Integer, primary_key=True)
+    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), unique=True, nullable=False)
+    rpm_nominal = db.Column(db.Integer, nullable=False)
+    punto_0_presion = db.Column(db.Float, nullable=False)
+    punto_50_presion = db.Column(db.Float, nullable=False)
+    punto_100_presion = db.Column(db.Float, nullable=False)
+    punto_150_presion = db.Column(db.Float, nullable=False)
+    fecha_ingreso = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    equipo = db.relationship(
+        "Equipo", backref=db.backref("curva_fabrica", uselist=False, cascade="all, delete-orphan")
+    )
+
+    def puntos(self):
+        """([0, 50, 100, 150], [presiones netas]) — mismo orden que
+        EnsayoCaudal.puntos_netos(), para poder comparar índice a índice."""
+        return (
+            [0, 50, 100, 150],
+            [self.punto_0_presion, self.punto_50_presion, self.punto_100_presion, self.punto_150_presion],
+        )
+
+    def __repr__(self):
+        return f"<CurvaFabrica equipo={self.equipo_id}>"
+
+
+class EnsayoCaudal(db.Model):
+    """Un ensayo de caudal puntual (una fecha) de una bomba: 4 puntos
+    (0/50/100/150% del caudal nominal), cada uno con su propia RPM medida en
+    campo (puede no coincidir con la RPM de la curva de fábrica — por eso se
+    corrige con la ley de afinidad antes de comparar, ver
+    utils.calcular_presion_ajustada). Se guarda un registro por año/ensayo,
+    para armar el histórico de tendencia de la bomba."""
+
+    __tablename__ = "ensayos_caudal"
+    __table_args__ = (db.UniqueConstraint("equipo_id", "fecha_ensayo", name="uq_ensayo_equipo_fecha"),)
+
+    id = db.Column(db.Integer, primary_key=True)
+    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=False)
+    fecha_ensayo = db.Column(db.Date, nullable=False)
+
+    rpm_punto_0 = db.Column(db.Integer, nullable=False)
+    presion_descarga_punto_0 = db.Column(db.Float, nullable=False)
+    presion_succion_punto_0 = db.Column(db.Float, nullable=False)
+    presion_neta_punto_0 = db.Column(db.Float, nullable=False)  # descarga - succión
+
+    rpm_punto_50 = db.Column(db.Integer, nullable=False)
+    presion_descarga_punto_50 = db.Column(db.Float, nullable=False)
+    presion_succion_punto_50 = db.Column(db.Float, nullable=False)
+    presion_neta_punto_50 = db.Column(db.Float, nullable=False)
+
+    rpm_punto_100 = db.Column(db.Integer, nullable=False)
+    presion_descarga_punto_100 = db.Column(db.Float, nullable=False)
+    presion_succion_punto_100 = db.Column(db.Float, nullable=False)
+    presion_neta_punto_100 = db.Column(db.Float, nullable=False)
+
+    rpm_punto_150 = db.Column(db.Integer, nullable=False)
+    presion_descarga_punto_150 = db.Column(db.Float, nullable=False)
+    presion_succion_punto_150 = db.Column(db.Float, nullable=False)
+    presion_neta_punto_150 = db.Column(db.Float, nullable=False)
+
+    creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    equipo = db.relationship(
+        "Equipo",
+        backref=db.backref(
+            "ensayos_caudal", lazy=True, cascade="all, delete-orphan", order_by="EnsayoCaudal.fecha_ensayo"
+        ),
+    )
+    creado_por = db.relationship("Usuario")
+
+    def puntos_netos(self):
+        return [self.presion_neta_punto_0, self.presion_neta_punto_50, self.presion_neta_punto_100, self.presion_neta_punto_150]
+
+    def puntos_rpm(self):
+        return [self.rpm_punto_0, self.rpm_punto_50, self.rpm_punto_100, self.rpm_punto_150]
+
+    def puntos_ajustados(self, rpm_nominal_fabrica):
+        """Presión neta de cada punto, corregida a la RPM de la curva de
+        fábrica — lo que realmente se compara contra ella."""
+        from app.utils import calcular_presion_ajustada
+
+        return [
+            calcular_presion_ajustada(neta, rpm, rpm_nominal_fabrica)
+            for neta, rpm in zip(self.puntos_netos(), self.puntos_rpm())
+        ]
+
+    def validacion_nfpa25(self):
+        """dict de validar_nfpa25(), o None si el equipo todavía no tiene
+        curva de fábrica cargada (no hay contra qué comparar)."""
+        if not self.equipo.curva_fabrica:
+            return None
+        from app.utils import validar_nfpa25
+
+        ajustadas = self.puntos_ajustados(self.equipo.curva_fabrica.rpm_nominal)
+        _, presiones_fabrica = self.equipo.curva_fabrica.puntos()
+        return validar_nfpa25(ajustadas, presiones_fabrica)
+
+    def resultado_nfpa25(self):
+        """True (aprobado) / False (rechazado) / None (sin curva de fábrica
+        para comparar)."""
+        validacion = self.validacion_nfpa25()
+        if validacion is None:
+            return None
+        return all(criterio["paso"] for criterio in validacion.values())
+
+    def __repr__(self):
+        return f"<EnsayoCaudal equipo={self.equipo_id} {self.fecha_ensayo}>"
 
 
 # ---------------------------------------------------------------------------

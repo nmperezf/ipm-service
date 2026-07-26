@@ -127,6 +127,221 @@ def slugify_campo(texto):
     return texto or "campo"
 
 
+# ---------------------------------------------------------------------------
+# Curva de caudal (NFPA 25) — cálculos compartidos entre las rutas de
+# equipos/curvas y la ficha de sala de bombas.
+# ---------------------------------------------------------------------------
+
+
+def calcular_presion_ajustada(presion_neta, rpm_ensayada, rpm_nominal_fabrica):
+    """Corrige la presión neta medida en campo a la RPM nominal de la curva
+    de fábrica, por la ley de afinidad de bombas centrífugas (P ∝ RPM²) —
+    así se puede comparar un ensayo hecho a otra velocidad. Si la RPM
+    ensayada coincide con la de fábrica, es el caso trivial: el ajuste no
+    cambia nada."""
+    if not rpm_ensayada:
+        return round(presion_neta, 1)
+    factor = (rpm_nominal_fabrica / rpm_ensayada) ** 2
+    return round(presion_neta * factor, 1)
+
+
+def validar_nfpa25(presiones_netas_ajustadas, presiones_netas_fabrica):
+    """Los 3 criterios de aceptación de NFPA 25 para un ensayo de curva de
+    caudal, sobre presiones netas ya corregidas a RPM nominal (ver
+    calcular_presion_ajustada). Ambas listas van en el orden
+    [0%, 50%, 100%, 150%]."""
+    p0, _p50, p100, p150 = presiones_netas_ajustadas
+    _f0, _f50, f100, _f150 = presiones_netas_fabrica
+
+    limite_1 = round(1.4 * p100, 1)
+    limite_2 = round(0.95 * f100, 1)
+    limite_3 = round(0.65 * p100, 1)
+
+    return {
+        "criterio_1": {
+            "paso": p0 <= limite_1,
+            "descripcion": "P@0% ≤ 1.4 × P@100%",
+            "valor_ensayo": p0,
+            "limite": limite_1,
+        },
+        "criterio_2": {
+            "paso": p100 >= limite_2,
+            "descripcion": "P@100% ≥ 0.95 × P_fábrica@100%",
+            "valor_ensayo": p100,
+            "limite": limite_2,
+        },
+        "criterio_3": {
+            "paso": p150 >= limite_3,
+            "descripcion": "P@150% ≥ 0.65 × P@100%",
+            "valor_ensayo": p150,
+            "limite": limite_3,
+        },
+    }
+
+
+def _ultimo_ensayo(equipo):
+    if not equipo.ensayos_caudal:
+        return None
+    return max(equipo.ensayos_caudal, key=lambda e: e.fecha_ensayo)
+
+
+def obtener_resumen_sala(sala_id):
+    """Tarjetas superiores de la ficha de sala: cuenta cada bomba una sola
+    vez, según el resultado NFPA 25 de su ensayo más reciente."""
+    from app.models import SalaBombas
+
+    sala = SalaBombas.query.get(sala_id)
+    if not sala:
+        return {
+            "total_equipos": 0,
+            "equipos_aprobados": 0,
+            "equipos_rechazados": 0,
+            "deficiencias_abiertas": 0,
+            "fecha_ultima_inspeccion": None,
+        }
+
+    equipos = sala.bombas
+    aprobados = 0
+    rechazados = 0
+    for equipo in equipos:
+        ultimo = _ultimo_ensayo(equipo)
+        if ultimo is None:
+            continue
+        resultado = ultimo.resultado_nfpa25()
+        if resultado is True:
+            aprobados += 1
+        elif resultado is False:
+            rechazados += 1
+
+    deficiencias_abiertas = sum(
+        1 for equipo in equipos for obs in equipo.deficiencias if not obs.resuelto
+    )
+
+    return {
+        "total_equipos": len(equipos),
+        "equipos_aprobados": aprobados,
+        "equipos_rechazados": rechazados,
+        "deficiencias_abiertas": deficiencias_abiertas,
+        "fecha_ultima_inspeccion": sala.fecha_ultima_inspeccion,
+    }
+
+
+def obtener_ultimos_ensayos_por_bomba(sala_id, limit=3):
+    """Para la tabla de histórico de cada bomba en la ficha de sala."""
+    from app.models import SalaBombas
+
+    sala = SalaBombas.query.get(sala_id)
+    if not sala:
+        return []
+
+    resultado = []
+    for equipo in sala.bombas:
+        ensayos_ordenados = sorted(equipo.ensayos_caudal, key=lambda e: e.fecha_ensayo, reverse=True)[:limit]
+        lista_ensayos = []
+        for ensayo in ensayos_ordenados:
+            resultado_nfpa = ensayo.resultado_nfpa25()
+            var_pct = None
+            if equipo.curva_fabrica and equipo.curva_fabrica.punto_100_presion:
+                ajustada_100 = ensayo.puntos_ajustados(equipo.curva_fabrica.rpm_nominal)[2]
+                var_pct = round(
+                    (ajustada_100 - equipo.curva_fabrica.punto_100_presion)
+                    / equipo.curva_fabrica.punto_100_presion
+                    * 100,
+                    1,
+                )
+            if resultado_nfpa is True:
+                estado = "Aprobado"
+            elif resultado_nfpa is False:
+                estado = "Rechazado"
+            else:
+                estado = "Sin curva de fábrica"
+            lista_ensayos.append(
+                {
+                    "fecha": ensayo.fecha_ensayo,
+                    "presion_100": ensayo.presion_neta_punto_100,
+                    "var_pct": var_pct,
+                    "estado": estado,
+                    "ensayo_id": ensayo.id,
+                }
+            )
+        resultado.append({"bomba_id": equipo.id, "bomba_nombre": equipo.nombre, "ensayos": lista_ensayos})
+    return resultado
+
+
+def obtener_datos_grafico_evolucion(sala_id):
+    """Serie por bomba de la presión neta @100% por año (el último ensayo
+    de cada año, si hubo más de uno), para el gráfico de tendencia."""
+    from app.models import SalaBombas
+
+    sala = SalaBombas.query.get(sala_id)
+    if not sala:
+        return {"bombas": [], "años": [], "datos": {}}
+
+    años = set()
+    por_bomba = {}
+    for equipo in sala.bombas:
+        por_año = {}
+        for ensayo in equipo.ensayos_caudal:
+            año = ensayo.fecha_ensayo.year
+            if año not in por_año or ensayo.fecha_ensayo > por_año[año].fecha_ensayo:
+                por_año[año] = ensayo
+        if not por_año:
+            continue
+        por_bomba[equipo.nombre] = por_año
+        años.update(por_año.keys())
+
+    años_ordenados = sorted(años)
+    datos = {
+        nombre: [por_año[a].presion_neta_punto_100 if a in por_año else None for a in años_ordenados]
+        for nombre, por_año in por_bomba.items()
+    }
+    return {"bombas": list(por_bomba.keys()), "años": años_ordenados, "datos": datos}
+
+
+def obtener_acciones_recomendadas(sala_id):
+    """Heurística simple para la sección "Acciones recomendadas" de la
+    ficha de sala: no hay un modelo de "acción" separado, se infiere de los
+    ensayos/curvas ya cargados (rechazado -> urgente, sin ensayo este año
+    -> programar, sin curva de fábrica -> revisión)."""
+    from app.models import SalaBombas
+
+    sala = SalaBombas.query.get(sala_id)
+    if not sala:
+        return {"urgentes": [], "programadas": [], "en_revision": []}
+
+    hoy = date.today()
+    urgentes, programadas, en_revision = [], [], []
+    for equipo in sala.bombas:
+        if not equipo.curva_fabrica:
+            en_revision.append(
+                {
+                    "equipo": equipo.nombre,
+                    "motivo": "Sin curva de fábrica cargada — no se puede validar contra NFPA 25.",
+                    "plazo": "Antes del próximo ensayo",
+                }
+            )
+            continue
+
+        ultimo = _ultimo_ensayo(equipo)
+        if ultimo and ultimo.resultado_nfpa25() is False:
+            urgentes.append(
+                {
+                    "equipo": equipo.nombre,
+                    "motivo": f"El ensayo del {ultimo.fecha_ensayo.strftime('%d/%m/%Y')} no aprobó NFPA 25.",
+                    "plazo": "Inmediato",
+                }
+            )
+        if not ultimo or ultimo.fecha_ensayo.year < hoy.year:
+            programadas.append(
+                {
+                    "equipo": equipo.nombre,
+                    "motivo": "Sin ensayo de caudal registrado este año.",
+                    "plazo": f"Antes de fin de {hoy.year}",
+                }
+            )
+    return {"urgentes": urgentes, "programadas": programadas, "en_revision": en_revision}
+
+
 def armar_campos_desde_formulario(form):
     """Reconstruye la lista de campos (schema_json) a partir de los inputs
     repetidos del constructor dinámico."""

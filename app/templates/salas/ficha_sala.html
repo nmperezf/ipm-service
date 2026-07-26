@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}{{ sala.nombre }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('salas.listar', instalacion_id=sala.instalacion_id) }}">&larr; Salas de bombas de {{ sala.instalacion.nombre }}</a></p>
+
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h1 class="mb-0">{{ sala.nombre }}</h1>
+    {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+    <a href="{{ url_for('salas.editar', sala_id=sala.id) }}" class="btn btn-outline-secondary">Editar sala</a>
+    {% endif %}
+</div>
+<p class="text-muted">
+    {{ sala.instalacion.cliente.nombre }} &middot; {{ sala.instalacion.nombre }}
+    {% if sala.ubicacion %} &middot; {{ sala.ubicacion }}{% endif %}
+    &middot; Última inspección: {{ resumen.fecha_ultima_inspeccion.strftime('%d/%m/%Y') if resumen.fecha_ultima_inspeccion else 'sin registrar' }}
+</p>
+{% if sala.descripcion %}<p class="text-muted">{{ sala.descripcion }}</p>{% endif %}
+
+<div class="row g-2 mb-4">
+    <div class="col-md">
+        <div class="card card-indicador"><div class="valor">{{ resumen.total_equipos }}</div><div class="text-muted small">Total equipos</div></div>
+    </div>
+    <div class="col-md">
+        <div class="card border-secondary card-indicador"><div class="valor text-success">{{ resumen.equipos_aprobados }}</div><div class="text-muted small">Equipos aprobados</div></div>
+    </div>
+    <div class="col-md">
+        <div class="card border-danger card-indicador"><div class="valor text-danger">{{ resumen.equipos_rechazados }}</div><div class="text-muted small">Equipos rechazados</div></div>
+    </div>
+    <div class="col-md">
+        <div class="card border-warning card-indicador"><div class="valor text-warning">{{ resumen.deficiencias_abiertas }}</div><div class="text-muted small">Deficiencias abiertas</div></div>
+    </div>
+</div>
+
+<h4 class="mt-4">Equipos</h4>
+{% if not sala.bombas %}
+<p class="text-muted">Esta sala todavía no tiene bombas asignadas. Asignalas desde la ficha de cada equipo (tipo "Bomba") en esta instalación.</p>
+{% endif %}
+{% for equipo in sala.bombas %}
+{% set ensayos = ensayos_por_bomba.get(equipo.id, []) %}
+{% set ultimo = ensayos[0] if ensayos else none %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start">
+            <div>
+                <h5 class="mb-0">
+                    <a href="{{ url_for('equipos.detalle', equipo_id=equipo.id) }}">{{ equipo.nombre }}</a>
+                    {% if equipo.modelo %}<small class="text-muted">{{ equipo.modelo }}</small>{% endif %}
+                    {% if equipo.serie %}<small class="text-muted">&middot; N° serie {{ equipo.serie }}</small>{% endif %}
+                </h5>
+            </div>
+            {% if ultimo %}
+                {% if ultimo.estado == 'Aprobado' %}<span class="badge badge-Cumplido">APROBADO</span>
+                {% elif ultimo.estado == 'Rechazado' %}<span class="badge badge-Vencido">RECHAZADO</span>
+                {% else %}<span class="badge bg-secondary">{{ ultimo.estado|upper }}</span>{% endif %}
+            {% else %}
+            <span class="badge bg-secondary">SIN ENSAYOS</span>
+            {% endif %}
+        </div>
+
+        <div class="row g-2 mt-1 mb-3 small text-muted">
+            <div class="col-auto">Tipo: <strong class="text-body">Bomba</strong></div>
+            <div class="col-auto">Caudal nominal: <strong class="text-body">{{ equipo.caudal_nominal if equipo.caudal_nominal else '-' }} GPM</strong></div>
+            <div class="col-auto">RPM nominal: <strong class="text-body">{{ equipo.rpm_nominal or '-' }}</strong></div>
+            <div class="col-auto">Año fabricación: <strong class="text-body">{{ equipo.anio_fabricacion or '-' }}</strong></div>
+        </div>
+
+        {% if ultimo and ultimo.estado == 'Rechazado' %}
+        <div class="alert alert-danger py-2 small mb-3">Degradación crítica: el último ensayo no aprobó NFPA 25 — requiere revisión mecánica.</div>
+        {% endif %}
+
+        {% if ensayos %}
+        <div class="table-responsive">
+        <table class="table table-sm mb-2">
+            <thead><tr><th>Fecha</th><th>Presión @ 100%</th><th>Var. vs fábrica</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+                {% for e in ensayos %}
+                <tr>
+                    <td>{{ e.fecha.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ e.presion_100 }} PSI</td>
+                    <td>{{ '%+.1f%%'|format(e.var_pct) if e.var_pct is not none else '-' }}</td>
+                    <td>
+                        {% if e.estado == 'Aprobado' %}<span class="badge badge-Cumplido">Aprobado</span>
+                        {% elif e.estado == 'Rechazado' %}<span class="badge badge-Vencido">Rechazado</span>
+                        {% else %}<span class="badge bg-secondary">{{ e.estado }}</span>{% endif %}
+                    </td>
+                    <td><a href="{{ url_for('curvas.ensayo_pdf', equipo_id=equipo.id, ensayo_id=e.ensayo_id) }}" class="btn btn-sm btn-outline-dark" target="_blank">PDF</a></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p class="text-muted small mb-2">Todavía no tiene ensayos de curva de caudal cargados.</p>
+        {% endif %}
+        <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-secondary">Ver histórico completo</a>
+        {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') and equipo.curva_fabrica %}
+        <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-primary">+ Nuevo ensayo</a>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+
+{% if grafico.bombas %}
+<h4 class="mt-4">Tendencia de presión — últimos años</h4>
+<div class="card mb-4">
+    <div class="card-body">
+        <canvas id="grafico-evolucion" height="90"></canvas>
+    </div>
+</div>
+{% endif %}
+
+<h4 class="mt-4">Deficiencias abiertas</h4>
+<div class="row g-3 mb-3">
+    <div class="col-md-6">
+        <h6 class="text-danger">Críticas ({{ criticas|length }})</h6>
+        {% for obs in criticas %}
+        <div class="card border-danger mb-2"><div class="card-body py-2">
+            <strong>#{{ obs.id }}</strong> &middot; {{ obs.equipo.nombre if obs.equipo else '-' }} &middot; {{ obs.fecha_carga.strftime('%d/%m/%Y') }}
+            <p class="mb-0 small">{{ obs.descripcion }}</p>
+        </div></div>
+        {% else %}
+        <p class="text-muted small">Sin deficiencias críticas abiertas.</p>
+        {% endfor %}
+    </div>
+    <div class="col-md-6">
+        <h6 class="text-warning">No críticas ({{ no_criticas|length }})</h6>
+        {% for obs in no_criticas %}
+        <div class="card border-warning mb-2"><div class="card-body py-2">
+            <strong>#{{ obs.id }}</strong> &middot; {{ obs.equipo.nombre if obs.equipo else '-' }} &middot; {{ obs.fecha_carga.strftime('%d/%m/%Y') }}
+            <p class="mb-0 small">{{ obs.descripcion }}</p>
+        </div></div>
+        {% else %}
+        <p class="text-muted small">Sin deficiencias no críticas abiertas.</p>
+        {% endfor %}
+    </div>
+</div>
+
+<h4 class="mt-4">Acciones recomendadas</h4>
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <h6 class="text-danger">Urgentes</h6>
+        {% for accion in acciones.urgentes %}
+        <div class="card border-danger mb-2"><div class="card-body py-2">
+            <strong>{{ accion.equipo }}</strong>
+            <p class="mb-0 small">{{ accion.motivo }}</p>
+            <p class="mb-0 small text-muted">Plazo: {{ accion.plazo }}</p>
+        </div></div>
+        {% else %}
+        <p class="text-muted small">Sin acciones urgentes.</p>
+        {% endfor %}
+    </div>
+    <div class="col-md-4">
+        <h6 class="text-primary">Programadas</h6>
+        {% for accion in acciones.programadas %}
+        <div class="card border-secondary mb-2"><div class="card-body py-2">
+            <strong>{{ accion.equipo }}</strong>
+            <p class="mb-0 small">{{ accion.motivo }}</p>
+            <p class="mb-0 small text-muted">Plazo: {{ accion.plazo }}</p>
+        </div></div>
+        {% else %}
+        <p class="text-muted small">Sin acciones programadas.</p>
+        {% endfor %}
+    </div>
+    <div class="col-md-4">
+        <h6 class="text-muted">En revisión</h6>
+        {% for accion in acciones.en_revision %}
+        <div class="card border-secondary mb-2"><div class="card-body py-2">
+            <strong>{{ accion.equipo }}</strong>
+            <p class="mb-0 small">{{ accion.motivo }}</p>
+            <p class="mb-0 small text-muted">Plazo: {{ accion.plazo }}</p>
+        </div></div>
+        {% else %}
+        <p class="text-muted small">Sin acciones en revisión.</p>
+        {% endfor %}
+    </div>
+</div>
+
+{% if grafico.bombas %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+const datosGrafico = {{ grafico|tojson }};
+const colores = ['#1A2233', '#E2131D', '#2C6E8C', '#B5730A', '#1F8A54', '#6B32C9'];
+const datasets = datosGrafico.bombas.map(function (nombre, i) {
+    return {
+        label: nombre,
+        data: datosGrafico.datos[nombre],
+        borderColor: colores[i % colores.length],
+        backgroundColor: colores[i % colores.length],
+        spanGaps: true,
+        tension: 0.15,
+    };
+});
+new Chart(document.getElementById('grafico-evolucion'), {
+    type: 'line',
+    data: { labels: datosGrafico['años'], datasets: datasets },
+    options: {
+        scales: {
+            y: { title: { display: true, text: 'Presión neta @100% (PSI)' } },
+            x: { title: { display: true, text: 'Año' } },
+        },
+    },
+});
+</script>
+{% endif %}
+{% endblock %}
