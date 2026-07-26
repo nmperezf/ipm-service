@@ -4,7 +4,7 @@
 import { test, expect } from '@playwright/test';
 import { seedDatabase } from '../helpers';
 
-test.describe('Administrador - Crear OT y registrar repuestos', () => {
+test.describe('Administrador - Crear OT y registrar repuestos', { tag: '@unitarios' }, () => {
   test.beforeAll(async () => {
     seedDatabase();
   });

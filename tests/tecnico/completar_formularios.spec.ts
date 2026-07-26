@@ -4,7 +4,7 @@
 import { test, expect } from '@playwright/test';
 import { seedDatabase } from '../helpers';
 
-test.describe('Técnico - Completar formularios y subir fotos', () => {
+test.describe('Técnico - Completar formularios y subir fotos', { tag: '@unitarios' }, () => {
   test.beforeAll(async () => {
     seedDatabase();
   });

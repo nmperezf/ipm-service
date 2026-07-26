@@ -12,7 +12,7 @@ function monthInputValueOffset(months = 0) {
   return `${y}-${m}`;
 }
 
-test.describe('Administrador - CRUD Cliente → Instalación → Contrato → Servicio', () => {
+test.describe('Administrador - CRUD Cliente → Instalación → Contrato → Servicio', { tag: '@unitarios' }, () => {
   test.beforeAll(async () => {
     seedDatabase();
   });

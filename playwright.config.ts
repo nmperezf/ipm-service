@@ -22,7 +22,7 @@ export default defineConfig({
     command: 'python run.py',
     port: 5000,
     timeout: 120_000,
-    reuseExistingServer: false,
+    reuseExistingServer: true,
   },
   projects: [
     { name: 'chromium', use: { ...devices['Desktop Chrome'] } },

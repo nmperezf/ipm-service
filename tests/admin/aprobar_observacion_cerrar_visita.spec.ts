@@ -4,7 +4,7 @@
 import { test, expect } from '@playwright/test';
 import { seedDatabase } from '../helpers';
 
-test.describe('Administrador - Aprobar observación y cerrar visita', () => {
+test.describe('Administrador - Aprobar observación y cerrar visita', {tag: '@unitarios'}, () => {
   test.beforeAll(async () => {
     seedDatabase();
   });

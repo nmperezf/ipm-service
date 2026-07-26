@@ -4,7 +4,7 @@
 import { test, expect } from '@playwright/test';
 import { seedDatabase } from '../helpers';
 
-test.describe('Cliente - Histórico y PDF', () => {
+test.describe('Cliente - Histórico y PDF', { tag: '@unitarios' }, () => {
   test.beforeAll(async () => {
     seedDatabase();
   });

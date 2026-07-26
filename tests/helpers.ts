@@ -30,9 +30,9 @@ export function seedDatabase() {
       console.warn('Could not write seed marker file:', e);
     }
   } catch (err: any) {
-    // If marker exists, another process is seeding or seeding already done. Skip.
+    // If marker exists, another process is seeding or seeding already done. Skip silently.
     if (err && (err.code === 'EEXIST' || err.code === 'EACCES')) {
-      console.log('Seeding already in progress or completed; skipping.');
+      return;
     } else {
       console.warn('Unexpected error while attempting to create seed marker:', err);
     }

@@ -4,7 +4,7 @@
 import { test, expect } from '@playwright/test';
 import { seedDatabase } from '../helpers';
 
-test.describe('Inventario - Repuestos críticos', () => {
+test.describe('Inventario - Repuestos críticos', { tag: '@unitarios' }, () => {
   test.beforeAll(async () => {
     seedDatabase();
   });

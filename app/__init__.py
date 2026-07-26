@@ -1,3 +1,5 @@
+import logging
+
 from flask import Flask
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
@@ -9,6 +11,9 @@ login_manager = LoginManager()
 def create_app():
     app = Flask(__name__)
     app.config.from_object("app.config.Config")
+
+    # Silence request logging during tests
+    logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
     db.init_app(app)
     login_manager.init_app(app)
