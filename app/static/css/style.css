@@ -71,7 +71,7 @@ small, .small, .text-muted {
 /* ---- Navbar ------------------------------------------------------------ */
 
 .navbar.ipm-navbar {
-    background: var(--brand);
+    background: #000000;
     box-shadow: 0 1px 0 rgba(0,0,0,.08);
 }
 .ipm-navbar .navbar-brand {
@@ -83,12 +83,9 @@ small, .small, .text-muted {
     letter-spacing: -0.01em;
 }
 .ipm-navbar .brand-mark {
-    width: 12px;
-    height: 12px;
-    border-radius: 3px;
-    background: var(--accent);
+    height: 28px;
+    width: auto;
     display: inline-block;
-    transform: rotate(45deg);
 }
 .ipm-navbar .navbar-nav {
     flex-wrap: wrap;
