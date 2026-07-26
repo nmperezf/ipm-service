@@ -146,6 +146,13 @@ def nuevo(item_id, tipo_formulario_id):
     if tipo.por_equipo and not equipo:
         return redirect(url_for("formularios.elegir_equipo", item_id=item.id, tipo_formulario_id=tipo.id))
 
+    # Si ya había un formulario cargado para este item/tipo/equipo, lo
+    # actualiza en vez de duplicarlo (antes creaba uno nuevo cada vez que
+    # se volvía a guardar el mismo checklist).
+    formulario = Formulario.query.filter_by(
+        item_visita_id=item.id, tipo_formulario_id=tipo.id, equipo_id=equipo.id if equipo else None
+    ).first()
+
     if request.method == "POST":
         datos = {}
         for campo in tipo.campos():
@@ -153,21 +160,24 @@ def nuevo(item_id, tipo_formulario_id):
                 datos[campo["campo"]] = request.form.getlist(campo["campo"])
             else:
                 datos[campo["campo"]] = request.form.get(campo["campo"])
-        formulario = Formulario(
-            item_visita_id=item.id,
-            tipo_formulario_id=tipo.id,
-            equipo_id=equipo.id if equipo else None,
-        )
+        es_nuevo = formulario is None
+        if es_nuevo:
+            formulario = Formulario(
+                item_visita_id=item.id,
+                tipo_formulario_id=tipo.id,
+                equipo_id=equipo.id if equipo else None,
+            )
+            db.session.add(formulario)
         formulario.set_datos(datos)
-        db.session.add(formulario)
         db.session.commit()
         destino = f"'{tipo.nombre}'" + (f" para {equipo.nombre}" if equipo else "")
-        flash(f"Formulario {destino} agregado a '{item.servicio.nombre}'.", "success")
+        verbo = "agregado a" if es_nuevo else "actualizado en"
+        flash(f"Formulario {destino} {verbo} '{item.servicio.nombre}'.", "success")
         if tipo.por_equipo:
             return redirect(url_for("formularios.elegir_equipo", item_id=item.id, tipo_formulario_id=tipo.id))
         return redirect(url_for("visitas.detalle", visita_id=item.visita_id))
 
-    return render_template("visitas/formulario_form.html", item=item, tipo=tipo, equipo=equipo)
+    return render_template("visitas/formulario_form.html", item=item, tipo=tipo, equipo=equipo, formulario=formulario)
 
 
 @formularios_bp.route("/<int:formulario_id>")
@@ -176,3 +186,17 @@ def detalle(formulario_id):
     formulario = Formulario.query.get_or_404(formulario_id)
     verificar_acceso_cliente(formulario.item_visita.visita.instalacion.cliente)
     return render_template("visitas/formulario_detail.html", formulario=formulario)
+
+
+@formularios_bp.route("/<int:formulario_id>/eliminar", methods=["POST"])
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def eliminar(formulario_id):
+    formulario = Formulario.query.get_or_404(formulario_id)
+    verificar_escritura_cliente(formulario.item_visita.visita.instalacion.cliente)
+    verificar_visita_editable(formulario.item_visita.visita)
+    visita_id = formulario.item_visita.visita_id
+    tipo_nombre = formulario.tipo_formulario.nombre
+    db.session.delete(formulario)
+    db.session.commit()
+    flash(f"Formulario '{tipo_nombre}' eliminado.", "info")
+    return redirect(url_for("visitas.detalle", visita_id=visita_id))

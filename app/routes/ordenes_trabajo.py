@@ -183,6 +183,32 @@ def agregar_repuesto(ot_id):
     return redirect(url_for("ordenes.detalle", ot_id=ot.id))
 
 
+@ordenes_bp.route("/<int:ot_id>/eliminar", methods=["POST"])
+@rol_requerido("Administrador", "Jefe")
+def eliminar(ot_id):
+    """Solo se pueden eliminar OT sueltas (correctivas, sin visita
+    planificada detrás) — las que vienen de una visita se borran borrando
+    la visita (o el contrato), así todo ese árbol queda consistente."""
+    ot = OrdenTrabajo.query.get_or_404(ot_id)
+    verificar_acceso_cliente(ot.instalacion.cliente)
+    if ot.visita_id:
+        flash(
+            f"La OT {ot.numero} está ligada a una visita planificada; para eliminarla, eliminá la visita "
+            "(o el contrato) en vez de la OT directamente.",
+            "danger",
+        )
+        return redirect(url_for("ordenes.detalle", ot_id=ot.id))
+
+    for uso in list(ot.repuestos_usados):
+        uso.repuesto.stock_actual += uso.cantidad  # repone el stock consumido antes de borrar
+
+    numero = ot.numero
+    db.session.delete(ot)
+    db.session.commit()
+    flash(f"Orden de trabajo {numero} eliminada. Stock de repuestos usados restituido.", "info")
+    return redirect(url_for("ordenes.listar"))
+
+
 @ordenes_bp.route("/repuestos-usados/<int:uso_id>/eliminar", methods=["POST"])
 @rol_requerido("Administrador", "Jefe", "Técnico")
 def eliminar_repuesto_usado(uso_id):

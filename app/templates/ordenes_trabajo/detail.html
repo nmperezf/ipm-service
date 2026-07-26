@@ -31,6 +31,13 @@
 <p><strong>Descripción:</strong><br>{{ ot.descripcion or '-' }}</p>
 {% if ot.observaciones %}<p><strong>Observaciones:</strong><br>{{ ot.observaciones }}</p>{% endif %}
 
+{% if current_user.rol in ('Administrador', 'Jefe') and not ot.visita_id %}
+<form method="POST" action="{{ url_for('ordenes.eliminar', ot_id=ot.id) }}"
+      onsubmit="return confirm('¿Eliminar la OT {{ ot.numero }}? Si tenía repuestos consumidos, se repone el stock. Esta acción no se puede deshacer.');">
+    <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar OT</button>
+</form>
+{% endif %}
+
 <h4 class="mt-4">Repuestos utilizados</h4>
 <div class="table-responsive">
 <table class="table table-sm data-table">
