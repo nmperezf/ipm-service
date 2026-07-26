@@ -540,7 +540,7 @@ class TipoFormulario(db.Model):
     por_equipo = db.Column(db.Boolean, default=False, nullable=False)
     tipo_equipo_aplicable = db.Column(db.String(40), nullable=True)  # nombre de un TipoEquipo
 
-    cliente = db.relationship("Cliente", backref="tipos_formulario")
+    cliente = db.relationship("Cliente", backref=db.backref("tipos_formulario", cascade="all, delete-orphan"))
 
     def campos(self):
         import json
