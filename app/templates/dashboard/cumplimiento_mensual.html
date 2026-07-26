@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Cumplimiento mensual{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('dashboard.inicio') }}">&larr; Inicio</a></p>
+<h1>Cumplimiento de {{ titulo_mes }} <span class="text-muted fs-6">({{ items|length }} servicios)</span></h1>
+<p class="text-muted">Todos los servicios planificados este mes, cumplidos y pendientes. Si un cliente canceló o quedó sin marcar, aparece acá.</p>
+
+<div class="table-responsive">
+<table class="table table-hover data-table">
+    <thead><tr><th>Fecha</th><th>Cliente</th><th>Observación</th><th>Estado</th></tr></thead>
+    <tbody>
+        {% for item in items %}
+        <tr>
+            <td>{{ item.visita.fecha.strftime('%d/%m/%Y') }}</td>
+            <td><a href="{{ url_for('clientes.detalle', cliente_id=item.visita.instalacion.cliente_id) }}">{{ item.visita.instalacion.cliente.nombre }}</a></td>
+            <td>
+                {{ item.servicio.nombre }}
+                {% if item.observaciones %}<br><small class="text-muted">{{ item.observaciones }}</small>
+                {% elif item.visita.observaciones %}<br><small class="text-muted">{{ item.visita.observaciones }}</small>{% endif %}
+            </td>
+            <td>
+                <a href="{{ url_for('visitas.detalle', visita_id=item.visita_id) }}">
+                    <span class="badge badge-{{ item.estado.replace(' ', '.') }}">{{ item.estado }}</span>
+                </a>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4" class="text-center text-muted py-4">No hay servicios planificados este mes.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if equipo else 'Nuevo' }} equipo{% endblock %}
+{% block content %}
+<h1>{{ 'Editar equipo' if equipo else 'Nuevo equipo' }} <small class="text-muted fs-6">{{ instalacion.nombre }}</small></h1>
+
+<form method="POST" class="mt-3">
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Tipo</label>
+            <select name="tipo" class="form-select" id="tipo" onchange="toggleManifold()" required>
+                {% for t in tipos %}
+                <option value="{{ t }}" {% if equipo and equipo.tipo == t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-8 mb-3">
+            <label class="form-label">Nombre / identificador</label>
+            <input type="text" name="nombre" class="form-control" required
+                   placeholder="Ej: ECA 3° piso ala norte"
+                   value="{{ equipo.nombre if equipo else '' }}">
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Ubicación</label>
+        <input type="text" name="ubicacion" class="form-control" value="{{ equipo.ubicacion if equipo else '' }}">
+    </div>
+    <div class="mb-3" id="manifold-wrapper">
+        <label class="form-label">Manifold al que pertenece (opcional)</label>
+        <select name="manifold_id" class="form-select">
+            <option value="">-- ECA suelto, sin manifold --</option>
+            {% for m in manifolds %}
+            <option value="{{ m.id }}" {% if equipo and equipo.manifold_id == m.id %}selected{% endif %}>{{ m.nombre }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% if equipo %}
+    <div class="form-check mb-3">
+        <input type="checkbox" name="activo" class="form-check-input" id="activo" {% if equipo.activo %}checked{% endif %}>
+        <label class="form-check-label" for="activo">Activo</label>
+    </div>
+    {% endif %}
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}" class="btn btn-link">Cancelar</a>
+</form>
+
+{% if equipo %}
+<form method="POST" action="{{ url_for('equipos.eliminar', equipo_id=equipo.id) }}" class="mt-4"
+      onsubmit="return confirm('¿Eliminar este equipo?');">
+    <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar equipo</button>
+</form>
+{% endif %}
+
+<script>
+function toggleManifold() {
+    const tipo = document.getElementById('tipo').value;
+    document.getElementById('manifold-wrapper').style.display = (tipo === 'ECA') ? 'block' : 'none';
+}
+document.addEventListener('DOMContentLoaded', toggleManifold);
+</script>
+{% endblock %}

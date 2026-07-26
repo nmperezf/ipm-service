@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}{{ equipo.nombre }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('instalaciones.detalle', instalacion_id=equipo.instalacion_id) }}">&larr; {{ equipo.instalacion.nombre }}</a></p>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>{{ equipo.nombre }} <span class="badge bg-secondary fs-6">{{ equipo.tipo }}</span></h1>
+    <div>
+        <a href="{{ url_for('observaciones.nueva', instalacion_id=equipo.instalacion_id, equipo_id=equipo.id) }}" class="btn btn-outline-warning btn-sm">+ Observación</a>
+        <a href="{{ url_for('equipos.editar', equipo_id=equipo.id) }}" class="btn btn-outline-secondary btn-sm">Editar equipo</a>
+    </div>
+</div>
+<p class="text-muted">
+    {{ equipo.ubicacion or '' }}
+    {% if equipo.manifold %} &middot; Depende de: {{ equipo.manifold.nombre }}{% endif %}
+</p>
+
+{% if deficiencias_abiertas %}
+<h4 class="mt-4">Deficiencias abiertas</h4>
+<div class="table-responsive">
+<table class="table table-sm data-table">
+    <thead><tr><th>Fecha</th><th>Clasificación</th><th>Descripción</th><th>Revisión</th><th></th></tr></thead>
+    <tbody>
+        {% for obs in deficiencias_abiertas %}
+        <tr>
+            <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+            <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+            <td>{{ obs.descripcion }}</td>
+            <td>
+                {% if obs.estado_revision == 'Aprobada' %}<span class="badge badge-Cumplido">Aprobada</span>
+                {% else %}<span class="badge badge-Pendiente">Pendiente de revisión</span>{% endif %}
+            </td>
+            <td>
+                <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>
+                </form>
+                {% if obs.estado_revision != 'Aprobada' %}
+                <a href="{{ url_for('observaciones.editar', observacion_id=obs.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                {% if current_user.rol in ('Administrador', 'Jefe') %}
+                <form method="POST" action="{{ url_for('observaciones.aprobar', observacion_id=obs.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Aprobar</button>
+                </form>
+                {% endif %}
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+
+<h4 class="mt-4">Histórico y trazabilidad</h4>
+{% if not secciones %}
+<p class="text-muted">Este equipo todavía no tiene ningún checklist completado.</p>
+{% endif %}
+
+{% for seccion in secciones %}
+<h5 class="mt-3">{{ seccion.tipo_formulario.nombre }}</h5>
+
+{% for campo in seccion.campos_numericos %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between">
+            <strong>{{ campo.label }}</strong>
+            {% if campo.minimo is not none %}
+            <small class="text-muted">mín. {{ campo.minimo }} &middot; máx. {{ campo.maximo }}</small>
+            {% endif %}
+        </div>
+        {% if campo.puntos %}
+        <svg viewBox="0 0 520 90" style="width:100%; max-width:520px; height:90px;">
+            <polyline points="{{ campo.puntos }}" fill="none" stroke="#1B3A5C" stroke-width="2" />
+        </svg>
+        {% else %}
+        <p class="text-muted small mb-0">Hace falta más de una carga para mostrar la evolución.</p>
+        {% endif %}
+        <div class="table-responsive">
+<table class="table table-sm mb-0 mt-2">
+            <tbody>
+                {% for fecha, valor in campo.serie|reverse %}
+                <tr><td>{{ fecha.strftime('%d/%m/%Y') }}</td><td>{{ valor }}</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+</div>
+    </div>
+</div>
+{% endfor %}
+
+{% for campo in seccion.campos_otros %}
+<div class="card mb-3">
+    <div class="card-body">
+        <strong>{{ campo.label }}</strong>
+        <div class="table-responsive">
+<table class="table table-sm mb-0 mt-2 data-table">
+            <thead><tr><th>Fecha</th><th>Valor</th></tr></thead>
+            <tbody>
+                {% for fecha, valor in campo.historial %}
+                <tr>
+                    <td>{{ fecha.strftime('%d/%m/%Y') }}</td>
+                    <td>{{ valor|join(', ') if valor is iterable and valor is not string else (valor if valor else '-') }}</td>
+                </tr>
+                {% else %}
+                <tr><td colspan="2" class="text-muted text-center">Sin datos cargados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+</div>
+    </div>
+</div>
+{% endfor %}
+{% endfor %}
+
+{% if deficiencias_resueltas %}
+<h5 class="mt-4">Deficiencias resueltas (histórico)</h5>
+<div class="table-responsive">
+<table class="table table-sm data-table">
+    <thead><tr><th>Fecha carga</th><th>Fecha resolución</th><th>Clasificación</th><th>Descripción</th></tr></thead>
+    <tbody>
+        {% for obs in deficiencias_resueltas %}
+        <tr>
+            <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+            <td>{{ obs.fecha_resolucion.strftime('%d/%m/%Y') if obs.fecha_resolucion else '-' }}</td>
+            <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+            <td>{{ obs.descripcion }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endif %}
+{% endblock %}

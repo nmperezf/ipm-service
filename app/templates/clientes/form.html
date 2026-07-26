@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if cliente else 'Nuevo' }} cliente{% endblock %}
+{% block content %}
+<h1>{{ 'Editar cliente' if cliente else 'Nuevo cliente' }}</h1>
+
+<form method="POST" class="mt-3">
+    <div class="mb-3">
+        <label class="form-label">Nombre</label>
+        <input type="text" name="nombre" class="form-control" required value="{{ cliente.nombre if cliente else '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Dirección</label>
+        <input type="text" name="direccion" class="form-control" value="{{ cliente.direccion if cliente else '' }}">
+    </div>
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Contacto</label>
+            <input type="text" name="contacto" class="form-control" value="{{ cliente.contacto if cliente else '' }}">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Teléfono</label>
+            <input type="text" name="telefono" class="form-control" value="{{ cliente.telefono if cliente else '' }}">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" name="email" class="form-control" value="{{ cliente.email if cliente else '' }}">
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Observaciones</label>
+        <textarea name="observaciones" class="form-control" rows="3">{{ cliente.observaciones if cliente else '' }}</textarea>
+    </div>
+    <div class="form-check mb-3">
+        <input type="checkbox" name="activo" class="form-check-input" id="activo"
+               {% if not cliente or cliente.activo %}checked{% endif %}>
+        <label class="form-check-label" for="activo">Activo</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a href="{{ url_for('clientes.listar') }}" class="btn btn-link">Cancelar</a>
+</form>
+{% endblock %}

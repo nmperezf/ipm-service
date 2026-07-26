@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Servicios tipo{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Servicios tipo</h1>
+    <a href="{{ url_for('servicios_tipo.nuevo') }}" class="btn btn-primary">+ Nuevo servicio tipo</a>
+</div>
+<p class="text-muted">
+    Catálogo de tu empresa. Al elegir uno de estos servicios desde un contrato, se le arma al cliente
+    su propio formulario a partir de este base — sigue siendo editable por separado para cada cliente.
+</p>
+
+<div class="table-responsive">
+<table class="table table-hover data-table">
+    <thead><tr><th>Nombre</th><th>Descripción</th><th>Por equipo</th><th>Campos</th><th></th></tr></thead>
+    <tbody>
+        {% for s in servicios %}
+        <tr>
+            <td>{{ s.nombre }}</td>
+            <td>{{ s.descripcion or '-' }}</td>
+            <td>{{ s.tipo_equipo_aplicable if s.por_equipo else '-' }}</td>
+            <td>{{ s.campos()|length }}</td>
+            <td>
+                <a href="{{ url_for('servicios_tipo.editar', servicio_id=s.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                <form method="POST" action="{{ url_for('servicios_tipo.eliminar', servicio_id=s.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar el servicio tipo {{ s.nombre }} del catálogo?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-4">Todavía no cargaste ningún servicio tipo.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

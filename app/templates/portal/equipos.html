@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Mis equipos{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('portal.inicio') }}">&larr; {{ cliente.nombre }}</a></p>
+<h1>Mis equipos</h1>
+
+{% for bloque in instalaciones_data %}
+<h4 class="mt-4">{{ bloque.instalacion.nombre }}</h4>
+{% for nombre_categoria, equipos in bloque.grupos.items() %}
+{% if equipos %}
+<h6 class="text-muted mt-3">{{ nombre_categoria }}</h6>
+<div class="d-flex flex-wrap gap-2 mb-2">
+    {% for equipo in equipos %}
+    <a href="{{ url_for('portal.equipo_detalle', equipo_id=equipo.id) }}" class="btn btn-outline-secondary btn-sm">
+        {{ equipo.nombre }}
+    </a>
+    {% endfor %}
+</div>
+{% endif %}
+{% endfor %}
+{% else %}
+<p class="text-muted">Todavía no hay instalaciones cargadas.</p>
+{% endfor %}
+{% endblock %}

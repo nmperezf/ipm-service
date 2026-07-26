@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Cerrar visita{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}">&larr; Volver a la visita</a></p>
+<h1>Cerrar visita <small class="text-muted fs-6">{{ visita.instalacion.nombre }} — {{ visita.fecha.strftime('%d/%m/%Y') }}</small></h1>
+<p class="text-muted">
+    Enviada a revisión el {{ visita.fecha_enviada_revision.strftime('%d/%m/%Y') if visita.fecha_enviada_revision else '-' }}
+    {% if visita.enviada_por %} por {{ visita.enviada_por.nombre_completo or visita.enviada_por.username }}{% endif %}.
+</p>
+
+{% if antecedentes %}
+<div class="card mb-3">
+    <div class="card-body">
+        <h5 class="card-title">Antecedentes de esta instalación</h5>
+        <div class="table-responsive">
+<table class="table table-sm mb-0">
+            <thead><tr><th>Fecha</th><th>Clasificación</th><th>Descripción</th></tr></thead>
+            <tbody>
+                {% for obs in antecedentes %}
+                <tr>
+                    <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+                    <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+                    <td>{{ obs.descripcion }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+</div>
+    </div>
+</div>
+{% endif %}
+
+<h4 class="mt-4">Resumen del servicio</h4>
+{% if resumen %}
+<div class="table-responsive">
+<table class="table table-sm">
+    <thead><tr><th>Área</th><th>Equipos / formularios revisados</th></tr></thead>
+    <tbody>
+        {% for r in resumen %}
+        <tr><td>{{ r.categoria }}</td><td>{{ r.equipos_revisados }}</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% else %}
+<p class="text-muted">No se cargó ningún checklist en esta visita.</p>
+{% endif %}
+
+{% if pendientes %}
+<div class="alert alert-danger">
+    <strong>No se puede cerrar todavía.</strong> Hay {{ pendientes|length }} observación(es) sin aprobar:
+    <ul class="mb-0 mt-2">
+        {% for obs in pendientes %}
+        <li>
+            <span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span>
+            {{ obs.descripcion }}
+            — <a href="{{ url_for('observaciones.editar', observacion_id=obs.id) }}">ver / editar</a>
+            <form method="POST" action="{{ url_for('observaciones.aprobar', observacion_id=obs.id) }}" class="d-inline">
+                <button type="submit" class="btn btn-sm btn-outline-primary ms-1">Aprobar</button>
+            </form>
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% else %}
+<form method="POST" class="mt-4">
+    <div class="mb-3">
+        <label class="form-label">Devolución del técnico (podés editarla si hace falta)</label>
+        <textarea name="notas_cierre" class="form-control" rows="4">{{ visita.notas_cierre or '' }}</textarea>
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Firma del cliente</label>
+        {% if visita.firma_cliente %}
+        <div>
+            <img src="{{ visita.firma_cliente }}" alt="Firma del cliente" style="max-height:120px; border:1px solid var(--border); border-radius:8px; background:#fff;">
+        </div>
+        <div class="form-text">Ya se capturó en el momento de la visita, junto con el técnico. Va a quedar en el PDF de devolución.</div>
+        {% else %}
+        <div class="alert alert-warning mb-0">El técnico no cargó la firma del cliente al enviar esta visita a revisión. Se puede cerrar igual, pero el PDF de devolución va a quedar sin firma.</div>
+        {% endif %}
+    </div>
+
+    <div class="barra-accion-fija-relleno d-sm-none"></div>
+    <div class="barra-accion-fija">
+        <button type="submit" class="btn btn-primary">Cerrar visita</button>
+    </div>
+</form>
+{% endif %}
+{% endblock %}

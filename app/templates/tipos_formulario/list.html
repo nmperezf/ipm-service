@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Formularios - {{ cliente.nombre }}{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}">&larr; {{ cliente.nombre }}</a></p>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Tipos de formulario <small class="text-muted fs-6">{{ cliente.nombre }}</small></h1>
+    <a href="{{ url_for('tipos_formulario.nuevo', cliente_id=cliente.id) }}" class="btn btn-primary">+ Nuevo tipo de formulario</a>
+</div>
+<p class="text-muted">Estos son los checklists disponibles para completar en las visitas de {{ cliente.nombre }}. Se pueden crear, editar y usar sin tocar código.</p>
+
+<div class="table-responsive">
+<table class="table table-hover data-table">
+    <thead><tr><th>Nombre</th><th>Descripción</th><th>Campos</th><th>Por equipo</th><th></th></tr></thead>
+    <tbody>
+        {% for tipo in tipos %}
+        <tr>
+            <td>{{ tipo.nombre }}</td>
+            <td>{{ tipo.descripcion or '-' }}</td>
+            <td>{{ tipo.campos()|length }}</td>
+            <td>{{ tipo.tipo_equipo_aplicable if tipo.por_equipo else '-' }}</td>
+            <td>
+                <a href="{{ url_for('tipos_formulario.editar', tipo_id=tipo.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                <form method="POST" action="{{ url_for('tipos_formulario.eliminar', tipo_id=tipo.id) }}" class="d-inline"
+                      onsubmit="return confirm('¿Eliminar este tipo de formulario?');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="5" class="text-center text-muted py-4">Todavía no creaste ningún tipo de formulario.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

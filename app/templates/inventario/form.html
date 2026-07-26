@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar' if repuesto else 'Nuevo' }} repuesto{% endblock %}
+{% block content %}
+<h1>{{ 'Editar repuesto' if repuesto else 'Nuevo repuesto' }}</h1>
+
+<form method="POST" class="mt-3">
+    <div class="mb-3">
+        <label class="form-label">Nombre</label>
+        <input type="text" name="nombre" class="form-control" required value="{{ repuesto.nombre if repuesto else '' }}">
+    </div>
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Código (opcional)</label>
+            <input type="text" name="codigo" class="form-control" value="{{ repuesto.codigo if repuesto else '' }}">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Unidad</label>
+            <input type="text" name="unidad" class="form-control" placeholder="unidad, litro, metro..." value="{{ repuesto.unidad if repuesto else 'unidad' }}">
+        </div>
+        {% if not repuesto %}
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Stock inicial</label>
+            <input type="number" name="stock_actual" class="form-control" min="0" value="0">
+        </div>
+        {% endif %}
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Stock mínimo (para el aviso de nivel crítico)</label>
+        <input type="number" name="stock_minimo" class="form-control" min="0" value="{{ repuesto.stock_minimo if repuesto else 0 }}">
+    </div>
+    {% if repuesto %}
+    <div class="form-check mb-3">
+        <input type="checkbox" name="activo" class="form-check-input" id="activo" {% if repuesto.activo %}checked{% endif %}>
+        <label class="form-check-label" for="activo">Activo</label>
+    </div>
+    {% endif %}
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a href="{{ url_for('inventario.dashboard') }}" class="btn btn-link">Cancelar</a>
+</form>
+
+{% if repuesto %}
+<form method="POST" action="{{ url_for('inventario.eliminar', repuesto_id=repuesto.id) }}" class="mt-4"
+      onsubmit="return confirm('¿Eliminar este repuesto?');">
+    <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar repuesto</button>
+</form>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ cliente.nombre }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>{{ cliente.nombre }}</h1>
+    <div>
+        <a href="{{ url_for('clientes.editar', cliente_id=cliente.id) }}" class="btn btn-outline-secondary">Editar</a>
+        <a href="{{ url_for('clientes.hoja_ruta', cliente_id=cliente.id) }}" class="btn btn-outline-dark">Hoja de ruta</a>
+        <a href="{{ url_for('tipos_formulario.listar', cliente_id=cliente.id) }}" class="btn btn-outline-dark">Formularios</a>
+        <a href="{{ url_for('instalaciones.nueva', cliente_id=cliente.id) }}" class="btn btn-primary">+ Nueva instalación</a>
+    </div>
+</div>
+
+<p class="text-muted">{{ cliente.direccion or '' }} {{ '· ' + cliente.contacto if cliente.contacto }} {{ '· ' + cliente.telefono if cliente.telefono }}</p>
+
+<div class="row g-2 mb-3">
+    <div class="col-md">
+        <a href="{{ url_for('clientes.deficiencias', cliente_id=cliente.id, clasificacion='Deficiencia crítica') }}" class="dashboard-card">
+            <div class="card border-danger card-indicador">
+                <div class="valor text-danger">{{ deficiencias['Deficiencia crítica'] }}</div>
+                <div class="text-muted small">Deficiencias críticas</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md">
+        <a href="{{ url_for('clientes.deficiencias', cliente_id=cliente.id, clasificacion='Deficiencia no crítica') }}" class="dashboard-card">
+            <div class="card border-warning card-indicador">
+                <div class="valor text-warning">{{ deficiencias['Deficiencia no crítica'] }}</div>
+                <div class="text-muted small">Deficiencias no críticas</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md">
+        <a href="{{ url_for('clientes.deficiencias', cliente_id=cliente.id, clasificacion='Desactivación') }}" class="dashboard-card">
+            <div class="card border-secondary card-indicador">
+                <div class="valor">{{ deficiencias['Desactivación'] }}</div>
+                <div class="text-muted small">Desactivaciones</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md">
+        <a href="{{ url_for('clientes.deficiencias', cliente_id=cliente.id, clasificacion='Comentario') }}" class="dashboard-card">
+            <div class="card card-indicador">
+                <div class="valor">{{ deficiencias['Comentario'] }}</div>
+                <div class="text-muted small">Comentarios</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-md">
+        <div class="card card-indicador">
+            <div class="valor text-success">{{ cumplido_anual_pct }}%</div>
+            <div class="text-muted small">Cumplido (año de contrato)</div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-2 mb-4">
+    <div class="col"><div class="card card-indicador"><div class="valor">{{ indicadores.servicios_contratados }}</div><div class="text-muted small">Contratados</div></div></div>
+    <div class="col"><div class="card card-indicador"><div class="valor text-success">{{ indicadores.servicios_realizados }}</div><div class="text-muted small">Realizados</div></div></div>
+    <div class="col"><div class="card card-indicador"><div class="valor text-primary">{{ indicadores.servicios_pendientes }}</div><div class="text-muted small">Pendientes</div></div></div>
+    <div class="col"><div class="card card-indicador"><div class="valor text-danger">{{ indicadores.servicios_vencidos }}</div><div class="text-muted small">Vencidos</div></div></div>
+    <div class="col"><div class="card card-indicador"><div class="valor">{{ indicadores.cumplimiento_pct }}%</div><div class="text-muted small">Cumplimiento histórico total</div></div></div>
+</div>
+
+<p>
+    <strong>Última visita:</strong> {{ indicadores.ultima_visita.strftime('%d/%m/%Y') if indicadores.ultima_visita else 'Sin visitas registradas' }}
+    &nbsp;|&nbsp;
+    <strong>Próxima visita:</strong> {{ indicadores.proxima_visita.strftime('%d/%m/%Y') if indicadores.proxima_visita else '-' }}
+</p>
+
+<h4 class="mt-4">Instalaciones</h4>
+<div class="list-group">
+    {% for inst in cliente.instalaciones %}
+    <a href="{{ url_for('instalaciones.detalle', instalacion_id=inst.id) }}" class="list-group-item list-group-item-action d-flex justify-content-between">
+        <span>{{ inst.nombre }} <small class="text-muted">{{ inst.direccion or '' }}</small></span>
+        <span class="badge bg-secondary">{{ inst.contratos|length }} contrato(s)</span>
+    </a>
+    {% else %}
+    <p class="text-muted">Este cliente todavía no tiene instalaciones cargadas.</p>
+    {% endfor %}
+</div>
+{% endblock %}

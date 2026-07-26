@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Editar {{ ot.numero }}{% endblock %}
+{% block content %}
+<h1>Editar {{ ot.numero }}</h1>
+
+<form method="POST" class="mt-3">
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Tipo</label>
+            <select name="tipo" class="form-select">
+                {% for t in tipos %}
+                <option value="{{ t }}" {% if ot.tipo == t %}selected{% endif %}>{{ t }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Estado</label>
+            <select name="estado" class="form-select">
+                {% for e in estados %}
+                <option value="{{ e }}" {% if ot.estado == e %}selected{% endif %}>{{ e }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Prioridad</label>
+            <select name="prioridad" class="form-select">
+                {% for p in prioridades %}
+                <option value="{{ p }}" {% if ot.prioridad == p %}selected{% endif %}>{{ p }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Técnico asignado</label>
+        <select name="tecnico_id" class="form-select">
+            <option value="">-- Sin asignar --</option>
+            {% for t in tecnicos %}
+            <option value="{{ t.id }}" {% if ot.tecnico_id == t.id %}selected{% endif %}>{{ t.nombre_completo or t.username }}{% if t.rol == 'Jefe' %} (Jefe){% endif %}</option>
+            {% endfor %}
+        </select>
+        {% if ot.tecnico and not ot.tecnico_id %}
+        <div class="form-text">Esta OT tenía cargado el técnico como texto libre ("{{ ot.tecnico }}"), de antes de tener usuarios reales. Elegí uno de la lista para que quede asignado de verdad.</div>
+        {% endif %}
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Descripción</label>
+        <textarea name="descripcion" class="form-control" rows="3">{{ ot.descripcion or '' }}</textarea>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Observaciones</label>
+        <textarea name="observaciones" class="form-control" rows="3">{{ ot.observaciones or '' }}</textarea>
+    </div>
+    <div class="form-text mb-3">Si pasás el estado a "Finalizada" y no tiene fecha de cierre, se completa automáticamente con hoy.</div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a href="{{ url_for('ordenes.detalle', ot_id=ot.id) }}" class="btn btn-link">Cancelar</a>
+</form>
+{% endblock %}
