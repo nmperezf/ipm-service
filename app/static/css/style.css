@@ -182,6 +182,8 @@ small, .small, .text-muted {
 .navbar.ipm-navbar {
     background: #000000;
     box-shadow: 0 1px 0 rgba(0,0,0,.08);
+    position: relative;
+    z-index: 1046;
 }
 .ipm-navbar .navbar-brand {
     display: flex;
@@ -221,9 +223,106 @@ small, .small, .text-muted {
     line-height: 1;
     text-transform: none !important;
     letter-spacing: normal !important;
+    color: rgba(255,255,255,.75);
+    padding: .4rem .5rem;
 }
 .theme-toggle-btn:hover {
     color: #fff !important;
+}
+
+/* ---- Panel lateral (PC, ≥992px) -------------------------------------------
+   Reemplaza los links horizontales por un cajón que se desliza desde la
+   derecha — evita que la navbar siga rompiéndose a medida que se suman
+   secciones. Por debajo de 992px sigue el patrón de siempre (navbar-toggler
+   + colapsable arriba, barra de accesos abajo), sin cambios. */
+
+.sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 1040;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .2s ease;
+}
+.sidebar-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+.sidebar-derecho {
+    position: fixed;
+    top: 56px;
+    right: 0;
+    height: calc(100vh - 56px);
+    width: 300px;
+    max-width: 85vw;
+    background: #000000;
+    z-index: 1045;
+    flex-direction: column;
+    transform: translateX(100%);
+    transition: transform .25s ease;
+    box-shadow: -4px 0 24px rgba(0,0,0,.3);
+}
+.sidebar-derecho.abierto {
+    transform: translateX(0);
+}
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 1.25rem 1.25rem 1rem;
+    border-bottom: 1px solid rgba(255,255,255,.1);
+}
+.sidebar-usuario {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: #fff;
+}
+.sidebar-rol {
+    font-size: .78rem;
+    color: rgba(255,255,255,.6);
+}
+.sidebar-close-btn {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,.75);
+    font-size: 1.6rem;
+    line-height: 1;
+    padding: 0;
+}
+.sidebar-close-btn:hover {
+    color: #fff;
+}
+.sidebar-nav {
+    list-style: none;
+    margin: 0;
+    padding: .75rem 0;
+    overflow-y: auto;
+    flex: 1;
+}
+.sidebar-nav .nav-item {
+    margin: 0;
+}
+.sidebar-link {
+    display: block;
+    padding: .7rem 1.25rem;
+    font-size: .85rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+    color: rgba(255,255,255,.75);
+    text-decoration: none;
+}
+.sidebar-link:hover {
+    color: #fff;
+    background: rgba(255,255,255,.06);
+}
+.sidebar-footer {
+    padding: 1rem 1.25rem calc(1rem + env(safe-area-inset-bottom));
+    border-top: 1px solid rgba(255,255,255,.1);
+}
+.sidebar-footer .sidebar-link {
+    padding: .5rem 0;
 }
 
 /* ---- Cards --------------------------------------------------------------- */
@@ -565,13 +664,13 @@ html[data-bs-theme="dark"] {
     --surface-muted: #10141D;
     --border: #2A3142;
 
-    --brand: #5B7099;
-    --brand-dark: #7891BC;
+    --brand: #8CA3D1;
+    --brand-dark: #ACC1E5;
     --accent: #FF6161;
     --accent-soft: #3A1418;
 
-    --bs-primary: #5B7099;
-    --bs-primary-rgb: 91, 112, 153;
+    --bs-primary: #8CA3D1;
+    --bs-primary-rgb: 140, 163, 209;
     --bs-secondary: #9AA3B2;
     --bs-secondary-rgb: 154, 163, 178;
     --bs-success: #34C77B;
@@ -584,8 +683,8 @@ html[data-bs-theme="dark"] {
     --bs-info-rgb: 79, 168, 216;
     --bs-dark: #E8EAEE;
     --bs-light: #1A2030;
-    --bs-link-color: #7891BC;
-    --bs-link-color-rgb: 120, 145, 188;
+    --bs-link-color: #8CA3D1;
+    --bs-link-color-rgb: 140, 163, 209;
     --bs-link-hover-color: #FFFFFF;
     --bs-link-hover-color-rgb: 255, 255, 255;
     --bs-body-color: #E8EAEE;
@@ -610,10 +709,16 @@ html[data-bs-theme="dark"] .btn-outline-success {
     --bs-btn-active-border-color: #299F62;
 }
 html[data-bs-theme="dark"] .btn-primary,
-html[data-bs-theme="dark"] .btn-dark,
+html[data-bs-theme="dark"] .btn-dark {
+    --bs-btn-color: #10141D;
+    --bs-btn-hover-color: #10141D;
+    --bs-btn-active-color: #10141D;
+}
 html[data-bs-theme="dark"] .btn-outline-primary,
 html[data-bs-theme="dark"] .btn-outline-dark {
-    --bs-btn-color: #10141D;
+    /* Sin fondo, el texto tiene que quedar claro (var(--brand)); recién al
+       hover/active se llena con var(--brand) y ahí sí necesita texto oscuro
+       para no perder contraste — al revés que en modo claro. */
     --bs-btn-hover-color: #10141D;
     --bs-btn-active-color: #10141D;
 }
