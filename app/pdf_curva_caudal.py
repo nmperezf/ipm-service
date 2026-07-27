@@ -1,6 +1,7 @@
 """Generación de PDF del ensayo de curva de caudal (NFPA 25): tabla de la
-curva de fábrica, tabla del ensayo, gráfico superpuesto y el resultado de
-la validación de los 3 criterios."""
+curva de fábrica, tabla del ensayo, gráfico superpuesto y los 3 criterios
+de la norma como referencia — sin un veredicto automático de aprobado/no
+aprobado (eso lo redacta el Administrador/Jefe en Comentarios)."""
 
 import io
 
@@ -21,8 +22,6 @@ GRIS = colors.HexColor("#5B6673")
 BORDE = colors.HexColor("#D9DEE3")
 VERDE = colors.HexColor("#1F8A54")
 ROJO = colors.HexColor("#E2131D")
-VERDE_SUAVE = colors.HexColor("#E5F4EC")
-ROJO_SUAVE = colors.HexColor("#FBEAE7")
 
 
 def _grafico_curvas(caudales, presiones_fabrica, presiones_ensayo_ajustadas, presiones_ensayo_sin_ajustar):
@@ -161,47 +160,29 @@ def generar_pdf_ensayo(ensayo):
         grafico_buffer = _grafico_curvas(caudales, presiones_fabrica, ajustadas, netas_redondeadas)
         elementos.append(Image(grafico_buffer, width=15 * cm, height=8.4 * cm))
 
-    # ---- Validación NFPA 25 ----
-    elementos.append(Paragraph("Validación NFPA 25", h2))
+    # ---- Criterios NFPA 25 ----
+    # Solo se informan los valores medidos contra los límites de la norma —
+    # NFPA 25 no "aprueba" nada, es un criterio de referencia. El resultado
+    # (aprueba o no) lo redacta el Administrador/Jefe en Comentarios, más
+    # abajo.
+    elementos.append(Paragraph("Criterios NFPA 25 (referencia)", h2))
     validacion = ensayo.validacion_nfpa25()
     if validacion:
-        filas_validacion = [["Criterio", "Valor del ensayo", "Límite", "Resultado"]]
+        filas_validacion = [["Criterio", "Valor del ensayo", "Límite"]]
         for criterio in validacion.values():
             filas_validacion.append(
                 [
                     criterio["descripcion"],
                     f"{criterio['valor_ensayo']:.1f}",
                     f"{criterio['limite']:.1f}",
-                    "APRUEBA" if criterio["paso"] else "NO APRUEBA",
                 ]
             )
-        tabla_validacion = Table(filas_validacion, colWidths=[7 * cm] + [3 * cm] * 3)
-        estilo_validacion = list(estilo_tabla_base)
-        for i, criterio in enumerate(validacion.values(), start=1):
-            color_fondo = VERDE_SUAVE if criterio["paso"] else ROJO_SUAVE
-            color_texto = VERDE if criterio["paso"] else ROJO
-            estilo_validacion.append(("BACKGROUND", (3, i), (3, i), color_fondo))
-            estilo_validacion.append(("TEXTCOLOR", (3, i), (3, i), color_texto))
-            estilo_validacion.append(("FONTNAME", (3, i), (3, i), "Helvetica-Bold"))
-        tabla_validacion.setStyle(TableStyle(estilo_validacion))
+        tabla_validacion = Table(filas_validacion, colWidths=[9 * cm] + [3.5 * cm] * 2)
+        tabla_validacion.setStyle(TableStyle(estilo_tabla_base))
         elementos.append(tabla_validacion)
-
-        aprobado = ensayo.resultado_final()
-        elementos.append(Spacer(1, 0.6 * cm))
-        estilo_resultado = ParagraphStyle(
-            "Resultado",
-            parent=styles["Title"],
-            fontSize=20,
-            alignment=1,
-            textColor=VERDE if aprobado else ROJO,
-        )
-        elementos.append(Paragraph("RESULTADO: ✓ CUMPLE NFPA 25" if aprobado else "RESULTADO: ✗ NO CUMPLE NFPA 25", estilo_resultado))
-        if ensayo.resultado_manual:
-            estilo_manual = ParagraphStyle("ResultadoManual", parent=styles["Normal"], fontSize=9, textColor=GRIS, alignment=1)
-            elementos.append(Paragraph("Resultado fijado manualmente por el Administrador/Jefe.", estilo_manual))
     else:
         elementos.append(
-            Paragraph("No se puede validar contra NFPA 25 sin una curva de fábrica cargada.", styles["Normal"])
+            Paragraph("No se puede comparar contra NFPA 25 sin una curva de fábrica cargada.", styles["Normal"])
         )
 
     # ---- Comentarios ----
