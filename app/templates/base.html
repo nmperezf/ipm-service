@@ -19,26 +19,26 @@
 <body class="{% if current_user.is_authenticated %}con-nav-inferior{% endif %}">
 
 {% macro nav_items(clase) %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('dashboard.inicio') }}">Inicio</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('dashboard.inicio') }}"><i class="bi bi-house"></i> Inicio</a></li>
 {% if current_user.is_authenticated and current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('clientes.listar') }}">Clientes</a></li>
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('planificacion.calendario') }}">Calendario</a></li>
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('ordenes.listar') }}">Órdenes de trabajo</a></li>
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('inventario.dashboard') }}">Inventario</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('clientes.listar') }}"><i class="bi bi-people"></i> Clientes</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('planificacion.calendario') }}"><i class="bi bi-calendar3"></i> Calendario</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('ordenes.listar') }}"><i class="bi bi-clipboard-check"></i> Órdenes de trabajo</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('inventario.dashboard') }}"><i class="bi bi-box-seam"></i> Inventario</a></li>
 {% if current_user.rol in ('Administrador', 'Jefe') %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('servicios_tipo.listar') }}">Servicios tipo</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('servicios_tipo.listar') }}"><i class="bi bi-gear"></i> Servicios tipo</a></li>
 {% endif %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('tipos_equipo.listar') }}">Tipos de equipo</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('tipos_equipo.listar') }}"><i class="bi bi-hdd-stack"></i> Tipos de equipo</a></li>
 {% endif %}
 {% if current_user.is_authenticated and current_user.rol in ('Administrador', 'Jefe', 'Super Admin') %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('usuarios.listar') }}">Usuarios</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('usuarios.listar') }}"><i class="bi bi-person-badge"></i> Usuarios</a></li>
 {% endif %}
 {% if current_user.is_authenticated and current_user.rol == 'Super Admin' %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('empresas.listar') }}">Empresas</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('empresas.listar') }}"><i class="bi bi-building"></i> Empresas</a></li>
 {% endif %}
 {% if current_user.is_authenticated and current_user.rol == 'Cliente' %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.equipos') }}">Mis equipos</a></li>
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.historico') }}">Histórico técnico</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.equipos') }}"><i class="bi bi-hdd-stack"></i> Mis equipos</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.historico') }}"><i class="bi bi-clock-history"></i> Histórico técnico</a></li>
 {% endif %}
 {% endmacro %}
 
@@ -66,10 +66,10 @@
             </ul>
             <ul class="navbar-nav">
                 {% if current_user.is_authenticated %}
-                <li class="nav-item"><span class="nav-link">{{ current_user.nombre_completo or current_user.username }} <small class="text-white-50">({{ current_user.rol }})</small></span></li>
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}">Cerrar sesión</a></li>
+                <li class="nav-item"><span class="nav-link"><i class="bi bi-person-circle"></i> {{ current_user.nombre_completo or current_user.username }} <small class="text-white-50">({{ current_user.rol }})</small></span></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</a></li>
                 {% else %}
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Iniciar sesión</a></li>
+                <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}"><i class="bi bi-box-arrow-in-right"></i> Iniciar sesión</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -115,6 +115,10 @@
 
     {% block content %}{% endblock %}
 </div>
+
+<footer class="ipm-footer">
+    <p>IPM Manager &mdash; Gestión de mantenimiento de sistemas contra incendio en Uruguay</p>
+</footer>
 
 {% if current_user.is_authenticated %}
 <nav class="nav-inferior">

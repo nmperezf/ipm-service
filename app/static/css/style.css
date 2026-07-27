@@ -216,6 +216,12 @@ small, .small, .text-muted {
 .ipm-navbar .nav-link:hover {
     color: #fff !important;
 }
+.ipm-navbar .nav-link i,
+.sidebar-link i {
+    width: 1.1em;
+    text-align: center;
+    margin-right: .3rem;
+}
 .theme-toggle-btn {
     background: none;
     border: none;
@@ -603,6 +609,25 @@ small, .small, .text-muted {
     .barra-accion-fija-relleno {
         height: 4.5rem;
     }
+}
+
+/* ---- Pie de página -------------------------------------------------------- */
+
+.ipm-footer {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    margin-top: 2rem;
+    border-top: 1px solid var(--border);
+}
+.ipm-footer p {
+    margin: 0;
+    font-family: var(--font-mono);
+    font-size: .72rem;
+    letter-spacing: .02em;
+    color: var(--ink-muted);
+}
+body.con-nav-inferior .ipm-footer {
+    margin-bottom: 3.6rem;
 }
 
 /* ---- Barra de navegación inferior en celular (mobile-first) --------------
