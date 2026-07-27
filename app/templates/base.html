@@ -38,6 +38,7 @@
 {% endif %}
 {% if current_user.is_authenticated and current_user.rol == 'Cliente' %}
 <li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.equipos') }}"><i class="bi bi-hdd-stack"></i> Mis equipos</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.contratos') }}"><i class="bi bi-file-earmark-text"></i> Mi contrato</a></li>
 <li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.historico') }}"><i class="bi bi-clock-history"></i> Histórico técnico</a></li>
 {% endif %}
 {% endmacro %}

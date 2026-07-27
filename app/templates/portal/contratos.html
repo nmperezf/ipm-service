@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Mi contrato{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('portal.inicio') }}">&larr; {{ cliente.nombre }}</a></p>
+<h1>Mi contrato</h1>
+
+{% for bloque in instalaciones_data %}
+<h4 class="mt-4">{{ bloque.instalacion.nombre }}</h4>
+{% if not bloque.contratos %}
+<p class="text-muted">Todavía no hay contratos cargados en esta instalación.</p>
+{% endif %}
+{% for contrato in bloque.contratos %}
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+                <h5 class="mb-1">{{ contrato.nombre }}</h5>
+                <p class="text-muted small mb-0">
+                    Vigencia: {{ contrato.fecha_inicio.strftime('%d/%m/%Y') }} - {{ contrato.fecha_fin.strftime('%d/%m/%Y') }}
+                </p>
+            </div>
+            <span class="badge badge-{{ contrato.estado.replace(' ', '.') }}">{{ contrato.estado }}</span>
+        </div>
+        {% if contrato.servicios %}
+        <div class="table-responsive mt-3">
+        <table class="table table-sm mb-0">
+            <thead><tr><th>Servicio</th><th>Frecuencia</th></tr></thead>
+            <tbody>
+                {% for servicio in contrato.servicios %}
+                <tr>
+                    <td>{{ servicio.nombre }}</td>
+                    <td class="text-capitalize">{{ servicio.frecuencia }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% else %}
+        <p class="text-muted small mb-0 mt-3">Sin servicios cargados en este contrato.</p>
+        {% endif %}
+    </div>
+</div>
+{% endfor %}
+{% else %}
+<p class="text-muted">Todavía no hay instalaciones cargadas.</p>
+{% endfor %}
+{% endblock %}

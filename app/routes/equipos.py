@@ -149,6 +149,7 @@ def eliminar(equipo_id):
 
 
 @equipos_bp.route("/<int:equipo_id>")
+@rol_requerido("Administrador", "Jefe", "Técnico")
 def detalle(equipo_id):
     """Ficha del equipo: histórico y trazabilidad de cada parámetro de su
     checklist a través del tiempo (ej. presión, estado de manguera,

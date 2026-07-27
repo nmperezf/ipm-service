@@ -9,7 +9,7 @@
         <a class="btn btn-outline-secondary" href="{{ url_for('planificacion.calendario', anio=mes_siguiente.year, mes=mes_siguiente.month) }}">&rarr;</a>
     </div>
 </div>
-<p class="text-muted">Solo se muestran clientes con servicios contratados.{% if current_user.rol in ('Administrador', 'Jefe') %} Cada chip lleva al detalle de esa orden de trabajo.{% endif %}</p>
+<p class="text-muted">Solo se muestran clientes con servicios contratados. Cada chip lleva al detalle de esa orden de trabajo.</p>
 
 <div class="d-flex gap-3 mb-2 small">
     <span><span class="chip-cliente chip-success" style="display:inline-block; padding:2px 8px;">&nbsp;</span> Completado</span>
@@ -30,15 +30,9 @@
     <div class="calendario-dia {{ 'fuera-de-mes' if dia.month != mes }}">
         <div class="numero-dia">{{ dia.day }}</div>
         {% for visita in visitas_por_dia.get(dia.day, []) if dia.month == mes %}
-        {% if current_user.rol in ('Administrador', 'Jefe') %}
         <a href="{{ url_for('ordenes.detalle', ot_id=visita.orden_trabajo.id) if visita.orden_trabajo else url_for('visitas.detalle', visita_id=visita.id) }}" class="chip-cliente chip-{{ visita.clase_calendario }}" title="{{ visita.etiqueta_calendario }}">
             {{ visita.instalacion.cliente.nombre }}
         </a>
-        {% else %}
-        <span class="chip-cliente chip-{{ visita.clase_calendario }}" title="{{ visita.etiqueta_calendario }}">
-            {{ visita.instalacion.cliente.nombre }}
-        </span>
-        {% endif %}
         {% endfor %}
     </div>
     {% endfor %}

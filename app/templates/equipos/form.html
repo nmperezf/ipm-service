@@ -21,12 +21,12 @@
             <label class="form-label">Nombre / identificador</label>
             <input type="text" name="nombre" class="form-control" required
                    placeholder="Ej: ECA 3° piso ala norte"
-                   value="{{ equipo.nombre if equipo else '' }}">
+                   value="{{ equipo.nombre or '' }}">
         </div>
     </div>
     <div class="mb-3">
         <label class="form-label">Ubicación</label>
-        <input type="text" name="ubicacion" class="form-control" value="{{ equipo.ubicacion if equipo else '' }}">
+        <input type="text" name="ubicacion" class="form-control" value="{{ equipo.ubicacion or '' }}">
     </div>
     <div class="mb-3" id="manifold-wrapper">
         <label class="form-label">Manifold al que pertenece (opcional)</label>
@@ -44,32 +44,32 @@
             <div class="row">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Modelo</label>
-                    <input type="text" name="modelo" class="form-control" value="{{ equipo.modelo if equipo else '' }}">
+                    <input type="text" name="modelo" class="form-control" value="{{ equipo.modelo or '' }}">
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">N° de serie</label>
-                    <input type="text" name="serie" class="form-control" value="{{ equipo.serie if equipo else '' }}">
+                    <input type="text" name="serie" class="form-control" value="{{ equipo.serie or '' }}">
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Caudal nominal (GPM)</label>
-                    <input type="number" step="any" name="caudal_nominal" class="form-control" value="{{ equipo.caudal_nominal if equipo else '' }}">
+                    <input type="number" step="any" name="caudal_nominal" class="form-control" value="{{ equipo.caudal_nominal or '' }}">
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Presión de diseño (PSI)</label>
-                    <input type="number" step="any" name="presion_diseno" class="form-control" value="{{ equipo.presion_diseno if equipo else '' }}">
+                    <input type="number" step="any" name="presion_diseno" class="form-control" value="{{ equipo.presion_diseno or '' }}">
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">RPM nominal</label>
-                    <input type="number" name="rpm_nominal" class="form-control" value="{{ equipo.rpm_nominal if equipo else '' }}">
+                    <input type="number" name="rpm_nominal" class="form-control" value="{{ equipo.rpm_nominal or '' }}">
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Año de fabricación</label>
-                    <input type="number" name="anio_fabricacion" class="form-control" value="{{ equipo.anio_fabricacion if equipo else '' }}">
+                    <input type="number" name="anio_fabricacion" class="form-control" value="{{ equipo.anio_fabricacion or '' }}">
                 </div>
             </div>
             <div class="mb-3">
                 <label class="form-label">Otros datos</label>
-                <textarea name="otros_datos_placa" class="form-control" rows="2" placeholder="Cualquier otro dato de placa relevante">{{ equipo.otros_datos_placa if equipo else '' }}</textarea>
+                <textarea name="otros_datos_placa" class="form-control" rows="2" placeholder="Cualquier otro dato de placa relevante">{{ equipo.otros_datos_placa or '' }}</textarea>
             </div>
 
             <h6 class="text-muted mt-2">Motor</h6>
@@ -84,18 +84,18 @@
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Potencia (HP)</label>
-                    <input type="number" step="any" name="motor_potencia_hp" class="form-control" value="{{ equipo.motor_potencia_hp if equipo else '' }}">
+                    <input type="number" step="any" name="motor_potencia_hp" class="form-control" value="{{ equipo.motor_potencia_hp or '' }}">
                 </div>
             </div>
 
             <div id="motor-electrico-wrapper" class="row" style="display:none;">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Voltaje (V)</label>
-                    <input type="number" step="any" name="motor_voltaje" class="form-control" value="{{ equipo.motor_voltaje if equipo else '' }}">
+                    <input type="number" step="any" name="motor_voltaje" class="form-control" value="{{ equipo.motor_voltaje or '' }}">
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Amperaje (A)</label>
-                    <input type="number" step="any" name="motor_amperaje" class="form-control" value="{{ equipo.motor_amperaje if equipo else '' }}">
+                    <input type="number" step="any" name="motor_amperaje" class="form-control" value="{{ equipo.motor_amperaje or '' }}">
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Fases</label>
@@ -110,19 +110,19 @@
             <div id="motor-diesel-wrapper" class="row" style="display:none;">
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Marca / modelo del motor</label>
-                    <input type="text" name="motor_marca_modelo" class="form-control" value="{{ equipo.motor_marca_modelo if equipo else '' }}">
+                    <input type="text" name="motor_marca_modelo" class="form-control" value="{{ equipo.motor_marca_modelo or '' }}">
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Capacidad tanque combustible (L)</label>
-                    <input type="number" step="any" name="motor_combustible_litros" class="form-control" value="{{ equipo.motor_combustible_litros if equipo else '' }}">
+                    <input type="number" step="any" name="motor_combustible_litros" class="form-control" value="{{ equipo.motor_combustible_litros or '' }}">
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Horas de uso acumuladas</label>
-                    <input type="number" step="any" name="motor_horas_uso" class="form-control" value="{{ equipo.motor_horas_uso if equipo else '' }}">
+                    <input type="number" step="any" name="motor_horas_uso" class="form-control" value="{{ equipo.motor_horas_uso or '' }}">
                 </div>
                 <div class="col-md-4 mb-3">
                     <label class="form-label">Estado de batería de arranque</label>
-                    <input type="text" name="motor_estado_bateria" class="form-control" placeholder="Ej: Buena, cambiada 03/2026" value="{{ equipo.motor_estado_bateria if equipo else '' }}">
+                    <input type="text" name="motor_estado_bateria" class="form-control" placeholder="Ej: Buena, cambiada 03/2026" value="{{ equipo.motor_estado_bateria or '' }}">
                 </div>
             </div>
         </div>

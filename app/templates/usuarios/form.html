@@ -53,7 +53,7 @@
 
     <div class="mb-3">
         <label class="form-label">Nombre completo</label>
-        <input type="text" name="nombre_completo" class="form-control" value="{{ usuario.nombre_completo if usuario else '' }}">
+        <input type="text" name="nombre_completo" class="form-control" value="{{ usuario.nombre_completo or '' }}">
     </div>
 
     {% if usuario %}

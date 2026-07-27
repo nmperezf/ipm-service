@@ -15,6 +15,7 @@ def _repuestos_empresa():
 
 
 @inventario_bp.route("/")
+@rol_requerido("Administrador", "Jefe", "Técnico")
 def dashboard():
     repuestos = _repuestos_empresa().filter_by(activo=True).order_by(Repuesto.nombre).all()
     criticos = [r for r in repuestos if r.en_nivel_critico]
@@ -22,6 +23,7 @@ def dashboard():
 
 
 @inventario_bp.route("/criticos")
+@rol_requerido("Administrador", "Jefe", "Técnico")
 def criticos_lista():
     repuestos = _repuestos_empresa().filter_by(activo=True).order_by(Repuesto.nombre).all()
     criticos = [r for r in repuestos if r.en_nivel_critico]

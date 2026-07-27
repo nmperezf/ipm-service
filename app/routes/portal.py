@@ -70,6 +70,19 @@ def deficiencias(clasificacion):
     )
 
 
+@portal_bp.route("/contratos")
+@rol_requerido("Cliente")
+def contratos():
+    """Qué servicios tiene contratados el cliente y su vigencia, por
+    instalación — de solo lectura, nada de edición acá."""
+    cliente = _cliente_actual()
+    instalaciones_data = [
+        {"instalacion": inst, "contratos": sorted(inst.contratos, key=lambda c: c.fecha_inicio, reverse=True)}
+        for inst in cliente.instalaciones
+    ]
+    return render_template("portal/contratos.html", cliente=cliente, instalaciones_data=instalaciones_data)
+
+
 @portal_bp.route("/historico")
 @rol_requerido("Cliente")
 def historico():

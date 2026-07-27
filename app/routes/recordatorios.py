@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, flash, redirect, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user
 
 from app import db
@@ -49,3 +49,24 @@ def eliminar(recordatorio_id):
     db.session.commit()
     flash("Recordatorio eliminado.", "info")
     return redirect(url_for("dashboard.inicio"))
+
+
+@recordatorios_bp.route("/resueltos")
+@rol_requerido("Administrador", "Jefe", "Super Admin")
+def resueltos():
+    rq = Recordatorio.query if current_user.rol == "Super Admin" else Recordatorio.query.filter_by(
+        empresa_id=current_user.empresa_id
+    )
+    recordatorios = rq.filter_by(resuelto=True).order_by(Recordatorio.fecha_carga.desc()).all()
+    return render_template("recordatorios/resueltos.html", recordatorios=recordatorios)
+
+
+@recordatorios_bp.route("/<int:recordatorio_id>/reabrir", methods=["POST"])
+@rol_requerido("Administrador", "Jefe")
+def reabrir(recordatorio_id):
+    recordatorio = Recordatorio.query.get_or_404(recordatorio_id)
+    _verificar_recordatorio(recordatorio)
+    recordatorio.resuelto = False
+    db.session.commit()
+    flash("Recordatorio reabierto.", "info")
+    return redirect(url_for("recordatorios.resueltos"))

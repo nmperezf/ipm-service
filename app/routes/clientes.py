@@ -17,6 +17,7 @@ MESES_ES = [
 
 
 @clientes_bp.route("/")
+@rol_requerido("Administrador", "Jefe", "Técnico")
 def listar():
     q = request.args.get("q", "").strip()
     query = clientes_visibles()
@@ -48,6 +49,7 @@ def nuevo():
 
 
 @clientes_bp.route("/<int:cliente_id>")
+@rol_requerido("Administrador", "Jefe", "Técnico")
 def detalle(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
     verificar_acceso_cliente(cliente)
@@ -61,6 +63,7 @@ def detalle(cliente_id):
 
 
 @clientes_bp.route("/<int:cliente_id>/hoja-ruta")
+@rol_requerido("Administrador", "Jefe", "Técnico")
 def hoja_ruta(cliente_id):
     """Hoja de ruta del cliente: todas las visitas (cumplidas y pendientes/
     futuras) de todas sus instalaciones, agrupadas por mes."""
@@ -89,6 +92,7 @@ def hoja_ruta(cliente_id):
 
 
 @clientes_bp.route("/<int:cliente_id>/deficiencias/<clasificacion>")
+@rol_requerido("Administrador", "Jefe", "Técnico")
 def deficiencias(cliente_id, clasificacion):
     cliente = Cliente.query.get_or_404(cliente_id)
     verificar_acceso_cliente(cliente)

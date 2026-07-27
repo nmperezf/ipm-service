@@ -28,6 +28,7 @@ def nueva(cliente_id):
 
 
 @instalaciones_bp.route("/<int:instalacion_id>")
+@rol_requerido("Administrador", "Jefe", "Técnico")
 def detalle(instalacion_id):
     instalacion = Instalacion.query.get_or_404(instalacion_id)
     verificar_acceso_cliente(instalacion.cliente)

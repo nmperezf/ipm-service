@@ -175,6 +175,16 @@ def agregar_repuesto(ot_id):
         abort(403)
     cantidad = int(request.form["cantidad"])
 
+    if cantidad <= 0:
+        flash("La cantidad tiene que ser mayor a 0.", "danger")
+        return redirect(url_for("ordenes.detalle", ot_id=ot.id))
+    if cantidad > repuesto.stock_actual:
+        flash(
+            f"No hay suficiente stock de '{repuesto.nombre}': quedan {repuesto.stock_actual} {repuesto.unidad}(s).",
+            "danger",
+        )
+        return redirect(url_for("ordenes.detalle", ot_id=ot.id))
+
     uso = RepuestoUsado(orden_trabajo_id=ot.id, repuesto_id=repuesto.id, cantidad=cantidad)
     repuesto.stock_actual -= cantidad
     db.session.add(uso)

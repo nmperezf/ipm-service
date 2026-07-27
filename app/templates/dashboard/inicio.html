@@ -135,9 +135,12 @@
 </div>
 
 <div class="row g-4">
-    {% if current_user.rol in ('Administrador', 'Super Admin') %}
+    {% if current_user.rol in ('Administrador', 'Jefe', 'Super Admin') %}
     <div class="col-md-12">
-        <h4>Recordatorios</h4>
+        <div class="d-flex justify-content-between align-items-center">
+            <h4>Recordatorios</h4>
+            <a href="{{ url_for('recordatorios.resueltos') }}" class="btn btn-sm btn-outline-secondary">Ver resueltos</a>
+        </div>
         <form method="POST" action="{{ url_for('recordatorios.nuevo') }}" class="row g-2 align-items-end mb-3">
             <div class="col-md-5">
                 <input type="text" name="titulo" class="form-control" placeholder="Ej: Llamar a fulano por renovación de contrato" required>
@@ -175,7 +178,8 @@
                     <form method="POST" action="{{ url_for('recordatorios.resolver', recordatorio_id=r.id) }}" class="d-inline">
                         <button type="submit" class="btn btn-sm btn-outline-success">Resuelto</button>
                     </form>
-                    <form method="POST" action="{{ url_for('recordatorios.eliminar', recordatorio_id=r.id) }}" class="d-inline">
+                    <form method="POST" action="{{ url_for('recordatorios.eliminar', recordatorio_id=r.id) }}" class="d-inline"
+                          onsubmit="return confirm('¿Eliminar este recordatorio?');">
                         <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                     </form>
                 </span>

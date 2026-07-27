@@ -56,6 +56,7 @@ def nuevo(instalacion_id):
 
 
 @contratos_bp.route("/<int:contrato_id>")
+@rol_requerido("Administrador", "Jefe", "Técnico")
 def detalle(contrato_id):
     contrato = Contrato.query.get_or_404(contrato_id)
     verificar_acceso_cliente(contrato.instalacion.cliente)

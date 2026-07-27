@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user
 
 from app.auth_utils import (
@@ -315,12 +315,17 @@ def editar_nota_cliente(visita_id):
 
 
 @visitas_bp.route("/<int:visita_id>/pdf-devolucion")
-@rol_requerido("Administrador", "Jefe", "Técnico")
+@rol_requerido("Administrador", "Jefe", "Técnico", "Cliente")
 def pdf_devolucion(visita_id):
     visita = Visita.query.get_or_404(visita_id)
     verificar_acceso_cliente(visita.instalacion.cliente)
 
-    if not visita.cerrada:
+    if current_user.rol == "Cliente":
+        # Mismo doble candado que el resto del portal: cerrada Y con OT
+        # finalizada, no alcanza con una sola.
+        if not (visita.cerrada and visita.orden_trabajo and visita.orden_trabajo.estado == "Finalizada"):
+            abort(404)
+    elif not visita.cerrada:
         flash("Esta visita todavía no está cerrada.", "danger")
         return redirect(url_for("visitas.detalle", visita_id=visita.id))
 

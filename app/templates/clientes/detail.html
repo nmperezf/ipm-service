@@ -79,4 +79,11 @@
     <p class="text-muted">Este cliente todavía no tiene instalaciones cargadas.</p>
     {% endfor %}
 </div>
+
+{% if current_user.rol in ('Administrador', 'Jefe') %}
+<form method="POST" action="{{ url_for('clientes.eliminar', cliente_id=cliente.id) }}" class="mt-4"
+      onsubmit="return confirm('¿Eliminar \'' + {{ cliente.nombre|tojson }} + '\'? Se borran también todas sus instalaciones, contratos, visitas y equipos. Esta acción no se puede deshacer.');">
+    <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar cliente</button>
+</form>
+{% endif %}
 {% endblock %}

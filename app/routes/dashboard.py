@@ -4,7 +4,7 @@ from dateutil.relativedelta import relativedelta
 from flask import Blueprint, redirect, render_template, request, url_for
 from flask_login import current_user
 
-from app.auth_utils import clientes_visibles
+from app.auth_utils import clientes_visibles, rol_requerido
 from app.models import (
     CLASIFICACIONES_OBSERVACION,
     Cliente,
@@ -96,9 +96,9 @@ def inicio():
         repuestos_query = Repuesto.query.filter_by(empresa_id=current_user.empresa_id)
     repuestos_criticos = sum(1 for r in repuestos_query.filter_by(activo=True).all() if r.en_nivel_critico)
 
-    # Los recordatorios son solo del Administrador de cada empresa.
+    # Los recordatorios son de Administrador/Jefe de cada empresa.
     recordatorios_abiertos = []
-    if current_user.rol in ("Administrador", "Super Admin"):
+    if current_user.rol in ("Administrador", "Jefe", "Super Admin"):
         rq = Recordatorio.query if current_user.rol == "Super Admin" else Recordatorio.query.filter_by(
             empresa_id=current_user.empresa_id
         )
@@ -133,12 +133,14 @@ def inicio():
 
 
 @dashboard_bp.route("/visitas-vencidas")
+@rol_requerido("Administrador", "Jefe", "Técnico")
 def visitas_vencidas_lista():
     visitas = _visitas_visibles().filter(Visita.estado == "Vencido").order_by(Visita.fecha).all()
     return render_template("dashboard/visitas_vencidas.html", visitas=visitas)
 
 
 @dashboard_bp.route("/cumplimiento-mensual")
+@rol_requerido("Administrador", "Jefe", "Técnico")
 def cumplimiento_mensual():
     """Detalle de la tarjeta de cumplimiento: todos los servicios del mes,
     cumplidos y no (pendientes o cancelados), para ver de un vistazo qué
@@ -165,6 +167,7 @@ def cumplimiento_mensual():
 
 
 @dashboard_bp.route("/clientes-con-novedad/<clasificacion>")
+@rol_requerido("Administrador", "Jefe", "Técnico")
 def clientes_con_novedad_lista(clasificacion):
     """Radar general: qué clientes tienen novedades abiertas de esta
     clasificación (crítica, no crítica, desactivación o comentario)."""
@@ -178,6 +181,7 @@ def clientes_con_novedad_lista(clasificacion):
 
 
 @dashboard_bp.route("/visitas-en-revision")
+@rol_requerido("Administrador", "Jefe", "Técnico")
 def visitas_en_revision_lista():
     """Visitas que los técnicos ya mandaron a revisión, esperando que
     Administrador/Jefe las apruebe y cierre."""
