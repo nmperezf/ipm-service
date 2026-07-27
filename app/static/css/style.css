@@ -156,6 +156,12 @@
 body {
     font-family: var(--font-body);
     color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+body > .container {
+    flex: 1 0 auto;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -614,20 +620,17 @@ small, .small, .text-muted {
 /* ---- Pie de página -------------------------------------------------------- */
 
 .ipm-footer {
+    flex-shrink: 0;
+    background: #000000;
     text-align: center;
-    padding: 1.5rem 1rem;
-    margin-top: 2rem;
-    border-top: 1px solid var(--border);
+    padding: 1rem;
 }
 .ipm-footer p {
     margin: 0;
     font-family: var(--font-mono);
     font-size: .72rem;
-    letter-spacing: .02em;
-    color: var(--ink-muted);
-}
-body.con-nav-inferior .ipm-footer {
-    margin-bottom: 3.6rem;
+    letter-spacing: .03em;
+    color: rgba(255,255,255,.65);
 }
 
 /* ---- Barra de navegación inferior en celular (mobile-first) --------------
