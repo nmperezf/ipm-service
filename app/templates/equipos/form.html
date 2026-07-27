@@ -63,6 +63,60 @@
                     <input type="number" name="anio_fabricacion" class="form-control" value="{{ equipo.anio_fabricacion if equipo else '' }}">
                 </div>
             </div>
+
+            <h6 class="text-muted mt-2">Motor</h6>
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Tipo de motor</label>
+                    <select name="tipo_motor" id="tipo_motor" class="form-select" onchange="toggleMotor()">
+                        <option value="">-- Sin especificar --</option>
+                        <option value="Eléctrico" {% if equipo and equipo.tipo_motor == 'Eléctrico' %}selected{% endif %}>Eléctrico</option>
+                        <option value="Diesel" {% if equipo and equipo.tipo_motor == 'Diesel' %}selected{% endif %}>Diesel</option>
+                    </select>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Potencia (HP)</label>
+                    <input type="number" step="any" name="motor_potencia_hp" class="form-control" value="{{ equipo.motor_potencia_hp if equipo else '' }}">
+                </div>
+            </div>
+
+            <div id="motor-electrico-wrapper" class="row" style="display:none;">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Voltaje (V)</label>
+                    <input type="number" step="any" name="motor_voltaje" class="form-control" value="{{ equipo.motor_voltaje if equipo else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Amperaje (A)</label>
+                    <input type="number" step="any" name="motor_amperaje" class="form-control" value="{{ equipo.motor_amperaje if equipo else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Fases</label>
+                    <select name="motor_fases" class="form-select">
+                        <option value="">-- --</option>
+                        <option value="1" {% if equipo and equipo.motor_fases == 1 %}selected{% endif %}>Monofásico</option>
+                        <option value="3" {% if equipo and equipo.motor_fases == 3 %}selected{% endif %}>Trifásico</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="motor-diesel-wrapper" class="row" style="display:none;">
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Marca / modelo del motor</label>
+                    <input type="text" name="motor_marca_modelo" class="form-control" value="{{ equipo.motor_marca_modelo if equipo else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Capacidad tanque combustible (L)</label>
+                    <input type="number" step="any" name="motor_combustible_litros" class="form-control" value="{{ equipo.motor_combustible_litros if equipo else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Horas de uso acumuladas</label>
+                    <input type="number" step="any" name="motor_horas_uso" class="form-control" value="{{ equipo.motor_horas_uso if equipo else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label">Estado de batería de arranque</label>
+                    <input type="text" name="motor_estado_bateria" class="form-control" placeholder="Ej: Buena, cambiada 03/2026" value="{{ equipo.motor_estado_bateria if equipo else '' }}">
+                </div>
+            </div>
         </div>
     </div>
 
@@ -90,6 +144,16 @@ function toggleManifold() {
     document.getElementById('manifold-wrapper').style.display = (tipo === 'ECA') ? 'block' : 'none';
     document.getElementById('bomba-wrapper').style.display = (tipo === 'Bomba') ? 'block' : 'none';
 }
-document.addEventListener('DOMContentLoaded', toggleManifold);
+
+function toggleMotor() {
+    const tipoMotor = document.getElementById('tipo_motor').value;
+    document.getElementById('motor-electrico-wrapper').style.display = (tipoMotor === 'Eléctrico') ? 'flex' : 'none';
+    document.getElementById('motor-diesel-wrapper').style.display = (tipoMotor === 'Diesel') ? 'flex' : 'none';
+}
+
+document.addEventListener('DOMContentLoaded', function () {
+    toggleManifold();
+    toggleMotor();
+});
 </script>
 {% endblock %}

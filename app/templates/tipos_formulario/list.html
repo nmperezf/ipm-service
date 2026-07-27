@@ -10,18 +10,14 @@
 
 <div class="table-responsive">
 <table class="table table-hover data-table">
-    <thead><tr><th>Nombre</th><th>Descripción</th><th>Campos</th><th>Modo</th><th></th></tr></thead>
+    <thead><tr><th>Nombre</th><th>Descripción</th><th>Campos</th><th>Por equipo</th><th></th></tr></thead>
     <tbody>
         {% for tipo in tipos %}
         <tr>
             <td>{{ tipo.nombre }}</td>
             <td>{{ tipo.descripcion or '-' }}</td>
             <td>{{ tipo.campos()|length }}</td>
-            <td>
-                {% if tipo.es_dato_base %}<span class="badge bg-secondary">Dato de base — {{ tipo.tipo_equipo_aplicable or 'cualquier equipo' }}</span>
-                {% elif tipo.por_equipo %}<span class="badge bg-secondary">Por equipo — {{ tipo.tipo_equipo_aplicable }}</span>
-                {% else %}Checklist de visita{% endif %}
-            </td>
+            <td>{{ tipo.tipo_equipo_aplicable if tipo.por_equipo else '-' }}</td>
             <td>
                 <a href="{{ url_for('tipos_formulario.editar', tipo_id=tipo.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
                 <form method="POST" action="{{ url_for('tipos_formulario.eliminar', tipo_id=tipo.id) }}" class="d-inline"

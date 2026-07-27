@@ -58,7 +58,6 @@ def create_app():
     from app.routes.portal import portal_bp
     from app.routes.servicios_tipo import servicios_tipo_bp
     from app.routes.curvas import curvas_bp
-    from app.routes.datos_motor import datos_motor_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -82,7 +81,6 @@ def create_app():
     app.register_blueprint(portal_bp)
     app.register_blueprint(servicios_tipo_bp)
     app.register_blueprint(curvas_bp)
-    app.register_blueprint(datos_motor_bp)
 
     with app.app_context():
         db.create_all()

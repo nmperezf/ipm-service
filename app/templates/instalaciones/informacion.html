@@ -55,7 +55,7 @@
             <div class="col-auto">Caudal nominal: <strong class="text-body">{{ equipo.caudal_nominal if equipo.caudal_nominal else '-' }} GPM</strong></div>
             <div class="col-auto">RPM nominal: <strong class="text-body">{{ equipo.rpm_nominal or '-' }}</strong></div>
             <div class="col-auto">Año fabricación: <strong class="text-body">{{ equipo.anio_fabricacion or '-' }}</strong></div>
-            <div class="col-auto">Datos de base: <strong class="text-body">{{ equipo.datos_base|length }}</strong></div>
+            <div class="col-auto">Motor: <strong class="text-body">{{ equipo.tipo_motor or 'Sin especificar' }}</strong></div>
         </div>
 
         {% if ultimo and ultimo.estado == 'Rechazado' %}
@@ -102,7 +102,7 @@
         {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') and equipo.curva_fabrica %}
         <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-primary">+ Nuevo ensayo</a>
         {% endif %}
-        <a href="{{ url_for('datos_motor.listar', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-dark">Datos de base (motor)</a>
+        <a href="{{ url_for('equipos.editar', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-dark">Editar datos de motor</a>
         </div>
     </div>
 </div>

@@ -9,15 +9,16 @@ equipos_bp = Blueprint("equipos", __name__, url_prefix="/equipos")
 
 
 def _aplicar_datos_bomba(equipo, form):
-    """Campos de placa que solo se completan cuando tipo == 'Bomba' — se
-    guardan igual si vienen en el form (el toggle es solo visual), pero
-    quedan en None para cualquier otro tipo de equipo."""
+    """Campos de placa y de motor, que solo se completan cuando
+    tipo == 'Bomba' — se guardan igual si vienen en el form (el toggle es
+    solo visual), pero quedan en None para cualquier otro tipo de equipo."""
     if form.get("tipo") != "Bomba":
         equipo.modelo = None
         equipo.serie = None
         equipo.caudal_nominal = None
         equipo.rpm_nominal = None
         equipo.anio_fabricacion = None
+        _aplicar_datos_motor(equipo, {})
         return
 
     equipo.modelo = form.get("modelo") or None
@@ -28,6 +29,45 @@ def _aplicar_datos_bomba(equipo, form):
     equipo.rpm_nominal = int(float(rpm)) if rpm else None
     anio = form.get("anio_fabricacion") or None
     equipo.anio_fabricacion = int(float(anio)) if anio else None
+    _aplicar_datos_motor(equipo, form)
+
+
+def _aplicar_datos_motor(equipo, form):
+    tipo_motor = form.get("tipo_motor") or None
+    equipo.tipo_motor = tipo_motor
+
+    potencia = form.get("motor_potencia_hp") or None
+    equipo.motor_potencia_hp = float(potencia) if potencia else None
+
+    if tipo_motor == "Eléctrico":
+        voltaje = form.get("motor_voltaje") or None
+        equipo.motor_voltaje = float(voltaje) if voltaje else None
+        amperaje = form.get("motor_amperaje") or None
+        equipo.motor_amperaje = float(amperaje) if amperaje else None
+        fases = form.get("motor_fases") or None
+        equipo.motor_fases = int(fases) if fases else None
+        equipo.motor_marca_modelo = None
+        equipo.motor_combustible_litros = None
+        equipo.motor_horas_uso = None
+        equipo.motor_estado_bateria = None
+    elif tipo_motor == "Diesel":
+        equipo.motor_voltaje = None
+        equipo.motor_amperaje = None
+        equipo.motor_fases = None
+        equipo.motor_marca_modelo = form.get("motor_marca_modelo") or None
+        combustible = form.get("motor_combustible_litros") or None
+        equipo.motor_combustible_litros = float(combustible) if combustible else None
+        horas = form.get("motor_horas_uso") or None
+        equipo.motor_horas_uso = float(horas) if horas else None
+        equipo.motor_estado_bateria = form.get("motor_estado_bateria") or None
+    else:
+        equipo.motor_voltaje = None
+        equipo.motor_amperaje = None
+        equipo.motor_fases = None
+        equipo.motor_marca_modelo = None
+        equipo.motor_combustible_litros = None
+        equipo.motor_horas_uso = None
+        equipo.motor_estado_bateria = None
 
 
 @equipos_bp.route("/nuevo/<int:instalacion_id>", methods=["GET", "POST"])

@@ -527,14 +527,7 @@ class TipoFormulario(db.Model):
     Si por_equipo=True, este formulario se completa una vez por cada equipo
     de la instalación (ej: un checklist de ECA se llena por cada ECA),
     en vez de una sola vez para toda la visita. tipo_equipo_aplicable filtra
-    qué tipo de equipo corresponde (ej: "ECA").
-
-    Si es_dato_base=True, este tipo NO es un checklist que se repite en
-    cada visita: es una plantilla de datos de base de un equipo (ej. "Motor
-    eléctrico", "Motor diesel") que el técnico completa una sola vez por
-    equipo, se guarda en DatosEquipoBase (no en Formulario/item_visita) y
-    se puede volver a editar después. por_equipo no aplica en ese caso —
-    ya es implícitamente "por equipo"."""
+    qué tipo de equipo corresponde (ej: "ECA")."""
 
     __tablename__ = "tipos_formulario"
     __table_args__ = (db.UniqueConstraint("cliente_id", "nombre", name="uq_tipo_formulario_cliente_nombre"),)
@@ -546,7 +539,6 @@ class TipoFormulario(db.Model):
     schema_json = db.Column(db.Text, nullable=False)  # lista de campos: [{campo, tipo, label, opciones?}]
     por_equipo = db.Column(db.Boolean, default=False, nullable=False)
     tipo_equipo_aplicable = db.Column(db.String(40), nullable=True)  # nombre de un TipoEquipo
-    es_dato_base = db.Column(db.Boolean, default=False, nullable=False)
 
     cliente = db.relationship("Cliente", backref=db.backref("tipos_formulario", cascade="all, delete-orphan"))
 
@@ -762,52 +754,27 @@ class Equipo(db.Model):
     rpm_nominal = db.Column(db.Integer, nullable=True)
     anio_fabricacion = db.Column(db.Integer, nullable=True)
 
+    # Datos de motor, también solo para tipo == "Bomba". Campos fijos en vez
+    # de un formulario dinámico: son bastante estándar en la industria
+    # (NFPA 20), así que no hace falta que cada cliente los redefina.
+    tipo_motor = db.Column(db.String(20), nullable=True)  # "Eléctrico" / "Diesel"
+    motor_potencia_hp = db.Column(db.Float, nullable=True)  # común a los dos tipos
+    # Solo si tipo_motor == "Eléctrico"
+    motor_voltaje = db.Column(db.Float, nullable=True)
+    motor_amperaje = db.Column(db.Float, nullable=True)
+    motor_fases = db.Column(db.Integer, nullable=True)
+    # Solo si tipo_motor == "Diesel"
+    motor_marca_modelo = db.Column(db.String(150), nullable=True)
+    motor_combustible_litros = db.Column(db.Float, nullable=True)
+    motor_horas_uso = db.Column(db.Float, nullable=True)
+    motor_estado_bateria = db.Column(db.String(100), nullable=True)
+
     equipos_hijos = db.relationship(
         "Equipo", backref=db.backref("manifold", remote_side=[id]), lazy=True
     )
 
     def __repr__(self):
         return f"<Equipo {self.tipo}: {self.nombre}>"
-
-
-# ---------------------------------------------------------------------------
-# Datos de base de un equipo (ej. datos de motor eléctrico/diesel): a
-# diferencia de Formulario (que se completa en cada visita), esto se carga
-# una sola vez por equipo y se puede editar después. El esquema de campos
-# lo define un TipoFormulario con es_dato_base=True — el técnico elige cuál
-# usar (ej. "Motor eléctrico" o "Motor diesel").
-# ---------------------------------------------------------------------------
-
-
-class DatosEquipoBase(db.Model):
-    __tablename__ = "datos_equipo_base"
-    __table_args__ = (db.UniqueConstraint("equipo_id", "tipo_formulario_id", name="uq_datos_equipo_base_tipo"),)
-
-    id = db.Column(db.Integer, primary_key=True)
-    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=False)
-    tipo_formulario_id = db.Column(db.Integer, db.ForeignKey("tipos_formulario.id"), nullable=False)
-    datos_json = db.Column(db.Text)
-    cargado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
-    fecha_carga = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-
-    equipo = db.relationship("Equipo", backref=db.backref("datos_base", cascade="all, delete-orphan"))
-    tipo_formulario = db.relationship(
-        "TipoFormulario", backref=db.backref("datos_equipo_base", cascade="all, delete-orphan")
-    )
-    cargado_por = db.relationship("Usuario")
-
-    def datos(self):
-        import json
-
-        return json.loads(self.datos_json) if self.datos_json else {}
-
-    def set_datos(self, dict_datos):
-        import json
-
-        self.datos_json = json.dumps(dict_datos)
-
-    def __repr__(self):
-        return f"<DatosEquipoBase equipo={self.equipo_id} tipo={self.tipo_formulario_id}>"
 
 
 # ---------------------------------------------------------------------------
