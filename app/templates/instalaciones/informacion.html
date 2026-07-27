@@ -9,218 +9,67 @@
     {% if instalacion.direccion %} &middot; {{ instalacion.direccion }}{% endif %}
 </p>
 
-<h4 class="mt-4">Bombas</h4>
-{% if not bombas %}
-<p class="text-muted">Esta instalación todavía no tiene equipos tipo "Bomba" cargados.</p>
+{% if not categorias %}
+<p class="text-muted">Esta instalación todavía no tiene equipos cargados.</p>
 {% else %}
 <div class="row g-2 mb-4">
-    <div class="col-md">
-        <div class="card card-indicador"><div class="valor">{{ resumen.total_equipos }}</div><div class="text-muted small">Total bombas</div></div>
-    </div>
-    <div class="col-md">
-        <div class="card border-secondary card-indicador"><div class="valor text-success">{{ resumen.equipos_aprobados }}</div><div class="text-muted small">Aprobadas</div></div>
-    </div>
-    <div class="col-md">
-        <div class="card border-danger card-indicador"><div class="valor text-danger">{{ resumen.equipos_rechazados }}</div><div class="text-muted small">Rechazadas</div></div>
-    </div>
-    <div class="col-md">
-        <div class="card border-warning card-indicador"><div class="valor text-warning">{{ resumen.deficiencias_abiertas }}</div><div class="text-muted small">Deficiencias abiertas</div></div>
-    </div>
-</div>
-
-{% for equipo in bombas %}
-{% set ensayos = ensayos_por_bomba.get(equipo.id, []) %}
-{% set ultimo = ensayos[0] if ensayos else none %}
-{% set curvas = curvas_por_bomba.get(equipo.id) %}
-<div class="card mb-3">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-start">
-            <div>
-                <h5 class="mb-0">
-                    <a href="{{ url_for('equipos.detalle', equipo_id=equipo.id) }}">{{ equipo.nombre }}</a>
-                    {% if equipo.modelo %}<small class="text-muted">{{ equipo.modelo }}</small>{% endif %}
-                    {% if equipo.serie %}<small class="text-muted">&middot; N° serie {{ equipo.serie }}</small>{% endif %}
-                </h5>
+    {% for categoria, equipos in categorias %}
+    <div class="col-md-3 col-6">
+        <a href="{{ url_for('instalaciones.equipos_categoria', instalacion_id=instalacion.id, categoria=categoria) }}" class="dashboard-card">
+            <div class="card card-indicador">
+                <div class="valor">{{ equipos|length }}</div>
+                <div class="text-muted small">{{ categoria }}</div>
             </div>
-            {% if ultimo %}
-                {% if ultimo.estado == 'Aprobado' %}<span class="badge badge-Cumplido">APROBADO</span>
-                {% elif ultimo.estado == 'Rechazado' %}<span class="badge badge-Vencido">RECHAZADO</span>
-                {% else %}<span class="badge bg-secondary">{{ ultimo.estado|upper }}</span>{% endif %}
-            {% else %}
-            <span class="badge bg-secondary">SIN ENSAYOS</span>
-            {% endif %}
-        </div>
-
-        <div class="row g-2 mt-1 mb-3 small text-muted">
-            <div class="col-auto">Caudal nominal: <strong class="text-body">{{ equipo.caudal_nominal if equipo.caudal_nominal else '-' }} GPM</strong></div>
-            <div class="col-auto">RPM nominal: <strong class="text-body">{{ equipo.rpm_nominal or '-' }}</strong></div>
-            <div class="col-auto">Año fabricación: <strong class="text-body">{{ equipo.anio_fabricacion or '-' }}</strong></div>
-            <div class="col-auto">Motor: <strong class="text-body">{{ equipo.tipo_motor or 'Sin especificar' }}</strong></div>
-        </div>
-
-        {% if ultimo and ultimo.estado == 'Rechazado' %}
-        <div class="alert alert-danger py-2 small mb-3">Degradación crítica: el último ensayo no aprobó NFPA 25 — requiere revisión mecánica.</div>
-        {% endif %}
-
-        {% if ensayos %}
-        <div class="table-responsive">
-        <table class="table table-sm mb-2">
-            <thead><tr><th>Fecha</th><th>Presión @ 100%</th><th>Var. vs fábrica</th><th>NFPA 25</th><th>Validación</th><th></th></tr></thead>
-            <tbody>
-                {% for e in ensayos %}
-                <tr>
-                    <td>{{ e.fecha.strftime('%d/%m/%Y') }}</td>
-                    <td>{{ e.presion_100 }} PSI</td>
-                    <td>{{ '%+.1f%%'|format(e.var_pct) if e.var_pct is not none else '-' }}</td>
-                    <td>
-                        {% if e.estado == 'Aprobado' %}<span class="badge badge-Cumplido">Aprobado</span>
-                        {% elif e.estado == 'Rechazado' %}<span class="badge badge-Vencido">Rechazado</span>
-                        {% else %}<span class="badge bg-secondary">{{ e.estado }}</span>{% endif %}
-                    </td>
-                    <td>
-                        {% if e.estado_revision == 'Validado' %}<span class="badge badge-Cumplido">Validado</span>
-                        {% elif e.estado_revision == 'Rechazado' %}<span class="badge badge-Vencido">Rechazado por Jefe</span>
-                        {% else %}<span class="badge badge-Pendiente">Pendiente</span>{% endif %}
-                    </td>
-                    <td><a href="{{ url_for('curvas.ensayo_pdf', equipo_id=equipo.id, ensayo_id=e.ensayo_id) }}" class="btn btn-sm btn-outline-dark" target="_blank">PDF</a></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        </div>
-        {% else %}
-        <p class="text-muted small mb-2">Todavía no tiene ensayos de curva de caudal cargados.</p>
-        {% endif %}
-
-        {% if curvas and curvas.curvas %}
-        <h6 class="text-muted mt-3">Tendencia de presión — últimas curvas</h6>
-        <canvas id="grafico-tendencia-{{ equipo.id }}" height="110"></canvas>
-        {% endif %}
-
-        <div class="mt-3">
-        <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-secondary">Ver histórico de ensayos</a>
-        {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') and equipo.curva_fabrica %}
-        <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-primary">+ Nuevo ensayo</a>
-        {% endif %}
-        <a href="{{ url_for('equipos.editar', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-dark">Editar datos de motor</a>
-        </div>
+        </a>
     </div>
-</div>
-{% endfor %}
-
-<h5 class="mt-4">Acciones recomendadas</h5>
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <h6 class="text-danger">Urgentes</h6>
-        {% for accion in acciones.urgentes %}
-        <div class="card border-danger mb-2"><div class="card-body py-2">
-            <strong>{{ accion.equipo }}</strong>
-            <p class="mb-0 small">{{ accion.motivo }}</p>
-            <p class="mb-0 small text-muted">Plazo: {{ accion.plazo }}</p>
-        </div></div>
-        {% else %}
-        <p class="text-muted small">Sin acciones urgentes.</p>
-        {% endfor %}
-    </div>
-    <div class="col-md-4">
-        <h6 class="text-primary">Programadas</h6>
-        {% for accion in acciones.programadas %}
-        <div class="card border-secondary mb-2"><div class="card-body py-2">
-            <strong>{{ accion.equipo }}</strong>
-            <p class="mb-0 small">{{ accion.motivo }}</p>
-            <p class="mb-0 small text-muted">Plazo: {{ accion.plazo }}</p>
-        </div></div>
-        {% else %}
-        <p class="text-muted small">Sin acciones programadas.</p>
-        {% endfor %}
-    </div>
-    <div class="col-md-4">
-        <h6 class="text-muted">En revisión</h6>
-        {% for accion in acciones.en_revision %}
-        <div class="card border-secondary mb-2"><div class="card-body py-2">
-            <strong>{{ accion.equipo }}</strong>
-            <p class="mb-0 small">{{ accion.motivo }}</p>
-            <p class="mb-0 small text-muted">Plazo: {{ accion.plazo }}</p>
-        </div></div>
-        {% else %}
-        <p class="text-muted small">Sin acciones en revisión.</p>
-        {% endfor %}
-    </div>
+    {% endfor %}
 </div>
 {% endif %}
 
-<h4 class="mt-4">Histórico de checklist — todos los equipos</h4>
-{% if not checklists_por_tipo %}
-<p class="text-muted">Esta instalación todavía no tiene equipos cargados.</p>
-{% endif %}
-{% for tipo, items in checklists_por_tipo.items() %}
-<h6 class="text-muted mt-3">{{ tipo }}</h6>
-<div class="table-responsive mb-3">
+<div class="d-flex justify-content-between align-items-baseline mt-4">
+    <h4>Acciones recomendadas</h4>
+    <a href="{{ url_for('observaciones.nueva', instalacion_id=instalacion.id) }}" class="btn btn-outline-warning btn-sm">+ Nueva observación</a>
+</div>
+{% if not acciones_recomendadas %}
+<p class="text-muted">No hay acciones recomendadas abiertas para esta instalación.</p>
+{% else %}
+<div class="table-responsive">
 <table class="table table-sm data-table">
-    <thead><tr><th>Equipo</th><th>Checklists cargados</th><th>Último</th><th></th></tr></thead>
+    <thead><tr><th>Fecha</th><th>Clasificación</th><th>Equipo</th><th>Descripción</th><th>Revisión</th><th></th></tr></thead>
     <tbody>
-        {% for item in items %}
+        {% for obs in acciones_recomendadas %}
         <tr>
-            <td>{{ item.equipo.nombre }}</td>
-            <td>{{ item.cantidad_checklists }}</td>
-            <td>{{ item.ultima_fecha.strftime('%d/%m/%Y') if item.ultima_fecha else '-' }}</td>
-            <td><a href="{{ url_for('equipos.detalle', equipo_id=item.equipo.id) }}" class="btn btn-sm btn-outline-secondary">Ver histórico</a></td>
+            <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+            <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+            <td>{{ obs.equipo.nombre if obs.equipo else '-' }}</td>
+            <td>{{ obs.descripcion }}</td>
+            <td>
+                {% if obs.estado_revision == 'Aprobada' %}<span class="badge badge-Cumplido">Aprobada</span>
+                {% else %}<span class="badge badge-Pendiente">Pendiente de revisión</span>{% endif %}
+            </td>
+            <td>
+                <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>
+                </form>
+                {% if obs.estado_revision != 'Aprobada' %}
+                <a href="{{ url_for('observaciones.editar', observacion_id=obs.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                {% if current_user.rol in ('Administrador', 'Jefe') %}
+                <form method="POST" action="{{ url_for('observaciones.aprobar', observacion_id=obs.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-primary">Aprobar</button>
+                </form>
+                {% endif %}
+                {% endif %}
+                {% if current_user.rol in ('Administrador', 'Jefe') %}
+                <form method="POST" action="{{ url_for('observaciones.eliminar', observacion_id=obs.id) }}" class="d-inline"
+                      onsubmit="return confirm('¿Eliminar esta observación? No se puede deshacer.');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                </form>
+                {% endif %}
+            </td>
         </tr>
         {% endfor %}
     </tbody>
 </table>
 </div>
-{% endfor %}
-
-{% set hay_curvas = curvas_por_bomba.values()|selectattr('curvas')|list %}
-{% if hay_curvas %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script>
-{% for equipo in bombas %}
-{% set curvas = curvas_por_bomba.get(equipo.id) %}
-{% if curvas and curvas.curvas %}
-(function () {
-    const datos = {{ curvas|tojson }};
-    const datasets = [];
-    datos.curvas.forEach(function (curva) {
-        datasets.push({
-            label: 'Ensayo ' + curva['año'],
-            data: curva.suave_x.map(function (x, i) { return { x: x, y: curva.suave_y[i] }; }),
-            borderColor: curva.color,
-            backgroundColor: curva.color,
-            pointRadius: 0,
-            borderWidth: 2,
-            tension: 0.3,
-        });
-        datasets.push({
-            label: 'Ensayo ' + curva['año'] + ' (puntos)',
-            data: datos.caudales.map(function (c, i) { return { x: c, y: curva.puntos[i] }; }),
-            borderColor: curva.color,
-            backgroundColor: curva.color,
-            showLine: false,
-            pointRadius: 4,
-            pointStyle: 'circle',
-        });
-    });
-    new Chart(document.getElementById('grafico-tendencia-{{ equipo.id }}'), {
-        type: 'line',
-        data: { datasets: datasets },
-        options: {
-            parsing: false,
-            scales: {
-                x: { type: 'linear', title: { display: true, text: 'Caudal (%)' }, ticks: { stepSize: 50 } },
-                y: { title: { display: true, text: 'Presión neta (PSI)' } },
-            },
-            plugins: {
-                legend: {
-                    labels: { filter: function (item) { return item.text.indexOf('(puntos)') === -1; } },
-                },
-            },
-        },
-    });
-})();
-{% endif %}
-{% endfor %}
-</script>
 {% endif %}
 {% endblock %}

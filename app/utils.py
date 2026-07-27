@@ -194,174 +194,22 @@ def curva_suavizada(caudales, presiones, n_puntos=40):
     return xs.tolist(), [round(float(y), 2) for y in ys]
 
 
-def _ultimo_ensayo(equipo):
-    if not equipo.ensayos_caudal:
-        return None
-    return max(equipo.ensayos_caudal, key=lambda e: e.fecha_ensayo)
+def equipos_por_categoria(instalacion):
+    """Equipos de la instalación agrupados por categoría de TipoEquipo
+    (misma agrupación que categorias_equipo_agrupadas), para las tarjetas
+    de 'Información de Instalación'. Cada tarjeta es solo un título con la
+    cantidad — el detalle de cada equipo vive en su propia ficha."""
+    from app.models import CATEGORIAS_EQUIPO_ORDEN, TipoEquipo
 
-
-def _bombas_de(instalacion):
-    return [e for e in instalacion.equipos if e.tipo == "Bomba"]
-
-
-def obtener_resumen_bombas(instalacion):
-    """Tarjetas superiores de 'Información de Instalación': cuenta cada
-    bomba una sola vez, según el resultado NFPA 25 de su ensayo más
-    reciente."""
-    equipos = _bombas_de(instalacion)
-    aprobados = 0
-    rechazados = 0
-    for equipo in equipos:
-        ultimo = _ultimo_ensayo(equipo)
-        if ultimo is None:
-            continue
-        resultado = ultimo.resultado_nfpa25()
-        if resultado is True:
-            aprobados += 1
-        elif resultado is False:
-            rechazados += 1
-
-    deficiencias_abiertas = sum(
-        1 for equipo in equipos for obs in equipo.deficiencias if not obs.resuelto
-    )
-
-    return {
-        "total_equipos": len(equipos),
-        "equipos_aprobados": aprobados,
-        "equipos_rechazados": rechazados,
-        "deficiencias_abiertas": deficiencias_abiertas,
-    }
-
-
-def obtener_ultimos_ensayos_por_bomba(instalacion, limit=3):
-    """Para la tabla de histórico de cada bomba en 'Información de
-    Instalación'."""
-    resultado = []
-    for equipo in _bombas_de(instalacion):
-        ensayos_ordenados = sorted(equipo.ensayos_caudal, key=lambda e: e.fecha_ensayo, reverse=True)[:limit]
-        lista_ensayos = []
-        for ensayo in ensayos_ordenados:
-            resultado_nfpa = ensayo.resultado_nfpa25()
-            var_pct = None
-            if equipo.curva_fabrica and equipo.curva_fabrica.punto_100_presion:
-                ajustada_100 = ensayo.puntos_ajustados(equipo.curva_fabrica.rpm_nominal)[2]
-                var_pct = round(
-                    (ajustada_100 - equipo.curva_fabrica.punto_100_presion)
-                    / equipo.curva_fabrica.punto_100_presion
-                    * 100,
-                    1,
-                )
-            if resultado_nfpa is True:
-                estado = "Aprobado"
-            elif resultado_nfpa is False:
-                estado = "Rechazado"
-            else:
-                estado = "Sin curva de fábrica"
-            lista_ensayos.append(
-                {
-                    "fecha": ensayo.fecha_ensayo,
-                    "presion_100": ensayo.presion_neta_punto_100,
-                    "var_pct": var_pct,
-                    "estado": estado,
-                    "estado_revision": ensayo.estado_revision,
-                    "ensayo_id": ensayo.id,
-                }
-            )
-        resultado.append({"bomba_id": equipo.id, "bomba_nombre": equipo.nombre, "ensayos": lista_ensayos})
-    return resultado
-
-
-COLORES_POR_AÑO = ["#1A2233", "#E2131D", "#2C6E8C", "#B5730A", "#1F8A54", "#6B32C9"]
-
-
-def obtener_curvas_superpuestas_equipo(equipo, limit=3):
-    """Últimos `limit` ensayos de un equipo (Bomba), cada uno con sus 4
-    puntos (0/50/100/150%) ajustados a RPM nominal y ya suavizados (ver
-    curva_suavizada) — para el mini-gráfico de tendencia de cada tarjeta de
-    equipo en la ficha de sala: curvas completas superpuestas, una por año,
-    coloreadas de forma distinta. Si no hay curva de fábrica, se muestran
-    las presiones netas medidas tal cual (sin ajuste posible)."""
-    caudales = [0, 50, 100, 150]
-    ensayos_ordenados = sorted(equipo.ensayos_caudal, key=lambda e: e.fecha_ensayo, reverse=True)[:limit]
-
-    curvas = []
-    for i, ensayo in enumerate(ensayos_ordenados):
-        if equipo.curva_fabrica:
-            puntos = ensayo.puntos_ajustados(equipo.curva_fabrica.rpm_nominal)
-        else:
-            puntos = [round(n, 1) for n in ensayo.puntos_netos()]
-        xs, ys = curva_suavizada(caudales, puntos)
-        curvas.append(
-            {
-                "año": ensayo.fecha_ensayo.year,
-                "fecha": ensayo.fecha_ensayo,
-                "puntos": puntos,
-                "suave_x": xs,
-                "suave_y": ys,
-                "color": COLORES_POR_AÑO[i % len(COLORES_POR_AÑO)],
-            }
-        )
-    return {"caudales": caudales, "curvas": curvas}
-
-
-def obtener_acciones_recomendadas(instalacion):
-    """Heurística simple para la sección "Acciones recomendadas" de
-    'Información de Instalación': no hay un modelo de "acción" separado, se
-    infiere de los ensayos/curvas ya cargados (rechazado -> urgente, sin
-    ensayo este año -> programar, sin curva de fábrica -> revisión)."""
-    hoy = date.today()
-    urgentes, programadas, en_revision = [], [], []
-    for equipo in _bombas_de(instalacion):
-        if not equipo.curva_fabrica:
-            en_revision.append(
-                {
-                    "equipo": equipo.nombre,
-                    "motivo": "Sin curva de fábrica cargada — no se puede validar contra NFPA 25.",
-                    "plazo": "Antes del próximo ensayo",
-                }
-            )
-            continue
-
-        ultimo = _ultimo_ensayo(equipo)
-        if ultimo and ultimo.resultado_nfpa25() is False:
-            urgentes.append(
-                {
-                    "equipo": equipo.nombre,
-                    "motivo": f"El ensayo del {ultimo.fecha_ensayo.strftime('%d/%m/%Y')} no aprobó NFPA 25.",
-                    "plazo": "Inmediato",
-                }
-            )
-        if not ultimo or ultimo.fecha_ensayo.year < hoy.year:
-            programadas.append(
-                {
-                    "equipo": equipo.nombre,
-                    "motivo": "Sin ensayo de caudal registrado este año.",
-                    "plazo": f"Antes de fin de {hoy.year}",
-                }
-            )
-    return {"urgentes": urgentes, "programadas": programadas, "en_revision": en_revision}
-
-
-def obtener_resumen_checklists_instalacion(instalacion):
-    """Para la sección de histórico de checklists de 'Información de
-    Instalación': todos los equipos de la instalación (ECA, BIE, Bomba,
-    etc), agrupados por tipo, con cuántos checklists tiene cada uno
-    cargados y la fecha del último — el detalle completo de cada uno sigue
-    viviendo en su propia ficha (equipos.detalle)."""
-    from app.models import Formulario
-
+    tipo_a_categoria = {t.nombre: t.categoria for t in TipoEquipo.query.all()}
     grupos = {}
     for equipo in instalacion.equipos:
-        formularios_equipo = Formulario.query.filter_by(equipo_id=equipo.id).order_by(Formulario.fecha_creacion.desc())
-        ultimo = formularios_equipo.first()
-        grupos.setdefault(equipo.tipo, []).append(
-            {
-                "equipo": equipo,
-                "cantidad_checklists": formularios_equipo.count(),
-                "ultima_fecha": ultimo.fecha_creacion if ultimo else None,
-            }
-        )
-    return grupos
+        categoria = tipo_a_categoria.get(equipo.tipo, "Otros equipos")
+        grupos.setdefault(categoria, []).append(equipo)
+
+    orden = [c for c in CATEGORIAS_EQUIPO_ORDEN if c in grupos]
+    orden += sorted(c for c in grupos if c not in CATEGORIAS_EQUIPO_ORDEN)
+    return [(categoria, grupos[categoria]) for categoria in orden]
 
 
 def armar_campos_desde_formulario(form):

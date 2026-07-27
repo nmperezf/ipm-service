@@ -751,8 +751,10 @@ class Equipo(db.Model):
     modelo = db.Column(db.String(150), nullable=True)
     serie = db.Column(db.String(150), nullable=True)
     caudal_nominal = db.Column(db.Float, nullable=True)  # GPM
+    presion_diseno = db.Column(db.Float, nullable=True)  # PSI
     rpm_nominal = db.Column(db.Integer, nullable=True)
     anio_fabricacion = db.Column(db.Integer, nullable=True)
+    otros_datos_placa = db.Column(db.Text, nullable=True)
 
     # Datos de motor, también solo para tipo == "Bomba". Campos fijos en vez
     # de un formulario dinámico: son bastante estándar en la industria

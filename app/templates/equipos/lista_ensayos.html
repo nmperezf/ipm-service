@@ -41,8 +41,8 @@
             <td>{{ ensayo.presion_neta_punto_100 }}</td>
             <td>
                 {% if resultado is none %}<span class="badge bg-secondary">Sin curva de fábrica</span>
-                {% elif resultado %}<span class="badge badge-Cumplido">Aprobado</span>
-                {% else %}<span class="badge badge-Vencido">Rechazado</span>{% endif %}
+                {% elif resultado %}<span class="badge badge-Cumplido">Cumple NFPA 25</span>
+                {% else %}<span class="badge badge-Vencido">No cumple NFPA 25</span>{% endif %}
             </td>
             <td>
                 {% if ensayo.estado_revision == 'Validado' %}<span class="badge badge-Cumplido">Validado</span>

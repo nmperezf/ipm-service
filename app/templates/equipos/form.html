@@ -55,6 +55,10 @@
                     <input type="number" step="any" name="caudal_nominal" class="form-control" value="{{ equipo.caudal_nominal if equipo else '' }}">
                 </div>
                 <div class="col-md-4 mb-3">
+                    <label class="form-label">Presión de diseño (PSI)</label>
+                    <input type="number" step="any" name="presion_diseno" class="form-control" value="{{ equipo.presion_diseno if equipo else '' }}">
+                </div>
+                <div class="col-md-4 mb-3">
                     <label class="form-label">RPM nominal</label>
                     <input type="number" name="rpm_nominal" class="form-control" value="{{ equipo.rpm_nominal if equipo else '' }}">
                 </div>
@@ -62,6 +66,10 @@
                     <label class="form-label">Año de fabricación</label>
                     <input type="number" name="anio_fabricacion" class="form-control" value="{{ equipo.anio_fabricacion if equipo else '' }}">
                 </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Otros datos</label>
+                <textarea name="otros_datos_placa" class="form-control" rows="2" placeholder="Cualquier otro dato de placa relevante">{{ equipo.otros_datos_placa if equipo else '' }}</textarea>
             </div>
 
             <h6 class="text-muted mt-2">Motor</h6>

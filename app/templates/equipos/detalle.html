@@ -19,16 +19,22 @@
 <h4 class="mt-4">Curva de caudal</h4>
 <div class="card mb-3">
     <div class="card-body">
-        <div class="row g-2 mb-3 small text-muted">
+        <div class="row g-2 mb-1 small text-muted">
             <div class="col-auto">Modelo: <strong class="text-body">{{ equipo.modelo or '-' }}</strong></div>
             <div class="col-auto">N° serie: <strong class="text-body">{{ equipo.serie or '-' }}</strong></div>
-            <div class="col-auto">Caudal nominal: <strong class="text-body">{{ equipo.caudal_nominal if equipo.caudal_nominal else '-' }} GPM</strong></div>
+        </div>
+        <div class="row g-2 mb-1 small text-muted">
+            <div class="col-auto">Caudal: <strong class="text-body">{{ equipo.caudal_nominal if equipo.caudal_nominal else '-' }} GPM</strong></div>
+            <div class="col-auto">Presión de diseño: <strong class="text-body">{{ equipo.presion_diseno if equipo.presion_diseno else '-' }} PSI</strong></div>
             <div class="col-auto">RPM nominal: <strong class="text-body">{{ equipo.rpm_nominal or '-' }}</strong></div>
             <div class="col-auto">Año fabricación: <strong class="text-body">{{ equipo.anio_fabricacion or '-' }}</strong></div>
+            <div class="col-auto">Tipo de motor: <strong class="text-body">{{ equipo.tipo_motor or 'Sin especificar' }}</strong></div>
         </div>
+        {% if equipo.otros_datos_placa %}
+        <p class="small text-muted mb-3"><strong class="text-body">Otros datos:</strong> {{ equipo.otros_datos_placa }}</p>
+        {% endif %}
 
         <div class="row g-2 mb-3 small text-muted">
-            <div class="col-auto">Motor: <strong class="text-body">{{ equipo.tipo_motor or 'Sin especificar' }}</strong></div>
             {% if equipo.motor_potencia_hp %}<div class="col-auto">Potencia: <strong class="text-body">{{ equipo.motor_potencia_hp }} HP</strong></div>{% endif %}
             {% if equipo.tipo_motor == 'Eléctrico' %}
             <div class="col-auto">Voltaje: <strong class="text-body">{{ equipo.motor_voltaje or '-' }} V</strong></div>
@@ -69,8 +75,8 @@
                     <td><a href="{{ url_for('curvas.ensayo_detalle', equipo_id=equipo.id, ensayo_id=ensayo.id) }}">{{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}</a></td>
                     <td>{{ ensayo.presion_neta_punto_100 }} PSI</td>
                     <td>
-                        {% if resultado %}<span class="badge badge-Cumplido">Aprobado</span>
-                        {% else %}<span class="badge badge-Vencido">Rechazado</span>{% endif %}
+                        {% if resultado %}<span class="badge badge-Cumplido">Cumple NFPA 25</span>
+                        {% else %}<span class="badge badge-Vencido">No cumple NFPA 25</span>{% endif %}
                     </td>
                 </tr>
                 {% endfor %}

@@ -2,7 +2,10 @@
 {% block title %}Carga masiva - {{ tipo.nombre }}{% endblock %}
 {% block content %}
 <p><a href="{{ url_for('formularios.elegir_equipo', item_id=item.id, tipo_formulario_id=tipo.id) }}">&larr; Volver</a></p>
-<h1>Carga masiva: {{ tipo.nombre }}</h1>
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+    <h1>Carga masiva: {{ tipo.nombre }}</h1>
+    <a href="{{ url_for('observaciones.nueva', instalacion_id=item.visita.instalacion_id, item_id=item.id) }}" class="btn btn-outline-warning btn-sm">+ Observación</a>
+</div>
 <p class="text-muted">
     {{ equipos|length }} equipo(s) de tipo {{ tipo.tipo_equipo_aplicable }}. Completá lo que corresponda y guardá todo junto — las
     filas que dejes en blanco no se guardan. Si un equipo ya tenía datos cargados para esta visita, se actualizan.

@@ -16,8 +16,10 @@ def _aplicar_datos_bomba(equipo, form):
         equipo.modelo = None
         equipo.serie = None
         equipo.caudal_nominal = None
+        equipo.presion_diseno = None
         equipo.rpm_nominal = None
         equipo.anio_fabricacion = None
+        equipo.otros_datos_placa = None
         _aplicar_datos_motor(equipo, {})
         return
 
@@ -25,10 +27,13 @@ def _aplicar_datos_bomba(equipo, form):
     equipo.serie = form.get("serie") or None
     caudal = form.get("caudal_nominal") or None
     equipo.caudal_nominal = float(caudal) if caudal else None
+    presion = form.get("presion_diseno") or None
+    equipo.presion_diseno = float(presion) if presion else None
     rpm = form.get("rpm_nominal") or None
     equipo.rpm_nominal = int(float(rpm)) if rpm else None
     anio = form.get("anio_fabricacion") or None
     equipo.anio_fabricacion = int(float(anio)) if anio else None
+    equipo.otros_datos_placa = form.get("otros_datos_placa") or None
     _aplicar_datos_motor(equipo, form)
 
 
