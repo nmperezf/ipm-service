@@ -53,6 +53,8 @@
 <div class="alert alert-info">Esta visita está {{ visita.fase|lower }}: ya no podés modificar nada. Si hace falta corregir algo, hablalo con el Administrador/Jefe.</div>
 {% endif %}
 
+{% set hay_tipos_formulario = formularios_generales|length + (grupos_formulario.values()|map('length')|sum) > 0 %}
+
 {% for item in visita.items %}
 <div class="card mb-3">
     <div class="card-body">
@@ -85,32 +87,30 @@
         </div>
 
         {% if puede_editar %}
-        {% for nombre_categoria, tipos in grupos_formulario.items() %}
-        {% if tipos %}
-        <div class="mb-2">
-            <div class="text-muted small fw-bold">{{ nombre_categoria }}</div>
-            <div class="d-flex flex-wrap gap-2">
-                {% for tipo in tipos %}
-                <a href="{{ url_for('formularios.carga_masiva', item_id=item.id, tipo_formulario_id=tipo.id) }}" class="btn btn-outline-primary btn-sm">
-                    + {{ tipo.nombre }}
-                </a>
+        {% if hay_tipos_formulario %}
+        <div class="mb-3" style="max-width: 320px;">
+            <select class="form-select form-select-sm" onchange="if (this.value) { window.location = this.value; }">
+                <option value="">+ Elegir formulario…</option>
+                {% for nombre_categoria, tipos in grupos_formulario.items() %}
+                {% if tipos %}
+                <optgroup label="{{ nombre_categoria }}">
+                    {% for tipo in tipos %}
+                    <option value="{{ url_for('formularios.carga_masiva', item_id=item.id, tipo_formulario_id=tipo.id) }}">{{ tipo.nombre }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endif %}
                 {% endfor %}
-            </div>
+                {% if formularios_generales %}
+                <optgroup label="Otros formularios">
+                    {% for tipo in formularios_generales %}
+                    <option value="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id) }}">{{ tipo.nombre }}</option>
+                    {% endfor %}
+                </optgroup>
+                {% endif %}
+            </select>
         </div>
-        {% endif %}
-        {% endfor %}
-
-        {% if formularios_generales %}
-        <div class="mb-3">
-            <div class="text-muted small fw-bold">Otros formularios</div>
-            <div class="d-flex flex-wrap gap-2">
-                {% for tipo in formularios_generales %}
-                <a href="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id) }}" class="btn btn-outline-primary btn-sm">
-                    + {{ tipo.nombre }}
-                </a>
-                {% endfor %}
-            </div>
-        </div>
+        {% else %}
+        <p class="text-muted small mb-3">Este cliente todavía no tiene tipos de formulario configurados.</p>
         {% endif %}
         {% endif %}
 
