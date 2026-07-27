@@ -6,18 +6,22 @@
 
 {% for bloque in instalaciones_data %}
 <h4 class="mt-4">{{ bloque.instalacion.nombre }}</h4>
-{% for nombre_categoria, equipos in bloque.grupos.items() %}
-{% if equipos %}
-<h6 class="text-muted mt-3">{{ nombre_categoria }}</h6>
-<div class="d-flex flex-wrap gap-2 mb-2">
-    {% for equipo in equipos %}
-    <a href="{{ url_for('portal.equipo_detalle', equipo_id=equipo.id) }}" class="btn btn-outline-secondary btn-sm">
-        {{ equipo.nombre }}
-    </a>
+{% if not bloque.grupos %}
+<p class="text-muted">Todavía no hay equipos cargados en esta instalación.</p>
+{% else %}
+<div class="row g-2 mb-4">
+    {% for nombre_categoria, equipos in bloque.grupos.items() %}
+    <div class="col-md-3 col-6">
+        <a href="{{ url_for('portal.equipos_categoria', instalacion_id=bloque.instalacion.id, categoria=nombre_categoria) }}" class="dashboard-card">
+            <div class="card card-indicador">
+                <div class="valor">{{ equipos|length }}</div>
+                <div class="text-muted small">{{ nombre_categoria }}</div>
+            </div>
+        </a>
+    </div>
     {% endfor %}
 </div>
 {% endif %}
-{% endfor %}
 {% else %}
 <p class="text-muted">Todavía no hay instalaciones cargadas.</p>
 {% endfor %}

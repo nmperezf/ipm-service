@@ -149,29 +149,56 @@ def detalle_visita(visita_id):
     return render_template("portal/visita_detalle.html", cliente=cliente, visita=visita, secciones=secciones)
 
 
+def _grupos_categoria(instalacion):
+    """Equipos activos de la instalación agrupados por categoría — mismo
+    criterio que la navegación interna (categorias_equipo_agrupadas), pero
+    acá se ocultan los equipos dados de baja."""
+    categorias = categorias_equipo_agrupadas()
+    grupos = {nombre: [] for nombre, _ in categorias}
+    for equipo in instalacion.equipos:
+        if not equipo.activo:
+            continue
+        for nombre_categoria, tipos in categorias:
+            if equipo.tipo in tipos:
+                grupos[nombre_categoria].append(equipo)
+                break
+    return {nombre: lista for nombre, lista in grupos.items() if lista}
+
+
 @portal_bp.route("/equipos")
 @rol_requerido("Cliente")
 def equipos():
-    """Lista de todos los equipos del cliente, agrupados por instalación y
-    categoría — igual que la navegación interna, para que se sienta
-    familiar. Se muestran todos, tengan o no histórico todavía (un equipo
-    recién instalado es válido que aparezca vacío)."""
+    """Una tarjeta por categoría de equipo (Bombas, ECA/Manifold, BIE,
+    Otros) y por instalación — mismo lenguaje visual que las tarjetas de
+    deficiencias del inicio. Cada tarjeta lleva al listado de esa
+    categoría; el detalle de cada equipo vive en su propia ficha."""
     cliente = _cliente_actual()
 
-    categorias = categorias_equipo_agrupadas()
-    instalaciones_data = []
-    for inst in cliente.instalaciones:
-        grupos = {nombre: [] for nombre, _ in categorias}
-        for equipo in inst.equipos:
-            if not equipo.activo:
-                continue
-            for nombre_categoria, tipos in categorias:
-                if equipo.tipo in tipos:
-                    grupos[nombre_categoria].append(equipo)
-                    break
-        instalaciones_data.append({"instalacion": inst, "grupos": grupos})
+    instalaciones_data = [
+        {"instalacion": inst, "grupos": _grupos_categoria(inst)} for inst in cliente.instalaciones
+    ]
 
     return render_template("portal/equipos.html", cliente=cliente, instalaciones_data=instalaciones_data)
+
+
+@portal_bp.route("/equipos/instalacion/<int:instalacion_id>/<categoria>")
+@rol_requerido("Cliente")
+def equipos_categoria(instalacion_id, categoria):
+    """Listado liviano (nombre + ubicación) de los equipos de una
+    categoría, dentro de una instalación puntual del cliente."""
+    cliente = _cliente_actual()
+    instalacion = next((i for i in cliente.instalaciones if i.id == instalacion_id), None)
+    if not instalacion:
+        abort(404)
+
+    grupos = _grupos_categoria(instalacion)
+    if categoria not in grupos:
+        abort(404)
+
+    return render_template(
+        "portal/equipos_categoria.html",
+        cliente=cliente, instalacion=instalacion, categoria=categoria, equipos=grupos[categoria],
+    )
 
 
 @portal_bp.route("/equipos/<int:equipo_id>")
