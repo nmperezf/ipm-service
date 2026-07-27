@@ -214,6 +214,17 @@ small, .small, .text-muted {
 .ipm-navbar .nav-link:hover {
     color: #fff !important;
 }
+.theme-toggle-btn {
+    background: none;
+    border: none;
+    font-size: 1.05rem;
+    line-height: 1;
+    text-transform: none !important;
+    letter-spacing: normal !important;
+}
+.theme-toggle-btn:hover {
+    color: #fff !important;
+}
 
 /* ---- Cards --------------------------------------------------------------- */
 
@@ -538,3 +549,117 @@ small, .small, .text-muted {
         padding-bottom: 3.6rem;
     }
 }
+
+/* ==========================================================================
+   Modo oscuro — se activa con <html data-bs-theme="dark"> (ver base.html,
+   botón en la navbar + localStorage). Mismos tokens que :root, retiñe
+   también las variables de Bootstrap para que inputs, dropdowns y modales
+   nativos se pinten solos. El navbar se queda negro en los dos modos: es
+   una decisión de marca, no una superficie que deba invertirse.
+   ========================================================================== */
+
+html[data-bs-theme="dark"] {
+    --ink: #E8EAEE;
+    --ink-muted: #9AA3B2;
+    --surface: #1A2030;
+    --surface-muted: #10141D;
+    --border: #2A3142;
+
+    --brand: #5B7099;
+    --brand-dark: #7891BC;
+    --accent: #FF6161;
+    --accent-soft: #3A1418;
+
+    --bs-primary: #5B7099;
+    --bs-primary-rgb: 91, 112, 153;
+    --bs-secondary: #9AA3B2;
+    --bs-secondary-rgb: 154, 163, 178;
+    --bs-success: #34C77B;
+    --bs-success-rgb: 52, 199, 123;
+    --bs-danger: #FF6161;
+    --bs-danger-rgb: 255, 97, 97;
+    --bs-warning: #F0A93E;
+    --bs-warning-rgb: 240, 169, 62;
+    --bs-info: #4FA8D8;
+    --bs-info-rgb: 79, 168, 216;
+    --bs-dark: #E8EAEE;
+    --bs-light: #1A2030;
+    --bs-link-color: #7891BC;
+    --bs-link-color-rgb: 120, 145, 188;
+    --bs-link-hover-color: #FFFFFF;
+    --bs-link-hover-color-rgb: 255, 255, 255;
+    --bs-body-color: #E8EAEE;
+    --bs-body-bg: #10141D;
+    --bs-border-color: #2A3142;
+    --bs-tertiary-bg: #1A2030;
+    --bs-secondary-bg: #232B3B;
+}
+
+html[data-bs-theme="dark"] .btn-danger,
+html[data-bs-theme="dark"] .btn-outline-danger {
+    --bs-btn-hover-bg: #D93F3F;
+    --bs-btn-hover-border-color: #D93F3F;
+    --bs-btn-active-bg: #D93F3F;
+    --bs-btn-active-border-color: #D93F3F;
+}
+html[data-bs-theme="dark"] .btn-success,
+html[data-bs-theme="dark"] .btn-outline-success {
+    --bs-btn-hover-bg: #299F62;
+    --bs-btn-hover-border-color: #299F62;
+    --bs-btn-active-bg: #299F62;
+    --bs-btn-active-border-color: #299F62;
+}
+html[data-bs-theme="dark"] .btn-primary,
+html[data-bs-theme="dark"] .btn-dark,
+html[data-bs-theme="dark"] .btn-outline-primary,
+html[data-bs-theme="dark"] .btn-outline-dark {
+    --bs-btn-color: #10141D;
+    --bs-btn-hover-color: #10141D;
+    --bs-btn-active-color: #10141D;
+}
+
+html[data-bs-theme="dark"] .card {
+    box-shadow: 0 1px 2px rgba(0,0,0,.3);
+}
+html[data-bs-theme="dark"] .dashboard-card:hover .card {
+    box-shadow: 0 6px 16px rgba(0,0,0,.4);
+}
+html[data-bs-theme="dark"] .table-hover > tbody > tr:hover > * {
+    background-color: rgba(255,255,255,.045);
+}
+html[data-bs-theme="dark"] .tabla-col-fija.table-hover > tbody > tr:hover > td:first-child {
+    background-color: #202737;
+}
+html[data-bs-theme="dark"] .calendario-dia.fuera-de-mes {
+    color: #4B5568;
+}
+
+html[data-bs-theme="dark"] .badge-Pendiente { background: #232B3B; color: #9AA3B2; }
+html[data-bs-theme="dark"] .badge-Programado { background: #18233A; color: #8FB3E8; }
+html[data-bs-theme="dark"] .badge-En.proceso,
+html[data-bs-theme="dark"] .badge-En\ proceso { background: #3A2A0E; color: #F0A93E; }
+html[data-bs-theme="dark"] .badge-Realizado,
+html[data-bs-theme="dark"] .badge-Cumplido { background: #123324; color: #4ADE96; }
+html[data-bs-theme="dark"] .badge-Vencido { background: #3A1418; color: #FF6B70; }
+html[data-bs-theme="dark"] .badge-Cancelado { background: #232734; color: #8A93A0; }
+html[data-bs-theme="dark"] .badge-Reprogramado { background: #271B3D; color: #C09BF2; }
+
+html[data-bs-theme="dark"] .badge-Asignada { background: #18233A; color: #8FB3E8; }
+html[data-bs-theme="dark"] .badge-Pausada { background: #3A2A0E; color: #F0A93E; }
+html[data-bs-theme="dark"] .badge-Finalizada { background: #123324; color: #4ADE96; }
+html[data-bs-theme="dark"] .badge-Cancelada { background: #232734; color: #8A93A0; }
+
+html[data-bs-theme="dark"] .badge-Deficiencia\.crítica { background: #3A1418; color: #FF6B70; }
+html[data-bs-theme="dark"] .badge-Deficiencia\.no\.crítica { background: #3A2A0E; color: #F0A93E; }
+html[data-bs-theme="dark"] .badge-Desactivación { background: #232734; color: #9AA3B2; }
+html[data-bs-theme="dark"] .badge-Comentario { background: #18233A; color: #8FB3E8; }
+
+html[data-bs-theme="dark"] .badge-Urgente { background: #3A1418; color: #FF6B70; }
+html[data-bs-theme="dark"] .badge-Alta { background: #3A2A0E; color: #F0A93E; }
+html[data-bs-theme="dark"] .badge-Media { background: #18233A; color: #8FB3E8; }
+html[data-bs-theme="dark"] .badge-Baja { background: #232734; color: #8A93A0; }
+
+html[data-bs-theme="dark"] .chip-success { background: #123324; color: #4ADE96; }
+html[data-bs-theme="dark"] .chip-primary { background: #18233A; color: #8FB3E8; }
+html[data-bs-theme="dark"] .chip-danger { background: #3A1418; color: #FF6B70; }
+html[data-bs-theme="dark"] .chip-secondary { background: #232734; color: #8A93A0; }

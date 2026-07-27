@@ -121,6 +121,12 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 const grafico = {{ grafico|tojson }};
+const estilos = getComputedStyle(document.documentElement);
+const colorFabrica = estilos.getPropertyValue('--ink').trim();
+const colorEnsayo = estilos.getPropertyValue('--accent').trim();
+const colorGrilla = estilos.getPropertyValue('--border').trim();
+Chart.defaults.color = estilos.getPropertyValue('--ink-muted').trim();
+Chart.defaults.borderColor = colorGrilla;
 new Chart(document.getElementById('grafico-ensayo'), {
     type: 'line',
     data: {
@@ -128,32 +134,32 @@ new Chart(document.getElementById('grafico-ensayo'), {
             {
                 label: 'Curva de fábrica',
                 data: grafico.fabrica.suave_x.map(function (x, i) { return { x: x, y: grafico.fabrica.suave_y[i] }; }),
-                borderColor: '#1A2233',
-                backgroundColor: '#1A2233',
+                borderColor: colorFabrica,
+                backgroundColor: colorFabrica,
                 pointRadius: 0,
                 borderWidth: 2,
             },
             {
                 label: 'Fábrica (puntos)',
                 data: grafico.caudales.map(function (c, i) { return { x: c, y: grafico.fabrica.puntos[i] }; }),
-                borderColor: '#1A2233',
-                backgroundColor: '#1A2233',
+                borderColor: colorFabrica,
+                backgroundColor: colorFabrica,
                 showLine: false,
                 pointRadius: 4,
             },
             {
                 label: 'Ensayo (ajustado a RPM nominal)',
                 data: grafico.ensayo.suave_x.map(function (x, i) { return { x: x, y: grafico.ensayo.suave_y[i] }; }),
-                borderColor: '#E2131D',
-                backgroundColor: '#E2131D',
+                borderColor: colorEnsayo,
+                backgroundColor: colorEnsayo,
                 pointRadius: 0,
                 borderWidth: 2,
             },
             {
                 label: 'Ensayo (puntos)',
                 data: grafico.caudales.map(function (c, i) { return { x: c, y: grafico.ensayo.puntos[i] }; }),
-                borderColor: '#E2131D',
-                backgroundColor: '#E2131D',
+                borderColor: colorEnsayo,
+                backgroundColor: colorEnsayo,
                 showLine: false,
                 pointRadius: 4,
             },
