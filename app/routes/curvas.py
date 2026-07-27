@@ -81,14 +81,19 @@ def curva_fabrica(equipo_id):
 
 
 @curvas_bp.route("/<int:equipo_id>/ensayos")
-@rol_requerido("Administrador", "Jefe", "Técnico")
+@rol_requerido("Administrador", "Jefe", "Técnico", "Cliente")
 def ensayos(equipo_id):
     equipo = Equipo.query.get_or_404(equipo_id)
     _verificar_es_bomba(equipo)
     verificar_acceso_cliente(equipo.instalacion.cliente)
 
-    año_filtro = request.args.get("año", type=int)
     ensayos_lista = sorted(equipo.ensayos_caudal, key=lambda e: e.fecha_ensayo, reverse=True)
+    if current_user.rol == "Cliente":
+        # El cliente solo ve lo que ya pasó el control de calidad del
+        # Jefe/Administrador — mismo criterio que Observacion/Formulario.
+        ensayos_lista = [e for e in ensayos_lista if e.estado_revision == "Validado"]
+
+    año_filtro = request.args.get("año", type=int)
     años_disponibles = sorted({e.fecha_ensayo.year for e in ensayos_lista}, reverse=True)
     if año_filtro:
         ensayos_lista = [e for e in ensayos_lista if e.fecha_ensayo.year == año_filtro]
@@ -232,7 +237,7 @@ def ensayo_rechazar(equipo_id, ensayo_id):
 
 
 @curvas_bp.route("/<int:equipo_id>/ensayo/<int:ensayo_id>")
-@rol_requerido("Administrador", "Jefe", "Técnico")
+@rol_requerido("Administrador", "Jefe", "Técnico", "Cliente")
 def ensayo_detalle(equipo_id, ensayo_id):
     equipo = Equipo.query.get_or_404(equipo_id)
     _verificar_es_bomba(equipo)
@@ -240,6 +245,8 @@ def ensayo_detalle(equipo_id, ensayo_id):
     ensayo = EnsayoCaudal.query.get_or_404(ensayo_id)
     if ensayo.equipo_id != equipo.id:
         abort(404)
+    if current_user.rol == "Cliente" and ensayo.estado_revision != "Validado":
+        abort(403)
 
     validacion = ensayo.validacion_nfpa25()
     ajustadas = ensayo.puntos_ajustados(equipo.curva_fabrica.rpm_nominal) if equipo.curva_fabrica else None
@@ -269,7 +276,7 @@ def ensayo_detalle(equipo_id, ensayo_id):
 
 
 @curvas_bp.route("/<int:equipo_id>/ensayo/<int:ensayo_id>/pdf")
-@rol_requerido("Administrador", "Jefe", "Técnico")
+@rol_requerido("Administrador", "Jefe", "Técnico", "Cliente")
 def ensayo_pdf(equipo_id, ensayo_id):
     equipo = Equipo.query.get_or_404(equipo_id)
     _verificar_es_bomba(equipo)
@@ -277,6 +284,8 @@ def ensayo_pdf(equipo_id, ensayo_id):
     ensayo = EnsayoCaudal.query.get_or_404(ensayo_id)
     if ensayo.equipo_id != equipo.id:
         abort(404)
+    if current_user.rol == "Cliente" and ensayo.estado_revision != "Validado":
+        abort(403)
 
     pdf_bytes = generar_pdf_ensayo(ensayo)
     nombre_archivo = f"Curva_caudal_{equipo.nombre.replace(' ', '_')}_{ensayo.fecha_ensayo}.pdf"

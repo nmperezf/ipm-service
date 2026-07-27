@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Ensayos de {{ equipo.nombre }}{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('equipos.detalle', equipo_id=equipo.id) }}">&larr; {{ equipo.nombre }}</a></p>
+<p><a href="{{ url_for('portal.equipo_detalle', equipo_id=equipo.id) if current_user.rol == 'Cliente' else url_for('equipos.detalle', equipo_id=equipo.id) }}">&larr; {{ equipo.nombre }}</a></p>
 
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h1 class="mb-0">Ensayos de curva de caudal <small class="text-muted fs-6">{{ equipo.nombre }}</small></h1>
-    {% if equipo.curva_fabrica %}
+    {% if equipo.curva_fabrica and current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
     <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id) }}" class="btn btn-primary">+ Nuevo ensayo</a>
     {% endif %}
 </div>

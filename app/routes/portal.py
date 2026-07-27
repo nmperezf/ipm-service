@@ -191,7 +191,12 @@ def equipo_detalle(equipo_id):
         o for o in equipo.deficiencias if not o.resuelto and o.estado_revision == "Aprobada"
     ]
 
+    ultimos_ensayos = []
+    if equipo.tipo == "Bomba":
+        validados = [e for e in equipo.ensayos_caudal if e.estado_revision == "Validado"]
+        ultimos_ensayos = sorted(validados, key=lambda e: e.fecha_ensayo, reverse=True)[:3]
+
     return render_template(
         "portal/equipo_detalle.html", cliente=cliente, equipo=equipo, secciones=secciones,
-        deficiencias_abiertas=deficiencias_abiertas,
+        deficiencias_abiertas=deficiencias_abiertas, ultimos_ensayos=ultimos_ensayos,
     )

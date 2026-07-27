@@ -6,7 +6,9 @@
 <div class="d-flex justify-content-between align-items-center mb-2">
     <h1 class="mb-0">Ensayo del {{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}</h1>
     <div>
+        {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
         <a href="{{ url_for('observaciones.nueva', instalacion_id=equipo.instalacion_id, equipo_id=equipo.id) }}" class="btn btn-outline-warning">+ Observación</a>
+        {% endif %}
         <a href="{{ url_for('curvas.ensayo_pdf', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn btn-outline-dark" target="_blank">Descargar PDF</a>
         {% if current_user.rol in ('Administrador', 'Jefe') %}
         <a href="{{ url_for('curvas.ensayo_editar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn btn-outline-secondary">Editar</a>
