@@ -150,12 +150,18 @@ def detalle(visita_id):
         .order_by(TipoFormulario.nombre)
         .all()
     )
-    grupos_formulario, formularios_generales = _agrupar_tipos_formulario(tipos)
+    # Cada servicio de la visita ofrece solo los tipos de formulario que
+    # aplican a él (ver TipoFormulario.aplica_a_servicio) — uno sin
+    # servicios configurados aparece para todos, sin romper lo de siempre.
+    formularios_por_item = {}
+    for item in visita.items:
+        tipos_item = [t for t in tipos if t.aplica_a_servicio(item.servicio)]
+        grupos, generales = _agrupar_tipos_formulario(tipos_item)
+        formularios_por_item[item.id] = {"grupos": grupos, "generales": generales}
     return render_template(
         "visitas/detail.html",
         visita=visita,
-        grupos_formulario=grupos_formulario,
-        formularios_generales=formularios_generales,
+        formularios_por_item=formularios_por_item,
     )
 
 

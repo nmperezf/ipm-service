@@ -53,9 +53,10 @@
 <div class="alert alert-info">Esta visita está {{ visita.fase|lower }}: ya no podés modificar nada. Si hace falta corregir algo, hablalo con el Administrador/Jefe.</div>
 {% endif %}
 
-{% set hay_tipos_formulario = formularios_generales|length + (grupos_formulario.values()|map('length')|sum) > 0 %}
-
 {% for item in visita.items %}
+{% set grupos_formulario = formularios_por_item[item.id].grupos %}
+{% set formularios_generales = formularios_por_item[item.id].generales %}
+{% set hay_tipos_formulario = formularios_generales|length + (grupos_formulario.values()|map('length')|sum) > 0 %}
 <div class="card mb-3">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-center">

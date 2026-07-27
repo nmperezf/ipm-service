@@ -519,6 +519,19 @@ class ItemVisita(db.Model):
 # ---------------------------------------------------------------------------
 
 
+# A qué tipos de servicio (del catálogo ServicioTipo) aplica cada
+# TipoFormulario — filtra el desplegable "Elegir formulario" de cada
+# servicio de una visita. Se vincula a ServicioTipo (el catálogo, estable)
+# y no a ServicioContrato (la instancia dentro de un contrato puntual, que
+# no sobrevive a una renovación de contrato) para que la configuración no
+# se pierda de un año al otro.
+tipo_formulario_servicios_tipo = db.Table(
+    "tipo_formulario_servicios_tipo",
+    db.Column("tipo_formulario_id", db.Integer, db.ForeignKey("tipos_formulario.id"), primary_key=True),
+    db.Column("servicio_tipo_id", db.Integer, db.ForeignKey("servicios_tipo.id"), primary_key=True),
+)
+
+
 class TipoFormulario(db.Model):
     """Define un tipo de formulario y su esquema de campos. Pertenece a un
     Cliente puntual (cada instalación es distinta) y lo puede crear y usar
@@ -542,10 +555,27 @@ class TipoFormulario(db.Model):
 
     cliente = db.relationship("Cliente", backref=db.backref("tipos_formulario", cascade="all, delete-orphan"))
 
+    # Vacío = aplica a cualquier servicio (comportamiento de siempre, sin
+    # configurar nada). Con uno o más elegidos, el desplegable "Elegir
+    # formulario" de una visita solo lo ofrece en los servicios que
+    # coincidan por nombre con alguno de estos.
+    servicios_tipo = db.relationship(
+        "ServicioTipo", secondary=tipo_formulario_servicios_tipo, backref="tipos_formulario"
+    )
+
     def campos(self):
         import json
 
         return json.loads(self.schema_json) if self.schema_json else []
+
+    def aplica_a_servicio(self, servicio_contrato):
+        """True si este tipo de formulario debería ofrecerse para ese
+        servicio de un contrato — sin restricciones configuradas, aplica a
+        cualquiera; si tiene, se compara por nombre contra el catálogo
+        (ServicioContrato no tiene FK directa a ServicioTipo)."""
+        if not self.servicios_tipo:
+            return True
+        return any(st.nombre == servicio_contrato.nombre for st in self.servicios_tipo)
 
     def __repr__(self):
         return f"<TipoFormulario {self.nombre}>"
