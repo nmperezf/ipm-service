@@ -88,6 +88,11 @@
         </div>
     </div>
 
+    <div class="mb-3 mt-3" style="max-width: 640px;">
+        <label class="form-label">Comentarios (opcional)</label>
+        <textarea name="comentarios" class="form-control" rows="3" placeholder="Cualquier observación sobre las condiciones del ensayo — aparece en el PDF">{{ ensayo.comentarios or '' }}</textarea>
+    </div>
+
     <div class="mt-4">
         <button type="submit" class="btn btn-primary" id="btn-guardar" disabled>{{ 'Actualizar' if ensayo else 'Guardar' }} ensayo</button>
         <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-link">Cancelar</a>

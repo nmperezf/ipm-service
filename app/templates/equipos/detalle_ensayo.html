@@ -21,11 +21,52 @@
 </p>
 
 {% if resultado is not none %}
-<div class="alert {{ 'alert-success' if resultado else 'alert-danger' }} fw-bold text-center fs-5">
+<div class="alert {{ 'alert-success' if resultado else 'alert-danger' }} fw-bold text-center fs-5 mb-2">
     {{ '✓ CUMPLE NFPA 25' if resultado else '✗ NO CUMPLE NFPA 25' }}
+    {% if ensayo.resultado_manual %}<span class="fs-6 fw-normal d-block">(fijado manualmente{% if resultado_automatico is not none and resultado_automatico != resultado %} — el cálculo automático da {{ 'Cumple' if resultado_automatico else 'No cumple' }}{% endif %})</span>{% endif %}
 </div>
 {% else %}
 <div class="alert alert-warning">Este equipo no tiene curva de fábrica cargada, así que no se puede validar contra NFPA 25.</div>
+{% endif %}
+
+{% if current_user.rol in ('Administrador', 'Jefe') %}
+<div class="card mb-4">
+    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <strong>Resultado NFPA 25:</strong>
+            {% if ensayo.resultado_manual %}
+            <span class="text-muted small">fijado manualmente como "{{ ensayo.resultado_manual }}" — el cálculo automático da {{ 'Cumple' if resultado_automatico else ('No cumple' if resultado_automatico is not none else 'sin curva de fábrica') }}.</span>
+            {% else %}
+            <span class="text-muted small">usando el cálculo automático de los 3 criterios.</span>
+            {% endif %}
+        </div>
+        <div class="d-flex gap-1">
+            <form method="POST" action="{{ url_for('curvas.ensayo_forzar_resultado', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline">
+                <input type="hidden" name="resultado" value="Aprobado">
+                <button type="submit" class="btn btn-sm btn-outline-success" {% if ensayo.resultado_manual == 'Aprobado' %}disabled{% endif %}>Forzar Aprobado</button>
+            </form>
+            <form method="POST" action="{{ url_for('curvas.ensayo_forzar_resultado', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline">
+                <input type="hidden" name="resultado" value="Rechazado">
+                <button type="submit" class="btn btn-sm btn-outline-danger" {% if ensayo.resultado_manual == 'Rechazado' %}disabled{% endif %}>Forzar Rechazado</button>
+            </form>
+            {% if ensayo.resultado_manual %}
+            <form method="POST" action="{{ url_for('curvas.ensayo_forzar_resultado', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline">
+                <input type="hidden" name="resultado" value="Automatico">
+                <button type="submit" class="btn btn-sm btn-outline-secondary">Volver a cálculo automático</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if ensayo.comentarios %}
+<div class="card mb-4">
+    <div class="card-body">
+        <strong>Comentarios</strong>
+        <p class="mb-0 mt-1" style="white-space: pre-wrap;">{{ ensayo.comentarios }}</p>
+    </div>
+</div>
 {% endif %}
 
 <div class="card mb-4">
@@ -85,7 +126,7 @@
 {% endif %}
 
 {% if grafico %}
-<h4 class="mt-4">Gráfico: fábrica vs ensayo</h4>
+<h4 class="mt-4">Gráfico: fábrica, ensayo sin ajustar y ensayo ajustado</h4>
 <div class="card mb-4">
     <div class="card-body">
         <canvas id="grafico-ensayo" height="110"></canvas>
@@ -126,6 +167,7 @@ const grafico = {{ grafico|tojson }};
 const estilos = getComputedStyle(document.documentElement);
 const colorFabrica = estilos.getPropertyValue('--ink').trim();
 const colorEnsayo = estilos.getPropertyValue('--accent').trim();
+const colorSinAjustar = estilos.getPropertyValue('--bs-warning').trim();
 const colorGrilla = estilos.getPropertyValue('--border').trim();
 Chart.defaults.color = estilos.getPropertyValue('--ink-muted').trim();
 Chart.defaults.borderColor = colorGrilla;
@@ -164,6 +206,24 @@ new Chart(document.getElementById('grafico-ensayo'), {
                 backgroundColor: colorEnsayo,
                 showLine: false,
                 pointRadius: 4,
+            },
+            {
+                label: 'Ensayo (sin ajustar)',
+                data: grafico.sin_ajustar.suave_x.map(function (x, i) { return { x: x, y: grafico.sin_ajustar.suave_y[i] }; }),
+                borderColor: colorSinAjustar,
+                backgroundColor: colorSinAjustar,
+                pointRadius: 0,
+                borderWidth: 2,
+                borderDash: [6, 4],
+            },
+            {
+                label: 'Ensayo sin ajustar (puntos)',
+                data: grafico.caudales.map(function (c, i) { return { x: c, y: grafico.sin_ajustar.puntos[i] }; }),
+                borderColor: colorSinAjustar,
+                backgroundColor: colorSinAjustar,
+                showLine: false,
+                pointRadius: 4,
+                pointStyle: 'triangle',
             },
         ],
     },

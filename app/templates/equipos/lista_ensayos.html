@@ -35,7 +35,7 @@
     <thead><tr><th>Fecha</th><th>Presión @ 100% (PSI)</th><th>NFPA 25</th><th>Validación</th><th></th></tr></thead>
     <tbody>
         {% for ensayo in ensayos %}
-        {% set resultado = ensayo.resultado_nfpa25() %}
+        {% set resultado = ensayo.resultado_final() %}
         <tr>
             <td>{{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}</td>
             <td>{{ ensayo.presion_neta_punto_100 }}</td>

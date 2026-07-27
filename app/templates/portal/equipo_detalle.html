@@ -39,7 +39,7 @@
             <thead><tr><th>Fecha</th><th>Presión @ 100%</th><th>Resultado</th><th></th></tr></thead>
             <tbody>
                 {% for ensayo in ultimos_ensayos %}
-                {% set resultado = ensayo.resultado_nfpa25() %}
+                {% set resultado = ensayo.resultado_final() %}
                 <tr>
                     <td><a href="{{ url_for('curvas.ensayo_detalle', equipo_id=equipo.id, ensayo_id=ensayo.id) }}">{{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}</a></td>
                     <td>{{ ensayo.presion_neta_punto_100 }} PSI</td>

@@ -863,6 +863,15 @@ class EnsayoCaudal(db.Model):
     validado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
     fecha_validacion = db.Column(db.DateTime, nullable=True)
 
+    comentarios = db.Column(db.Text, nullable=True)
+
+    # Resultado NFPA25 fijado a mano por el Administrador/Jefe, independiente
+    # del cálculo (ver resultado_nfpa25) — None/"Aprobado"/"Rechazado". Sirve
+    # para los casos donde el criterio de ingeniería difiere del cálculo
+    # estricto de los 3 puntos; resultado_final() es el que hay que usar en
+    # toda la app para mostrar/decidir el resultado.
+    resultado_manual = db.Column(db.String(20), nullable=True)
+
     equipo = db.relationship(
         "Equipo",
         backref=db.backref(
@@ -911,11 +920,20 @@ class EnsayoCaudal(db.Model):
 
     def resultado_nfpa25(self):
         """True (aprobado) / False (rechazado) / None (sin curva de fábrica
-        para comparar)."""
+        para comparar) — solo el cálculo automático de los 3 criterios."""
         validacion = self.validacion_nfpa25()
         if validacion is None:
             return None
         return all(criterio["paso"] for criterio in validacion.values())
+
+    def resultado_final(self):
+        """El resultado a mostrar/usar en toda la app: si el Administrador/
+        Jefe fijó un resultado manual, ese manda por sobre el cálculo."""
+        if self.resultado_manual == "Aprobado":
+            return True
+        if self.resultado_manual == "Rechazado":
+            return False
+        return self.resultado_nfpa25()
 
     def __repr__(self):
         return f"<EnsayoCaudal equipo={self.equipo_id} {self.fecha_ensayo}>"

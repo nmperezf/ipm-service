@@ -135,6 +135,7 @@ def ensayo_nuevo(equipo_id):
 
         ensayo = EnsayoCaudal(equipo_id=equipo.id, fecha_ensayo=fecha_ensayo, creado_por_id=current_user.id)
         _aplicar_puntos_ensayo(ensayo, datos_puntos)
+        ensayo.comentarios = request.form.get("comentarios") or None
         db.session.add(ensayo)
         db.session.commit()
         flash(f"Ensayo del {fecha_ensayo.strftime('%d/%m/%Y')} guardado para '{equipo.nombre}'.", "success")
@@ -173,15 +174,30 @@ def ensayo_editar(equipo_id, ensayo_id):
             flash(f"Ya hay otro ensayo cargado para '{equipo.nombre}' con fecha {fecha_ensayo.strftime('%d/%m/%Y')}.", "danger")
             return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica, ensayo=ensayo)
 
+        cambio_datos = ensayo.fecha_ensayo != fecha_ensayo or any(
+            getattr(ensayo, f"rpm_punto_{p}") != datos_puntos[p]["rpm"]
+            or getattr(ensayo, f"presion_descarga_punto_{p}") != datos_puntos[p]["descarga"]
+            or getattr(ensayo, f"presion_succion_punto_{p}") != datos_puntos[p]["succion"]
+            for p in PUNTOS
+        )
+
         ensayo.fecha_ensayo = fecha_ensayo
         _aplicar_puntos_ensayo(ensayo, datos_puntos)
-        # Corregir los datos vuelve a dejar el ensayo pendiente de revisión
-        # — la validación anterior era sobre valores que ya no son estos.
-        ensayo.estado_revision = "Pendiente"
-        ensayo.validado_por_id = None
-        ensayo.fecha_validacion = None
-        db.session.commit()
-        flash(f"Ensayo del {fecha_ensayo.strftime('%d/%m/%Y')} actualizado. Queda pendiente de revisión otra vez.", "success")
+        ensayo.comentarios = request.form.get("comentarios") or None
+
+        if cambio_datos:
+            # Corregir los datos vuelve a dejar el ensayo pendiente de
+            # revisión — la validación anterior era sobre valores que ya no
+            # son estos. Si solo se tocó el comentario, la revisión no se
+            # toca.
+            ensayo.estado_revision = "Pendiente"
+            ensayo.validado_por_id = None
+            ensayo.fecha_validacion = None
+            db.session.commit()
+            flash(f"Ensayo del {fecha_ensayo.strftime('%d/%m/%Y')} actualizado. Queda pendiente de revisión otra vez.", "success")
+        else:
+            db.session.commit()
+            flash(f"Ensayo del {fecha_ensayo.strftime('%d/%m/%Y')} actualizado.", "success")
         return redirect(url_for("curvas.ensayo_detalle", equipo_id=equipo.id, ensayo_id=ensayo.id))
 
     return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica, ensayo=ensayo)
@@ -236,6 +252,32 @@ def ensayo_rechazar(equipo_id, ensayo_id):
     return redirect(url_for("curvas.ensayo_detalle", equipo_id=equipo.id, ensayo_id=ensayo.id))
 
 
+@curvas_bp.route("/<int:equipo_id>/ensayo/<int:ensayo_id>/forzar-resultado", methods=["POST"])
+@rol_requerido("Administrador", "Jefe")
+def ensayo_forzar_resultado(equipo_id, ensayo_id):
+    """Deja que el Administrador/Jefe fije a mano el resultado NFPA 25
+    (independiente del cálculo de los 3 criterios) — para los casos donde
+    el criterio de ingeniería difiere del cálculo estricto. 'Automatico'
+    vuelve a dejar que decida el cálculo."""
+    equipo = Equipo.query.get_or_404(equipo_id)
+    _verificar_es_bomba(equipo)
+    verificar_escritura_cliente(equipo.instalacion.cliente)
+    ensayo = EnsayoCaudal.query.get_or_404(ensayo_id)
+    if ensayo.equipo_id != equipo.id:
+        abort(404)
+
+    valor = request.form.get("resultado")
+    if valor not in ("Aprobado", "Rechazado", "Automatico"):
+        abort(400)
+    ensayo.resultado_manual = None if valor == "Automatico" else valor
+    db.session.commit()
+    if valor == "Automatico":
+        flash("Resultado NFPA 25 vuelve a decidirse por el cálculo automático.", "info")
+    else:
+        flash(f"Resultado NFPA 25 fijado manualmente como '{valor}'.", "success")
+    return redirect(url_for("curvas.ensayo_detalle", equipo_id=equipo.id, ensayo_id=ensayo.id))
+
+
 @curvas_bp.route("/<int:equipo_id>/ensayo/<int:ensayo_id>")
 @rol_requerido("Administrador", "Jefe", "Técnico", "Cliente")
 def ensayo_detalle(equipo_id, ensayo_id):
@@ -250,6 +292,7 @@ def ensayo_detalle(equipo_id, ensayo_id):
 
     validacion = ensayo.validacion_nfpa25()
     ajustadas = ensayo.puntos_ajustados(equipo.curva_fabrica.rpm_nominal) if equipo.curva_fabrica else None
+    sin_ajustar = [round(n, 1) for n in ensayo.puntos_netos()]
 
     grafico = None
     if equipo.curva_fabrica:
@@ -257,10 +300,12 @@ def ensayo_detalle(equipo_id, ensayo_id):
         _, presiones_fabrica = equipo.curva_fabrica.puntos()
         xs_fabrica, ys_fabrica = curva_suavizada(caudales, presiones_fabrica)
         xs_ensayo, ys_ensayo = curva_suavizada(caudales, ajustadas)
+        xs_sin_ajustar, ys_sin_ajustar = curva_suavizada(caudales, sin_ajustar)
         grafico = {
             "caudales": caudales,
             "fabrica": {"puntos": presiones_fabrica, "suave_x": xs_fabrica, "suave_y": ys_fabrica},
             "ensayo": {"puntos": ajustadas, "suave_x": xs_ensayo, "suave_y": ys_ensayo},
+            "sin_ajustar": {"puntos": sin_ajustar, "suave_x": xs_sin_ajustar, "suave_y": ys_sin_ajustar},
         }
 
     return render_template(
@@ -269,8 +314,10 @@ def ensayo_detalle(equipo_id, ensayo_id):
         ensayo=ensayo,
         curva=equipo.curva_fabrica,
         ajustadas=ajustadas,
+        sin_ajustar=sin_ajustar,
         validacion=validacion,
-        resultado=ensayo.resultado_nfpa25(),
+        resultado_automatico=ensayo.resultado_nfpa25(),
+        resultado=ensayo.resultado_final(),
         grafico=grafico,
     )
 

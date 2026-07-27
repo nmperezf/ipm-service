@@ -25,14 +25,19 @@ VERDE_SUAVE = colors.HexColor("#E5F4EC")
 ROJO_SUAVE = colors.HexColor("#FBEAE7")
 
 
-def _grafico_curvas(caudales, presiones_fabrica, presiones_ensayo_ajustadas):
+def _grafico_curvas(caudales, presiones_fabrica, presiones_ensayo_ajustadas, presiones_ensayo_sin_ajustar):
     """Dispersión (los 4 puntos reales) + curva suavizada (parábola
-    ajustada, ver utils.curva_suavizada) para fábrica y ensayo, superpuestas."""
+    ajustada, ver utils.curva_suavizada) para fábrica, ensayo ajustado a RPM
+    nominal y ensayo tal cual se midió (sin ajuste), superpuestas."""
     fig, ax = plt.subplots(figsize=(6.4, 3.6), dpi=150)
 
     xs_fabrica, ys_fabrica = curva_suavizada(caudales, presiones_fabrica)
     ax.plot(xs_fabrica, ys_fabrica, color="#1A2233", linewidth=2, label="Curva de fábrica")
     ax.scatter(caudales, presiones_fabrica, color="#1A2233", zorder=3)
+
+    xs_sin_ajustar, ys_sin_ajustar = curva_suavizada(caudales, presiones_ensayo_sin_ajustar)
+    ax.plot(xs_sin_ajustar, ys_sin_ajustar, color="#B5730A", linewidth=2, linestyle="--", label="Ensayo (sin ajustar)")
+    ax.scatter(caudales, presiones_ensayo_sin_ajustar, color="#B5730A", zorder=3, marker="^")
 
     xs_ensayo, ys_ensayo = curva_suavizada(caudales, presiones_ensayo_ajustadas)
     ax.plot(xs_ensayo, ys_ensayo, color="#E2131D", linewidth=2, label="Ensayo (ajustado a RPM nominal)")
@@ -152,7 +157,8 @@ def generar_pdf_ensayo(ensayo):
 
     # ---- Gráfico ----
     if curva_fabrica:
-        grafico_buffer = _grafico_curvas(caudales, presiones_fabrica, ajustadas)
+        netas_redondeadas = [round(n, 1) for n in netas]
+        grafico_buffer = _grafico_curvas(caudales, presiones_fabrica, ajustadas, netas_redondeadas)
         elementos.append(Image(grafico_buffer, width=15 * cm, height=8.4 * cm))
 
     # ---- Validación NFPA 25 ----
@@ -180,7 +186,7 @@ def generar_pdf_ensayo(ensayo):
         tabla_validacion.setStyle(TableStyle(estilo_validacion))
         elementos.append(tabla_validacion)
 
-        aprobado = all(c["paso"] for c in validacion.values())
+        aprobado = ensayo.resultado_final()
         elementos.append(Spacer(1, 0.6 * cm))
         estilo_resultado = ParagraphStyle(
             "Resultado",
@@ -189,11 +195,19 @@ def generar_pdf_ensayo(ensayo):
             alignment=1,
             textColor=VERDE if aprobado else ROJO,
         )
-        elementos.append(Paragraph("RESULTADO: ✓ APROBADO" if aprobado else "RESULTADO: ✗ RECHAZADO", estilo_resultado))
+        elementos.append(Paragraph("RESULTADO: ✓ CUMPLE NFPA 25" if aprobado else "RESULTADO: ✗ NO CUMPLE NFPA 25", estilo_resultado))
+        if ensayo.resultado_manual:
+            estilo_manual = ParagraphStyle("ResultadoManual", parent=styles["Normal"], fontSize=9, textColor=GRIS, alignment=1)
+            elementos.append(Paragraph("Resultado fijado manualmente por el Administrador/Jefe.", estilo_manual))
     else:
         elementos.append(
             Paragraph("No se puede validar contra NFPA 25 sin una curva de fábrica cargada.", styles["Normal"])
         )
+
+    # ---- Comentarios ----
+    if ensayo.comentarios:
+        elementos.append(Paragraph("Comentarios", h2))
+        elementos.append(Paragraph(ensayo.comentarios.replace("\n", "<br/>"), styles["Normal"]))
 
     # ---- Validación del Jefe/Administrador (independiente del cálculo) ----
     elementos.append(Spacer(1, 0.4 * cm))
