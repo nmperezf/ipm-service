@@ -932,6 +932,8 @@ html[data-bs-theme="dark"] .hoja-doc { box-shadow: 0 4px 22px rgba(0,0,0,.35); }
 .card-atencion.alerta .num, .card-atencion.alerta .etiqueta { color: var(--bs-warning); }
 .card-atencion.info { background: var(--info-soft); }
 .card-atencion.info .num, .card-atencion.info .etiqueta { color: var(--bs-info); }
+.card-atencion.ok { background: var(--ok-soft); }
+.card-atencion.ok .num, .card-atencion.ok .etiqueta { color: var(--bs-success); }
 
 .card-tendencia {
     display: flex; align-items: center; gap: 1.4rem; background: var(--surface-muted);

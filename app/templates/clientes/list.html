@@ -1,45 +1,59 @@
 {% extends "base.html" %}
 {% block title %}Clientes - IPM Service{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Clientes</h1>
-    <a href="{{ url_for('clientes.nuevo') }}" class="btn btn-primary">+ Nuevo cliente</a>
-</div>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <div class="marca">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="">
+            </div>
+            <h1>Clientes</h1>
+        </div>
+        <div class="filete-rojo-doc"></div>
+        <div class="cuerpo-doc">
 
-<div class="table-responsive">
-<table class="table table-hover align-middle data-table tabla-col-fija">
-    <thead>
-        <tr>
-            <th>Nombre</th>
-            <th>Contacto</th>
-            <th>Teléfono</th>
-            <th>Instalaciones</th>
-            <th>Estado</th>
-            <th></th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for cliente in clientes %}
-        <tr>
-            <td><a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}">{{ cliente.nombre }}</a></td>
-            <td>{{ cliente.contacto or '-' }}</td>
-            <td>{{ cliente.telefono or '-' }}</td>
-            <td>{{ cliente.instalaciones|length }}</td>
-            <td>
-                {% if cliente.activo %}
-                    <span class="badge bg-success">Activo</span>
-                {% else %}
-                    <span class="badge bg-secondary">Inactivo</span>
-                {% endif %}
-            </td>
-            <td class="text-end">
-                <a href="{{ url_for('clientes.editar', cliente_id=cliente.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-            </td>
-        </tr>
-        {% else %}
-        <tr><td colspan="6" class="text-center text-muted py-4">Todavía no hay clientes cargados.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+            <div class="d-flex justify-content-end mb-3">
+                <a href="{{ url_for('clientes.nuevo') }}" class="btn btn-dark">+ Nuevo cliente</a>
+            </div>
+
+            <div class="table-responsive">
+            <table class="table table-hover align-middle data-table tabla-col-fija">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Contacto</th>
+                        <th>Teléfono</th>
+                        <th>Instalaciones</th>
+                        <th>Estado</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cliente in clientes %}
+                    <tr>
+                        <td><a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}">{{ cliente.nombre }}</a></td>
+                        <td>{{ cliente.contacto or '-' }}</td>
+                        <td>{{ cliente.telefono or '-' }}</td>
+                        <td>{{ cliente.instalaciones|length }}</td>
+                        <td>
+                            {% if cliente.activo %}
+                                <span class="badge bg-success">Activo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactivo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ url_for('clientes.editar', cliente_id=cliente.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="6" class="text-center text-muted py-4">Todavía no hay clientes cargados.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+        </div>
+    </div>
 </div>
 {% endblock %}
