@@ -879,7 +879,6 @@ html[data-bs-theme="dark"] .hoja-doc { box-shadow: 0 4px 22px rgba(0,0,0,.35); }
 }
 .encabezado-doc .marca { display: flex; align-items: center; gap: .6rem; }
 .encabezado-doc .marca img { height: 28px; width: auto; }
-.encabezado-doc .marca .nombre { font-family: var(--font-display); font-weight: 800; letter-spacing: .01em; font-size: .95rem; }
 .encabezado-doc h1 { margin: 0; font-size: 1.2rem; font-weight: 700; color: #fff; }
 .encabezado-doc .sub { font-size: .78rem; color: rgba(255,255,255,.7); }
 .filete-rojo-doc { height: 3px; background: var(--accent); }
