@@ -10,27 +10,36 @@
     su propio formulario a partir de este base — sigue siendo editable por separado para cada cliente.
 </p>
 
+{% if not grupos %}
+<p class="text-center text-muted py-4">Todavía no cargaste ningún servicio tipo.</p>
+{% endif %}
+{% for categoria, servicios in grupos %}
+<h6 class="text-muted text-uppercase mt-3" style="font-size:.72rem; letter-spacing:.04em;">{{ categoria }}</h6>
 <div class="table-responsive">
 <table class="table table-hover data-table">
-    <thead><tr><th>Nombre</th><th>Descripción</th><th>Por equipo</th><th>Campos</th><th></th></tr></thead>
     <tbody>
         {% for s in servicios %}
         <tr>
-            <td>{{ s.nombre }}</td>
-            <td>{{ s.descripcion or '-' }}</td>
-            <td>{{ s.tipo_equipo_aplicable if s.por_equipo else '-' }}</td>
-            <td>{{ s.campos()|length }}</td>
             <td>
+                {{ s.nombre }}
+                {% if s.por_equipo and s.tipo_equipo_aplicable %}
+                <span class="badge badge-Pendiente ms-1">{{ s.tipo_equipo_aplicable }}</span>
+                {% else %}
+                <span class="badge badge-Programado ms-1">Sin equipo puntual</span>
+                {% endif %}
+                {% if s.descripcion %}<div class="text-muted small">{{ s.descripcion }}</div>{% endif %}
+            </td>
+            <td class="text-end" style="white-space:nowrap;">
+                <span class="text-muted small me-2">{{ s.campos()|length }} campo(s)</span>
                 <a href="{{ url_for('servicios_tipo.editar', servicio_id=s.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
                 <form method="POST" action="{{ url_for('servicios_tipo.eliminar', servicio_id=s.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar el servicio tipo {{ s.nombre }} del catálogo?');">
                     <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                 </form>
             </td>
         </tr>
-        {% else %}
-        <tr><td colspan="5" class="text-center text-muted py-4">Todavía no cargaste ningún servicio tipo.</td></tr>
         {% endfor %}
     </tbody>
 </table>
 </div>
+{% endfor %}
 {% endblock %}

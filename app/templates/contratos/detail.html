@@ -13,32 +13,55 @@
 </p>
 
 <h4 class="mt-4">Servicios contratados</h4>
-<div class="table-responsive">
-<table class="table table-sm data-table">
-    <thead><tr><th>Servicio</th><th>Frecuencia</th><th>Empieza a contar</th><th>Ejecuciones en el año</th><th></th></tr></thead>
-    <tbody>
-        {% for s in contrato.servicios %}
-        <tr>
-            <td>{{ s.nombre }}</td>
-            <td class="text-capitalize">{{ s.frecuencia }}</td>
-            <td>
-                {{ s.fecha_base.strftime('%m/%Y') }}
-                {% if not s.fecha_inicio %}<span class="text-muted small">(mismo mes del contrato)</span>{% endif %}
-            </td>
-            <td>{{ s.fechas_ocurrencia()|length }}</td>
-            <td>
-                <form method="POST" action="{{ url_for('contratos.eliminar_servicio', servicio_id=s.id) }}"
+{% if not contrato.servicios %}
+<p class="text-muted">Todavía no agregaste servicios a este contrato.</p>
+{% endif %}
+{% for s in contrato.servicios %}
+{% set tipo_formulario = formularios_por_servicio.get(s.id) %}
+<div class="card mb-2">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <strong>{{ s.nombre }}</strong>
+                <span class="badge badge-Programado text-capitalize ms-1">{{ s.frecuencia }}</span>
+                <span class="text-muted small ms-2">
+                    {{ s.fechas_ocurrencia()|length }} ejecución(es) en el año, desde {{ s.fecha_base.strftime('%m/%Y') }}
+                    {% if not s.fecha_inicio %}(mismo mes del contrato){% endif %}
+                </span>
+            </div>
+            <div>
+                {% if tipo_formulario %}
+                <a href="{{ url_for('tipos_formulario.editar', tipo_id=tipo_formulario.id, volver_a=url_for('contratos.detalle', contrato_id=contrato.id)) }}" class="btn btn-sm btn-outline-secondary">✏️ Editar campos</a>
+                {% endif %}
+                <form method="POST" action="{{ url_for('contratos.eliminar_servicio', servicio_id=s.id) }}" class="d-inline"
                       onsubmit="return confirm('¿Eliminar este servicio? Se regenerarán las visitas del contrato.');">
                     <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                 </form>
-            </td>
-        </tr>
+            </div>
+        </div>
+
+        {% if tipo_formulario %}
+        <div class="formulario-inline mt-2">
+            {% for campo in tipo_formulario.campos() %}
+            <div class="campo-inline"><span class="text-muted">{{ campo.label }}</span><span>{{ etiquetas_tipo_campo.get(campo.tipo, campo.tipo) }}</span></div>
+            {% else %}
+            <span class="text-muted small">Este formulario todavía no tiene campos.</span>
+            {% endfor %}
+        </div>
         {% else %}
-        <tr><td colspan="5" class="text-muted text-center py-3">Todavía no agregaste servicios a este contrato.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+        <p class="text-muted small mb-0 mt-2">
+            No se encontró el formulario de este servicio para {{ contrato.instalacion.cliente.nombre }}.
+            <a href="{{ url_for('tipos_formulario.nuevo', cliente_id=contrato.instalacion.cliente_id, volver_a=url_for('contratos.detalle', contrato_id=contrato.id)) }}">Crear uno</a>.
+        </p>
+        {% endif %}
+    </div>
 </div>
+{% endfor %}
+{% if contrato.servicios %}
+<p class="text-end">
+    <a href="{{ url_for('tipos_formulario.nuevo', cliente_id=contrato.instalacion.cliente_id, volver_a=url_for('contratos.detalle', contrato_id=contrato.id)) }}" class="small">+ Formulario adicional (sin ligar a un servicio contratado)</a>
+</p>
+{% endif %}
 
 <h5 class="mt-3">Agregar servicio</h5>
 {% if not servicios_tipo %}

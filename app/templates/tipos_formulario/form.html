@@ -1,11 +1,12 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Editar' if tipo else 'Nuevo' }} tipo de formulario{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('tipos_formulario.listar', cliente_id=cliente.id) }}">&larr; Formularios de {{ cliente.nombre }}</a></p>
+<p><a href="{{ volver_a or url_for('clientes.detalle', cliente_id=cliente.id) }}">&larr; Volver</a></p>
 <h1>{{ 'Editar tipo de formulario' if tipo else 'Nuevo tipo de formulario' }} <small class="text-muted fs-6">{{ cliente.nombre }}</small></h1>
 <p class="text-muted">Armá el checklist agregando los campos que necesites. Cada campo se guarda con la etiqueta que le pongas.</p>
 
 <form method="POST">
+    {% if volver_a %}<input type="hidden" name="volver_a" value="{{ volver_a }}">{% endif %}
     <div class="mb-3">
         <label class="form-label">Nombre</label>
         <input type="text" name="nombre" class="form-control" required
@@ -37,31 +38,6 @@
         </div>
     </div>
 
-    <div class="card mb-3">
-        <div class="card-body">
-            <label class="form-label">¿A qué servicios aplica? (opcional)</label>
-            <p class="text-muted small">
-                Filtra el desplegable "Elegir formulario" de cada servicio de una visita. Si no elegís
-                ninguno, este formulario aparece disponible para todos los servicios.
-            </p>
-            {% if not servicios_tipo_disponibles %}
-            <p class="text-muted small mb-0">Todavía no hay servicios cargados en el catálogo de la empresa.</p>
-            {% else %}
-            <div class="row">
-                {% for st in servicios_tipo_disponibles %}
-                <div class="col-md-4">
-                    <div class="form-check">
-                        <input type="checkbox" name="servicios_tipo_ids" value="{{ st.id }}" class="form-check-input" id="servicio-tipo-{{ st.id }}"
-                               {% if tipo and st in tipo.servicios_tipo %}checked{% endif %}>
-                        <label class="form-check-label" for="servicio-tipo-{{ st.id }}">{{ st.nombre }}</label>
-                    </div>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
-        </div>
-    </div>
-
     <h5>Campos del formulario</h5>
     <div class="table-responsive">
 <table class="table table-sm align-middle" id="tabla-campos">
@@ -81,7 +57,7 @@
     <div class="barra-accion-fija-relleno d-sm-none"></div>
     <div class="barra-accion-fija">
         <button type="submit" class="btn btn-primary">Guardar tipo de formulario</button>
-        <a href="{{ url_for('tipos_formulario.listar', cliente_id=cliente.id) }}" class="btn btn-link">Cancelar</a>
+        <a href="{{ volver_a or url_for('clientes.detalle', cliente_id=cliente.id) }}" class="btn btn-link">Cancelar</a>
     </div>
 </form>
 

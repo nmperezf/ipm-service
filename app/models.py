@@ -344,6 +344,11 @@ class ServicioContrato(db.Model):
     frecuencia = db.Column(db.String(30), nullable=False)  # ver FRECUENCIAS_DISPONIBLES
     fecha_inicio = db.Column(db.Date, nullable=True)  # si es None, usa contrato.fecha_inicio
     activo = db.Column(db.Boolean, default=True, nullable=False)
+    # Copiado de ServicioTipo.tipo_equipo_aplicable al agregar el servicio al
+    # contrato (ver contratos.nuevo_servicio) — filtra el desplegable "Elegir
+    # formulario" de la visita para que solo ofrezca los tipos de formulario
+    # del mismo tipo de equipo (por categoría, ver categoria_de_tipo_equipo).
+    tipo_equipo_aplicable = db.Column(db.String(40), nullable=True)
 
     items = db.relationship("ItemVisita", backref="servicio", lazy=True, cascade="all, delete-orphan")
 
@@ -519,19 +524,6 @@ class ItemVisita(db.Model):
 # ---------------------------------------------------------------------------
 
 
-# A qué tipos de servicio (del catálogo ServicioTipo) aplica cada
-# TipoFormulario — filtra el desplegable "Elegir formulario" de cada
-# servicio de una visita. Se vincula a ServicioTipo (el catálogo, estable)
-# y no a ServicioContrato (la instancia dentro de un contrato puntual, que
-# no sobrevive a una renovación de contrato) para que la configuración no
-# se pierda de un año al otro.
-tipo_formulario_servicios_tipo = db.Table(
-    "tipo_formulario_servicios_tipo",
-    db.Column("tipo_formulario_id", db.Integer, db.ForeignKey("tipos_formulario.id"), primary_key=True),
-    db.Column("servicio_tipo_id", db.Integer, db.ForeignKey("servicios_tipo.id"), primary_key=True),
-)
-
-
 class TipoFormulario(db.Model):
     """Define un tipo de formulario y su esquema de campos. Pertenece a un
     Cliente puntual (cada instalación es distinta) y lo puede crear y usar
@@ -555,14 +547,6 @@ class TipoFormulario(db.Model):
 
     cliente = db.relationship("Cliente", backref=db.backref("tipos_formulario", cascade="all, delete-orphan"))
 
-    # Vacío = aplica a cualquier servicio (comportamiento de siempre, sin
-    # configurar nada). Con uno o más elegidos, el desplegable "Elegir
-    # formulario" de una visita solo lo ofrece en los servicios que
-    # coincidan por nombre con alguno de estos.
-    servicios_tipo = db.relationship(
-        "ServicioTipo", secondary=tipo_formulario_servicios_tipo, backref="tipos_formulario"
-    )
-
     def campos(self):
         import json
 
@@ -570,12 +554,19 @@ class TipoFormulario(db.Model):
 
     def aplica_a_servicio(self, servicio_contrato):
         """True si este tipo de formulario debería ofrecerse para ese
-        servicio de un contrato — sin restricciones configuradas, aplica a
-        cualquiera; si tiene, se compara por nombre contra el catálogo
-        (ServicioContrato no tiene FK directa a ServicioTipo)."""
-        if not self.servicios_tipo:
+        servicio de un contrato. Sin tipo de equipo propio (formulario
+        general, ej. checklist mensual) aplica a cualquier servicio. Con
+        tipo de equipo, solo aplica si cae en la misma categoría que el
+        tipo de equipo del servicio (ver categoria_de_tipo_equipo) — si el
+        servicio no tiene tipo de equipo asignado, no se filtra nada
+        (comportamiento de siempre)."""
+        if not self.tipo_equipo_aplicable:
             return True
-        return any(st.nombre == servicio_contrato.nombre for st in self.servicios_tipo)
+        if not servicio_contrato.tipo_equipo_aplicable:
+            return True
+        return categoria_de_tipo_equipo(self.tipo_equipo_aplicable) == categoria_de_tipo_equipo(
+            servicio_contrato.tipo_equipo_aplicable
+        )
 
     def __repr__(self):
         return f"<TipoFormulario {self.nombre}>"
@@ -751,6 +742,18 @@ def categorias_equipo_agrupadas():
     orden = [c for c in CATEGORIAS_EQUIPO_ORDEN if c in grupos]
     orden += sorted(c for c in grupos if c not in CATEGORIAS_EQUIPO_ORDEN)
     return [(categoria, grupos[categoria]) for categoria in orden]
+
+
+def categoria_de_tipo_equipo(nombre_tipo_equipo):
+    """La categoría (Sala de bombas, Bocas de incendio, etc) a la que
+    pertenece un nombre de tipo de equipo. None si no está cargado en el
+    catálogo (ej. quedó huérfano tras eliminarse el TipoEquipo)."""
+    if not nombre_tipo_equipo:
+        return None
+    for categoria, tipos in categorias_equipo_agrupadas():
+        if nombre_tipo_equipo in tipos:
+            return categoria
+    return None
 
 
 # ---------------------------------------------------------------------------

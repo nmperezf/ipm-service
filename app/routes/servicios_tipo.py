@@ -5,10 +5,12 @@ from flask_login import current_user
 
 from app import db
 from app.auth_utils import rol_requerido
-from app.models import ServicioTipo, nombres_tipos_equipo
+from app.models import ServicioTipo, categoria_de_tipo_equipo, categorias_equipo_agrupadas, nombres_tipos_equipo
 from app.utils import TIPOS_CAMPO, armar_campos_desde_formulario
 
 servicios_tipo_bp = Blueprint("servicios_tipo", __name__, url_prefix="/servicios-tipo")
+
+CATEGORIA_SIN_EQUIPO = "Otros equipos"
 
 
 def _verificar_pertenencia(servicio_tipo):
@@ -22,7 +24,15 @@ def listar():
     servicios = (
         ServicioTipo.query.filter_by(empresa_id=current_user.empresa_id).order_by(ServicioTipo.nombre).all()
     )
-    return render_template("servicios_tipo/list.html", servicios=servicios)
+    orden_categorias = [c for c, _ in categorias_equipo_agrupadas()]
+    if CATEGORIA_SIN_EQUIPO not in orden_categorias:
+        orden_categorias.append(CATEGORIA_SIN_EQUIPO)
+    grupos_dict = {c: [] for c in orden_categorias}
+    for s in servicios:
+        categoria = categoria_de_tipo_equipo(s.tipo_equipo_aplicable) or CATEGORIA_SIN_EQUIPO
+        grupos_dict.setdefault(categoria, []).append(s)
+    grupos = [(c, grupos_dict[c]) for c in orden_categorias if grupos_dict[c]]
+    return render_template("servicios_tipo/list.html", grupos=grupos)
 
 
 @servicios_tipo_bp.route("/nuevo", methods=["GET", "POST"])

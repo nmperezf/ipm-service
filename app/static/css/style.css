@@ -382,6 +382,24 @@ small, .small, .text-muted {
     box-shadow: 0 6px 16px rgba(20,30,45,.10);
 }
 
+.formulario-inline {
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: .5rem;
+    padding: .5rem .75rem;
+    font-size: .84rem;
+}
+.formulario-inline .campo-inline {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: .3rem 0;
+    border-bottom: 1px solid var(--border);
+}
+.formulario-inline .campo-inline:last-child {
+    border-bottom: none;
+}
+
 /* ---- Tablas -------------------------------------------------------------- */
 
 .table thead th {

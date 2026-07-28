@@ -2,7 +2,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app import db
 from app.auth_utils import rol_requerido
-from app.models import CATEGORIAS_EQUIPO_ORDEN, Equipo, ServicioTipo, TipoEquipo, TipoFormulario
+from app.models import CATEGORIAS_EQUIPO_ORDEN, Equipo, ServicioTipo, TipoEquipo, TipoFormulario, categorias_equipo_agrupadas
 
 tipos_equipo_bp = Blueprint("tipos_equipo", __name__, url_prefix="/tipos-equipo")
 
@@ -10,8 +10,12 @@ tipos_equipo_bp = Blueprint("tipos_equipo", __name__, url_prefix="/tipos-equipo"
 @tipos_equipo_bp.route("/")
 @rol_requerido("Administrador", "Jefe", "Técnico")
 def listar():
-    tipos = TipoEquipo.query.order_by(TipoEquipo.nombre).all()
-    return render_template("tipos_equipo/list.html", tipos=tipos)
+    tipos_por_nombre = {t.nombre: t for t in TipoEquipo.query.all()}
+    grupos = [
+        (categoria, [tipos_por_nombre[nombre] for nombre in nombres])
+        for categoria, nombres in categorias_equipo_agrupadas()
+    ]
+    return render_template("tipos_equipo/list.html", grupos=grupos)
 
 
 @tipos_equipo_bp.route("/nuevo", methods=["GET", "POST"])

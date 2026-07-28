@@ -8,6 +8,16 @@ from app.pdf_reporte import generar_pdf_reporte_equipos
 formularios_bp = Blueprint("formularios", __name__, url_prefix="/formularios")
 
 
+@formularios_bp.route("/")
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def hub():
+    """Landing del menú 'Formularios': los dos catálogos de la empresa
+    (Servicios tipo, Tipos de equipo). Los formularios propios de cada
+    cliente no aparecen acá — esos se ven y editan desde el contrato de
+    cada cliente."""
+    return render_template("formularios/hub.html")
+
+
 def _verificar_tipo_del_cliente(item, tipo):
     """El tipo de formulario tiene que pertenecer al mismo cliente que la
     visita — evita mezclar un checklist de otro cliente por id."""

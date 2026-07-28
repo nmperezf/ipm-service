@@ -10,15 +10,18 @@
     equipo aplica un formulario o un servicio tipo. La categoría agrupa la navegación del portal de cliente.
 </p>
 
+{% if not grupos %}
+<p class="text-center text-muted py-4">Todavía no hay tipos de equipo cargados.</p>
+{% endif %}
+{% for categoria, tipos in grupos %}
+<h6 class="text-muted text-uppercase mt-3" style="font-size:.72rem; letter-spacing:.04em;">{{ categoria }}</h6>
 <div class="table-responsive">
 <table class="table table-hover data-table">
-    <thead><tr><th>Nombre</th><th>Categoría</th><th></th></tr></thead>
     <tbody>
         {% for t in tipos %}
         <tr>
             <td>{{ t.nombre }}</td>
-            <td>{{ t.categoria }}</td>
-            <td>
+            <td class="text-end">
                 {% if current_user.rol in ('Administrador', 'Jefe') %}
                 <form method="POST" action="{{ url_for('tipos_equipo.eliminar', tipo_id=t.id) }}" class="d-inline"
                       onsubmit="return confirm('¿Eliminar el tipo de equipo {{ t.nombre }}?');">
@@ -27,10 +30,9 @@
                 {% endif %}
             </td>
         </tr>
-        {% else %}
-        <tr><td colspan="3" class="text-center text-muted py-4">Todavía no hay tipos de equipo cargados.</td></tr>
         {% endfor %}
     </tbody>
 </table>
 </div>
+{% endfor %}
 {% endblock %}

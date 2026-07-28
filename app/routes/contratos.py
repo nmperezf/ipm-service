@@ -19,6 +19,7 @@ from app.models import (
     ServicioTipo,
     TipoFormulario,
 )
+from app.utils import TIPOS_CAMPO
 
 contratos_bp = Blueprint("contratos", __name__, url_prefix="/contratos")
 
@@ -66,11 +67,19 @@ def detalle(contrato_id):
     contrato = Contrato.query.get_or_404(contrato_id)
     verificar_acceso_cliente(contrato.instalacion.cliente)
     visitas = sorted(contrato.visitas, key=lambda v: v.fecha)
-    empresa_id = contrato.instalacion.cliente.empresa_id
-    servicios_tipo = ServicioTipo.query.filter_by(empresa_id=empresa_id).order_by(ServicioTipo.nombre).all()
+    cliente = contrato.instalacion.cliente
+    servicios_tipo = ServicioTipo.query.filter_by(empresa_id=cliente.empresa_id).order_by(ServicioTipo.nombre).all()
+    # El formulario de cada servicio contratado es la copia que se importó
+    # al cliente al agregarlo (ver nuevo_servicio) — se busca por nombre
+    # porque ServicioContrato no tiene FK directa a ella.
+    formularios_por_servicio = {
+        s.id: TipoFormulario.query.filter_by(cliente_id=cliente.id, nombre=s.nombre).first()
+        for s in contrato.servicios
+    }
     return render_template(
         "contratos/detail.html", contrato=contrato, visitas=visitas, frecuencias=FRECUENCIAS_DISPONIBLES,
-        servicios_tipo=servicios_tipo,
+        servicios_tipo=servicios_tipo, formularios_por_servicio=formularios_por_servicio,
+        etiquetas_tipo_campo=dict(TIPOS_CAMPO),
     )
 
 
@@ -140,6 +149,7 @@ def nuevo_servicio(contrato_id):
         frecuencia=request.form["frecuencia"],
         fecha_inicio=fecha_inicio_servicio,
         activo=True,
+        tipo_equipo_aplicable=servicio_tipo.tipo_equipo_aplicable,
     )
     db.session.add(servicio)
     db.session.commit()
