@@ -1,7 +1,12 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app import db
-from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_escritura_cliente
+from app.auth_utils import (
+    rol_requerido,
+    verificar_acceso_cliente,
+    verificar_escritura_cliente,
+    verificar_password_confirmacion,
+)
 from app.models import Equipo, Formulario, Instalacion, nombres_tipos_equipo
 from app.utils import construir_secciones_historico
 
@@ -141,6 +146,8 @@ def editar(equipo_id):
 def eliminar(equipo_id):
     equipo = Equipo.query.get_or_404(equipo_id)
     verificar_escritura_cliente(equipo.instalacion.cliente)
+    if not verificar_password_confirmacion():
+        return redirect(url_for("equipos.editar", equipo_id=equipo.id))
     instalacion_id = equipo.instalacion_id
     db.session.delete(equipo)
     db.session.commit()

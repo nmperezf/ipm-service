@@ -141,4 +141,9 @@
     </tbody>
 </table>
 </div>
+
+<form method="POST" action="{{ url_for('instalaciones.eliminar', instalacion_id=instalacion.id) }}" class="mt-4 form-confirmar-password" data-sin-bloqueo
+      data-mensaje="¿Eliminar '{{ instalacion.nombre }}'? Se borran también sus contratos, visitas y equipos. Esta acción no se puede deshacer.">
+    <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar instalación</button>
+</form>
 {% endblock %}

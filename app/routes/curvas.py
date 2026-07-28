@@ -4,7 +4,12 @@ from flask import Blueprint, Response, abort, flash, redirect, render_template, 
 from flask_login import current_user
 
 from app import db
-from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_escritura_cliente
+from app.auth_utils import (
+    rol_requerido,
+    verificar_acceso_cliente,
+    verificar_escritura_cliente,
+    verificar_password_confirmacion,
+)
 from app.models import CurvaFabrica, EnsayoCaudal, Equipo
 from app.pdf_curva_caudal import generar_pdf_ensayo
 from app.utils import calcular_presion_ajustada, curva_suavizada, validar_nfpa25
@@ -212,6 +217,8 @@ def ensayo_eliminar(equipo_id, ensayo_id):
     ensayo = EnsayoCaudal.query.get_or_404(ensayo_id)
     if ensayo.equipo_id != equipo.id:
         abort(404)
+    if not verificar_password_confirmacion():
+        return redirect(url_for("curvas.ensayo_detalle", equipo_id=equipo.id, ensayo_id=ensayo.id))
 
     fecha = ensayo.fecha_ensayo
     db.session.delete(ensayo)

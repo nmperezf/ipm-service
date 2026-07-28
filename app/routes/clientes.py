@@ -4,7 +4,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from flask_login import current_user
 
 from app import db
-from app.auth_utils import clientes_visibles, rol_requerido, verificar_acceso_cliente
+from app.auth_utils import clientes_visibles, rol_requerido, verificar_acceso_cliente, verificar_password_confirmacion
 from app.models import Cliente, Visita
 from app.utils import actualizar_vencimientos
 
@@ -135,6 +135,8 @@ def editar(cliente_id):
 def eliminar(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
     verificar_acceso_cliente(cliente)
+    if not verificar_password_confirmacion():
+        return redirect(url_for("clientes.detalle", cliente_id=cliente.id))
     db.session.delete(cliente)
     db.session.commit()
     flash(f"Cliente '{cliente.nombre}' eliminado.", "info")

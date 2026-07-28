@@ -100,8 +100,8 @@
 </table>
 </div>
 
-<form method="POST" action="{{ url_for('contratos.eliminar', contrato_id=contrato.id) }}"
-      onsubmit="return confirm('¿Eliminar este contrato y todas sus visitas?');">
+<form method="POST" action="{{ url_for('contratos.eliminar', contrato_id=contrato.id) }}" class="form-confirmar-password" data-sin-bloqueo
+      data-mensaje="¿Eliminar '{{ contrato.nombre }}'? Se borran también todos sus servicios, visitas, checklists y fotos asociadas. Esta acción no se puede deshacer.">
     <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar contrato</button>
 </form>
 {% endblock %}

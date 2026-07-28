@@ -154,8 +154,8 @@
 {% endif %}
 
 {% if current_user.rol in ('Administrador', 'Jefe') %}
-<form method="POST" action="{{ url_for('curvas.ensayo_eliminar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}"
-      onsubmit="return confirm('¿Eliminar este ensayo? Esta acción no se puede deshacer.');">
+<form method="POST" action="{{ url_for('curvas.ensayo_eliminar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="form-confirmar-password" data-sin-bloqueo
+      data-mensaje="¿Eliminar el ensayo del {{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}? Esta acción no se puede deshacer.">
     <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar ensayo</button>
 </form>
 {% endif %}

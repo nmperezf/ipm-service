@@ -4,7 +4,12 @@ from flask import Blueprint, abort, flash, redirect, render_template, request, u
 from flask_login import current_user
 
 from app import db
-from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_escritura_cliente
+from app.auth_utils import (
+    rol_requerido,
+    verificar_acceso_cliente,
+    verificar_escritura_cliente,
+    verificar_password_confirmacion,
+)
 from app.models import (
     Contrato,
     ESTADOS_CONTRATO,
@@ -91,6 +96,8 @@ def editar(contrato_id):
 def eliminar(contrato_id):
     contrato = Contrato.query.get_or_404(contrato_id)
     verificar_escritura_cliente(contrato.instalacion.cliente)
+    if not verificar_password_confirmacion():
+        return redirect(url_for("contratos.detalle", contrato_id=contrato.id))
     instalacion_id = contrato.instalacion_id
     db.session.delete(contrato)
     db.session.commit()

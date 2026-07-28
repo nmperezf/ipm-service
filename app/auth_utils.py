@@ -133,3 +133,18 @@ def verificar_visita_editable(visita):
     que ya mandó a revisión o que ya está cerrada."""
     if visita_bloqueada_para_tecnico(visita):
         abort(403)
+
+
+def verificar_password_confirmacion():
+    """Para eliminar registros de alto impacto (cliente, instalación,
+    contrato, equipo, ensayo de curva de caudal): además del rol/pertenencia
+    ya validados, exige reingresar la contraseña como doble confirmación.
+    Devuelve True si es correcta; si no, deja un flash de error para que el
+    caller redirija sin borrar nada."""
+    from flask import flash, request
+
+    password = request.form.get("password", "")
+    if not password or not current_user.check_password(password):
+        flash("Contraseña incorrecta — no se realizó la eliminación.", "danger")
+        return False
+    return True

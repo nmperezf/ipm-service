@@ -140,8 +140,8 @@
 </form>
 
 {% if equipo %}
-<form method="POST" action="{{ url_for('equipos.eliminar', equipo_id=equipo.id) }}" class="mt-4"
-      onsubmit="return confirm('¿Eliminar este equipo?');">
+<form method="POST" action="{{ url_for('equipos.eliminar', equipo_id=equipo.id) }}" class="mt-4 form-confirmar-password" data-sin-bloqueo
+      data-mensaje="¿Eliminar '{{ equipo.nombre }}'? Se borran también su curva de fábrica, ensayos, checklists y deficiencias asociadas. Esta acción no se puede deshacer.">
     <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar equipo</button>
 </form>
 {% endif %}
