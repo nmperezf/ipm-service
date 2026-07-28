@@ -414,7 +414,10 @@ def ensayo_pdf(equipo_id, ensayo_id):
     return Response(
         pdf_bytes,
         mimetype="application/pdf",
-        headers={"Content-Disposition": f"inline; filename={nombre_archivo}"},
+        headers={
+            "Content-Disposition": f"inline; filename={nombre_archivo}",
+            "Cache-Control": "no-store",
+        },
     )
 
 
