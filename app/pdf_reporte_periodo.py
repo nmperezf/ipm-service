@@ -7,39 +7,31 @@ criterio que ya usamos en la curva de caudal)."""
 
 import io
 
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
 
-AZUL = colors.HexColor("#1B3A5C")
-GRIS = colors.HexColor("#5B6673")
-BORDE = colors.HexColor("#D9DEE3")
-ROJO_SUAVE = colors.HexColor("#FBEAE7")
-ROJO = colors.HexColor("#B3261E")
+from app.pdf_base import ACCENT, ACCENT_SOFT, INK, SURFACE_MUTED, BORDE, construir, crear_documento, estilos
 
 
 def generar_pdf_reporte_periodo(cliente, fecha_desde, fecha_hasta, resumen_servicios, deficiencias_periodo, deficiencias_abiertas):
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=A4,
-        topMargin=1.8 * cm,
-        bottomMargin=1.8 * cm,
-        leftMargin=1.8 * cm,
-        rightMargin=1.8 * cm,
+    doc = crear_documento(buffer)
+    styles = estilos()
+    titulo, subtitulo, h2, normal, celda = (
+        styles["titulo"], styles["subtitulo"], styles["h2"], styles["normal"], styles["celda"],
     )
 
-    styles = getSampleStyleSheet()
-    titulo = ParagraphStyle("Titulo", parent=styles["Title"], textColor=AZUL, fontSize=20, spaceAfter=2)
-    subtitulo = ParagraphStyle("Subtitulo", parent=styles["Normal"], textColor=GRIS, fontSize=10)
-    h2 = ParagraphStyle("H2", parent=styles["Heading2"], textColor=AZUL, fontSize=12, spaceBefore=14, spaceAfter=6)
-    normal = styles["Normal"]
-    celda = ParagraphStyle("Celda", parent=styles["Normal"], fontSize=9, leading=12)
+    def _estilo_base():
+        return [
+            ("BACKGROUND", (0, 0), (-1, 0), SURFACE_MUTED),
+            ("TEXTCOLOR", (0, 0), (-1, 0), INK),
+            ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+            ("FONTSIZE", (0, 0), (-1, -1), 8.5),
+            ("GRID", (0, 0), (-1, -1), 0.4, BORDE),
+            ("VALIGN", (0, 0), (-1, -1), "TOP"),
+        ]
 
     elementos = []
-    elementos.append(Paragraph("IPM Service", subtitulo))
     elementos.append(Paragraph("Reporte de cumplimiento", titulo))
     elementos.append(
         Paragraph(
@@ -58,18 +50,7 @@ def generar_pdf_reporte_periodo(cliente, fecha_desde, fecha_hasta, resumen_servi
                 str(r["pendientes"]), str(r["cancelados"]), f"{r['pct']}%",
             ])
         tabla = Table(filas, colWidths=[6.5 * cm, 1.7 * cm, 2 * cm, 2 * cm, 2 * cm, 2.3 * cm])
-        tabla.setStyle(
-            TableStyle(
-                [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F4F6F8")),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), AZUL),
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, -1), 9),
-                    ("GRID", (0, 0), (-1, -1), 0.4, BORDE),
-                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ]
-            )
-        )
+        tabla.setStyle(TableStyle(_estilo_base()))
         elementos.append(tabla)
     else:
         elementos.append(Paragraph("No hubo visitas planificadas en este período.", normal))
@@ -85,21 +66,9 @@ def generar_pdf_reporte_periodo(cliente, fecha_desde, fecha_hasta, resumen_servi
                 Paragraph(o.clasificacion, celda), estado, Paragraph(o.descripcion, celda),
             ])
             if o.clasificacion == "Deficiencia crítica":
-                estilos_fila.append(("BACKGROUND", (0, i), (-1, i), ROJO_SUAVE))
+                estilos_fila.append(("BACKGROUND", (0, i), (-1, i), ACCENT_SOFT))
         tabla = Table(filas, colWidths=[2.2 * cm, 3.3 * cm, 3 * cm, 2.8 * cm, 5.2 * cm])
-        tabla.setStyle(
-            TableStyle(
-                [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F4F6F8")),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), AZUL),
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, -1), 8.5),
-                    ("GRID", (0, 0), (-1, -1), 0.4, BORDE),
-                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                    *estilos_fila,
-                ]
-            )
-        )
+        tabla.setStyle(TableStyle(_estilo_base() + estilos_fila))
         elementos.append(tabla)
     else:
         elementos.append(Paragraph("No se registraron deficiencias nuevas en este período.", normal))
@@ -118,26 +87,14 @@ def generar_pdf_reporte_periodo(cliente, fecha_desde, fecha_hasta, resumen_servi
                 f"{o.dias_abierta} día(s)", o.fecha_carga.strftime("%d/%m/%Y"), Paragraph(o.descripcion, celda),
             ])
             if o.clasificacion == "Deficiencia crítica":
-                estilos_fila.append(("BACKGROUND", (0, i), (-1, i), ROJO_SUAVE))
-                estilos_fila.append(("TEXTCOLOR", (2, i), (2, i), ROJO))
+                estilos_fila.append(("BACKGROUND", (0, i), (-1, i), ACCENT_SOFT))
+                estilos_fila.append(("TEXTCOLOR", (2, i), (2, i), ACCENT))
                 estilos_fila.append(("FONTNAME", (2, i), (2, i), "Helvetica-Bold"))
         tabla = Table(filas, colWidths=[3.3 * cm, 3 * cm, 2.3 * cm, 2.7 * cm, 5.2 * cm])
-        tabla.setStyle(
-            TableStyle(
-                [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F4F6F8")),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), AZUL),
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, -1), 8.5),
-                    ("GRID", (0, 0), (-1, -1), 0.4, BORDE),
-                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                    *estilos_fila,
-                ]
-            )
-        )
+        tabla.setStyle(TableStyle(_estilo_base() + estilos_fila))
         elementos.append(tabla)
     else:
         elementos.append(Paragraph("No hay deficiencias abiertas para este cliente.", normal))
 
-    doc.build(elementos)
+    construir(doc, elementos, tipo_doc="Reporte de cumplimiento")
     return buffer.getvalue()

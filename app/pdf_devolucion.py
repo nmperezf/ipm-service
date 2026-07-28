@@ -7,39 +7,23 @@ portal del cliente."""
 import base64
 import io
 
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
-from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Image, Paragraph, Spacer, Table, TableStyle
 
-AZUL = colors.HexColor("#1B3A5C")
-GRIS = colors.HexColor("#5B6673")
-BORDE = colors.HexColor("#D9DEE3")
+from app.pdf_base import INK_MUTED, construir, crear_documento, estilo_tabla_encabezado, estilos
 
 
 def generar_pdf_devolucion(visita, resumen_categorias, deficiencias):
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(
-        buffer,
-        pagesize=A4,
-        topMargin=1.8 * cm,
-        bottomMargin=1.8 * cm,
-        leftMargin=1.8 * cm,
-        rightMargin=1.8 * cm,
+    doc = crear_documento(buffer)
+    styles = estilos()
+    titulo, subtitulo, h2, normal, celda = (
+        styles["titulo"], styles["subtitulo"], styles["h2"], styles["normal"], styles["celda"],
     )
-
-    styles = getSampleStyleSheet()
-    titulo = ParagraphStyle("Titulo", parent=styles["Title"], textColor=AZUL, fontSize=20, spaceAfter=2)
-    subtitulo = ParagraphStyle("Subtitulo", parent=styles["Normal"], textColor=GRIS, fontSize=10)
-    h2 = ParagraphStyle("H2", parent=styles["Heading2"], textColor=AZUL, fontSize=12, spaceBefore=14, spaceAfter=6)
-    normal = styles["Normal"]
-    celda = ParagraphStyle("Celda", parent=styles["Normal"], fontSize=9, leading=12)
 
     instalacion = visita.instalacion
     elementos = []
 
-    elementos.append(Paragraph("IPM Service", subtitulo))
     elementos.append(Paragraph("Reporte de visita", titulo))
     elementos.append(
         Paragraph(
@@ -57,19 +41,7 @@ def generar_pdf_devolucion(visita, resumen_categorias, deficiencias):
         for r in resumen_categorias:
             filas.append([r["categoria"], str(r["equipos_revisados"])])
         tabla_resumen = Table(filas, colWidths=[10 * cm, 6.5 * cm])
-        tabla_resumen.setStyle(
-            TableStyle(
-                [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F4F6F8")),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), AZUL),
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, -1), 9.5),
-                    ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-                    ("TOPPADDING", (0, 0), (-1, -1), 6),
-                    ("LINEBELOW", (0, 0), (-1, -1), 0.5, BORDE),
-                ]
-            )
-        )
+        tabla_resumen.setStyle(estilo_tabla_encabezado())
         elementos.append(tabla_resumen)
     else:
         elementos.append(Paragraph("Sin checklists de equipos cargados en esta visita.", normal))
@@ -80,18 +52,7 @@ def generar_pdf_devolucion(visita, resumen_categorias, deficiencias):
         for d in deficiencias:
             filas.append([Paragraph(d.clasificacion, celda), Paragraph(d.descripcion, celda)])
         tabla_def = Table(filas, colWidths=[4 * cm, 12.5 * cm])
-        tabla_def.setStyle(
-            TableStyle(
-                [
-                    ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F4F6F8")),
-                    ("TEXTCOLOR", (0, 0), (-1, 0), AZUL),
-                    ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-                    ("FONTSIZE", (0, 0), (-1, 0), 9.5),
-                    ("GRID", (0, 0), (-1, -1), 0.4, BORDE),
-                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                ]
-            )
-        )
+        tabla_def.setStyle(estilo_tabla_encabezado())
         elementos.append(tabla_def)
     else:
         elementos.append(Paragraph("No se registraron deficiencias en esta visita.", normal))
@@ -122,12 +83,12 @@ def generar_pdf_devolucion(visita, resumen_categorias, deficiencias):
         TableStyle(
             [
                 ("FONTSIZE", (0, 0), (-1, -1), 9),
-                ("TEXTCOLOR", (0, 1), (-1, 1), GRIS),
+                ("TEXTCOLOR", (0, 1), (-1, 1), INK_MUTED),
                 ("TOPPADDING", (0, 1), (-1, 1), 2),
             ]
         )
     )
     elementos.append(firmas)
 
-    doc.build(elementos)
+    construir(doc, elementos, tipo_doc="Reporte de visita")
     return buffer.getvalue()

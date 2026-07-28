@@ -9,19 +9,12 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from reportlab.lib import colors
-from reportlab.lib.pagesizes import A4
-from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
+from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
-from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import Image, Paragraph, Spacer, Table, TableStyle
 
+from app.pdf_base import ACCENT, INK_MUTED, VERDE, construir, crear_documento, estilo_tabla_encabezado, estilos
 from app.utils import calcular_presion_ajustada, curva_suavizada
-
-AZUL = colors.HexColor("#1A2233")
-GRIS = colors.HexColor("#5B6673")
-BORDE = colors.HexColor("#D9DEE3")
-VERDE = colors.HexColor("#1F8A54")
-ROJO = colors.HexColor("#E2131D")
 
 
 def _grafico_curvas(caudales, presiones_fabrica, presiones_ensayo_ajustadas, presiones_ensayo_sin_ajustar):
@@ -62,20 +55,13 @@ def generar_pdf_ensayo(ensayo):
     equipo = ensayo.equipo
     curva_fabrica = equipo.curva_fabrica
     instalacion = equipo.instalacion
-    empresa = instalacion.cliente.empresa
 
     buffer = io.BytesIO()
-    doc = SimpleDocTemplate(
-        buffer, pagesize=A4, topMargin=1.5 * cm, bottomMargin=1.5 * cm, leftMargin=1.5 * cm, rightMargin=1.5 * cm
-    )
-
-    styles = getSampleStyleSheet()
-    titulo = ParagraphStyle("Titulo", parent=styles["Title"], textColor=AZUL, fontSize=17, spaceAfter=2)
-    subtitulo = ParagraphStyle("Subtitulo", parent=styles["Normal"], textColor=GRIS, fontSize=10)
-    h2 = ParagraphStyle("H2", parent=styles["Heading2"], textColor=AZUL, fontSize=12, spaceBefore=14, spaceAfter=6)
+    doc = crear_documento(buffer, margen_izq=1.5 * cm, margen_der=1.5 * cm)
+    styles = estilos()
+    titulo, subtitulo, h2, normal = styles["titulo"], styles["subtitulo"], styles["h2"], styles["normal"]
 
     elementos = []
-    elementos.append(Paragraph(empresa.nombre if empresa else "IPM Service", subtitulo))
     elementos.append(Paragraph("Ensayo de curva de caudal — NFPA 25", titulo))
     elementos.append(
         Paragraph(
@@ -89,15 +75,7 @@ def generar_pdf_ensayo(ensayo):
     elementos.append(Paragraph(f"Fecha de ensayo: {ensayo.fecha_ensayo.strftime('%d/%m/%Y')}", subtitulo))
     elementos.append(Spacer(1, 0.4 * cm))
 
-    estilo_tabla_base = [
-        ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#F4F6F8")),
-        ("TEXTCOLOR", (0, 0), (-1, 0), AZUL),
-        ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
-        ("FONTSIZE", (0, 0), (-1, -1), 9),
-        ("GRID", (0, 0), (-1, -1), 0.4, BORDE),
-        ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
-        ("ALIGN", (1, 0), (-1, -1), "CENTER"),
-    ]
+    estilo_tabla_base = estilo_tabla_encabezado()
 
     caudales = [0, 50, 100, 150]
 
@@ -108,11 +86,11 @@ def generar_pdf_ensayo(ensayo):
         filas_fabrica = [["Caudal (%)", "0%", "50%", "100%", "150%"], ["RPM"] + [curva_fabrica.rpm_nominal] * 4]
         filas_fabrica.append(["Presión neta (PSI)"] + presiones_fabrica)
         tabla_fabrica = Table(filas_fabrica, colWidths=[3.5 * cm] + [3.2 * cm] * 4)
-        tabla_fabrica.setStyle(TableStyle(estilo_tabla_base))
+        tabla_fabrica.setStyle(estilo_tabla_base)
         elementos.append(tabla_fabrica)
     else:
         presiones_fabrica = None
-        elementos.append(Paragraph("Este equipo todavía no tiene curva de fábrica cargada.", styles["Normal"]))
+        elementos.append(Paragraph("Este equipo todavía no tiene curva de fábrica cargada.", normal))
 
     # ---- Ensayo ----
     elementos.append(Paragraph("Ensayo", h2))
@@ -150,7 +128,7 @@ def generar_pdf_ensayo(ensayo):
         ["Variación vs fábrica"] + [f"{v:+.1f}%" if v is not None else "-" for v in variaciones],
     ]
     tabla_ensayo = Table(filas_ensayo, colWidths=[4 * cm] + [2.85 * cm] * 4)
-    tabla_ensayo.setStyle(TableStyle(estilo_tabla_base))
+    tabla_ensayo.setStyle(estilo_tabla_base)
     elementos.append(tabla_ensayo)
     elementos.append(Spacer(1, 0.4 * cm))
 
@@ -178,17 +156,17 @@ def generar_pdf_ensayo(ensayo):
                 ]
             )
         tabla_validacion = Table(filas_validacion, colWidths=[9 * cm] + [3.5 * cm] * 2)
-        tabla_validacion.setStyle(TableStyle(estilo_tabla_base))
+        tabla_validacion.setStyle(estilo_tabla_base)
         elementos.append(tabla_validacion)
     else:
         elementos.append(
-            Paragraph("No se puede comparar contra NFPA 25 sin una curva de fábrica cargada.", styles["Normal"])
+            Paragraph("No se puede comparar contra NFPA 25 sin una curva de fábrica cargada.", normal)
         )
 
     # ---- Comentarios ----
     if ensayo.comentarios:
         elementos.append(Paragraph("Comentarios", h2))
-        elementos.append(Paragraph(ensayo.comentarios.replace("\n", "<br/>"), styles["Normal"]))
+        elementos.append(Paragraph(ensayo.comentarios.replace("\n", "<br/>"), normal))
 
     # ---- Validación del Jefe/Administrador (independiente del cálculo) ----
     elementos.append(Spacer(1, 0.4 * cm))
@@ -197,14 +175,14 @@ def generar_pdf_ensayo(ensayo):
         color_revision = VERDE
     elif ensayo.estado_revision == "Rechazado":
         texto_revision = f"Rechazado por {ensayo.validado_por.nombre_completo or ensayo.validado_por.username}"
-        color_revision = ROJO
+        color_revision = ACCENT
     else:
         texto_revision = "Pendiente de revisión por Administrador/Jefe"
-        color_revision = GRIS
+        color_revision = INK_MUTED
     if ensayo.fecha_validacion:
         texto_revision += f" el {ensayo.fecha_validacion.strftime('%d/%m/%Y')}"
-    estilo_revision = ParagraphStyle("Revision", parent=styles["Normal"], fontSize=9, textColor=color_revision, alignment=1)
+    estilo_revision = ParagraphStyle("Revision", parent=normal, fontSize=9, textColor=color_revision, alignment=1)
     elementos.append(Paragraph(texto_revision, estilo_revision))
 
-    doc.build(elementos)
+    construir(doc, elementos, tipo_doc="Ensayo de curva de caudal")
     return buffer.getvalue()
