@@ -19,6 +19,11 @@
             {% endif %}
         {% elif visita.fase == 'Cerrada' %}
             <a href="{{ url_for('visitas.pdf_devolucion', visita_id=visita.id) }}" class="btn btn-sm btn-outline-dark" target="_blank">Descargar PDF de devolución</a>
+            {% if current_user.rol in ('Administrador', 'Jefe') %}
+            <form method="POST" action="{{ url_for('visitas.reabrir', visita_id=visita.id) }}" class="d-inline" onsubmit="return confirm('¿Reabrir esta visita para corregirla? El PDF ya entregado no va a reflejar los cambios hasta que la vuelvas a cerrar.');">
+                <button type="submit" class="btn btn-sm btn-outline-warning">Reabrir visita</button>
+            </form>
+            {% endif %}
         {% endif %}
 
         {% if current_user.rol in ('Administrador', 'Jefe') %}
@@ -48,9 +53,16 @@
 <p class="text-muted">Esta visita no tiene servicios asociados de un contrato (es una visita manual).</p>
 {% endif %}
 
-{% set puede_editar = not (current_user.rol == 'Técnico' and visita.fase != 'Abierta') %}
+{% set puede_editar = not visita.cerrada and not (current_user.rol == 'Técnico' and visita.fase != 'Abierta') %}
 {% if not puede_editar %}
-<div class="alert alert-info">Esta visita está {{ visita.fase|lower }}: ya no podés modificar nada. Si hace falta corregir algo, hablalo con el Administrador/Jefe.</div>
+<div class="alert alert-info">
+    Esta visita está {{ visita.fase|lower }}: ya no se puede modificar nada.
+    {% if visita.cerrada and current_user.rol in ('Administrador', 'Jefe') %}
+    Usá "Reabrir visita" arriba si hace falta corregir algo.
+    {% else %}
+    Si hace falta corregir algo, hablalo con el Administrador/Jefe.
+    {% endif %}
+</div>
 {% endif %}
 
 {% for item in visita.items %}

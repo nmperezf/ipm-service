@@ -130,8 +130,11 @@ def visita_bloqueada_para_tecnico(visita):
 
 def verificar_visita_editable(visita):
     """Corta con 403 si un Técnico intenta modificar algo de una visita
-    que ya mandó a revisión o que ya está cerrada."""
-    if visita_bloqueada_para_tecnico(visita):
+    que ya mandó a revisión, o si la visita ya está cerrada (ahí queda
+    bloqueada para todos, Administrador/Jefe incluidos: el PDF de
+    devolución ya se pudo haber entregado al cliente, así que cualquier
+    corrección pasa primero por reabrir la visita explícitamente)."""
+    if visita.cerrada or visita_bloqueada_para_tecnico(visita):
         abort(403)
 
 

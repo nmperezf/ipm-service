@@ -302,6 +302,32 @@ def cerrar(visita_id):
     )
 
 
+@visitas_bp.route("/<int:visita_id>/reabrir", methods=["POST"])
+@rol_requerido("Administrador", "Jefe")
+def reabrir(visita_id):
+    """Una visita cerrada queda bloqueada para todos (ver
+    verificar_visita_editable). Si hace falta corregir algo después de
+    cerrarla, primero hay que reabrirla acá explícitamente: es una acción
+    deliberada y visible, no una edición silenciosa sobre un PDF que ya se
+    le pudo haber entregado al cliente."""
+    visita = Visita.query.get_or_404(visita_id)
+    verificar_acceso_cliente(visita.instalacion.cliente)
+
+    if not visita.cerrada:
+        flash("Esta visita no está cerrada.", "info")
+        return redirect(url_for("visitas.detalle", visita_id=visita.id))
+
+    visita.cerrada = False
+    visita.fecha_cierre = None
+    visita.cerrada_por_id = None
+    db.session.commit()
+    flash(
+        "Visita reabierta. Recordá que el PDF de devolución ya entregado no va a reflejar los cambios hasta volver a cerrarla.",
+        "warning",
+    )
+    return redirect(url_for("visitas.detalle", visita_id=visita.id))
+
+
 @visitas_bp.route("/<int:visita_id>/nota-cliente", methods=["GET", "POST"])
 @rol_requerido("Administrador", "Jefe")
 def editar_nota_cliente(visita_id):
