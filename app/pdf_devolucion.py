@@ -100,17 +100,22 @@ def generar_pdf_devolucion(visita, resumen_categorias, deficiencias):
     elementos.append(Paragraph(visita.notas_cierre or "-", normal))
 
     elementos.append(Spacer(1, 1.2 * cm))
-    celda_firma_cliente = "_______________________________"
-    if visita.firma_cliente:
+
+    def _celda_firma(firma_b64):
+        if not firma_b64:
+            return "_______________________________"
         try:
-            _, datos_b64 = visita.firma_cliente.split(",", 1)
+            _, datos_b64 = firma_b64.split(",", 1)
             imagen_bytes = base64.b64decode(datos_b64)
-            celda_firma_cliente = Image(io.BytesIO(imagen_bytes), width=6 * cm, height=2.2 * cm)
+            return Image(io.BytesIO(imagen_bytes), width=6 * cm, height=2.2 * cm)
         except Exception:
-            celda_firma_cliente = "_______________________________"
+            return "_______________________________"
+
+    celda_firma_tecnico = _celda_firma(visita.firma_tecnico)
+    celda_firma_cliente = _celda_firma(visita.firma_cliente)
 
     firmas = Table(
-        [["_______________________________", celda_firma_cliente], ["Firma técnico", "Firma cliente / conformidad"]],
+        [[celda_firma_tecnico, celda_firma_cliente], ["Firma técnico", "Firma cliente / conformidad"]],
         colWidths=[8 * cm, 8 * cm],
     )
     firmas.setStyle(

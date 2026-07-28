@@ -44,7 +44,9 @@
             <td>{{ obs.equipo.nombre if obs.equipo else '-' }}</td>
             <td>{{ obs.descripcion }}</td>
             <td>
-                {% if obs.estado_revision == 'Aprobada' %}<span class="badge badge-Cumplido">Aprobada</span>
+                {% if obs.estado_revision == 'Aprobada' %}
+                <span class="badge badge-Cumplido" title="{{ obs.aprobado_por.nombre_completo or obs.aprobado_por.username if obs.aprobado_por else '' }}">Aprobada</span>
+                {% if obs.aprobado_por %}<div class="text-muted small">{{ obs.aprobado_por.nombre_completo or obs.aprobado_por.username }} — {{ obs.fecha_aprobacion.strftime('%d/%m/%Y') if obs.fecha_aprobacion }}</div>{% endif %}
                 {% else %}<span class="badge badge-Pendiente">Pendiente de revisión</span>{% endif %}
             </td>
             <td>

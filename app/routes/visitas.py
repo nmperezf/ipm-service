@@ -256,6 +256,9 @@ def enviar_revision(visita_id):
         firma = request.form.get("firma_cliente")
         if firma:
             visita.firma_cliente = firma
+        firma_tecnico = request.form.get("firma_tecnico")
+        if firma_tecnico:
+            visita.firma_tecnico = firma_tecnico
         notificar_gestion(
             empresa_id=current_user.empresa_id,
             tipo="visita_revision",

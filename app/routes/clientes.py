@@ -1,11 +1,14 @@
 from collections import defaultdict
+from datetime import date, datetime
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from dateutil.relativedelta import relativedelta
+from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
 from flask_login import current_user
 
 from app import db
 from app.auth_utils import clientes_visibles, rol_requerido, verificar_acceso_cliente, verificar_password_confirmacion
-from app.models import Cliente, Visita
+from app.models import Cliente, ItemVisita, Visita
+from app.pdf_reporte_periodo import generar_pdf_reporte_periodo
 from app.utils import actualizar_vencimientos
 
 clientes_bp = Blueprint("clientes", __name__, url_prefix="/clientes")
@@ -108,6 +111,99 @@ def deficiencias(cliente_id, clasificacion):
     )
     return render_template(
         "clientes/deficiencias.html", cliente=cliente, observaciones=observaciones, clasificacion=clasificacion
+    )
+
+
+def _parse_fecha_iso(valor, por_defecto=None):
+    if not valor:
+        return por_defecto
+    try:
+        return datetime.strptime(valor, "%Y-%m-%d").date()
+    except ValueError:
+        return por_defecto
+
+
+@clientes_bp.route("/<int:cliente_id>/reporte-periodo")
+@rol_requerido("Administrador", "Jefe")
+def reporte_periodo(cliente_id):
+    """Reporte de cumplimiento por período (pensado para 6 meses, pero
+    acepta cualquier rango): servicios ejecutados + deficiencias
+    encontradas en el período + todas las que siguen abiertas hoy
+    (críticas primero). Es lo que un cliente necesita para su propia
+    auditoría interna."""
+    cliente = Cliente.query.get_or_404(cliente_id)
+    verificar_acceso_cliente(cliente)
+
+    hoy = date.today()
+    fecha_desde = _parse_fecha_iso(request.args.get("fecha_desde"), hoy - relativedelta(months=6))
+    fecha_hasta = _parse_fecha_iso(request.args.get("fecha_hasta"), hoy)
+
+    ids_instalaciones = [i.id for i in cliente.instalaciones]
+
+    items_periodo = (
+        ItemVisita.query.join(Visita)
+        .filter(
+            Visita.instalacion_id.in_(ids_instalaciones),
+            Visita.fecha >= fecha_desde,
+            Visita.fecha <= fecha_hasta,
+        )
+        .all()
+        if ids_instalaciones
+        else []
+    )
+    resumen_servicios = []
+    for inst in cliente.instalaciones:
+        items_inst = [it for it in items_periodo if it.visita.instalacion_id == inst.id]
+        if not items_inst:
+            continue
+        cumplidos = sum(1 for it in items_inst if it.estado == "Cumplido")
+        resumen_servicios.append(
+            {
+                "instalacion": inst.nombre,
+                "total": len(items_inst),
+                "cumplidos": cumplidos,
+                "pendientes": sum(1 for it in items_inst if it.estado == "Pendiente"),
+                "cancelados": sum(1 for it in items_inst if it.estado == "Cancelado"),
+                "pct": round(cumplidos / len(items_inst) * 100, 1),
+            }
+        )
+
+    deficiencias_periodo = sorted(
+        (
+            o
+            for inst in cliente.instalaciones
+            for o in inst.deficiencias
+            if fecha_desde <= o.fecha_carga <= fecha_hasta
+        ),
+        key=lambda o: (o.clasificacion != "Deficiencia crítica", o.fecha_carga),
+    )
+
+    deficiencias_abiertas = sorted(
+        (o for inst in cliente.instalaciones for o in inst.deficiencias if not o.resuelto),
+        key=lambda o: (o.clasificacion != "Deficiencia crítica", -(hoy - o.fecha_carga).days),
+    )
+    for o in deficiencias_abiertas:
+        o.dias_abierta = (hoy - o.fecha_carga).days
+
+    if request.args.get("pdf"):
+        pdf_bytes = generar_pdf_reporte_periodo(
+            cliente, fecha_desde, fecha_hasta, resumen_servicios, deficiencias_periodo, deficiencias_abiertas
+        )
+        nombre_archivo = f"Reporte_{cliente.nombre.replace(' ', '_')}_{fecha_desde}_{fecha_hasta}.pdf"
+        return Response(
+            pdf_bytes,
+            mimetype="application/pdf",
+            headers={"Content-Disposition": f"inline; filename={nombre_archivo}"},
+        )
+
+    return render_template(
+        "clientes/reporte_periodo.html",
+        cliente=cliente,
+        fecha_desde=fecha_desde,
+        fecha_hasta=fecha_hasta,
+        resumen_servicios=resumen_servicios,
+        deficiencias_periodo=deficiencias_periodo,
+        deficiencias_abiertas=deficiencias_abiertas,
     )
 
 

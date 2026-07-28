@@ -100,7 +100,9 @@
             <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
             <td>{{ obs.descripcion }}</td>
             <td>
-                {% if obs.estado_revision == 'Aprobada' %}<span class="badge badge-Cumplido">Aprobada</span>
+                {% if obs.estado_revision == 'Aprobada' %}
+                <span class="badge badge-Cumplido">Aprobada</span>
+                {% if obs.aprobado_por %}<div class="text-muted small">{{ obs.aprobado_por.nombre_completo or obs.aprobado_por.username }} — {{ obs.fecha_aprobacion.strftime('%d/%m/%Y') if obs.fecha_aprobacion }}</div>{% endif %}
                 {% else %}<span class="badge badge-Pendiente">Pendiente de revisión</span>{% endif %}
             </td>
             <td>
@@ -194,12 +196,13 @@
 <h5 class="mt-4">Deficiencias resueltas (histórico)</h5>
 <div class="table-responsive">
 <table class="table table-sm data-table">
-    <thead><tr><th>Fecha carga</th><th>Fecha resolución</th><th>Clasificación</th><th>Descripción</th></tr></thead>
+    <thead><tr><th>Fecha carga</th><th>Fecha resolución</th><th>Resuelta por</th><th>Clasificación</th><th>Descripción</th></tr></thead>
     <tbody>
         {% for obs in deficiencias_resueltas %}
         <tr>
             <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
             <td>{{ obs.fecha_resolucion.strftime('%d/%m/%Y') if obs.fecha_resolucion else '-' }}</td>
+            <td>{{ (obs.resuelto_por.nombre_completo or obs.resuelto_por.username) if obs.resuelto_por else '-' }}</td>
             <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
             <td>{{ obs.descripcion }}</td>
         </tr>

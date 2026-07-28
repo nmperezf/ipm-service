@@ -6,6 +6,9 @@
     <div>
         <a href="{{ url_for('clientes.editar', cliente_id=cliente.id) }}" class="btn btn-outline-secondary">Editar</a>
         <a href="{{ url_for('clientes.hoja_ruta', cliente_id=cliente.id) }}" class="btn btn-outline-dark">Hoja de ruta</a>
+        {% if current_user.rol in ('Administrador', 'Jefe') %}
+        <a href="{{ url_for('clientes.reporte_periodo', cliente_id=cliente.id) }}" class="btn btn-outline-dark">Reporte de cumplimiento</a>
+        {% endif %}
         <a href="{{ url_for('instalaciones.nueva', cliente_id=cliente.id) }}" class="btn btn-primary">+ Nueva instalación</a>
     </div>
 </div>

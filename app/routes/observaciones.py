@@ -109,7 +109,7 @@ def editar(observacion_id):
 def aprobar(observacion_id):
     observacion = Observacion.query.get_or_404(observacion_id)
     verificar_acceso_cliente(observacion.instalacion.cliente)
-    observacion.aprobar()
+    observacion.aprobar(current_user.id)
     if observacion.creado_por:
         notificar_usuario(
             observacion.creado_por,
@@ -130,7 +130,7 @@ def aprobar(observacion_id):
 def resolver(observacion_id):
     observacion = Observacion.query.get_or_404(observacion_id)
     verificar_escritura_cliente(observacion.instalacion.cliente)
-    observacion.marcar_resuelta()
+    observacion.marcar_resuelta(current_user.id)
     db.session.commit()
     flash("Observación marcada como resuelta.", "success")
     return redirect(request.referrer or url_for("dashboard.inicio"))
@@ -141,7 +141,7 @@ def resolver(observacion_id):
 def reabrir(observacion_id):
     observacion = Observacion.query.get_or_404(observacion_id)
     verificar_escritura_cliente(observacion.instalacion.cliente)
-    observacion.reabrir()
+    observacion.reabrir(current_user.id)
     db.session.commit()
     flash("Observación reabierta.", "info")
     return redirect(request.referrer or url_for("dashboard.inicio"))

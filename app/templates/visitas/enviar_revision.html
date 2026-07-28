@@ -67,12 +67,22 @@
         <div class="form-text">Pasale el dispositivo al cliente para que firme acá arriba, con el dedo o el mouse — es la firma que va a quedar en el PDF de devolución.</div>
     </div>
 
+    <div class="mb-3">
+        <label class="form-label">Tu firma (técnico)</label>
+        <div>
+            <canvas id="firma-tecnico-canvas" width="500" height="180" style="border:1px solid var(--border); border-radius:8px; touch-action:none; max-width:100%;"></canvas>
+        </div>
+        <button type="button" id="limpiar-firma-tecnico" class="btn btn-sm btn-outline-secondary mt-2">Limpiar firma</button>
+        <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
+    </div>
+
     <button type="submit" class="btn btn-primary">Enviar a revisión</button>
 </form>
 <script src="{{ url_for('static', filename='js/firma.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
     iniciarFirma('firma-canvas', 'firma_cliente_input', 'limpiar-firma');
+    iniciarFirma('firma-tecnico-canvas', 'firma_tecnico_input', 'limpiar-firma-tecnico');
 });
 </script>
 {% endblock %}

@@ -82,11 +82,14 @@ CLASE_CALENDARIO = {
     "Cancelado": "secondary",
 }
 
-TIPOS_OT = ["Preventivo", "Correctivo", "Predictivo", "Visita técnica"]
+TIPOS_OT = ["Preventivo", "Inspección", "Mantenimiento", "Correctivo", "Predictivo", "Visita técnica"]
 
 # Tipos elegibles al cargar una OT a mano (Preventivo queda reservado para
-# las que se generan solas desde un contrato, ligadas a una visita)
-TIPOS_OT_MANUAL = ["Correctivo", "Predictivo", "Visita técnica"]
+# las que se generan solas desde un contrato, ligadas a una visita).
+# "Inspección" va primera: es el tipo de OT manual más común, y al no
+# marcarse ninguna por defecto en el <select>, el navegador preselecciona
+# la primera de la lista.
+TIPOS_OT_MANUAL = ["Inspección", "Mantenimiento", "Correctivo", "Predictivo", "Visita técnica"]
 
 ESTADOS_OT = ["Pendiente", "Asignada", "En proceso", "Pausada", "Finalizada", "Cancelada"]
 
@@ -411,7 +414,8 @@ class Visita(db.Model):
     fecha_cierre = db.Column(db.Date, nullable=True)
     notas_cierre = db.Column(db.Text)
     cerrada_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
-    firma_cliente = db.Column(db.Text, nullable=True)  # imagen en base64 (data URI), capturada al cerrar
+    firma_cliente = db.Column(db.Text, nullable=True)  # imagen en base64 (data URI), capturada al enviar a revisión
+    firma_tecnico = db.Column(db.Text, nullable=True)  # ídem, firma del técnico que hizo el servicio
 
     # Nota para el cliente: la carga el Administrador/Jefe, visible en el
     # portal del cliente junto a la fecha en que se escribió.
@@ -683,21 +687,35 @@ class Observacion(db.Model):
     fecha_resolucion = db.Column(db.Date, nullable=True)
     estado_revision = db.Column(db.String(20), default="Pendiente", nullable=False)  # Pendiente / Aprobada
     creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    aprobado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    fecha_aprobacion = db.Column(db.Date, nullable=True)
+    resuelto_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    reabierto_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    fecha_reapertura = db.Column(db.Date, nullable=True)
 
     item_visita = db.relationship("ItemVisita", backref="observaciones_registradas")
     equipo = db.relationship("Equipo", backref="deficiencias")
     creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
+    aprobado_por = db.relationship("Usuario", foreign_keys=[aprobado_por_id])
+    resuelto_por = db.relationship("Usuario", foreign_keys=[resuelto_por_id])
+    reabierto_por = db.relationship("Usuario", foreign_keys=[reabierto_por_id])
 
-    def marcar_resuelta(self, fecha=None):
+    def marcar_resuelta(self, usuario_id=None, fecha=None):
         self.resuelto = True
         self.fecha_resolucion = fecha or date.today()
+        self.resuelto_por_id = usuario_id
 
-    def reabrir(self):
+    def reabrir(self, usuario_id=None):
         self.resuelto = False
         self.fecha_resolucion = None
+        self.resuelto_por_id = None
+        self.reabierto_por_id = usuario_id
+        self.fecha_reapertura = date.today()
 
-    def aprobar(self):
+    def aprobar(self, usuario_id=None):
         self.estado_revision = "Aprobada"
+        self.aprobado_por_id = usuario_id
+        self.fecha_aprobacion = date.today()
 
     def __repr__(self):
         return f"<Observacion {self.clasificacion} - {self.instalacion_id}>"
