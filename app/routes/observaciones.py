@@ -11,6 +11,7 @@ from app.auth_utils import (
     verificar_visita_editable,
 )
 from app.models import CLASIFICACIONES_OBSERVACION, Equipo, Instalacion, ItemVisita, Observacion
+from app.notificaciones import notificar_gestion, notificar_usuario
 
 observaciones_bp = Blueprint("observaciones", __name__, url_prefix="/observaciones")
 
@@ -45,8 +46,18 @@ def nueva(instalacion_id):
             descripcion=request.form["descripcion"],
             fecha_carga=_parse_fecha(request.form.get("fecha_carga")),
             estado_revision="Pendiente",
+            creado_por_id=current_user.id,
         )
         db.session.add(observacion)
+        db.session.flush()
+        notificar_gestion(
+            empresa_id=instalacion.cliente.empresa_id,
+            tipo="observacion_nueva",
+            titulo=f"Observación nueva ({observacion.clasificacion}) — {instalacion.nombre}",
+            cliente_id=instalacion.cliente_id,
+            enlace=url_for("instalaciones.informacion", instalacion_id=instalacion.id),
+            remitente=current_user,
+        )
         db.session.commit()
         flash("Observación cargada, pendiente de revisión del Administrador.", "success")
         if equipo:
@@ -99,6 +110,16 @@ def aprobar(observacion_id):
     observacion = Observacion.query.get_or_404(observacion_id)
     verificar_acceso_cliente(observacion.instalacion.cliente)
     observacion.aprobar()
+    if observacion.creado_por:
+        notificar_usuario(
+            observacion.creado_por,
+            tipo="observacion_aprobada",
+            titulo=f"Observación aprobada — {observacion.instalacion.nombre}",
+            empresa_id=observacion.instalacion.cliente.empresa_id,
+            cliente_id=observacion.instalacion.cliente_id,
+            enlace=url_for("instalaciones.informacion", instalacion_id=observacion.instalacion_id),
+            remitente=current_user,
+        )
     db.session.commit()
     flash("Observación aprobada.", "success")
     return redirect(request.referrer or url_for("dashboard.inicio"))

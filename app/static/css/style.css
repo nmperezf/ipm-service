@@ -382,6 +382,16 @@ small, .small, .text-muted {
     box-shadow: 0 6px 16px rgba(20,30,45,.10);
 }
 
+.punto-no-leido {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    margin-left: 4px;
+    vertical-align: top;
+}
+
 .formulario-inline {
     background: var(--surface-muted);
     border: 1px solid var(--border);

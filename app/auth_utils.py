@@ -121,6 +121,19 @@ def tecnicos_de_la_empresa(empresa_id=None):
     ).order_by(Usuario.nombre_completo).all()
 
 
+def destinatarios_posibles_mensaje():
+    """A quién le puede escribir un Mensaje el usuario logueado: cualquier
+    otro Administrador/Jefe/Técnico activo de su misma empresa."""
+    from app.models import Usuario
+
+    return Usuario.query.filter(
+        Usuario.rol.in_(["Administrador", "Jefe", "Técnico"]),
+        Usuario.empresa_id == current_user.empresa_id,
+        Usuario.activo == True,  # noqa: E712
+        Usuario.id != current_user.id,
+    ).order_by(Usuario.nombre_completo).all()
+
+
 def visita_bloqueada_para_tecnico(visita):
     """True si el Técnico ya no puede tocar nada de esta visita: la mandó
     a revisión (o ya está cerrada) — a partir de ahí, cualquier corrección

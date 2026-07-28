@@ -23,6 +23,7 @@ from app.models import (
     Visita,
     categorias_equipo_agrupadas,
 )
+from app.notificaciones import notificar_gestion, notificar_usuario
 from app.pdf_devolucion import generar_pdf_devolucion
 
 visitas_bp = Blueprint("visitas", __name__, url_prefix="/visitas")
@@ -130,6 +131,17 @@ def nueva(instalacion_id):
         db.session.add(ot)
         db.session.flush()
         ot.asignar_numero()
+
+        if ot.tecnico_id:
+            notificar_usuario(
+                ot.tecnico_usuario,
+                tipo="ot_asignada",
+                titulo=f"OT {ot.numero} asignada — {instalacion.nombre} ({visita.fecha.strftime('%d/%m/%Y')})",
+                empresa_id=current_user.empresa_id,
+                cliente_id=instalacion.cliente_id,
+                enlace=url_for("ordenes.detalle", ot_id=ot.id),
+                remitente=current_user,
+            )
 
         db.session.commit()
         flash("Visita registrada.", "success")
@@ -244,6 +256,14 @@ def enviar_revision(visita_id):
         firma = request.form.get("firma_cliente")
         if firma:
             visita.firma_cliente = firma
+        notificar_gestion(
+            empresa_id=current_user.empresa_id,
+            tipo="visita_revision",
+            titulo=f"Visita a revisión — {visita.instalacion.nombre} ({visita.fecha.strftime('%d/%m/%Y')})",
+            cliente_id=visita.instalacion.cliente_id,
+            enlace=url_for("visitas.detalle", visita_id=visita.id),
+            remitente=current_user,
+        )
         db.session.commit()
         flash("Visita enviada a revisión.", "success")
         return redirect(url_for("visitas.detalle", visita_id=visita.id))

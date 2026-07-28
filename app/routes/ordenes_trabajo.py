@@ -16,6 +16,7 @@ from app.models import (
     TIPOS_OT_MANUAL,
     Usuario,
 )
+from app.notificaciones import notificar_usuario
 from app.pdf_ot import generar_pdf_ot
 
 ordenes_bp = Blueprint("ordenes", __name__, url_prefix="/ordenes-trabajo")
@@ -94,6 +95,16 @@ def nueva():
         db.session.add(ot)
         db.session.flush()
         ot.asignar_numero()
+        if ot.tecnico_id:
+            notificar_usuario(
+                ot.tecnico_usuario,
+                tipo="ot_asignada",
+                titulo=f"OT {ot.numero} asignada — {instalacion.nombre}",
+                empresa_id=current_user.empresa_id,
+                cliente_id=instalacion.cliente_id,
+                enlace=url_for("ordenes.detalle", ot_id=ot.id),
+                remitente=current_user,
+            )
         db.session.commit()
         flash(f"Orden de trabajo {ot.numero} creada.", "success")
         return redirect(url_for("ordenes.detalle", ot_id=ot.id))
@@ -136,8 +147,19 @@ def editar(ot_id):
         ot.tipo = request.form.get("tipo", ot.tipo)
         ot.prioridad = request.form.get("prioridad", ot.prioridad)
         ot.estado = nuevo_estado
+        tecnico_id_anterior = ot.tecnico_id
         tecnico_id = request.form.get("tecnico_id")
         ot.tecnico_id = int(tecnico_id) if tecnico_id else None
+        if ot.tecnico_id and ot.tecnico_id != tecnico_id_anterior:
+            notificar_usuario(
+                ot.tecnico_usuario,
+                tipo="ot_asignada",
+                titulo=f"OT {ot.numero} asignada — {ot.instalacion.nombre}",
+                empresa_id=current_user.empresa_id,
+                cliente_id=ot.instalacion.cliente_id,
+                enlace=url_for("ordenes.detalle", ot_id=ot.id),
+                remitente=current_user,
+            )
         ot.descripcion = request.form.get("descripcion")
         ot.observaciones = request.form.get("observaciones")
         if ot.estado == "Finalizada" and not ot.fecha_cierre:

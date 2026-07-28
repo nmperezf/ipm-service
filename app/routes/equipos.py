@@ -1,4 +1,5 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask_login import current_user
 
 from app import db
 from app.auth_utils import (
@@ -8,6 +9,7 @@ from app.auth_utils import (
     verificar_password_confirmacion,
 )
 from app.models import Equipo, Formulario, Instalacion, nombres_tipos_equipo
+from app.notificaciones import notificar_gestion
 from app.utils import construir_secciones_historico
 
 equipos_bp = Blueprint("equipos", __name__, url_prefix="/equipos")
@@ -98,6 +100,15 @@ def nuevo(instalacion_id):
         )
         _aplicar_datos_bomba(equipo, request.form)
         db.session.add(equipo)
+        db.session.flush()
+        notificar_gestion(
+            empresa_id=instalacion.cliente.empresa_id,
+            tipo="equipo_nuevo",
+            titulo=f"Equipo nuevo — {equipo.nombre} ({instalacion.nombre})",
+            cliente_id=instalacion.cliente_id,
+            enlace=url_for("equipos.detalle", equipo_id=equipo.id),
+            remitente=current_user,
+        )
         db.session.commit()
         flash(f"Equipo '{equipo.nombre}' ({equipo.tipo}) creado.", "success")
         return redirect(url_for("instalaciones.detalle", instalacion_id=instalacion.id))

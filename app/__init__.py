@@ -35,6 +35,20 @@ def create_app():
             return redirect(url_for("auth.login", next=request.path))
         return None
 
+    @app.context_processor
+    def inyectar_notificaciones_no_leidas():
+        from flask_login import current_user
+
+        from app.models import Notificacion
+
+        if not current_user.is_authenticated:
+            return {}
+        return {
+            "notificaciones_no_leidas": Notificacion.query.filter_by(
+                destinatario_id=current_user.id, leido=False
+            ).count()
+        }
+
     # Registro de blueprints (cada módulo queda desacoplado del resto)
     from app.routes.auth import auth_bp
     from app.routes.clientes import clientes_bp
@@ -51,7 +65,8 @@ def create_app():
     from app.routes.dashboard import dashboard_bp
     from app.routes.ordenes_trabajo import ordenes_bp
     from app.routes.inventario import inventario_bp
-    from app.routes.recordatorios import recordatorios_bp
+    from app.routes.mensajes import mensajes_bp
+    from app.routes.notificaciones import notificaciones_bp
     from app.routes.tipos_formulario import tipos_formulario_bp
     from app.routes.empresas import empresas_bp
     from app.routes.usuarios import usuarios_bp
@@ -74,7 +89,8 @@ def create_app():
     app.register_blueprint(planificacion_bp)
     app.register_blueprint(ordenes_bp)
     app.register_blueprint(inventario_bp)
-    app.register_blueprint(recordatorios_bp)
+    app.register_blueprint(mensajes_bp)
+    app.register_blueprint(notificaciones_bp)
     app.register_blueprint(tipos_formulario_bp)
     app.register_blueprint(empresas_bp)
     app.register_blueprint(usuarios_bp)

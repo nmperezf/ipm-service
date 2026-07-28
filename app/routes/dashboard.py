@@ -4,15 +4,15 @@ from dateutil.relativedelta import relativedelta
 from flask import Blueprint, redirect, render_template, request, url_for
 from flask_login import current_user
 
-from app.auth_utils import clientes_visibles, rol_requerido
+from app.auth_utils import clientes_visibles, destinatarios_posibles_mensaje, rol_requerido
 from app.models import (
     CLASIFICACIONES_OBSERVACION,
     Cliente,
     Instalacion,
     ItemVisita,
+    Mensaje,
     OrdenTrabajo,
     PRIORIDADES_OT,
-    Recordatorio,
     Repuesto,
     Visita,
 )
@@ -96,16 +96,16 @@ def inicio():
         repuestos_query = Repuesto.query.filter_by(empresa_id=current_user.empresa_id)
     repuestos_criticos = sum(1 for r in repuestos_query.filter_by(activo=True).all() if r.en_nivel_critico)
 
-    # Los recordatorios son de Administrador/Jefe de cada empresa.
-    recordatorios_abiertos = []
-    if current_user.rol in ("Administrador", "Jefe", "Super Admin"):
-        rq = Recordatorio.query if current_user.rol == "Super Admin" else Recordatorio.query.filter_by(
-            empresa_id=current_user.empresa_id
-        )
-        recordatorios_abiertos = sorted(
-            rq.filter_by(resuelto=False).order_by(Recordatorio.fecha_carga.desc()).all(),
-            key=lambda r: ORDEN_PRIORIDAD.get(r.prioridad, 2),
-        )
+    # Mensajes donde el usuario logueado participa (como remitente o
+    # destinatario) — chat interno acotado entre el staff de la empresa.
+    mensajes_abiertos = sorted(
+        Mensaje.query.filter(
+            (Mensaje.remitente_id == current_user.id) | (Mensaje.destinatario_id == current_user.id),
+            Mensaje.resuelto == False,  # noqa: E712
+        ).order_by(Mensaje.fecha_carga.desc()).all(),
+        key=lambda m: ORDEN_PRIORIDAD.get(m.prioridad, 2),
+    )
+    destinatarios_mensaje = destinatarios_posibles_mensaje()
 
     q = request.args.get("q", "").strip()
     resultados_busqueda = []
@@ -124,9 +124,10 @@ def inicio():
         ot_pendientes=ot_pendientes,
         visitas_en_revision=visitas_en_revision,
         repuestos_criticos=repuestos_criticos,
-        recordatorios_abiertos=recordatorios_abiertos,
+        mensajes_abiertos=mensajes_abiertos,
+        destinatarios_mensaje=destinatarios_mensaje,
         prioridades=PRIORIDADES_OT,
-        clientes_para_recordatorio=clientes,
+        clientes_para_mensaje=clientes,
         q=q,
         resultados_busqueda=resultados_busqueda,
     )

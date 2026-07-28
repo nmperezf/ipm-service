@@ -682,9 +682,11 @@ class Observacion(db.Model):
     resuelto = db.Column(db.Boolean, default=False, nullable=False)
     fecha_resolucion = db.Column(db.Date, nullable=True)
     estado_revision = db.Column(db.String(20), default="Pendiente", nullable=False)  # Pendiente / Aprobada
+    creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
 
     item_visita = db.relationship("ItemVisita", backref="observaciones_registradas")
     equipo = db.relationship("Equipo", backref="deficiencias")
+    creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
 
     def marcar_resuelta(self, fecha=None):
         self.resuelto = True
@@ -1084,30 +1086,85 @@ class RepuestoUsado(db.Model):
 
 
 # ---------------------------------------------------------------------------
-# Recordatorios — notas rápidas en la pantalla principal
+# Mensajes — chat interno acotado (Administrador/Jefe <-> Técnico)
 # ---------------------------------------------------------------------------
 
 
-class Recordatorio(db.Model):
-    """Nota rápida para la pantalla principal, sin depender de una
-    instalación (a diferencia de Observacion). Puede asociarse a un
-    cliente opcionalmente, con una prioridad (misma escala que las OT)."""
+class Mensaje(db.Model):
+    """Nota dirigida de un usuario a otro (ej. Jefe -> Técnico o
+    Técnico -> Jefe), con destinatario explícito — no es un tablón
+    compartido. Puede asociarse a un cliente opcionalmente, con una
+    prioridad (misma escala que las OT). Antes 'Recordatorio': ese nombre
+    ya no describe bien que ahora tiene remitente y destinatario."""
 
-    __tablename__ = "recordatorios"
+    __tablename__ = "mensajes"
 
     id = db.Column(db.Integer, primary_key=True)
     empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
+    remitente_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
+    destinatario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
     cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=True)
     titulo = db.Column(db.String(200), nullable=False)
     prioridad = db.Column(db.String(20), default="Media", nullable=False)  # ver PRIORIDADES_OT
+    leido = db.Column(db.Boolean, default=False, nullable=False)
     resuelto = db.Column(db.Boolean, default=False, nullable=False)
     fecha_carga = db.Column(db.Date, default=date.today, nullable=False)
 
-    cliente = db.relationship("Cliente", backref="recordatorios")
-    empresa = db.relationship("Empresa", backref="recordatorios")
+    cliente = db.relationship("Cliente", backref="mensajes")
+    empresa = db.relationship("Empresa", backref="mensajes")
+    remitente = db.relationship("Usuario", backref="mensajes_enviados", foreign_keys=[remitente_id])
+    destinatario = db.relationship("Usuario", backref="mensajes_recibidos", foreign_keys=[destinatario_id])
 
     def __repr__(self):
-        return f"<Recordatorio {self.titulo}>"
+        return f"<Mensaje {self.titulo}>"
+
+
+# ---------------------------------------------------------------------------
+# Notificaciones — avisos de eventos del sistema (y de mensajes nuevos)
+# ---------------------------------------------------------------------------
+
+TIPOS_NOTIFICACION = {
+    "ensayo_nuevo": "Nuevo ensayo de curva de caudal",
+    "visita_revision": "Visita enviada a revisión",
+    "observacion_nueva": "Observación nueva",
+    "equipo_nuevo": "Equipo nuevo",
+    "formulario_cargado": "Formulario cargado",
+    "mensaje_nuevo": "Mensaje nuevo",
+    "ot_asignada": "Orden de trabajo asignada",
+    "ensayo_validado": "Ensayo validado",
+    "ensayo_rechazado": "Ensayo rechazado",
+    "observacion_aprobada": "Observación aprobada",
+}
+
+
+class Notificacion(db.Model):
+    """Aviso dirigido a un usuario puntual, generado por el sistema (un
+    evento operativo) o por otro usuario (un Mensaje nuevo). Se agrupan en
+    pantalla por (tipo, cliente) — ver notificaciones.listar."""
+
+    __tablename__ = "notificaciones"
+
+    id = db.Column(db.Integer, primary_key=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
+    destinatario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
+    remitente_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)  # None = sistema
+    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=True)
+    tipo = db.Column(db.String(30), nullable=False)  # ver TIPOS_NOTIFICACION
+    titulo = db.Column(db.String(250), nullable=False)
+    enlace = db.Column(db.String(300), nullable=True)
+    leido = db.Column(db.Boolean, default=False, nullable=False)
+    fecha_carga = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    destinatario = db.relationship("Usuario", backref="notificaciones", foreign_keys=[destinatario_id])
+    remitente = db.relationship("Usuario", foreign_keys=[remitente_id])
+    cliente = db.relationship("Cliente")
+
+    @property
+    def descripcion_tipo(self):
+        return TIPOS_NOTIFICACION.get(self.tipo, self.tipo)
+
+    def __repr__(self):
+        return f"<Notificacion {self.tipo} -> {self.destinatario_id}>"
 
 
 # ---------------------------------------------------------------------------

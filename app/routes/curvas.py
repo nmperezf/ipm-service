@@ -11,6 +11,7 @@ from app.auth_utils import (
     verificar_password_confirmacion,
 )
 from app.models import CurvaFabrica, EnsayoCaudal, Equipo
+from app.notificaciones import notificar_gestion, notificar_usuario
 from app.pdf_curva_caudal import generar_pdf_ensayo
 from app.utils import calcular_presion_ajustada, curva_suavizada, validar_nfpa25
 
@@ -142,6 +143,15 @@ def ensayo_nuevo(equipo_id):
         _aplicar_puntos_ensayo(ensayo, datos_puntos)
         ensayo.comentarios = request.form.get("comentarios") or None
         db.session.add(ensayo)
+        db.session.flush()
+        notificar_gestion(
+            empresa_id=current_user.empresa_id,
+            tipo="ensayo_nuevo",
+            titulo=f"Nuevo ensayo de curva de caudal — {equipo.nombre}",
+            cliente_id=equipo.instalacion.cliente_id,
+            enlace=url_for("curvas.ensayo_detalle", equipo_id=equipo.id, ensayo_id=ensayo.id),
+            remitente=current_user,
+        )
         db.session.commit()
         flash(f"Ensayo del {fecha_ensayo.strftime('%d/%m/%Y')} guardado para '{equipo.nombre}'.", "success")
         return redirect(url_for("curvas.ensayo_detalle", equipo_id=equipo.id, ensayo_id=ensayo.id))
@@ -238,6 +248,16 @@ def ensayo_validar(equipo_id, ensayo_id):
         abort(404)
 
     ensayo.validar(current_user.id)
+    if ensayo.creado_por:
+        notificar_usuario(
+            ensayo.creado_por,
+            tipo="ensayo_validado",
+            titulo=f"Ensayo validado — {equipo.nombre} ({ensayo.fecha_ensayo.strftime('%d/%m/%Y')})",
+            empresa_id=current_user.empresa_id,
+            cliente_id=equipo.instalacion.cliente_id,
+            enlace=url_for("curvas.ensayo_detalle", equipo_id=equipo.id, ensayo_id=ensayo.id),
+            remitente=current_user,
+        )
     db.session.commit()
     flash(f"Ensayo del {ensayo.fecha_ensayo.strftime('%d/%m/%Y')} validado.", "success")
     return redirect(url_for("curvas.ensayo_detalle", equipo_id=equipo.id, ensayo_id=ensayo.id))
@@ -254,6 +274,16 @@ def ensayo_rechazar(equipo_id, ensayo_id):
         abort(404)
 
     ensayo.rechazar(current_user.id)
+    if ensayo.creado_por:
+        notificar_usuario(
+            ensayo.creado_por,
+            tipo="ensayo_rechazado",
+            titulo=f"Ensayo rechazado — {equipo.nombre} ({ensayo.fecha_ensayo.strftime('%d/%m/%Y')})",
+            empresa_id=current_user.empresa_id,
+            cliente_id=equipo.instalacion.cliente_id,
+            enlace=url_for("curvas.ensayo_detalle", equipo_id=equipo.id, ensayo_id=ensayo.id),
+            remitente=current_user,
+        )
     db.session.commit()
     flash(f"Ensayo del {ensayo.fecha_ensayo.strftime('%d/%m/%Y')} rechazado.", "info")
     return redirect(url_for("curvas.ensayo_detalle", equipo_id=equipo.id, ensayo_id=ensayo.id))
