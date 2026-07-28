@@ -60,6 +60,20 @@
 </div>
 {% endif %}
 
+{% if ensayo.temperatura_ambiente is not none or ensayo.presion_atmosferica_mbar is not none or ensayo.presion_succion_estatica is not none or ensayo.normativa_aplicable %}
+<div class="card mb-4">
+    <div class="card-body">
+        <strong>Condiciones de prueba</strong>
+        <div class="row g-2 mt-1">
+            {% if ensayo.temperatura_ambiente is not none %}<div class="col-md-3"><span class="text-muted small">Temperatura ambiente</span><br>{{ ensayo.temperatura_ambiente }} °C</div>{% endif %}
+            {% if ensayo.presion_atmosferica_mbar is not none %}<div class="col-md-3"><span class="text-muted small">Presión atmosférica</span><br>{{ ensayo.presion_atmosferica_mbar }} Mbar</div>{% endif %}
+            {% if ensayo.presion_succion_estatica is not none %}<div class="col-md-3"><span class="text-muted small">Presión succión (estática)</span><br>{{ ensayo.presion_succion_estatica }} PSI</div>{% endif %}
+            {% if ensayo.normativa_aplicable %}<div class="col-md-3"><span class="text-muted small">Normativa aplicable</span><br>{{ ensayo.normativa_aplicable }}</div>{% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% if ensayo.comentarios %}
 <div class="card mb-4">
     <div class="card-body">
@@ -101,6 +115,7 @@
 <table class="table table-sm data-table">
     <thead><tr><th>Caudal</th><th>0%</th><th>50%</th><th>100%</th><th>150%</th></tr></thead>
     <tbody>
+        <tr><td>Caudal (GPM)</td>{% for g in ensayo.puntos_gpm() %}<td>{{ g|round(0) if g is not none else '-' }}</td>{% endfor %}</tr>
         <tr><td>RPM ensayada</td><td>{{ ensayo.rpm_punto_0 }}</td><td>{{ ensayo.rpm_punto_50 }}</td><td>{{ ensayo.rpm_punto_100 }}</td><td>{{ ensayo.rpm_punto_150 }}</td></tr>
         <tr><td>Presión descarga (PSI)</td><td>{{ ensayo.presion_descarga_punto_0 }}</td><td>{{ ensayo.presion_descarga_punto_50 }}</td><td>{{ ensayo.presion_descarga_punto_100 }}</td><td>{{ ensayo.presion_descarga_punto_150 }}</td></tr>
         <tr><td>Presión succión (PSI)</td><td>{{ ensayo.presion_succion_punto_0 }}</td><td>{{ ensayo.presion_succion_punto_50 }}</td><td>{{ ensayo.presion_succion_punto_100 }}</td><td>{{ ensayo.presion_succion_punto_150 }}</td></tr>
@@ -108,6 +123,7 @@
         {% if ajustadas %}
         <tr class="fw-bold"><td>Presión neta ajustada (PSI)</td><td>{{ ajustadas[0] }}</td><td>{{ ajustadas[1] }}</td><td>{{ ajustadas[2] }}</td><td>{{ ajustadas[3] }}</td></tr>
         {% endif %}
+        <tr><td>Pot. absorbida (kW)</td>{% for a in ensayo.puntos_potencia_absorbida() %}<td>{{ a if a is not none else 's/d' }}</td>{% endfor %}</tr>
     </tbody>
 </table>
 </div>
@@ -120,6 +136,9 @@
     <tbody>
         <tr><td>RPM</td><td colspan="4">{{ curva.rpm_nominal }}</td></tr>
         <tr><td>Presión neta (PSI)</td><td>{{ curva.punto_0_presion }}</td><td>{{ curva.punto_50_presion }}</td><td>{{ curva.punto_100_presion }}</td><td>{{ curva.punto_150_presion }}</td></tr>
+        {% if curva.potencias()|reject('none')|list|length > 0 %}
+        <tr><td>Potencia nominal (kW)</td>{% for p in curva.potencias() %}<td>{{ p if p is not none else '-' }}</td>{% endfor %}</tr>
+        {% endif %}
     </tbody>
 </table>
 </div>

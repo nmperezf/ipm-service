@@ -29,16 +29,28 @@ def _parse_fecha(valor):
     return datetime.strptime(valor, "%Y-%m-%d").date()
 
 
+def _float_opcional(form, nombre):
+    valor = form.get(nombre, "").strip()
+    return float(valor) if valor else None
+
+
 def _parse_puntos_ensayo(form):
-    """Levanta los 4 puntos (RPM, descarga, succión) del form y calcula la
-    presión neta de cada uno. Lanza (KeyError, ValueError) si falta o hay
-    algún valor no numérico — el caller decide qué hacer con eso."""
+    """Levanta los 4 puntos (RPM, descarga, succión, y opcionalmente caudal
+    medido y potencia absorbida) del form y calcula la presión neta de cada
+    uno. Lanza (KeyError, ValueError) si falta o hay algún valor no numérico
+    en los campos obligatorios — el caller decide qué hacer con eso."""
     datos_puntos = {}
     for p in PUNTOS:
         rpm = int(form[f"rpm_punto_{p}"])
         descarga = float(form[f"presion_descarga_punto_{p}"])
         succion = float(form[f"presion_succion_punto_{p}"])
-        datos_puntos[p] = {"rpm": rpm, "descarga": descarga, "succion": succion, "neta": descarga - succion}
+        datos_puntos[p] = {
+            "rpm": rpm, "descarga": descarga, "succion": succion, "neta": descarga - succion,
+            "gpm": _float_opcional(form, f"caudal_gpm_punto_{p}"),
+            # Potencia absorbida queda deliberadamente en blanco si no hay forma
+            # de medirla (ej. motor diésel sin instrumentación).
+            "abs": _float_opcional(form, f"potencia_absorbida_punto_{p}"),
+        }
     return datos_puntos
 
 
@@ -49,6 +61,15 @@ def _aplicar_puntos_ensayo(ensayo, datos_puntos):
         setattr(ensayo, f"presion_descarga_punto_{p}", d["descarga"])
         setattr(ensayo, f"presion_succion_punto_{p}", d["succion"])
         setattr(ensayo, f"presion_neta_punto_{p}", d["neta"])
+        setattr(ensayo, f"caudal_gpm_punto_{p}", d["gpm"])
+        setattr(ensayo, f"potencia_absorbida_punto_{p}", d["abs"])
+
+
+def _aplicar_condiciones_prueba(ensayo, form):
+    ensayo.temperatura_ambiente = _float_opcional(form, "temperatura_ambiente")
+    ensayo.presion_atmosferica_mbar = _float_opcional(form, "presion_atmosferica_mbar")
+    ensayo.presion_succion_estatica = _float_opcional(form, "presion_succion_estatica")
+    ensayo.normativa_aplicable = form.get("normativa_aplicable", "").strip() or None
 
 
 @curvas_bp.route("/<int:equipo_id>/curva-fabrica", methods=["GET", "POST"])
@@ -70,6 +91,11 @@ def curva_fabrica(equipo_id):
             flash("La RPM nominal tiene que ser mayor a 0.", "danger")
             return render_template("equipos/formulario_curva_fabrica.html", equipo=equipo, curva=None)
 
+        potencias = {}
+        for p in PUNTOS:
+            valor = request.form.get(f"punto_{p}_potencia_kw", "").strip()
+            potencias[p] = float(valor) if valor else None
+
         curva = equipo.curva_fabrica
         if not curva:
             curva = CurvaFabrica(equipo_id=equipo.id)
@@ -79,6 +105,10 @@ def curva_fabrica(equipo_id):
         curva.punto_50_presion = valores["50"]
         curva.punto_100_presion = valores["100"]
         curva.punto_150_presion = valores["150"]
+        curva.punto_0_potencia_kw = potencias["0"]
+        curva.punto_50_potencia_kw = potencias["50"]
+        curva.punto_100_potencia_kw = potencias["100"]
+        curva.punto_150_potencia_kw = potencias["150"]
         db.session.commit()
         flash(f"Curva de fábrica de '{equipo.nombre}' guardada.", "success")
         return redirect(url_for("equipos.detalle", equipo_id=equipo.id))
@@ -141,6 +171,7 @@ def ensayo_nuevo(equipo_id):
 
         ensayo = EnsayoCaudal(equipo_id=equipo.id, fecha_ensayo=fecha_ensayo, creado_por_id=current_user.id)
         _aplicar_puntos_ensayo(ensayo, datos_puntos)
+        _aplicar_condiciones_prueba(ensayo, request.form)
         ensayo.comentarios = request.form.get("comentarios") or None
         db.session.add(ensayo)
         db.session.flush()
@@ -198,6 +229,7 @@ def ensayo_editar(equipo_id, ensayo_id):
 
         ensayo.fecha_ensayo = fecha_ensayo
         _aplicar_puntos_ensayo(ensayo, datos_puntos)
+        _aplicar_condiciones_prueba(ensayo, request.form)
         ensayo.comentarios = request.form.get("comentarios") or None
 
         if cambio_datos:

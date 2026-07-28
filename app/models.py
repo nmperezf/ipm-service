@@ -852,6 +852,12 @@ class CurvaFabrica(db.Model):
     punto_50_presion = db.Column(db.Float, nullable=False)
     punto_100_presion = db.Column(db.Float, nullable=False)
     punto_150_presion = db.Column(db.Float, nullable=False)
+    # Potencia de placa del fabricante en cada punto — opcional (no todos
+    # los fabricantes la publican por punto de caudal).
+    punto_0_potencia_kw = db.Column(db.Float, nullable=True)
+    punto_50_potencia_kw = db.Column(db.Float, nullable=True)
+    punto_100_potencia_kw = db.Column(db.Float, nullable=True)
+    punto_150_potencia_kw = db.Column(db.Float, nullable=True)
     fecha_ingreso = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     equipo = db.relationship(
@@ -865,6 +871,11 @@ class CurvaFabrica(db.Model):
             [0, 50, 100, 150],
             [self.punto_0_presion, self.punto_50_presion, self.punto_100_presion, self.punto_150_presion],
         )
+
+    def potencias(self):
+        """Potencia de placa por punto (kW), puede tener None sueltos si no
+        se cargó para ese punto."""
+        return [self.punto_0_potencia_kw, self.punto_50_potencia_kw, self.punto_100_potencia_kw, self.punto_150_potencia_kw]
 
     def __repr__(self):
         return f"<CurvaFabrica equipo={self.equipo_id}>"
@@ -889,21 +900,35 @@ class EnsayoCaudal(db.Model):
     presion_descarga_punto_0 = db.Column(db.Float, nullable=False)
     presion_succion_punto_0 = db.Column(db.Float, nullable=False)
     presion_neta_punto_0 = db.Column(db.Float, nullable=False)  # descarga - succión
+    caudal_gpm_punto_0 = db.Column(db.Float, nullable=True)  # medido en campo; si falta, se estima desde equipo.caudal_nominal
+    potencia_absorbida_punto_0 = db.Column(db.Float, nullable=True)  # kW — opcional (ej. motor diésel sin instrumentar)
 
     rpm_punto_50 = db.Column(db.Integer, nullable=False)
     presion_descarga_punto_50 = db.Column(db.Float, nullable=False)
     presion_succion_punto_50 = db.Column(db.Float, nullable=False)
     presion_neta_punto_50 = db.Column(db.Float, nullable=False)
+    caudal_gpm_punto_50 = db.Column(db.Float, nullable=True)
+    potencia_absorbida_punto_50 = db.Column(db.Float, nullable=True)
 
     rpm_punto_100 = db.Column(db.Integer, nullable=False)
     presion_descarga_punto_100 = db.Column(db.Float, nullable=False)
     presion_succion_punto_100 = db.Column(db.Float, nullable=False)
     presion_neta_punto_100 = db.Column(db.Float, nullable=False)
+    caudal_gpm_punto_100 = db.Column(db.Float, nullable=True)
+    potencia_absorbida_punto_100 = db.Column(db.Float, nullable=True)
 
     rpm_punto_150 = db.Column(db.Integer, nullable=False)
     presion_descarga_punto_150 = db.Column(db.Float, nullable=False)
     presion_succion_punto_150 = db.Column(db.Float, nullable=False)
     presion_neta_punto_150 = db.Column(db.Float, nullable=False)
+    caudal_gpm_punto_150 = db.Column(db.Float, nullable=True)
+    potencia_absorbida_punto_150 = db.Column(db.Float, nullable=True)
+
+    # Condiciones de prueba — contexto del ensayo, todas opcionales.
+    temperatura_ambiente = db.Column(db.Float, nullable=True)  # °C
+    presion_atmosferica_mbar = db.Column(db.Float, nullable=True)
+    presion_succion_estatica = db.Column(db.Float, nullable=True)  # PSI, condición general (no por punto)
+    normativa_aplicable = db.Column(db.Text, nullable=True)
 
     creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -949,6 +974,23 @@ class EnsayoCaudal(db.Model):
 
     def puntos_rpm(self):
         return [self.rpm_punto_0, self.rpm_punto_50, self.rpm_punto_100, self.rpm_punto_150]
+
+    def puntos_gpm(self):
+        """Caudal medido por punto; si no se cargó (None), se estima como
+        el % nominal del caudal de placa del equipo (0/50/100/150%)."""
+        medidos = [self.caudal_gpm_punto_0, self.caudal_gpm_punto_50, self.caudal_gpm_punto_100, self.caudal_gpm_punto_150]
+        nominal = self.equipo.caudal_nominal if self.equipo else None
+        porcentajes = [0, 0.5, 1, 1.5]
+        return [
+            medido if medido is not None else (nominal * pct if nominal else None)
+            for medido, pct in zip(medidos, porcentajes)
+        ]
+
+    def puntos_potencia_absorbida(self):
+        return [
+            self.potencia_absorbida_punto_0, self.potencia_absorbida_punto_50,
+            self.potencia_absorbida_punto_100, self.potencia_absorbida_punto_150,
+        ]
 
     def puntos_ajustados(self, rpm_nominal_fabrica):
         """Presión neta de cada punto, corregida a la RPM de la curva de

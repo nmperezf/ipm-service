@@ -52,6 +52,38 @@
         </div>
     </div>
 
+    <div class="row">
+        <div class="col-12 mb-1"><label class="form-label mb-0 text-muted small">Potencia de placa (kW, opcional)</label></div>
+        <div class="col-md-3 mb-3">
+            <div class="input-group">
+                <input type="number" step="any" name="punto_0_potencia_kw" class="form-control" placeholder="0%"
+                       value="{{ curva.punto_0_potencia_kw if curva and curva.punto_0_potencia_kw is not none else '' }}">
+                <span class="input-group-text">kW</span>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="input-group">
+                <input type="number" step="any" name="punto_50_potencia_kw" class="form-control" placeholder="50%"
+                       value="{{ curva.punto_50_potencia_kw if curva and curva.punto_50_potencia_kw is not none else '' }}">
+                <span class="input-group-text">kW</span>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="input-group">
+                <input type="number" step="any" name="punto_100_potencia_kw" class="form-control" placeholder="100%"
+                       value="{{ curva.punto_100_potencia_kw if curva and curva.punto_100_potencia_kw is not none else '' }}">
+                <span class="input-group-text">kW</span>
+            </div>
+        </div>
+        <div class="col-md-3 mb-3">
+            <div class="input-group">
+                <input type="number" step="any" name="punto_150_potencia_kw" class="form-control" placeholder="150%"
+                       value="{{ curva.punto_150_potencia_kw if curva and curva.punto_150_potencia_kw is not none else '' }}">
+                <span class="input-group-text">kW</span>
+            </div>
+        </div>
+    </div>
+
     <button type="submit" class="btn btn-primary">Guardar curva de fábrica</button>
     <a href="{{ url_for('equipos.detalle', equipo_id=equipo.id) }}" class="btn btn-link">Cancelar</a>
 </form>

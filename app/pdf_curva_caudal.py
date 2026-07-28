@@ -73,6 +73,19 @@ def generar_pdf_ensayo(ensayo):
         )
     )
     elementos.append(Paragraph(f"Fecha de ensayo: {ensayo.fecha_ensayo.strftime('%d/%m/%Y')}", subtitulo))
+
+    condiciones = []
+    if ensayo.temperatura_ambiente is not None:
+        condiciones.append(f"Temperatura ambiente: {ensayo.temperatura_ambiente} °C")
+    if ensayo.presion_atmosferica_mbar is not None:
+        condiciones.append(f"Presión atmosférica: {ensayo.presion_atmosferica_mbar} Mbar")
+    if ensayo.presion_succion_estatica is not None:
+        condiciones.append(f"Presión succión (estática): {ensayo.presion_succion_estatica} PSI")
+    if ensayo.normativa_aplicable:
+        condiciones.append(f"Normativa aplicable: {ensayo.normativa_aplicable}")
+    if condiciones:
+        elementos.append(Paragraph(" &middot; ".join(condiciones), subtitulo))
+
     elementos.append(Spacer(1, 0.4 * cm))
 
     estilo_tabla_base = estilo_tabla_encabezado()
@@ -85,6 +98,9 @@ def generar_pdf_ensayo(ensayo):
         _, presiones_fabrica = curva_fabrica.puntos()
         filas_fabrica = [["Caudal (%)", "0%", "50%", "100%", "150%"], ["RPM"] + [curva_fabrica.rpm_nominal] * 4]
         filas_fabrica.append(["Presión neta (PSI)"] + presiones_fabrica)
+        potencias_fabrica = curva_fabrica.potencias()
+        if any(p is not None for p in potencias_fabrica):
+            filas_fabrica.append(["Potencia nominal (kW)"] + [p if p is not None else "-" for p in potencias_fabrica])
         tabla_fabrica = Table(filas_fabrica, colWidths=[3.5 * cm] + [3.2 * cm] * 4)
         tabla_fabrica.setStyle(estilo_tabla_base)
         elementos.append(tabla_fabrica)
@@ -118,14 +134,19 @@ def generar_pdf_ensayo(ensayo):
         ajustadas = [calcular_presion_ajustada(n, r, r) for n, r in zip(netas, rpm)]
         variaciones = [None] * 4
 
+    gpm = [round(g, 0) if g is not None else "-" for g in ensayo.puntos_gpm()]
+    potencias_absorbidas = [p if p is not None else "s/d" for p in ensayo.puntos_potencia_absorbida()]
+
     filas_ensayo = [
         ["Caudal (%)", "0%", "50%", "100%", "150%"],
+        ["Caudal (GPM)"] + gpm,
         ["RPM ensayada"] + rpm,
         ["Presión descarga (PSI)"] + descargas,
         ["Presión succión (PSI)"] + succiones,
         ["Presión neta (PSI)"] + [round(n, 1) for n in netas],
         ["Presión neta ajustada (PSI)"] + ajustadas,
         ["Variación vs fábrica"] + [f"{v:+.1f}%" if v is not None else "-" for v in variaciones],
+        ["Pot. absorbida (kW)"] + potencias_absorbidas,
     ]
     tabla_ensayo = Table(filas_ensayo, colWidths=[4 * cm] + [2.85 * cm] * 4)
     tabla_ensayo.setStyle(estilo_tabla_base)
