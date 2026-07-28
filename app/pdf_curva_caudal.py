@@ -11,8 +11,9 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
 from reportlab.lib.units import cm
-from reportlab.platypus import Image, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import Flowable, Image, Paragraph, Spacer, Table, TableStyle
 
 from app.pdf_base import (
     ACCENT,
@@ -30,6 +31,36 @@ from app.pdf_base import (
 
 OK_BG = colors.HexColor("#E8F7EE")
 ANCHO_CONTENIDO = 18 * cm
+MARGEN_LAT_ENSAYO = 1.5 * cm
+ANCHO_PAGINA = A4[0]
+
+
+class _BandaSeccion(Flowable):
+    """Título de sección de punta a punta de la hoja (como el encabezado),
+    no solo del ancho de contenido: dibuja directo sobre el canvas
+    deshaciendo el margen lateral en vez de usar una tabla, que queda
+    encajonada dentro del margen normal del documento."""
+
+    ALTO = 0.85 * cm
+
+    def __init__(self, texto):
+        Flowable.__init__(self)
+        self.texto = texto
+        self.width = ANCHO_CONTENIDO
+        self.height = self.ALTO
+
+    def draw(self):
+        c = self.canv
+        c.saveState()
+        c.translate(-MARGEN_LAT_ENSAYO, 0)
+        c.setFillColor(colors.black)
+        c.rect(0, 0, ANCHO_PAGINA, self.ALTO, stroke=0, fill=1)
+        c.setFillColor(ACCENT)
+        c.rect(0, -0.09 * cm, ANCHO_PAGINA, 0.09 * cm, stroke=0, fill=1)
+        c.setFillColor(colors.white)
+        c.setFont("Helvetica-Bold", 9)
+        c.drawString(MARGEN_LAT_ENSAYO, self.ALTO / 2 - 3, self.texto.upper())
+        c.restoreState()
 
 NOMBRES_CRITERIO = {
     "criterio_1": "Presión a caudal 0%",
@@ -85,19 +116,10 @@ def generar_pdf_ensayo(ensayo):
     titulo, normal, celda = styles["titulo"], styles["normal"], styles["celda"]
 
     def titulo_seccion(texto):
-        """Barra negra + filete rojo debajo, texto en blanco — calcada del
-        encabezado del documento, igual que en las pantallas de carga/ficha."""
-        p = Paragraph(f"<font color='white' size=9><b>{texto.upper()}</b></font>", celda)
-        t = Table([[p]], colWidths=[ANCHO_CONTENIDO])
-        t.setStyle(TableStyle([
-            ("BACKGROUND", (0, 0), (-1, -1), colors.black),
-            ("LINEBELOW", (0, 0), (-1, -1), 2.4, ACCENT),
-            ("TOPPADDING", (0, 0), (-1, -1), 6),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
-            ("LEFTPADDING", (0, 0), (-1, -1), 2),
-            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
-        ]))
-        return t
+        """Barra negra + filete rojo debajo, texto en blanco, de punta a
+        punta de la hoja — calcada del encabezado del documento, igual que
+        en las pantallas de carga/ficha."""
+        return _BandaSeccion(texto)
 
     def tabla_identificacion(pares):
         """pares: lista de (label, valor) -> grilla de 3 columnas sin bordes."""
