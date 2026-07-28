@@ -49,7 +49,7 @@
             <div class="campo-doc" style="grid-column: span 3;"><label>Normativa aplicable</label><input type="text" class="valor-doc" name="normativa_aplicable" value="{{ ensayo.normativa_aplicable if ensayo and ensayo.normativa_aplicable else 'NFPA 25 — ensayo anual de bomba contra incendio' }}"></div>
         </div>
 
-        <div class="seccion-titulo-doc">Curva de fábrica <span style="text-transform:none; font-weight:400; color:var(--tinta-muted-doc); letter-spacing:0;">(referencia) — RPM nominal: <span style="font-weight:700;">{{ curva.rpm_nominal }}</span></span></div>
+        <div class="seccion-titulo-doc">Curva de fábrica <span style="text-transform:none; font-weight:400; color:rgba(255,255,255,.7); letter-spacing:0;">(referencia) — RPM nominal: <span style="font-weight:700; color:#fff;">{{ curva.rpm_nominal }}</span></span></div>
         <div class="tabla-doc-scroll">
         <table class="tabla-doc" id="tabla-fabrica">
             <thead>
@@ -75,7 +75,7 @@
         </table>
         </div>
 
-        <div class="seccion-titulo-doc">Ensayo <span class="fw-normal" style="text-transform:none; letter-spacing:0; color:var(--tinta-muted-doc);">— un clic en cualquier celda para editar</span></div>
+        <div class="seccion-titulo-doc">Ensayo <span class="fw-normal" style="text-transform:none; letter-spacing:0; color:rgba(255,255,255,.7);">— un clic en cualquier celda para editar</span></div>
         <div class="tabla-doc-scroll">
         <table class="tabla-doc" id="tabla-ensayo">
             <thead>

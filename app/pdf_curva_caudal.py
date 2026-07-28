@@ -29,6 +29,7 @@ from app.pdf_base import (
 )
 
 OK_BG = colors.HexColor("#E8F7EE")
+ANCHO_CONTENIDO = 18 * cm
 
 NOMBRES_CRITERIO = {
     "criterio_1": "Presión a caudal 0%",
@@ -81,7 +82,22 @@ def generar_pdf_ensayo(ensayo):
     buffer = io.BytesIO()
     doc = crear_documento(buffer, margen_izq=1.5 * cm, margen_der=1.5 * cm)
     styles = estilos()
-    titulo, h2, normal, celda = styles["titulo"], styles["h2"], styles["normal"], styles["celda"]
+    titulo, normal, celda = styles["titulo"], styles["normal"], styles["celda"]
+
+    def titulo_seccion(texto):
+        """Barra negra + filete rojo debajo, texto en blanco — calcada del
+        encabezado del documento, igual que en las pantallas de carga/ficha."""
+        p = Paragraph(f"<font color='white' size=9><b>{texto.upper()}</b></font>", celda)
+        t = Table([[p]], colWidths=[ANCHO_CONTENIDO])
+        t.setStyle(TableStyle([
+            ("BACKGROUND", (0, 0), (-1, -1), colors.black),
+            ("LINEBELOW", (0, 0), (-1, -1), 2.4, ACCENT),
+            ("TOPPADDING", (0, 0), (-1, -1), 6),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 5),
+            ("LEFTPADDING", (0, 0), (-1, -1), 2),
+            ("RIGHTPADDING", (0, 0), (-1, -1), 2),
+        ]))
+        return t
 
     def tabla_identificacion(pares):
         """pares: lista de (label, valor) -> grilla de 3 columnas sin bordes."""
@@ -107,7 +123,8 @@ def generar_pdf_ensayo(ensayo):
     elementos.append(Spacer(1, 0.3 * cm))
 
     tipo_bomba = (equipo.tipo_motor or "-") + (f" · {equipo.motor_potencia_hp} HP" if equipo.motor_potencia_hp else "")
-    elementos.append(Paragraph("Identificación del ensayo", h2))
+    elementos.append(titulo_seccion("Identificación del ensayo"))
+    elementos.append(Spacer(1, 0.3 * cm))
     elementos.append(tabla_identificacion([
         ("Lugar", f"{instalacion.cliente.nombre} — {instalacion.nombre}"),
         ("Modelo", equipo.modelo or "-"),
@@ -125,7 +142,9 @@ def generar_pdf_ensayo(ensayo):
     if ensayo.presion_succion_estatica is not None:
         condiciones.append(("Presión succión (estática)", f"{ensayo.presion_succion_estatica} PSI"))
     if condiciones:
-        elementos.append(Paragraph("Condiciones de prueba", h2))
+        elementos.append(Spacer(1, 0.5 * cm))
+        elementos.append(titulo_seccion("Condiciones de prueba"))
+        elementos.append(Spacer(1, 0.3 * cm))
         elementos.append(tabla_identificacion(condiciones))
     if ensayo.normativa_aplicable:
         elementos.append(Paragraph(f"<b>Normativa aplicable:</b> {ensayo.normativa_aplicable}", celda))
@@ -136,7 +155,9 @@ def generar_pdf_ensayo(ensayo):
     # ---- Curva de fábrica (filas por punto, igual que la pantalla) ----
     if curva_fabrica:
         titulo_fabrica = f"Curva de fábrica (referencia) — RPM nominal: {curva_fabrica.rpm_nominal}"
-        elementos.append(Paragraph(titulo_fabrica, h2))
+        elementos.append(Spacer(1, 0.5 * cm))
+        elementos.append(titulo_seccion(titulo_fabrica))
+        elementos.append(Spacer(1, 0.3 * cm))
         _, presiones_fabrica = curva_fabrica.puntos()
         potencias_fabrica = curva_fabrica.potencias()
         filas_fabrica = [["Caudal (%)", "Caudal (GPM)", "RPM", "Presión neta (PSI)", "Potencia nominal (kW)"]]
@@ -154,11 +175,15 @@ def generar_pdf_ensayo(ensayo):
     else:
         presiones_fabrica = None
         gpm_fabrica = [0, 50, 100, 150]
-        elementos.append(Paragraph("Curva de fábrica", h2))
+        elementos.append(Spacer(1, 0.5 * cm))
+        elementos.append(titulo_seccion("Curva de fábrica"))
+        elementos.append(Spacer(1, 0.3 * cm))
         elementos.append(Paragraph("Este equipo todavía no tiene curva de fábrica cargada.", normal))
 
     # ---- Ensayo (filas por punto) ----
-    elementos.append(Paragraph("Ensayo", h2))
+    elementos.append(Spacer(1, 0.5 * cm))
+    elementos.append(titulo_seccion("Ensayo"))
+    elementos.append(Spacer(1, 0.3 * cm))
     rpm = ensayo.puntos_rpm()
     netas = ensayo.puntos_netos()
     descargas = [
@@ -210,14 +235,18 @@ def generar_pdf_ensayo(ensayo):
     if curva_fabrica:
         netas_redondeadas = [round(n, 1) for n in netas]
         grafico_buffer = _grafico_curvas(gpm_fabrica, presiones_fabrica, ajustadas, netas_redondeadas)
-        elementos.append(Paragraph("Curva Q–H", h2))
+        elementos.append(Spacer(1, 0.5 * cm))
+        elementos.append(titulo_seccion("Curva Q–H"))
+        elementos.append(Spacer(1, 0.3 * cm))
         elementos.append(Image(grafico_buffer, width=15.5 * cm, height=8 * cm))
 
     # ---- Criterios NFPA 25 ----
     # Solo se informan los valores medidos contra los límites de la norma —
     # NFPA 25 no "aprueba" nada, es un criterio de referencia. El resultado
     # (aprueba o no) lo redacta el Administrador/Jefe en Comentarios/Validación.
-    elementos.append(Paragraph("Criterios NFPA 25", h2))
+    elementos.append(Spacer(1, 0.5 * cm))
+    elementos.append(titulo_seccion("Criterios NFPA 25"))
+    elementos.append(Spacer(1, 0.3 * cm))
     validacion = ensayo.validacion_nfpa25()
     if validacion:
         filas_validacion = [["Criterio", "Fórmula", "Valor de ensayo", "Límite", "Estado"]]
@@ -255,11 +284,15 @@ def generar_pdf_ensayo(ensayo):
 
     # ---- Comentarios ----
     if ensayo.comentarios:
-        elementos.append(Paragraph("Comentarios", h2))
+        elementos.append(Spacer(1, 0.5 * cm))
+        elementos.append(titulo_seccion("Comentarios"))
+        elementos.append(Spacer(1, 0.3 * cm))
         elementos.append(Paragraph(ensayo.comentarios.replace("\n", "<br/>"), normal))
 
     # ---- Validación del Jefe/Administrador (independiente del cálculo) ----
-    elementos.append(Paragraph("Validación", h2))
+    elementos.append(Spacer(1, 0.5 * cm))
+    elementos.append(titulo_seccion("Validación"))
+    elementos.append(Spacer(1, 0.3 * cm))
     if ensayo.validado_por:
         validado_por = ensayo.validado_por.nombre_completo or ensayo.validado_por.username
         fecha_val = ensayo.fecha_validacion.strftime("%d/%m/%Y") if ensayo.fecha_validacion else "-"
