@@ -1,204 +1,288 @@
 {% extends "base.html" %}
-{% block title %}Inicio - IPM Service{% endblock %}
+{% block title %}Inicio - IPM Manager{% endblock %}
 {% block content %}
-
-<form method="GET" action="{{ url_for('dashboard.inicio') }}" class="mb-4">
-    <div class="input-group input-group-lg">
-        <input type="text" name="q" class="form-control" placeholder="Buscar cliente por nombre..." value="{{ q }}">
-        <button type="submit" class="btn btn-dark">Buscar</button>
-    </div>
-</form>
-
-{% if q %}
-<h5>Resultados para "{{ q }}"</h5>
-<div class="list-group mb-4">
-    {% for c in resultados_busqueda %}
-    <a href="{{ url_for('clientes.detalle', cliente_id=c.id) }}" class="list-group-item list-group-item-action">{{ c.nombre }}</a>
-    {% else %}
-    <p class="text-muted">No se encontraron clientes.</p>
-    {% endfor %}
-</div>
-{% endif %}
-
-<div class="row g-2 mb-3">
-    <div class="col-md-3">
-        <a href="{{ url_for('dashboard.clientes_con_novedad_lista', clasificacion='Deficiencia crítica') }}" class="dashboard-card">
-            <div class="card border-danger card-indicador">
-                <div class="valor text-danger">{{ clientes_con_novedad['Deficiencia crítica'] }}</div>
-                <div class="text-muted small">Clientes con críticas abiertas</div>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <div class="marca">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="">
+                <span class="nombre">IPM MANAGER</span>
             </div>
-        </a>
-    </div>
-    <div class="col-md-3">
-        <a href="{{ url_for('dashboard.clientes_con_novedad_lista', clasificacion='Deficiencia no crítica') }}" class="dashboard-card">
-            <div class="card border-warning card-indicador">
-                <div class="valor text-warning">{{ clientes_con_novedad['Deficiencia no crítica'] }}</div>
-                <div class="text-muted small">Clientes con no críticas abiertas</div>
-            </div>
-        </a>
-    </div>
-    <div class="col-md-3">
-        <a href="{{ url_for('dashboard.clientes_con_novedad_lista', clasificacion='Desactivación') }}" class="dashboard-card">
-            <div class="card border-secondary card-indicador">
-                <div class="valor">{{ clientes_con_novedad['Desactivación'] }}</div>
-                <div class="text-muted small">Clientes con desactivaciones</div>
-            </div>
-        </a>
-    </div>
-    <div class="col-md-3">
-        <a href="{{ url_for('dashboard.clientes_con_novedad_lista', clasificacion='Comentario') }}" class="dashboard-card">
-            <div class="card card-indicador">
-                <div class="valor">{{ clientes_con_novedad['Comentario'] }}</div>
-                <div class="text-muted small">Clientes con comentarios</div>
-            </div>
-        </a>
-    </div>
-</div>
-
-<div class="row g-3 mb-4">
-    <div class="col-md-3">
-        <a href="{{ url_for('dashboard.visitas_vencidas_lista') }}" class="dashboard-card">
-            <div class="card border-danger">
-                <div class="card-body card-indicador">
-                    <div class="valor text-danger">{{ visitas_vencidas }}</div>
-                    <div class="text-muted small">Visitas vencidas</div>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-md-3">
-        <a href="{{ url_for('dashboard.visitas_en_revision_lista') }}" class="dashboard-card">
-            <div class="card">
-                <div class="card-body card-indicador">
-                    <div class="valor">{{ visitas_en_revision }}</div>
-                    <div class="text-muted small">Visitas en revisión</div>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-md-3">
-        <a href="{{ url_for('ordenes.listar') }}" class="dashboard-card">
-            <div class="card">
-                <div class="card-body card-indicador">
-                    <div class="valor">{{ ot_pendientes }}</div>
-                    <div class="text-muted small">{{ 'Mis OT pendientes' if current_user.rol == 'Técnico' else 'OT pendientes' }}</div>
-                </div>
-            </div>
-        </a>
-    </div>
-    <div class="col-md-3">
-        <a href="{{ url_for('inventario.criticos_lista') }}" class="dashboard-card">
-            <div class="card border-warning">
-                <div class="card-body card-indicador">
-                    <div class="valor text-warning">{{ repuestos_criticos }}</div>
-                    <div class="text-muted small">Repuestos en nivel crítico</div>
-                </div>
-            </div>
-        </a>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-md-6">
-        <a href="{{ url_for('dashboard.cumplimiento_mensual') }}" class="dashboard-card">
-            <div class="card">
-                <div class="card-body card-indicador">
-                    <div class="valor text-success">{{ cumplimiento_pct }}%</div>
-                    <div class="text-muted">Cumplimiento de {{ titulo_mes }} ({{ cumplidos_mes }}/{{ total_mes }} servicios)</div>
-                </div>
-            </div>
-        </a>
-    </div>
-</div>
-
-<div class="row g-4 mb-4">
-    <div class="col-md-12">
-        <h4>Agenda de esta semana</h4>
-        <div class="table-responsive">
-<table class="table table-sm data-table">
-            <thead><tr><th>Fecha</th><th>Cliente</th><th>Instalación</th><th>Estado</th></tr></thead>
-            <tbody>
-                {% for visita in agenda_semana %}
-                <tr>
-                    <td>{{ visita.fecha.strftime('%d/%m') }}</td>
-                    <td><a href="{{ url_for('clientes.detalle', cliente_id=visita.instalacion.cliente_id) }}">{{ visita.instalacion.cliente.nombre }}</a></td>
-                    <td>{{ visita.instalacion.nombre }}</td>
-                    <td><a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}"><span class="badge badge-{{ visita.estado.replace(' ', '.') }}">{{ visita.estado }}</span></a></td>
-                </tr>
-                {% else %}
-                <tr><td colspan="4" class="text-muted text-center py-3">No hay visitas programadas para los próximos 7 días.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-</div>
-    </div>
-</div>
-
-<div class="row g-4">
-    <div class="col-md-12">
-        <div class="d-flex justify-content-between align-items-center">
-            <h4>Mensajes</h4>
-            <a href="{{ url_for('mensajes.resueltos') }}" class="btn btn-sm btn-outline-secondary">Ver resueltos</a>
+            <h1>Inicio</h1>
         </div>
-        <form method="POST" action="{{ url_for('mensajes.nuevo') }}" class="row g-2 align-items-end mb-3">
-            <div class="col-md-3">
-                <select name="destinatario_id" class="form-select" required>
-                    <option value="">-- Para quién --</option>
-                    {% for u in destinatarios_mensaje %}
-                    <option value="{{ u.id }}">{{ u.nombre_completo or u.username }} ({{ u.rol }})</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-4">
-                <input type="text" name="titulo" class="form-control" placeholder="Ej: Llamar a fulano por renovación de contrato" required>
-            </div>
-            <div class="col-md-2">
-                <select name="cliente_id" class="form-select">
-                    <option value="">-- Sin cliente --</option>
-                    {% for c in clientes_para_mensaje %}
-                    <option value="{{ c.id }}">{{ c.nombre }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <select name="prioridad" class="form-select">
-                    {% for p in prioridades %}
-                    <option value="{{ p }}" {% if p == 'Media' %}selected{% endif %}>{{ p }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-1">
-                <button type="submit" class="btn btn-outline-dark w-100">Enviar</button>
-            </div>
-        </form>
+        <div class="filete-rojo-doc"></div>
+        <div class="cuerpo-doc">
 
-        <div class="list-group">
-            {% for m in mensajes_abiertos %}
-            <div class="list-group-item d-flex justify-content-between align-items-center">
-                <span>
-                    <span class="badge badge-{{ m.prioridad }}">{{ m.prioridad }}</span>
-                    {% if m.remitente_id == current_user.id %}
-                    <span class="text-muted small">Para {{ m.destinatario.nombre_completo or m.destinatario.username }}:</span>
+            <div class="eyebrow-doc">Inicio</div>
+            <div class="saludo-doc">Hola, {{ current_user.nombre_completo or current_user.username }} <span>— {{ hoy.strftime('%d/%m/%Y') }}</span></div>
+
+            <form method="GET" action="{{ url_for('dashboard.inicio') }}" class="mb-4">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control" placeholder="Buscar cliente por nombre..." value="{{ q }}">
+                    <button type="submit" class="btn btn-dark">Buscar</button>
+                </div>
+            </form>
+
+            {% if q %}
+            <div class="mb-4">
+                <div class="fw-semibold mb-2">Resultados para "{{ q }}"</div>
+                <div class="list-group">
+                    {% for c in resultados_busqueda %}
+                    <a href="{{ url_for('clientes.detalle', cliente_id=c.id) }}" class="list-group-item list-group-item-action">{{ c.nombre }}</a>
                     {% else %}
-                    <span class="text-muted small">De {{ m.remitente.nombre_completo or m.remitente.username }}:</span>
-                    {% endif %}
-                    {{ m.titulo }}
-                    {% if m.cliente %} — <a href="{{ url_for('clientes.detalle', cliente_id=m.cliente_id) }}">{{ m.cliente.nombre }}</a>{% endif %}
-                    <small class="text-muted">({{ m.fecha_carga.strftime('%d/%m/%Y') }})</small>
-                </span>
-                <span>
-                    <form method="POST" action="{{ url_for('mensajes.resolver', mensaje_id=m.id) }}" class="d-inline">
-                        <button type="submit" class="btn btn-sm btn-outline-success">Resuelto</button>
-                    </form>
-                    <form method="POST" action="{{ url_for('mensajes.eliminar', mensaje_id=m.id) }}" class="d-inline"
-                          onsubmit="return confirm('¿Eliminar este mensaje?');">
-                        <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-                    </form>
-                </span>
+                    <p class="text-muted mb-0">No se encontraron clientes.</p>
+                    {% endfor %}
+                </div>
             </div>
+            {% endif %}
+
+            {% if es_gestion %}
+            {# ============ VISTA JEFE / ADMINISTRADOR ============ #}
+
+            <div class="seccion-titulo-doc">Necesita tu atención</div>
+            <div class="grid-atencion">
+
+                <details class="card-expandible critico" style="grid-column: span 2;">
+                    <summary>
+                        <span class="num">{{ deficiencias_total }}</span>
+                        <span class="textos">
+                            <span class="etiqueta">Deficiencias abiertas</span>
+                            <span class="desglose-clasif">
+                                {% for clasif, cant in deficiencias_por_clasif.items() %}
+                                {% if cant %}<span class="mini-chip">{{ cant }} {{ clasif|lower }}</span>{% endif %}
+                                {% endfor %}
+                            </span>
+                        </span>
+                        <span class="flecha">▶</span>
+                    </summary>
+                    <ul class="lista-expandible">
+                        {% for o in deficiencias_abiertas %}
+                        {% set visita_id = o.item_visita.visita_id if o.item_visita else none %}
+                        <li>
+                            <a class="fila-expandible" href="{{ url_for('visitas.detalle', visita_id=visita_id) if visita_id else url_for('clientes.detalle', cliente_id=o.instalacion.cliente_id) }}">
+                                <span class="cuerpo">
+                                    <div class="desc">{{ o.descripcion }}</div>
+                                    <div class="meta">{{ o.clasificacion }} · {{ o.instalacion.cliente.nombre }} — {{ o.instalacion.nombre }} · detectada {{ o.fecha_carga.strftime('%d/%m') }}</div>
+                                </span>
+                                <span class="ir">{{ 'Ver visita →' if visita_id else 'Ver cliente →' }}</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="text-muted">No hay deficiencias abiertas.</li>
+                        {% endfor %}
+                    </ul>
+                    {% if deficiencias_total > deficiencias_abiertas|length %}
+                    <a class="ver-todas-doc" href="{{ url_for('dashboard.deficiencias_abiertas_lista') }}">Ver las {{ deficiencias_total }} →</a>
+                    {% endif %}
+                </details>
+
+                <details class="card-expandible alerta" style="grid-column: span 2;">
+                    <summary>
+                        <span class="num">{{ ensayos_pendientes_total }}</span>
+                        <span class="textos">
+                            <span class="etiqueta">Ensayos pendientes de validación</span>
+                            <span class="sub">cargados por un técnico, esperan tu firma</span>
+                        </span>
+                        <span class="flecha">▶</span>
+                    </summary>
+                    <ul class="lista-expandible">
+                        {% for e in ensayos_pendientes %}
+                        <li>
+                            <a class="fila-expandible" href="{{ url_for('curvas.ensayo_detalle', equipo_id=e.equipo_id, ensayo_id=e.id) }}">
+                                <span class="cuerpo">
+                                    <div class="desc">Curva de caudal — {{ e.equipo.nombre }}</div>
+                                    <div class="meta">{{ e.equipo.instalacion.cliente.nombre }} · cargado {{ e.fecha_creacion.strftime('%d/%m') }}{% if e.creado_por %} por {{ e.creado_por.nombre_completo or e.creado_por.username }}{% endif %}</div>
+                                </span>
+                                <span class="ir">Ver ensayo →</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="text-muted">No hay ensayos pendientes.</li>
+                        {% endfor %}
+                    </ul>
+                    {% if ensayos_pendientes_total > ensayos_pendientes|length %}
+                    <a class="ver-todas-doc" href="{{ url_for('dashboard.ensayos_pendientes_lista') }}">Ver los {{ ensayos_pendientes_total }} →</a>
+                    {% endif %}
+                </details>
+
+                <a class="card-atencion alerta" href="{{ url_for('inventario.criticos_lista') }}">
+                    <span class="num">{{ repuestos_criticos }}</span>
+                    <span class="etiqueta">Repuestos en stock crítico</span>
+                    <span class="sub">por debajo del mínimo</span>
+                </a>
+                <a class="card-atencion info" href="{{ url_for('dashboard.visitas_en_revision_lista') }}">
+                    <span class="num">{{ visitas_en_revision }}</span>
+                    <span class="etiqueta">Visitas en revisión</span>
+                    <span class="sub">esperando tu aprobación</span>
+                </a>
+                <a class="card-atencion info" href="{{ url_for('ordenes.listar') }}" style="grid-column: span 2;">
+                    <span class="num">{{ ot_pendientes }}</span>
+                    <span class="etiqueta">OT abiertas</span>
+                    <span class="sub">en toda la empresa</span>
+                </a>
+            </div>
+
+            <div class="seccion-titulo-doc">Cumplimiento de mantenimiento</div>
+            <a href="{{ url_for('dashboard.cumplimiento_mensual') }}" class="text-decoration-none">
+                <div class="card-tendencia">
+                    <div>
+                        <div class="valor">{{ cumplimiento_pct }}% <small>{{ titulo_mes }}</small>
+                            {% if cumplimiento_tendencia is not none %}
+                            <span class="pill-tendencia {{ 'subio' if cumplimiento_tendencia >= 0 else 'bajo' }}">
+                                {{ '▲' if cumplimiento_tendencia >= 0 else '▼' }} {{ '%+.1f'|format(cumplimiento_tendencia) }} vs. mes pasado
+                            </span>
+                            {% endif %}
+                        </div>
+                        <div class="detalle">{{ cumplidos_mes }} de {{ total_mes }} ítems de visita cumplidos a tiempo</div>
+                    </div>
+                </div>
+            </a>
+
+            {% if carga_tecnicos %}
+            <div class="seccion-titulo-doc">Carga de trabajo del equipo</div>
+            <div class="table-responsive">
+                <table class="tabla-carga-doc">
+                    <thead><tr><th>Técnico</th><th style="width:45%">OT abiertas</th><th>Urgentes</th></tr></thead>
+                    <tbody>
+                        {% for c in carga_tecnicos %}
+                        <tr>
+                            <td>{{ c.usuario.nombre_completo or c.usuario.username }}</td>
+                            <td>
+                                <span class="barra-carga-doc">
+                                    <span class="pista"><span class="relleno" style="width: {{ (c.abiertas / max_carga_tecnico * 100) if max_carga_tecnico else 0 }}%"></span></span>
+                                    <span class="n">{{ c.abiertas }}</span>
+                                </span>
+                            </td>
+                            <td>{{ c.urgentes }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
             {% else %}
-            <p class="text-muted">No hay mensajes abiertos.</p>
-            {% endfor %}
+            {# ============ VISTA TÉCNICO ============ #}
+
+            <div class="foco-tecnico-doc">
+                <div>
+                    <div class="seccion-titulo-doc">Tus OT</div>
+                    <ul class="lista-ot-doc">
+                        {% for ot in mis_ot %}
+                        <li>
+                            <a class="item-ot-doc" href="{{ url_for('ordenes.detalle', ot_id=ot.id) }}">
+                                <div class="flex">
+                                    <div class="num-ot">{{ ot.numero }} · {{ ot.tipo }}</div>
+                                    <div class="titulo-ot">{{ ot.descripcion or 'Sin descripción' }}</div>
+                                    <div class="lugar-ot">{{ ot.instalacion.cliente.nombre }} — {{ ot.instalacion.nombre }}</div>
+                                </div>
+                                <span class="badge badge-{{ ot.prioridad }}">{{ ot.prioridad }}</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="text-muted">No tenés OT abiertas asignadas.</li>
+                        {% endfor %}
+                    </ul>
+                    {% if ot_pendientes > (mis_ot|length) %}
+                    <a class="ver-todas-doc mt-2" style="border-radius:.5rem; border:1px solid var(--border);" href="{{ url_for('ordenes.listar') }}">Ver todas ({{ ot_pendientes }}) →</a>
+                    {% endif %}
+                </div>
+                <div>
+                    <div class="seccion-titulo-doc">Agenda de la semana</div>
+                    <ul class="lista-agenda-doc">
+                        {% for visita in agenda_semana %}
+                        <li>
+                            <a class="item-agenda-doc" href="{{ url_for('visitas.detalle', visita_id=visita.id) }}">
+                                <span class="fecha">{{ visita.fecha.strftime('%d/%m') }}</span>
+                                <span class="nombre">{{ visita.instalacion.nombre }}<span class="cliente">{{ visita.instalacion.cliente.nombre }}</span></span>
+                                <span class="badge badge-{{ visita.estado.replace(' ', '.') }}">{{ visita.estado }}</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="text-muted">No hay visitas programadas para los próximos 7 días.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+
+            <details class="card-expandible mt-4">
+                <summary>
+                    <span class="textos">
+                        <span class="etiqueta">Mensajes internos</span>
+                        <span class="sub">chat interno con el resto del equipo</span>
+                    </span>
+                    {% if mensajes_abiertos %}<span class="badge badge-Urgente">{{ mensajes_abiertos|length }} sin resolver</span>{% endif %}
+                    <span class="flecha">▶</span>
+                </summary>
+                <div style="padding: 0 1.1rem 1.1rem;">
+                    <form method="POST" action="{{ url_for('mensajes.nuevo') }}" class="row g-2 align-items-end mb-3">
+                        <div class="col-md-3">
+                            <select name="destinatario_id" class="form-select" required>
+                                <option value="">-- Para quién --</option>
+                                {% for u in destinatarios_mensaje %}
+                                <option value="{{ u.id }}">{{ u.nombre_completo or u.username }} ({{ u.rol }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <input type="text" name="titulo" class="form-control" placeholder="Ej: Llamar a fulano por renovación de contrato" required>
+                        </div>
+                        <div class="col-md-2">
+                            <select name="cliente_id" class="form-select">
+                                <option value="">-- Sin cliente --</option>
+                                {% for c in clientes_para_mensaje %}
+                                <option value="{{ c.id }}">{{ c.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select name="prioridad" class="form-select">
+                                {% for p in prioridades %}
+                                <option value="{{ p }}" {% if p == 'Media' %}selected{% endif %}>{{ p }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-1">
+                            <button type="submit" class="btn btn-outline-dark w-100">Enviar</button>
+                        </div>
+                    </form>
+
+                    <div class="d-flex justify-content-end mb-2">
+                        <a href="{{ url_for('mensajes.resueltos') }}" class="btn btn-sm btn-outline-secondary">Ver resueltos</a>
+                    </div>
+                    <div class="list-group">
+                        {% for m in mensajes_abiertos %}
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <span>
+                                <span class="badge badge-{{ m.prioridad }}">{{ m.prioridad }}</span>
+                                {% if m.remitente_id == current_user.id %}
+                                <span class="text-muted small">Para {{ m.destinatario.nombre_completo or m.destinatario.username }}:</span>
+                                {% else %}
+                                <span class="text-muted small">De {{ m.remitente.nombre_completo or m.remitente.username }}:</span>
+                                {% endif %}
+                                {{ m.titulo }}
+                                {% if m.cliente %} — <a href="{{ url_for('clientes.detalle', cliente_id=m.cliente_id) }}">{{ m.cliente.nombre }}</a>{% endif %}
+                                <small class="text-muted">({{ m.fecha_carga.strftime('%d/%m/%Y') }})</small>
+                            </span>
+                            <span>
+                                <form method="POST" action="{{ url_for('mensajes.resolver', mensaje_id=m.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Resuelto</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('mensajes.eliminar', mensaje_id=m.id) }}" class="d-inline"
+                                      onsubmit="return confirm('¿Eliminar este mensaje?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                </form>
+                            </span>
+                        </div>
+                        {% else %}
+                        <p class="text-muted mb-0">No hay mensajes abiertos.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </details>
+
+            <div class="pie-nota-doc">IPM Manager — Gestión de mantenimiento de sistemas contra incendio en Uruguay.</div>
         </div>
     </div>
 </div>

@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Ensayos pendientes de validación - IPM Manager{% endblock %}
+{% block content %}
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <div class="marca">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="">
+                <span class="nombre">IPM MANAGER</span>
+            </div>
+            <h1>Ensayos pendientes de validación</h1>
+        </div>
+        <div class="filete-rojo-doc"></div>
+        <div class="cuerpo-doc">
+            <p class="text-muted mb-3"><a href="{{ url_for('dashboard.inicio') }}">&larr; Volver al Inicio</a> — {{ ensayos|length }} ensayo{{ 's' if ensayos|length != 1 else '' }} esperando validación.</p>
+
+            <ul class="lista-expandible" style="padding: 0;">
+                {% for e in ensayos %}
+                <li>
+                    <a class="fila-expandible" href="{{ url_for('curvas.ensayo_detalle', equipo_id=e.equipo_id, ensayo_id=e.id) }}">
+                        <span class="cuerpo">
+                            <div class="desc">Curva de caudal — {{ e.equipo.nombre }}</div>
+                            <div class="meta">{{ e.equipo.instalacion.cliente.nombre }} — {{ e.equipo.instalacion.nombre }} · cargado {{ e.fecha_creacion.strftime('%d/%m/%Y') }}{% if e.creado_por %} por {{ e.creado_por.nombre_completo or e.creado_por.username }}{% endif %}</div>
+                        </span>
+                        <span class="ir">Ver ensayo →</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="text-muted py-3">No hay ensayos pendientes de validación.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

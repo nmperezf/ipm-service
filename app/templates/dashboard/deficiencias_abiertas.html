@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Deficiencias abiertas - IPM Manager{% endblock %}
+{% block content %}
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <div class="marca">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="">
+                <span class="nombre">IPM MANAGER</span>
+            </div>
+            <h1>Deficiencias abiertas</h1>
+        </div>
+        <div class="filete-rojo-doc"></div>
+        <div class="cuerpo-doc">
+            <p class="text-muted mb-3"><a href="{{ url_for('dashboard.inicio') }}">&larr; Volver al Inicio</a> — {{ deficiencias|length }} observación{{ 'es' if deficiencias|length != 1 else '' }} sin resolver.</p>
+
+            <ul class="lista-expandible" style="padding: 0;">
+                {% for o in deficiencias %}
+                {% set visita_id = o.item_visita.visita_id if o.item_visita else none %}
+                <li>
+                    {% if visita_id %}
+                    <a class="fila-expandible" href="{{ url_for('visitas.detalle', visita_id=visita_id) }}">
+                    {% else %}
+                    <a class="fila-expandible" href="{{ url_for('clientes.detalle', cliente_id=o.instalacion.cliente_id) }}">
+                    {% endif %}
+                        <span class="cuerpo">
+                            <div class="desc"><span class="badge badge-{{ o.clasificacion.replace(' ', '.') }}">{{ o.clasificacion }}</span> {{ o.descripcion }}</div>
+                            <div class="meta">{{ o.instalacion.cliente.nombre }} — {{ o.instalacion.nombre }} · detectada {{ o.fecha_carga.strftime('%d/%m/%Y') }}</div>
+                        </span>
+                        <span class="ir">{{ 'Ver visita →' if visita_id else 'Ver cliente →' }}</span>
+                    </a>
+                </li>
+                {% else %}
+                <li class="text-muted py-3">No hay deficiencias abiertas.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

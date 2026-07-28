@@ -15,6 +15,9 @@
     --brand-dark: #000000;
     --accent: #E2131D;
     --accent-soft: #FBEAE7;
+    --warn-soft: #FDF2E3;
+    --info-soft: #EAF1FA;
+    --ok-soft: #E5F4EC;
 
     --font-display: 'Space Grotesk', system-ui, sans-serif;
     --font-body: 'Inter', system-ui, -apple-system, sans-serif;
@@ -188,6 +191,7 @@ small, .small, .text-muted {
 .navbar.ipm-navbar {
     background: #000000;
     box-shadow: 0 1px 0 rgba(0,0,0,.08);
+    border-bottom: 3px solid var(--accent);
     position: relative;
     z-index: 1046;
 }
@@ -240,6 +244,16 @@ small, .small, .text-muted {
 }
 .theme-toggle-btn:hover {
     color: #fff !important;
+}
+.punto-no-leido-navbar {
+    position: absolute;
+    top: .35rem;
+    right: .3rem;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    border: 1.5px solid #000;
 }
 
 /* ---- Panel lateral (PC, ≥992px) -------------------------------------------
@@ -724,6 +738,9 @@ html[data-bs-theme="dark"] {
     --brand-dark: #ACC1E5;
     --accent: #FF6161;
     --accent-soft: #3A1418;
+    --warn-soft: #3A2A0E;
+    --info-soft: #18233A;
+    --ok-soft: #123324;
 
     --bs-primary: #8CA3D1;
     --bs-primary-rgb: 140, 163, 209;
@@ -824,3 +841,191 @@ html[data-bs-theme="dark"] .chip-success { background: #123324; color: #4ADE96; 
 html[data-bs-theme="dark"] .chip-primary { background: #18233A; color: #8FB3E8; }
 html[data-bs-theme="dark"] .chip-danger { background: #3A1418; color: #FF6B70; }
 html[data-bs-theme="dark"] .chip-secondary { background: #232734; color: #8A93A0; }
+
+/* ==========================================================================
+   Sistema "hoja de documento" — banda negra + filete rojo, calcada del
+   encabezado del sitio. Nace en los PDF/pantallas de ensayo de curva de
+   caudal; de acá en más es el formato para toda pantalla nueva (o migrada)
+   del sitio, no solo esa. El negro de la banda va fijo en #000, igual que
+   la navbar: es una decisión de marca, no algo que se invierta en oscuro.
+   ========================================================================== */
+
+.fondo-doc-wrap {
+    background: var(--surface-muted);
+    border-radius: .6rem;
+    padding: 1.4rem;
+    margin: 0 -.25rem 1.5rem;
+}
+.hoja-doc {
+    max-width: 1100px;
+    margin: 0 auto;
+    background: var(--surface);
+    border-radius: .6rem;
+    box-shadow: 0 4px 22px rgba(20,30,45,.12);
+    overflow: hidden;
+    color: var(--ink);
+}
+html[data-bs-theme="dark"] .hoja-doc { box-shadow: 0 4px 22px rgba(0,0,0,.35); }
+
+.encabezado-doc {
+    background: #000;
+    color: #fff;
+    padding: 1.1rem 1.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+.encabezado-doc .marca { display: flex; align-items: center; gap: .6rem; }
+.encabezado-doc .marca img { height: 28px; width: auto; }
+.encabezado-doc .marca .nombre { font-family: var(--font-display); font-weight: 800; letter-spacing: .01em; font-size: .95rem; }
+.encabezado-doc h1 { margin: 0; font-size: 1.2rem; font-weight: 700; color: #fff; }
+.encabezado-doc .sub { font-size: .78rem; color: rgba(255,255,255,.7); }
+.filete-rojo-doc { height: 3px; background: var(--accent); }
+
+.cuerpo-doc { padding: 1.5rem 1.6rem 2rem; }
+
+.seccion-titulo-doc {
+    background: #000;
+    color: #fff;
+    font-family: var(--font-display);
+    font-size: .74rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-weight: 700;
+    margin: 1.8rem -1.6rem .9rem;
+    padding: .55rem 1.6rem .5rem;
+    border-bottom: 3px solid var(--accent);
+}
+.seccion-titulo-doc:first-child { margin-top: 0; }
+
+.pie-nota-doc {
+    font-size: .72rem;
+    color: var(--ink-muted);
+    margin-top: 2rem;
+    border-top: 1px solid var(--border);
+    padding-top: .8rem;
+}
+
+/* ---- Inicio: tarjetas de atención ----------------------------------------- */
+
+.eyebrow-doc {
+    font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; font-weight: 800;
+    color: var(--ink-muted); margin: 0 0 .3rem;
+}
+.saludo-doc { font-size: 1.25rem; font-weight: 800; margin: 0 0 1.4rem; font-family: var(--font-display); }
+.saludo-doc span { font-weight: 400; color: var(--ink-muted); font-size: .95rem; }
+
+.grid-atencion { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .9rem; }
+
+.card-atencion {
+    border-radius: .6rem; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: .3rem;
+    text-decoration: none; color: inherit; transition: transform .1s; background: var(--surface-muted);
+}
+.card-atencion:hover { transform: translateY(-1px); }
+.card-atencion .num { font-family: var(--font-mono); font-size: 1.9rem; font-weight: 700; line-height: 1; }
+.card-atencion .etiqueta { font-size: .8rem; font-weight: 600; }
+.card-atencion .sub { font-size: .74rem; color: var(--ink-muted); }
+.card-atencion.critico { background: var(--accent-soft); }
+.card-atencion.critico .num, .card-atencion.critico .etiqueta { color: var(--accent); }
+.card-atencion.alerta { background: var(--warn-soft); }
+.card-atencion.alerta .num, .card-atencion.alerta .etiqueta { color: var(--bs-warning); }
+.card-atencion.info { background: var(--info-soft); }
+.card-atencion.info .num, .card-atencion.info .etiqueta { color: var(--bs-info); }
+
+.card-tendencia {
+    display: flex; align-items: center; gap: 1.4rem; background: var(--surface-muted);
+    border-radius: .6rem; padding: 1.1rem 1.3rem; margin-top: .3rem;
+}
+.card-tendencia .valor {
+    font-family: var(--font-mono); font-size: 2.1rem; font-weight: 700; color: var(--ink);
+}
+.card-tendencia .valor small { font-size: 1rem; font-weight: 500; color: var(--ink-muted); font-family: var(--font-body); }
+.card-tendencia .detalle { font-size: .8rem; color: var(--ink-muted); }
+.pill-tendencia {
+    display: inline-flex; align-items: center; gap: .25rem; font-size: .72rem; font-weight: 700;
+    padding: .1rem .5rem; border-radius: 100px; margin-left: .5rem;
+}
+.pill-tendencia.subio { background: var(--ok-soft); color: var(--bs-success); }
+.pill-tendencia.bajo { background: var(--accent-soft); color: var(--accent); }
+
+/* ---- Tarjetas expandibles (deficiencias, ensayos pendientes) -------------- */
+
+details.card-expandible { border-radius: .6rem; overflow: hidden; background: var(--surface-muted); }
+details.card-expandible summary {
+    cursor: pointer; padding: 1rem 1.1rem; list-style: none; display: flex; align-items: center; gap: .9rem;
+}
+details.card-expandible summary::-webkit-details-marker { display: none; }
+details.card-expandible summary .num { font-family: var(--font-mono); font-size: 1.9rem; font-weight: 700; line-height: 1; }
+details.card-expandible summary .textos { flex: 1; display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
+details.card-expandible summary .etiqueta { font-size: .8rem; font-weight: 600; }
+details.card-expandible summary .sub { font-size: .74rem; color: var(--ink-muted); }
+details.card-expandible summary .flecha { color: var(--ink-muted); transition: transform .15s; flex-shrink: 0; }
+details.card-expandible[open] summary .flecha { transform: rotate(90deg); }
+details.card-expandible.critico { background: var(--accent-soft); }
+details.card-expandible.critico summary .num, details.card-expandible.critico summary .etiqueta { color: var(--accent); }
+details.card-expandible.alerta { background: var(--warn-soft); }
+details.card-expandible.alerta summary .num, details.card-expandible.alerta summary .etiqueta { color: var(--bs-warning); }
+
+.desglose-clasif { display: flex; gap: .4rem; flex-wrap: wrap; margin-top: .2rem; }
+.desglose-clasif .mini-chip {
+    font-size: .68rem; font-weight: 700; padding: .1rem .5rem; border-radius: 100px; background: rgba(0,0,0,.06);
+}
+html[data-bs-theme="dark"] .desglose-clasif .mini-chip { background: rgba(255,255,255,.1); }
+
+.lista-expandible {
+    list-style: none; margin: 0; padding: 0 1.1rem 1rem; display: flex; flex-direction: column; gap: .5rem;
+}
+.fila-expandible {
+    display: flex; align-items: center; gap: .7rem; padding: .6rem .7rem; border-radius: .5rem;
+    border: 1px solid var(--border); font-size: .82rem; text-decoration: none; color: inherit; background: var(--surface);
+}
+.fila-expandible:hover { border-color: var(--accent); }
+.fila-expandible .cuerpo { flex: 1; min-width: 0; }
+.fila-expandible .desc { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fila-expandible .meta { font-size: .74rem; color: var(--ink-muted); }
+.fila-expandible .ir { font-size: .74rem; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+.ver-todas-doc {
+    display: block; text-align: center; font-size: .78rem; font-weight: 700; color: var(--accent);
+    text-decoration: none; padding: .5rem; background: var(--surface);
+}
+
+/* ---- Carga de trabajo por técnico ------------------------------------------ */
+
+.tabla-carga-doc { width: 100%; border-collapse: collapse; font-size: .84rem; margin-top: .3rem; }
+.tabla-carga-doc th, .tabla-carga-doc td { padding: .5rem .6rem; border-bottom: 1px solid var(--border); text-align: left; }
+.tabla-carga-doc th { font-size: .68rem; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-muted); }
+.barra-carga-doc { display: inline-flex; align-items: center; gap: .5rem; width: 100%; max-width: 220px; }
+.barra-carga-doc .pista { flex: 1; height: 6px; border-radius: 4px; background: var(--surface-muted); overflow: hidden; }
+.barra-carga-doc .relleno { height: 100%; background: var(--accent); border-radius: 4px; }
+.barra-carga-doc .n { font-variant-numeric: tabular-nums; font-weight: 700; font-size: .78rem; min-width: 1.3rem; text-align: right; }
+
+/* ---- Agenda e ítems de OT -------------------------------------------------- */
+
+.lista-agenda-doc { list-style: none; margin: .2rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
+.item-agenda-doc {
+    display: flex; align-items: center; gap: .8rem; padding: .6rem .8rem; border: 1px solid var(--border);
+    border-radius: .5rem; font-size: .85rem; text-decoration: none; color: inherit;
+}
+.item-agenda-doc:hover { border-color: var(--accent); }
+.item-agenda-doc .fecha { font-weight: 700; min-width: 3.2rem; color: var(--ink-muted); font-size: .78rem; }
+.item-agenda-doc .nombre { flex: 1; font-weight: 600; min-width: 0; }
+.item-agenda-doc .cliente { color: var(--ink-muted); font-size: .78rem; font-weight: 400; display: block; }
+
+.foco-tecnico-doc { display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.4rem; align-items: start; }
+@media (max-width: 760px) { .foco-tecnico-doc { grid-template-columns: 1fr; } }
+
+.lista-ot-doc { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: .6rem; }
+.item-ot-doc {
+    border: 1px solid var(--border); border-radius: .6rem; padding: .8rem .95rem; display: flex;
+    align-items: center; gap: .8rem; text-decoration: none; color: inherit;
+}
+.item-ot-doc:hover { border-color: var(--accent); }
+.item-ot-doc .num-ot { font-size: .72rem; color: var(--ink-muted); font-weight: 700; }
+.item-ot-doc .titulo-ot { font-weight: 700; font-size: .9rem; margin-top: .1rem; }
+.item-ot-doc .lugar-ot { font-size: .78rem; color: var(--ink-muted); }
+.item-ot-doc .flex { flex: 1; min-width: 0; }
+
+@media (max-width: 720px) { .grid-atencion { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 480px) { .grid-atencion { grid-template-columns: 1fr; } }

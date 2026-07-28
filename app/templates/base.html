@@ -56,6 +56,12 @@
             <button type="button" id="theme-toggle" class="theme-toggle-btn" title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
                 <i class="bi bi-moon-stars-fill" id="theme-toggle-icon"></i>
             </button>
+            {% if current_user.is_authenticated and current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+            <a href="{{ url_for('notificaciones.listar') }}" class="theme-toggle-btn position-relative" title="Notificaciones" aria-label="Notificaciones">
+                <i class="bi bi-bell"></i>
+                {% if notificaciones_no_leidas %}<span class="punto-no-leido-navbar" title="{{ notificaciones_no_leidas }} sin leer"></span>{% endif %}
+            </a>
+            {% endif %}
             <button type="button" id="sidebar-toggle" class="theme-toggle-btn d-none d-lg-inline-flex" title="Menú" aria-label="Abrir menú">
                 <i class="bi bi-list"></i>
             </button>
