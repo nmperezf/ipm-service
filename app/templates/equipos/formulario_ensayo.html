@@ -7,109 +7,151 @@
     --azul-oscuro: #123b68;
     --rojo: #c41e3a;
     --rojo-suave: #fbe9ec;
+    --tinta-doc: #1f2937;
+    --tinta-muted-doc: #6b7280;
     --borde-doc: #dfe4ea;
+    --superficie-doc: #ffffff;
     --superficie-muted-doc: #f6f8fa;
-    --edit-hover: #ffffdd;
-    --edit-focus: #fff6bf;
+    --fondo-doc: #eef1f5;
     --ok-bg: #e8f7ee;
     --ok-fg: #16803c;
+    --edit-hover: #ffffdd;
+    --edit-focus: #fff6bf;
 }
 html[data-bs-theme="dark"] {
-    --borde-doc: #313a46; --superficie-muted-doc: #1d222a;
+    --tinta-doc: #e7ebf1; --tinta-muted-doc: #9aa4b2; --borde-doc: #313a46;
+    --superficie-doc: #171b21; --superficie-muted-doc: #1d222a; --fondo-doc: #101317;
     --ok-bg: #123321; --ok-fg: #4ade80; --rojo-suave: #3a1620;
     --edit-hover: #3a3620; --edit-focus: #4a4322;
 }
 
-.barra-ensayo {
+.barra-superior-doc {
     position: sticky; top: 0; z-index: 15; background: var(--azul-oscuro); color: #fff;
     display: flex; align-items: center; gap: .9rem; padding: .55rem 1.1rem; margin: 0 -.75rem 1.2rem;
-    font-size: .82rem; border-radius: 0 0 .4rem .4rem;
+    font-size: .82rem; box-shadow: 0 2px 10px rgba(0,0,0,.15); border-radius: 0 0 .4rem .4rem;
 }
-.barra-ensayo .spacer { flex: 1; }
+.barra-superior-doc .titulo-barra { font-weight: 700; letter-spacing: .01em; }
+.barra-superior-doc .spacer { flex: 1; }
 #dirty-badge {
     display: none; align-items: center; gap: .4rem; background: rgba(255,255,255,.12);
     padding: .3rem .7rem; border-radius: 100px; font-size: .74rem;
 }
 #dirty-badge.visible { display: inline-flex; }
 #dirty-badge .punto { width: 7px; height: 7px; border-radius: 50%; background: #fbbf24; }
-.barra-ensayo .btn { font-size: .8rem; font-weight: 600; }
-.barra-ensayo .btn-outline-light { border-color: rgba(255,255,255,.4); }
+.btn-doc {
+    font-size: .8rem; font-weight: 600; border-radius: .45rem; padding: .4rem .85rem;
+    border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; gap: .4rem;
+}
+.btn-doc-primary { background: var(--rojo); color: #fff; }
+.btn-doc-primary:hover { background: #a91830; color: #fff; }
+.btn-doc-outline { background: transparent; color: #fff; border-color: rgba(255,255,255,.4); }
+.btn-doc-outline:hover { border-color: #fff; color: #fff; }
 .toggle-ft { display: flex; align-items: center; gap: .4rem; font-size: .78rem; color: #fff; margin-bottom: 0; }
 
-.hoja-ensayo { max-width: 1040px; background: var(--bs-body-bg); border-radius: .6rem;
-    box-shadow: 0 4px 22px rgba(20,30,45,.12); overflow: hidden; margin-bottom: 1.5rem; }
+.fondo-doc-wrap { background: var(--fondo-doc); border-radius: .6rem; padding: 1.4rem; margin: 0 -.25rem 1.5rem; }
+.hoja-doc { max-width: 1040px; margin: 0 auto; background: var(--superficie-doc); border-radius: .6rem;
+    box-shadow: 0 4px 22px rgba(20,30,45,.12); overflow: hidden; color: var(--tinta-doc); }
 
-.encabezado-ensayo { background: var(--azul); color: #fff; padding: 1.1rem 1.6rem; display: flex;
+.encabezado-doc { background: var(--azul); color: #fff; padding: 1.1rem 1.6rem; display: flex;
     align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-.encabezado-ensayo .marca { display: flex; align-items: center; gap: .6rem; }
-.encabezado-ensayo .marca img { height: 28px; width: auto; background: #fff; border-radius: 6px; padding: 3px; }
-.encabezado-ensayo .marca .nombre { font-weight: 800; letter-spacing: .02em; font-size: .9rem; }
-.encabezado-ensayo h1 { margin: 0; font-size: 1.2rem; font-weight: 700; text-align: right; color: #fff; }
-.encabezado-ensayo .sub { font-size: .74rem; opacity: .85; text-align: right; margin-top: .15rem; }
+.encabezado-doc .marca { display: flex; align-items: center; gap: .6rem; }
+.encabezado-doc .marca img { height: 30px; width: auto; background: #fff; border-radius: 6px; padding: 3px; }
+.encabezado-doc .marca .nombre { font-weight: 800; letter-spacing: .02em; font-size: .95rem; }
+.encabezado-doc h1 { margin: 0; font-size: 1.25rem; font-weight: 700; text-align: right; color: #fff; }
+.encabezado-doc .sub { font-size: .74rem; opacity: .85; text-align: right; margin-top: .15rem; }
 
-.cuerpo-ensayo { padding: 1.4rem 1.6rem 1.8rem; }
-.seccion-titulo-ensayo {
+.cuerpo-doc { padding: 1.5rem 1.6rem 2.2rem; }
+.seccion-titulo-doc {
     font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; font-weight: 700;
-    color: var(--azul); margin: 1.7rem 0 .7rem; padding-bottom: .35rem; border-bottom: 2px solid var(--borde-doc);
+    color: var(--azul); margin: 1.8rem 0 .7rem; padding-bottom: .35rem; border-bottom: 2px solid var(--borde-doc);
 }
-.seccion-titulo-ensayo:first-child { margin-top: 0; }
+.seccion-titulo-doc:first-child { margin-top: 0; }
 
-.grid-id { display: grid; grid-template-columns: repeat(3, 1fr); gap: .9rem 1.2rem; }
-.campo-id label { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: .04em;
-    color: var(--bs-secondary-color); font-weight: 700; margin-bottom: .2rem; }
+.grid-3-doc { display: grid; grid-template-columns: repeat(3, 1fr); gap: .9rem 1.2rem; }
+.campo-doc label { display: block; font-size: .68rem; text-transform: uppercase; letter-spacing: .04em;
+    color: var(--tinta-muted-doc); font-weight: 700; margin-bottom: .2rem; }
+.campo-doc .valor-doc { font-size: .95rem; padding: .3rem .4rem; border-radius: .35rem; min-height: 1.4em; }
 
-.tabla-ensayo-wrap table { width: 100%; border-collapse: collapse; font-size: .82rem; margin-top: .3rem; }
-.tabla-ensayo-wrap th, .tabla-ensayo-wrap td { border: 1px solid var(--borde-doc); padding: .4rem .5rem; text-align: center; }
-.tabla-ensayo-wrap td:first-child, .tabla-ensayo-wrap th:first-child { text-align: left; }
-.tabla-ensayo-wrap thead th { background: var(--superficie-muted-doc); color: var(--azul); font-size: .68rem;
+.campo-doc input.valor-doc, .campo-doc select.valor-doc {
+    display: block; width: 100%; border: none; background: transparent; font: inherit; color: inherit;
+    transition: background .1s;
+}
+.campo-doc input.valor-doc:hover, .campo-doc select.valor-doc:hover { background: var(--edit-hover); }
+.campo-doc input.valor-doc:focus, .campo-doc select.valor-doc:focus {
+    background: var(--edit-focus); outline: 2px solid var(--azul); outline-offset: 1px;
+}
+
+.tabla-doc-scroll { overflow-x: auto; }
+.tabla-doc { width: 100%; border-collapse: collapse; font-size: .82rem; margin-top: .3rem; }
+.tabla-doc th, .tabla-doc td { border: 1px solid var(--borde-doc); padding: .4rem .55rem; text-align: center; }
+.tabla-doc td:first-child, .tabla-doc th:first-child { text-align: left; }
+.tabla-doc thead th { background: var(--superficie-muted-doc); color: var(--azul); font-size: .68rem;
     text-transform: uppercase; letter-spacing: .03em; font-weight: 700; }
-.tabla-ensayo-wrap td.computada { background: var(--superficie-muted-doc); font-weight: 600; }
+.tabla-doc tbody td { font-variant-numeric: tabular-nums; }
+.tabla-doc td.computada-doc { background: var(--superficie-muted-doc); color: var(--tinta-doc); font-weight: 600; }
 .col-ft { display: none; }
 .mostrar-ft .col-ft { display: table-cell; }
 
-#tabla-ensayo input, #tabla-fabrica-form input {
+.tabla-doc input {
     border: none; background: transparent; width: 100%; text-align: center; font: inherit; color: inherit;
-    padding: .1rem; border-radius: .25rem;
+    padding: .15rem; border-radius: .25rem; transition: background .1s;
 }
-#tabla-ensayo input:hover { background: var(--edit-hover); }
-#tabla-ensayo input:focus { background: var(--edit-focus); outline: 2px solid var(--azul); outline-offset: 0; }
+.tabla-doc input:hover { background: var(--edit-hover); }
+.tabla-doc input:focus { background: var(--edit-focus); outline: 2px solid var(--azul); outline-offset: 0; }
 
-.grafico-wrap-ensayo { margin-top: .6rem; background: var(--superficie-muted-doc); border: 1px solid var(--borde-doc);
+.grafico-wrap-doc { margin-top: .6rem; background: var(--superficie-muted-doc); border: 1px solid var(--borde-doc);
     border-radius: .5rem; padding: 1rem; }
-.leyenda-manual { display: flex; gap: 1.2rem; flex-wrap: wrap; font-size: .74rem; color: var(--bs-secondary-color);
+.leyenda-manual-doc { display: flex; gap: 1.2rem; flex-wrap: wrap; font-size: .74rem; color: var(--tinta-muted-doc);
     margin-top: .6rem; }
-.leyenda-manual span { display: inline-flex; align-items: center; gap: .35rem; }
-.leyenda-manual i { width: 18px; height: 3px; border-radius: 2px; display: inline-block; }
+.leyenda-manual-doc span { display: inline-flex; align-items: center; gap: .35rem; }
+.leyenda-manual-doc i { width: 18px; height: 3px; border-radius: 2px; display: inline-block; }
 
-.chip-nfpa { display: inline-flex; align-items: center; gap: .3rem; font-size: .74rem; font-weight: 700;
+.chip-doc { display: inline-flex; align-items: center; gap: .3rem; font-size: .74rem; font-weight: 700;
     padding: .18rem .55rem; border-radius: 100px; }
-.chip-ok { background: var(--ok-bg); color: var(--ok-fg); }
-.chip-no { background: var(--rojo-suave); color: var(--rojo); }
-tr.fila-no-cumple td { background: var(--rojo-suave); }
+.chip-doc-ok { background: var(--ok-bg); color: var(--ok-fg); }
+.chip-doc-no { background: var(--rojo-suave); color: var(--rojo); }
+.tabla-doc tr.fila-no-cumple-doc td { background: var(--rojo-suave); }
 
-textarea#comentarios-ensayo:hover { background: var(--edit-hover); }
-textarea#comentarios-ensayo:focus { background: var(--edit-focus); }
+textarea#comentarios-doc {
+    width: 100%; min-height: 5rem; font-size: .88rem; padding: .6rem .7rem; border-radius: .4rem;
+    border: 1px solid var(--borde-doc); resize: vertical; background: var(--superficie-doc); color: var(--tinta-doc);
+}
+textarea#comentarios-doc:hover { background: var(--edit-hover); }
+textarea#comentarios-doc:focus { background: var(--edit-focus); outline: 2px solid var(--azul); }
 
+.validacion-row-doc { display: flex; gap: 1.4rem; flex-wrap: wrap; align-items: flex-end; margin-top: .6rem; }
+.validacion-row-doc .campo-doc select, .validacion-row-doc .campo-doc input {
+    font-size: .88rem; padding: .35rem .5rem; border-radius: .35rem; border: 1px solid var(--borde-doc);
+    background: var(--superficie-muted-doc); color: var(--tinta-doc);
+}
+
+.pie-nota-doc { font-size: .72rem; color: var(--tinta-muted-doc); margin-top: 2rem; border-top: 1px solid var(--borde-doc);
+    padding-top: .8rem; }
+
+@media (max-width: 720px) { .grid-3-doc { grid-template-columns: 1fr 1fr; } }
 @media print {
-    .barra-ensayo, .no-imprimir, nav, footer, .nav-inferior { display: none !important; }
-    .hoja-ensayo { box-shadow: none; }
+    .barra-superior-doc, .no-imprimir, nav, footer, .nav-inferior { display: none !important; }
+    .fondo-doc-wrap { background: #fff; padding: 0; margin: 0; }
+    .hoja-doc { box-shadow: none; }
 }
 </style>
 
-<div class="barra-ensayo no-imprimir">
-    <span class="fw-bold">🧯 {{ 'Editar' if ensayo else 'Nuevo' }} ensayo — {{ equipo.nombre }}</span>
+<div class="barra-superior-doc no-imprimir">
+    <span class="titulo-barra">🧯 Ensayo de curva de caudal — NFPA 25</span>
     <span id="dirty-badge"><span class="punto"></span> Cambios sin guardar</span>
     <span class="spacer"></span>
-    <label class="toggle-ft"><input type="checkbox" id="chk-ft"> mostrar ft head</label>
-    <button type="button" class="btn btn-sm btn-outline-light" id="btn-exportar-pdf">⤓ Exportar PDF</button>
+    <label class="toggle-ft"><input type="checkbox" id="chk-ft"> Mostrar ft head</label>
+    <button type="button" class="btn-doc btn-doc-outline" id="btn-descartar">Descartar cambios</button>
+    <button type="button" class="btn-doc btn-doc-primary" id="btn-pdf">⤓ Exportar PDF</button>
 </div>
 
 {% if ensayo %}
 <p class="text-muted small no-imprimir">Corregir los puntos del ensayo lo vuelve a dejar pendiente de revisión.</p>
 {% endif %}
 
-<div class="hoja-ensayo">
-    <div class="encabezado-ensayo">
+<div class="fondo-doc-wrap">
+<div class="hoja-doc" id="hoja">
+    <div class="encabezado-doc">
         <div class="marca">
             <img src="{{ url_for('static', filename='img/logo.png') }}" alt="IPM Manager">
             <span class="nombre">IPM MANAGER</span>
@@ -121,177 +163,159 @@ textarea#comentarios-ensayo:focus { background: var(--edit-focus); }
     </div>
 
     <form method="POST" id="form-ensayo">
-        <div class="cuerpo-ensayo">
-            <div class="seccion-titulo-ensayo">Identificación del ensayo</div>
-            <div class="grid-id">
-                <div class="campo-id"><label>Lugar</label>{{ equipo.instalacion.cliente.nombre }} — {{ equipo.instalacion.nombre }}</div>
-                <div class="campo-id"><label>Modelo</label>{{ equipo.modelo or '-' }}</div>
-                <div class="campo-id"><label>N° de serie</label>{{ equipo.serie or '-' }}</div>
-                <div class="campo-id">
-                    <label>Tipo de bomba</label>
-                    {{ equipo.tipo_motor or '-' }}{% if equipo.motor_potencia_hp %} · {{ equipo.motor_potencia_hp }} HP{% endif %}
-                </div>
-                <div class="campo-id">
-                    <label>Fecha</label>
-                    <input type="date" name="fecha_ensayo" class="form-control form-control-sm" style="max-width:180px;" required
-                           value="{{ ensayo.fecha_ensayo.isoformat() if ensayo else '' }}">
-                </div>
-                <div class="campo-id">
-                    <label>Inspector</label>
-                    {{ (ensayo.creado_por.nombre_completo or ensayo.creado_por.username) if ensayo and ensayo.creado_por else (current_user.nombre_completo or current_user.username) }}
-                </div>
-            </div>
+    <div class="cuerpo-doc">
+        <div class="seccion-titulo-doc">Identificación del ensayo</div>
+        <div class="grid-3-doc">
+            <div class="campo-doc"><label>Lugar</label><div class="valor-doc">{{ equipo.instalacion.cliente.nombre }} — {{ equipo.instalacion.nombre }}</div></div>
+            <div class="campo-doc"><label>Modelo</label><div class="valor-doc">{{ equipo.modelo or '-' }}</div></div>
+            <div class="campo-doc"><label>N° de serie</label><div class="valor-doc">{{ equipo.serie or '-' }}</div></div>
+            <div class="campo-doc"><label>Tipo de bomba</label><div class="valor-doc">{{ equipo.tipo_motor or '-' }}{% if equipo.motor_potencia_hp %} · {{ equipo.motor_potencia_hp }} HP{% endif %}</div></div>
+            <div class="campo-doc"><label>Fecha</label><input type="date" name="fecha_ensayo" class="valor-doc" required value="{{ ensayo.fecha_ensayo.isoformat() if ensayo else '' }}"></div>
+            <div class="campo-doc"><label>Inspector</label><div class="valor-doc">{{ (ensayo.creado_por.nombre_completo or ensayo.creado_por.username) if ensayo and ensayo.creado_por else (current_user.nombre_completo or current_user.username) }}</div></div>
+        </div>
 
-            <div class="seccion-titulo-ensayo">Condiciones de prueba <span class="fw-normal text-body-secondary" style="text-transform:none; letter-spacing:0;">(opcional)</span></div>
-            <div class="row g-3">
-                <div class="col-md-3">
-                    <label class="form-label small mb-0">Temperatura ambiente</label>
-                    <div class="input-group input-group-sm">
-                        <input type="number" step="any" name="temperatura_ambiente" class="form-control"
-                               value="{{ ensayo.temperatura_ambiente if ensayo and ensayo.temperatura_ambiente is not none else '' }}">
-                        <span class="input-group-text">°C</span>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label small mb-0">Presión atmosférica</label>
-                    <div class="input-group input-group-sm">
-                        <input type="number" step="any" name="presion_atmosferica_mbar" class="form-control"
-                               value="{{ ensayo.presion_atmosferica_mbar if ensayo and ensayo.presion_atmosferica_mbar is not none else '' }}">
-                        <span class="input-group-text">Mbar</span>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label small mb-0">Presión succión (estática)</label>
-                    <div class="input-group input-group-sm">
-                        <input type="number" step="any" name="presion_succion_estatica" class="form-control"
-                               value="{{ ensayo.presion_succion_estatica if ensayo and ensayo.presion_succion_estatica is not none else '' }}">
-                        <span class="input-group-text">PSI</span>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label small mb-0">Normativa aplicable</label>
-                    <input type="text" name="normativa_aplicable" class="form-control form-control-sm"
-                           value="{{ ensayo.normativa_aplicable if ensayo and ensayo.normativa_aplicable else 'NFPA 25 — ensayo anual de bomba contra incendio' }}">
-                </div>
-            </div>
+        <div class="seccion-titulo-doc">Condiciones de prueba</div>
+        <div class="grid-3-doc">
+            <div class="campo-doc"><label>Temperatura ambiente (°C)</label><input type="number" step="any" class="valor-doc" name="temperatura_ambiente" value="{{ ensayo.temperatura_ambiente if ensayo and ensayo.temperatura_ambiente is not none else '' }}"></div>
+            <div class="campo-doc"><label>Presión atmosférica (Mbar)</label><input type="number" step="any" class="valor-doc" name="presion_atmosferica_mbar" value="{{ ensayo.presion_atmosferica_mbar if ensayo and ensayo.presion_atmosferica_mbar is not none else '' }}"></div>
+            <div class="campo-doc"><label>Presión de succión (estática, PSI)</label><input type="number" step="any" class="valor-doc" name="presion_succion_estatica" value="{{ ensayo.presion_succion_estatica if ensayo and ensayo.presion_succion_estatica is not none else '' }}"></div>
+            <div class="campo-doc" style="grid-column: span 3;"><label>Normativa aplicable</label><input type="text" class="valor-doc" name="normativa_aplicable" value="{{ ensayo.normativa_aplicable if ensayo and ensayo.normativa_aplicable else 'NFPA 25 — ensayo anual de bomba contra incendio' }}"></div>
+        </div>
 
-            <div class="seccion-titulo-ensayo">Curva de fábrica <span class="fw-normal text-body-secondary" style="text-transform:none; letter-spacing:0;">(referencia)</span></div>
-            <div class="table-responsive tabla-ensayo-wrap" id="tabla-fabrica-form">
-                <table>
-                    <thead><tr><th>Caudal</th><th>0%</th><th>50%</th><th>100%</th><th>150%</th></tr></thead>
-                    <tbody>
-                        <tr><td>Caudal (GPM)</td>
-                            {% for pct in [0, 0.5, 1, 1.5] %}<td>{{ (equipo.caudal_nominal * pct)|round(0) if equipo.caudal_nominal else '-' }}</td>{% endfor %}
-                        </tr>
-                        <tr><td>RPM</td><td colspan="4">{{ curva.rpm_nominal }}</td></tr>
-                        <tr><td>Presión neta (PSI)</td>
-                            <td>{{ curva.punto_0_presion }}</td><td>{{ curva.punto_50_presion }}</td>
-                            <td>{{ curva.punto_100_presion }}</td><td>{{ curva.punto_150_presion }}</td>
-                        </tr>
-                        <tr class="col-ft"><td>Presión neta (ft)</td>
-                            <td>{{ (curva.punto_0_presion * 2.307)|round(1) }}</td><td>{{ (curva.punto_50_presion * 2.307)|round(1) }}</td>
-                            <td>{{ (curva.punto_100_presion * 2.307)|round(1) }}</td><td>{{ (curva.punto_150_presion * 2.307)|round(1) }}</td>
-                        </tr>
-                        <tr><td>Potencia nominal (kW)</td>
-                            <td>{{ curva.punto_0_potencia_kw if curva.punto_0_potencia_kw is not none else '-' }}</td>
-                            <td>{{ curva.punto_50_potencia_kw if curva.punto_50_potencia_kw is not none else '-' }}</td>
-                            <td>{{ curva.punto_100_potencia_kw if curva.punto_100_potencia_kw is not none else '-' }}</td>
-                            <td>{{ curva.punto_150_potencia_kw if curva.punto_150_potencia_kw is not none else '-' }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <div class="seccion-titulo-doc">Curva de fábrica <span style="text-transform:none; font-weight:400; color:var(--tinta-muted-doc); letter-spacing:0;">(referencia) — RPM nominal: <span style="font-weight:700;">{{ curva.rpm_nominal }}</span></span></div>
+        <div class="tabla-doc-scroll">
+        <table class="tabla-doc" id="tabla-fabrica">
+            <thead>
+                <tr>
+                    <th>Caudal (%)</th><th>Caudal (GPM)</th><th>RPM</th>
+                    <th>Presión neta (PSI)</th><th class="col-ft">Presión neta (ft)</th>
+                    <th>Potencia nominal (kW)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set fabrica_pts = [('0', 0, curva.punto_0_presion, curva.punto_0_potencia_kw), ('50', 0.5, curva.punto_50_presion, curva.punto_50_potencia_kw), ('100', 1, curva.punto_100_presion, curva.punto_100_potencia_kw), ('150', 1.5, curva.punto_150_presion, curva.punto_150_potencia_kw)] %}
+                {% for p, factor, presion, potencia in fabrica_pts %}
+                <tr>
+                    <td>{{ p }}%</td>
+                    <td>{{ (equipo.caudal_nominal * factor)|round(0) if equipo.caudal_nominal else '-' }}</td>
+                    <td>{{ curva.rpm_nominal }}</td>
+                    <td class="computada-doc">{{ presion }}</td>
+                    <td class="computada-doc col-ft">{{ (presion * 2.307)|round(1) }}</td>
+                    <td class="computada-doc">{{ potencia if potencia is not none else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
 
-            <div class="seccion-titulo-ensayo">Ensayo <span class="fw-normal text-body-secondary" style="text-transform:none; letter-spacing:0;">— un clic en cualquier celda para editar</span></div>
-            <div class="table-responsive tabla-ensayo-wrap">
-                <table id="tabla-ensayo">
-                    <thead>
-                        <tr>
-                            <th>Caudal (%)</th>
-                            <th>Caudal (GPM)</th>
-                            <th>RPM ensayada</th>
-                            <th>Presión descarga (PSI)</th>
-                            <th>Presión succión (PSI)</th>
-                            <th>Presión neta (PSI)</th>
-                            <th>Presión ajustada (PSI)</th>
-                            <th class="col-ft">Ajustada (ft)</th>
-                            <th>Variación</th>
-                            <th>Pot. absorbida (kW)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for p in ['0', '50', '100', '150'] %}
-                        <tr>
-                            <td>{{ p }}%</td>
-                            <td>
-                                <input type="number" step="any" class="punto-input" data-punto="{{ p }}" data-campo="gpm"
-                                       name="caudal_gpm_punto_{{ p }}"
-                                       placeholder="{{ (equipo.caudal_nominal * (p|int) / 100)|round(0) if equipo.caudal_nominal else '' }}"
-                                       value="{{ ensayo['caudal_gpm_punto_' ~ p] if ensayo and ensayo['caudal_gpm_punto_' ~ p] is not none else '' }}">
-                            </td>
-                            <td>
-                                <input type="number" class="punto-input" data-punto="{{ p }}" data-campo="rpm"
-                                       name="rpm_punto_{{ p }}" required
-                                       value="{{ ensayo['rpm_punto_' ~ p] if ensayo else '' }}">
-                            </td>
-                            <td>
-                                <input type="number" step="any" class="punto-input" data-punto="{{ p }}" data-campo="descarga"
-                                       name="presion_descarga_punto_{{ p }}" required
-                                       value="{{ ensayo['presion_descarga_punto_' ~ p] if ensayo else '' }}">
-                            </td>
-                            <td>
-                                <input type="number" step="any" class="punto-input" data-punto="{{ p }}" data-campo="succion"
-                                       name="presion_succion_punto_{{ p }}" required placeholder="-5 si vacío"
-                                       value="{{ ensayo['presion_succion_punto_' ~ p] if ensayo else '' }}">
-                            </td>
-                            <td class="computada" id="neta-{{ p }}">—</td>
-                            <td class="computada" id="adj-{{ p }}">—</td>
-                            <td class="computada col-ft" id="adj-ft-{{ p }}">—</td>
-                            <td class="computada" id="var-{{ p }}">—</td>
-                            <td>
-                                <input type="number" step="any" data-punto="{{ p }}" data-campo="abs"
-                                       name="potencia_absorbida_punto_{{ p }}" placeholder="s/d"
-                                       value="{{ ensayo['potencia_absorbida_punto_' ~ p] if ensayo and ensayo['potencia_absorbida_punto_' ~ p] is not none else '' }}">
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-            <p class="text-muted small mb-0 mt-2">
-                Presión neta = descarga − succión &middot; Presión ajustada = neta × (RPM nominal / RPM ensayada)² &middot;
-                Variación = (ajustada − fábrica) / fábrica. "Pot. absorbida" es opcional — dejala vacía si no hay forma de medirla
-                (ej. motor diésel sin instrumentación).
-            </p>
+        <div class="seccion-titulo-doc">Ensayo <span class="fw-normal" style="text-transform:none; letter-spacing:0; color:var(--tinta-muted-doc);">— un clic en cualquier celda para editar</span></div>
+        <div class="tabla-doc-scroll">
+        <table class="tabla-doc" id="tabla-ensayo">
+            <thead>
+                <tr>
+                    <th>Caudal (%)</th><th>Caudal (GPM)</th><th>RPM ensayada</th>
+                    <th>Presión descarga (PSI)</th>
+                    <th>Presión succión (PSI)</th>
+                    <th>Presión neta (PSI)</th>
+                    <th>Presión ajustada (PSI)</th><th class="col-ft">Ajustada (ft)</th>
+                    <th>Variación</th>
+                    <th>Pot. absorbida (kW)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in ['0', '50', '100', '150'] %}
+                <tr>
+                    <td>{{ p }}%</td>
+                    <td>
+                        <input type="number" step="any" class="punto-input" data-punto="{{ p }}" data-campo="gpm"
+                               name="caudal_gpm_punto_{{ p }}"
+                               placeholder="{{ (equipo.caudal_nominal * (p|int) / 100)|round(0) if equipo.caudal_nominal else '' }}"
+                               value="{{ ensayo['caudal_gpm_punto_' ~ p] if ensayo and ensayo['caudal_gpm_punto_' ~ p] is not none else '' }}">
+                    </td>
+                    <td>
+                        <input type="number" class="punto-input" data-punto="{{ p }}" data-campo="rpm"
+                               name="rpm_punto_{{ p }}" required
+                               value="{{ ensayo['rpm_punto_' ~ p] if ensayo else '' }}">
+                    </td>
+                    <td>
+                        <input type="number" step="any" class="punto-input" data-punto="{{ p }}" data-campo="descarga"
+                               name="presion_descarga_punto_{{ p }}" required
+                               value="{{ ensayo['presion_descarga_punto_' ~ p] if ensayo else '' }}">
+                    </td>
+                    <td>
+                        <input type="number" step="any" class="punto-input" data-punto="{{ p }}" data-campo="succion"
+                               name="presion_succion_punto_{{ p }}" required placeholder="-5 si vacío"
+                               value="{{ ensayo['presion_succion_punto_' ~ p] if ensayo else '' }}">
+                    </td>
+                    <td class="computada-doc" id="neta-{{ p }}">—</td>
+                    <td class="computada-doc" id="adj-{{ p }}">—</td>
+                    <td class="computada-doc col-ft" id="adj-ft-{{ p }}">—</td>
+                    <td class="computada-doc" id="var-{{ p }}">—</td>
+                    <td>
+                        <input type="number" step="any" data-punto="{{ p }}" data-campo="abs"
+                               name="potencia_absorbida_punto_{{ p }}" placeholder="s/d"
+                               value="{{ ensayo['potencia_absorbida_punto_' ~ p] if ensayo and ensayo['potencia_absorbida_punto_' ~ p] is not none else '' }}">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        <p style="font-size:.72rem; color:var(--tinta-muted-doc); margin-top:.4rem;">
+            Presión neta = descarga − succión &middot; Presión ajustada = neta × (RPM nominal / RPM ensayada)² &middot;
+            Variación = (ajustada − fábrica) / fábrica. Las celdas con fondo gris son calculadas; el resto se edita con un clic.
+            "Pot. absorbida" es opcional — dejala en blanco si no hay forma de medirla (ej. motor diésel sin instrumentación).
+        </p>
 
-            <div class="seccion-titulo-ensayo">Curva Q–H</div>
-            <div class="grafico-wrap-ensayo">
-                <canvas id="grafico-qh" height="90"></canvas>
-                <div class="leyenda-manual">
-                    <span><i style="background:#1a5490;"></i> Curva de fábrica</span>
-                    <span><i style="background:#d97706; border-top:2px dashed #d97706; height:0;"></i> Ensayo sin ajustar</span>
-                    <span><i style="background:#c41e3a;"></i> Ensayo ajustado a RPM nominal</span>
-                </div>
-            </div>
-
-            <div class="seccion-titulo-ensayo">Criterios NFPA 25 <span class="fw-normal text-body-secondary" style="text-transform:none; letter-spacing:0;">— se actualiza mientras editás</span></div>
-            <div class="table-responsive tabla-ensayo-wrap">
-                <table>
-                    <thead><tr><th>Criterio</th><th>Fórmula</th><th>Valor de ensayo</th><th>Límite</th><th>Estado</th></tr></thead>
-                    <tbody id="cuerpo-validacion"></tbody>
-                </table>
-            </div>
-
-            <div class="seccion-titulo-ensayo">Comentarios</div>
-            <textarea id="comentarios-ensayo" name="comentarios" class="form-control" rows="3"
-                      placeholder="Cualquier observación sobre las condiciones del ensayo — aparece en el PDF">{{ ensayo.comentarios or '' }}</textarea>
-
-            <div class="mt-4 no-imprimir">
-                <button type="submit" class="btn btn-primary">{{ 'Actualizar' if ensayo else 'Guardar' }} ensayo</button>
-                <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-link">Cancelar</a>
+        <div class="seccion-titulo-doc">Curva Q–H</div>
+        <div class="grafico-wrap-doc">
+            <canvas id="grafico-qh" height="110"></canvas>
+            <div class="leyenda-manual-doc">
+                <span><i style="background:#1a5490;"></i> Curva de fábrica</span>
+                <span><i style="background:#d97706; border-top:2px dashed #d97706; height:0;"></i> Ensayo sin ajustar</span>
+                <span><i style="background:#c41e3a;"></i> Ensayo ajustado a RPM nominal</span>
             </div>
         </div>
+
+        <div class="seccion-titulo-doc">Criterios NFPA 25</div>
+        <div class="tabla-doc-scroll">
+        <table class="tabla-doc">
+            <thead><tr><th>Criterio</th><th>Fórmula</th><th>Valor de ensayo</th><th>Límite</th><th>Estado</th></tr></thead>
+            <tbody id="cuerpo-nfpa"></tbody>
+        </table>
+        </div>
+
+        <div class="seccion-titulo-doc">Comentarios</div>
+        <textarea id="comentarios-doc" name="comentarios" placeholder="Cualquier observación sobre las condiciones del ensayo — aparece en el PDF">{{ ensayo.comentarios or '' }}</textarea>
+
+        <div class="seccion-titulo-doc">Validación</div>
+        <div class="validacion-row-doc">
+            <div class="campo-doc">
+                <label>Estado</label>
+                <select disabled>
+                    <option {{ 'selected' if not ensayo or ensayo.estado_revision == 'Pendiente' }}>Pendiente</option>
+                    <option {{ 'selected' if ensayo and ensayo.estado_revision == 'Validado' }}>Validado</option>
+                    <option {{ 'selected' if ensayo and ensayo.estado_revision == 'Rechazado' }}>Rechazado</option>
+                </select>
+            </div>
+            <div class="campo-doc"><label>Validado por</label><input type="text" disabled value="{{ (ensayo.validado_por.nombre_completo or ensayo.validado_por.username) if ensayo and ensayo.validado_por else '—' }}"></div>
+            <div class="campo-doc"><label>Fecha</label><input type="text" disabled value="{{ ensayo.fecha_validacion.strftime('%d/%m/%Y') if ensayo and ensayo.fecha_validacion else '—' }}"></div>
+        </div>
+        <p class="text-muted small mb-0 mt-1">La validación la hace Administrador/Jefe desde la ficha del ensayo, una vez guardado.</p>
+
+        <div class="pie-nota-doc">
+            IPM Manager — Gestión de mantenimiento de sistemas contra incendio en Uruguay. Documento de trabajo:
+            los valores fuera de límite se marcan en rojo automáticamente, pero el criterio final de aprobación
+            queda en Comentarios y Validación, no en un veredicto calculado.
+        </div>
+
+        <div class="mt-4 no-imprimir">
+            <button type="submit" class="btn btn-primary">{{ 'Actualizar' if ensayo else 'Guardar' }} ensayo</button>
+            <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-link">Cancelar</a>
+        </div>
+    </div>
     </form>
+</div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
@@ -351,7 +375,7 @@ function refrescar() {
 function renderNfpa(adjs) {
     const [p0, , p100, p150] = adjs;
     const fab100 = curvaFabrica.presiones[2];
-    const cuerpo = document.getElementById('cuerpo-validacion');
+    const cuerpo = document.getElementById('cuerpo-nfpa');
     if (p0 === null || p100 === null || p150 === null) {
         cuerpo.innerHTML = '<tr><td colspan="5" class="text-muted">Completá RPM, descarga y succión de los 4 puntos para validar.</td></tr>';
         return;
@@ -362,11 +386,11 @@ function renderNfpa(adjs) {
         { d: 'Presión a sobrecarga (150%)', f: 'P@150% (ensayado) ≥ 0.65 × P@100% (ensayado)', v: p150, l: 0.65 * p100, ok: p150 >= 0.65 * p100 },
     ];
     cuerpo.innerHTML = criterios.map(c => `
-        <tr class="${c.ok ? '' : 'fila-no-cumple'}">
+        <tr class="${c.ok ? '' : 'fila-no-cumple-doc'}">
             <td style="text-align:left;">${c.d}</td>
-            <td style="text-align:left; font-size:.76rem; color:var(--bs-secondary-color);">${c.f}</td>
+            <td style="text-align:left; font-size:.76rem; color:var(--tinta-muted-doc);">${c.f}</td>
             <td>${num(c.v, 1)} PSI</td><td>${num(c.l, 1)} PSI</td>
-            <td>${c.ok ? '<span class="chip-nfpa chip-ok">✓ CUMPLE</span>' : '<span class="chip-nfpa chip-no">✗ NO CUMPLE</span>'}</td>
+            <td>${c.ok ? '<span class="chip-doc chip-doc-ok">✓ CUMPLE</span>' : '<span class="chip-doc chip-doc-no">✗ NO CUMPLE</span>'}</td>
         </tr>
     `).join('');
 }
@@ -410,13 +434,16 @@ function marcarSucio() {
 }
 
 document.querySelectorAll('.punto-input').forEach(input => input.addEventListener('input', () => { refrescar(); marcarSucio(); }));
-document.querySelectorAll('#form-ensayo input, #form-ensayo textarea').forEach(el => el.addEventListener('input', marcarSucio));
+document.querySelectorAll('#form-ensayo input:not([disabled]), #form-ensayo textarea').forEach(el => el.addEventListener('input', marcarSucio));
 
 document.getElementById('chk-ft').addEventListener('change', ev => {
-    document.body.classList.toggle('mostrar-ft', ev.target.checked);
+    document.getElementById('hoja').classList.toggle('mostrar-ft', ev.target.checked);
 });
 
-document.getElementById('btn-exportar-pdf').addEventListener('click', () => window.print());
+document.getElementById('btn-pdf').addEventListener('click', () => window.print());
+document.getElementById('btn-descartar').addEventListener('click', () => {
+    if (!sucio || confirm('¿Descartar los cambios sin guardar?')) location.reload();
+});
 
 refrescar();
 </script>
