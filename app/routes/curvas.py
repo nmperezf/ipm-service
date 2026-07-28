@@ -365,13 +365,19 @@ def ensayo_detalle(equipo_id, ensayo_id):
 
     grafico = None
     if equipo.curva_fabrica:
-        caudales = [0, 50, 100, 150]
+        if equipo.caudal_nominal:
+            caudales = [equipo.caudal_nominal * f for f in (0, 0.5, 1, 1.5)]
+            eje_x_label = "Caudal (GPM)"
+        else:
+            caudales = [0, 50, 100, 150]
+            eje_x_label = "Caudal (%)"
         _, presiones_fabrica = equipo.curva_fabrica.puntos()
         xs_fabrica, ys_fabrica = curva_suavizada(caudales, presiones_fabrica)
         xs_ensayo, ys_ensayo = curva_suavizada(caudales, ajustadas)
         xs_sin_ajustar, ys_sin_ajustar = curva_suavizada(caudales, sin_ajustar)
         grafico = {
             "caudales": caudales,
+            "eje_x_label": eje_x_label,
             "fabrica": {"puntos": presiones_fabrica, "suave_x": xs_fabrica, "suave_y": ys_fabrica},
             "ensayo": {"puntos": ajustadas, "suave_x": xs_ensayo, "suave_y": ys_ensayo},
             "sin_ajustar": {"puntos": sin_ajustar, "suave_x": xs_sin_ajustar, "suave_y": ys_sin_ajustar},

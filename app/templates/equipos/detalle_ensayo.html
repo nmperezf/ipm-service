@@ -1,195 +1,243 @@
 {% extends "base.html" %}
 {% block title %}Ensayo {{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }} - {{ equipo.nombre }}{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}">&larr; Ensayos de {{ equipo.nombre }}</a></p>
+{% include "equipos/_estilos_ensayo_doc.html" %}
 
-<div class="d-flex justify-content-between align-items-center mb-2">
-    <h1 class="mb-0">Ensayo del {{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}</h1>
-    <div>
-        {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
-        <a href="{{ url_for('observaciones.nueva', instalacion_id=equipo.instalacion_id, equipo_id=equipo.id) }}" class="btn btn-outline-warning">+ Observación</a>
+<div class="barra-superior-doc no-imprimir">
+    <span class="titulo-barra">🧯 Ensayo del {{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }} — {{ equipo.nombre }}</span>
+    <span class="spacer"></span>
+    <label class="toggle-ft"><input type="checkbox" id="chk-ft"> Mostrar ft head</label>
+    {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+    <a href="{{ url_for('observaciones.nueva', instalacion_id=equipo.instalacion_id, equipo_id=equipo.id) }}" class="btn-doc btn-doc-outline">+ Observación</a>
+    {% endif %}
+    <a href="{{ url_for('curvas.ensayo_pdf', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn-doc btn-doc-primary" target="_blank">⤓ Descargar PDF</a>
+    {% if current_user.rol in ('Administrador', 'Jefe') %}
+    <a href="{{ url_for('curvas.ensayo_editar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn-doc btn-doc-outline">Editar</a>
+    {% endif %}
+</div>
+
+<div class="fondo-doc-wrap">
+<div class="hoja-doc" id="hoja">
+    <div class="encabezado-doc">
+        <div class="marca">
+            <img src="{{ url_for('static', filename='img/logo.png') }}" alt="IPM Manager">
+            <span class="nombre">IPM MANAGER</span>
+        </div>
+        <div>
+            <h1>Ensayo de curva de caudal — NFPA 25</h1>
+        </div>
+    </div>
+    <div class="filete-rojo-doc"></div>
+
+    <div class="cuerpo-doc">
+        {% if resultado is not none %}
+        <div class="banner-doc {{ 'banner-doc-ok' if resultado else 'banner-doc-no' }}">
+            {{ '✓ CUMPLE NFPA 25' if resultado else '✗ NO CUMPLE NFPA 25' }}
+            {% if ensayo.resultado_manual %}<small>(fijado manualmente{% if resultado_automatico is not none and resultado_automatico != resultado %} — el cálculo automático da {{ 'Cumple' if resultado_automatico else 'No cumple' }}{% endif %})</small>{% endif %}
+        </div>
+        {% else %}
+        <div class="banner-doc banner-doc-warn">Este equipo no tiene curva de fábrica cargada, así que no se puede validar contra NFPA 25.</div>
         {% endif %}
-        <a href="{{ url_for('curvas.ensayo_pdf', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn btn-outline-dark" target="_blank">Descargar PDF</a>
+
         {% if current_user.rol in ('Administrador', 'Jefe') %}
-        <a href="{{ url_for('curvas.ensayo_editar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn btn-outline-secondary">Editar</a>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <span class="text-muted small">
+                {% if ensayo.resultado_manual %}
+                Resultado fijado manualmente como "{{ ensayo.resultado_manual }}" — el cálculo automático da {{ 'Cumple' if resultado_automatico else ('No cumple' if resultado_automatico is not none else 'sin curva de fábrica') }}.
+                {% else %}
+                Resultado usando el cálculo automático de los 3 criterios.
+                {% endif %}
+            </span>
+            <div class="d-flex gap-1 no-imprimir">
+                <form method="POST" action="{{ url_for('curvas.ensayo_forzar_resultado', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline">
+                    <input type="hidden" name="resultado" value="Aprobado">
+                    <button type="submit" class="btn btn-sm btn-outline-success" {% if ensayo.resultado_manual == 'Aprobado' %}disabled{% endif %}>Forzar Aprobado</button>
+                </form>
+                <form method="POST" action="{{ url_for('curvas.ensayo_forzar_resultado', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline">
+                    <input type="hidden" name="resultado" value="Rechazado">
+                    <button type="submit" class="btn btn-sm btn-outline-danger" {% if ensayo.resultado_manual == 'Rechazado' %}disabled{% endif %}>Forzar Rechazado</button>
+                </form>
+                {% if ensayo.resultado_manual %}
+                <form method="POST" action="{{ url_for('curvas.ensayo_forzar_resultado', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline">
+                    <input type="hidden" name="resultado" value="Automatico">
+                    <button type="submit" class="btn btn-sm btn-outline-secondary">Volver a cálculo automático</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
         {% endif %}
-    </div>
-</div>
-<p class="text-muted">
-    {{ equipo.nombre }}{% if equipo.modelo %} &middot; Modelo {{ equipo.modelo }}{% endif %}{% if equipo.serie %} &middot; N° serie {{ equipo.serie }}{% endif %}
-    &middot; Cargado por {{ ensayo.creado_por.nombre_completo or ensayo.creado_por.username if ensayo.creado_por else '-' }}
-</p>
 
-{% if resultado is not none %}
-<div class="alert {{ 'alert-success' if resultado else 'alert-danger' }} fw-bold text-center fs-5 mb-2">
-    {{ '✓ CUMPLE NFPA 25' if resultado else '✗ NO CUMPLE NFPA 25' }}
-    {% if ensayo.resultado_manual %}<span class="fs-6 fw-normal d-block">(fijado manualmente{% if resultado_automatico is not none and resultado_automatico != resultado %} — el cálculo automático da {{ 'Cumple' if resultado_automatico else 'No cumple' }}{% endif %})</span>{% endif %}
-</div>
-{% else %}
-<div class="alert alert-warning">Este equipo no tiene curva de fábrica cargada, así que no se puede validar contra NFPA 25.</div>
-{% endif %}
+        <div class="seccion-titulo-doc">Identificación del ensayo</div>
+        <div class="grid-3-doc">
+            <div class="campo-doc"><label>Lugar</label><div class="valor-doc">{{ equipo.instalacion.cliente.nombre }} — {{ equipo.instalacion.nombre }}</div></div>
+            <div class="campo-doc"><label>Modelo</label><div class="valor-doc">{{ equipo.modelo or '-' }}</div></div>
+            <div class="campo-doc"><label>N° de serie</label><div class="valor-doc">{{ equipo.serie or '-' }}</div></div>
+            <div class="campo-doc"><label>Tipo de bomba</label><div class="valor-doc">{{ equipo.tipo_motor or '-' }}{% if equipo.motor_potencia_hp %} · {{ equipo.motor_potencia_hp }} HP{% endif %}</div></div>
+            <div class="campo-doc"><label>Fecha</label><div class="valor-doc">{{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}</div></div>
+            <div class="campo-doc"><label>Inspector</label><div class="valor-doc">{{ (ensayo.creado_por.nombre_completo or ensayo.creado_por.username) if ensayo.creado_por else '-' }}</div></div>
+        </div>
 
-{% if current_user.rol in ('Administrador', 'Jefe') %}
-<div class="card mb-4">
-    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div>
-            <strong>Resultado NFPA 25:</strong>
-            {% if ensayo.resultado_manual %}
-            <span class="text-muted small">fijado manualmente como "{{ ensayo.resultado_manual }}" — el cálculo automático da {{ 'Cumple' if resultado_automatico else ('No cumple' if resultado_automatico is not none else 'sin curva de fábrica') }}.</span>
-            {% else %}
-            <span class="text-muted small">usando el cálculo automático de los 3 criterios.</span>
+        {% if ensayo.temperatura_ambiente is not none or ensayo.presion_atmosferica_mbar is not none or ensayo.presion_succion_estatica is not none or ensayo.normativa_aplicable %}
+        <div class="seccion-titulo-doc">Condiciones de prueba</div>
+        <div class="grid-3-doc">
+            {% if ensayo.temperatura_ambiente is not none %}<div class="campo-doc"><label>Temperatura ambiente</label><div class="valor-doc">{{ ensayo.temperatura_ambiente }} °C</div></div>{% endif %}
+            {% if ensayo.presion_atmosferica_mbar is not none %}<div class="campo-doc"><label>Presión atmosférica</label><div class="valor-doc">{{ ensayo.presion_atmosferica_mbar }} Mbar</div></div>{% endif %}
+            {% if ensayo.presion_succion_estatica is not none %}<div class="campo-doc"><label>Presión succión (estática)</label><div class="valor-doc">{{ ensayo.presion_succion_estatica }} PSI</div></div>{% endif %}
+            {% if ensayo.normativa_aplicable %}<div class="campo-doc" style="grid-column: span 3;"><label>Normativa aplicable</label><div class="valor-doc">{{ ensayo.normativa_aplicable }}</div></div>{% endif %}
+        </div>
+        {% endif %}
+
+        {% if curva %}
+        <div class="seccion-titulo-doc">Curva de fábrica <span style="text-transform:none; font-weight:400; color:var(--tinta-muted-doc); letter-spacing:0;">(referencia) — RPM nominal: <span style="font-weight:700;">{{ curva.rpm_nominal }}</span></span></div>
+        <div class="tabla-doc-scroll">
+        <table class="tabla-doc">
+            <thead>
+                <tr>
+                    <th>Caudal (%)</th><th>Caudal (GPM)</th><th>RPM</th>
+                    <th>Presión neta (PSI)</th><th class="col-ft">Presión neta (ft)</th>
+                    <th>Potencia nominal (kW)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set fabrica_pts = [('0', 0, curva.punto_0_presion, curva.punto_0_potencia_kw), ('50', 0.5, curva.punto_50_presion, curva.punto_50_potencia_kw), ('100', 1, curva.punto_100_presion, curva.punto_100_potencia_kw), ('150', 1.5, curva.punto_150_presion, curva.punto_150_potencia_kw)] %}
+                {% for p, factor, presion, potencia in fabrica_pts %}
+                <tr>
+                    <td>{{ p }}%</td>
+                    <td>{{ (equipo.caudal_nominal * factor)|round(0) if equipo.caudal_nominal else '-' }}</td>
+                    <td>{{ curva.rpm_nominal }}</td>
+                    <td>{{ presion }}</td>
+                    <td class="col-ft">{{ (presion * 2.307)|round(1) }}</td>
+                    <td>{{ potencia if potencia is not none else '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% endif %}
+
+        <div class="seccion-titulo-doc">Ensayo</div>
+        <div class="tabla-doc-scroll">
+        <table class="tabla-doc">
+            <thead>
+                <tr>
+                    <th>Caudal (%)</th><th>Caudal (GPM)</th><th>RPM ensayada</th>
+                    <th>Presión descarga (PSI)</th><th>Presión succión (PSI)</th><th>Presión neta (PSI)</th>
+                    <th>Presión ajustada (PSI)</th><th class="col-ft">Ajustada (ft)</th>
+                    <th>Variación</th><th>Pot. absorbida (kW)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set gpm_pts = ensayo.puntos_gpm() %}
+                {% set potencia_pts = ensayo.puntos_potencia_absorbida() %}
+                {% for p in ['0', '50', '100', '150'] %}
+                {% set i = loop.index0 %}
+                {% set neta = ensayo['presion_neta_punto_' ~ p] %}
+                {% set fab = curva.puntos()[1][i] if curva else none %}
+                {% set adj = ajustadas[i] if ajustadas else none %}
+                {% set variacion = ((adj - fab) / fab * 100) if (adj is not none and fab) else none %}
+                <tr>
+                    <td>{{ p }}%</td>
+                    <td>{{ gpm_pts[i]|round(0) if gpm_pts[i] is not none else '-' }}</td>
+                    <td>{{ ensayo['rpm_punto_' ~ p] }}</td>
+                    <td>{{ ensayo['presion_descarga_punto_' ~ p] }}</td>
+                    <td>{{ ensayo['presion_succion_punto_' ~ p] }}</td>
+                    <td>{{ neta }}</td>
+                    <td>{{ adj if adj is not none else '-' }}</td>
+                    <td class="col-ft">{{ (adj * 2.307)|round(1) if adj is not none else '-' }}</td>
+                    <td>{{ '%+.1f%%'|format(variacion) if variacion is not none else '-' }}</td>
+                    <td>{{ potencia_pts[i] if potencia_pts[i] is not none else 's/d' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+
+        {% if grafico %}
+        <div class="seccion-titulo-doc">Curva Q–H</div>
+        <div class="grafico-wrap-doc">
+            <canvas id="grafico-ensayo" height="110"></canvas>
+            <div class="leyenda-manual-doc">
+                <span><i style="background:#1A2233;"></i> Curva de fábrica</span>
+                <span><i style="background:#B5730A; border-top:2px dashed #B5730A; height:0;"></i> Ensayo sin ajustar</span>
+                <span><i style="background:#E2131D;"></i> Ensayo ajustado a RPM nominal</span>
+            </div>
+        </div>
+        {% endif %}
+
+        {% if validacion %}
+        <div class="seccion-titulo-doc">Criterios NFPA 25</div>
+        <div class="tabla-doc-scroll">
+        <table class="tabla-doc">
+            <thead><tr><th>Criterio</th><th>Fórmula</th><th>Valor de ensayo</th><th>Límite</th><th>Estado</th></tr></thead>
+            <tbody>
+                {% set nombres_criterio = {'criterio_1': 'Presión a caudal 0%', 'criterio_2': 'Presión a caudal nominal (100%)', 'criterio_3': 'Presión a sobrecarga (150%)'} %}
+                {% for clave, criterio in validacion.items() %}
+                <tr class="{{ '' if criterio.paso else 'fila-no-cumple-doc' }}">
+                    <td style="text-align:left;">{{ nombres_criterio.get(clave, clave) }}</td>
+                    <td style="text-align:left; font-size:.76rem; color:var(--tinta-muted-doc);">{{ criterio.descripcion }}</td>
+                    <td>{{ criterio.valor_ensayo }} PSI</td>
+                    <td>{{ criterio.limite }} PSI</td>
+                    <td>
+                        {% if criterio.paso %}<span class="chip-doc chip-doc-ok">✓ CUMPLE</span>
+                        {% else %}<span class="chip-doc chip-doc-no">✗ NO CUMPLE</span>{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        {% endif %}
+
+        {% if ensayo.comentarios %}
+        <div class="seccion-titulo-doc">Comentarios</div>
+        <p style="white-space: pre-wrap;">{{ ensayo.comentarios }}</p>
+        {% endif %}
+
+        <div class="seccion-titulo-doc">Validación</div>
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                {% if ensayo.estado_revision == 'Validado' %}
+                <span class="chip-doc chip-doc-ok">Validado</span>
+                <span class="text-muted small">por {{ ensayo.validado_por.nombre_completo or ensayo.validado_por.username }} el {{ ensayo.fecha_validacion.strftime('%d/%m/%Y') }}</span>
+                {% elif ensayo.estado_revision == 'Rechazado' %}
+                <span class="chip-doc chip-doc-no">Rechazado</span>
+                <span class="text-muted small">por {{ ensayo.validado_por.nombre_completo or ensayo.validado_por.username }} el {{ ensayo.fecha_validacion.strftime('%d/%m/%Y') }}</span>
+                {% else %}
+                <span class="chip-doc" style="background:var(--superficie-muted-doc); color:var(--tinta-muted-doc);">Pendiente de revisión</span>
+                {% endif %}
+            </div>
+            {% if current_user.rol in ('Administrador', 'Jefe') %}
+            <div class="no-imprimir">
+                <form method="POST" action="{{ url_for('curvas.ensayo_validar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-success">Validar</button>
+                </form>
+                <form method="POST" action="{{ url_for('curvas.ensayo_rechazar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Rechazar</button>
+                </form>
+            </div>
             {% endif %}
         </div>
-        <div class="d-flex gap-1">
-            <form method="POST" action="{{ url_for('curvas.ensayo_forzar_resultado', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline">
-                <input type="hidden" name="resultado" value="Aprobado">
-                <button type="submit" class="btn btn-sm btn-outline-success" {% if ensayo.resultado_manual == 'Aprobado' %}disabled{% endif %}>Forzar Aprobado</button>
-            </form>
-            <form method="POST" action="{{ url_for('curvas.ensayo_forzar_resultado', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline">
-                <input type="hidden" name="resultado" value="Rechazado">
-                <button type="submit" class="btn btn-sm btn-outline-danger" {% if ensayo.resultado_manual == 'Rechazado' %}disabled{% endif %}>Forzar Rechazado</button>
-            </form>
-            {% if ensayo.resultado_manual %}
-            <form method="POST" action="{{ url_for('curvas.ensayo_forzar_resultado', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline">
-                <input type="hidden" name="resultado" value="Automatico">
-                <button type="submit" class="btn btn-sm btn-outline-secondary">Volver a cálculo automático</button>
-            </form>
-            {% endif %}
-        </div>
-    </div>
-</div>
-{% endif %}
 
-{% if ensayo.temperatura_ambiente is not none or ensayo.presion_atmosferica_mbar is not none or ensayo.presion_succion_estatica is not none or ensayo.normativa_aplicable %}
-<div class="card mb-4">
-    <div class="card-body">
-        <strong>Condiciones de prueba</strong>
-        <div class="row g-2 mt-1">
-            {% if ensayo.temperatura_ambiente is not none %}<div class="col-md-3"><span class="text-muted small">Temperatura ambiente</span><br>{{ ensayo.temperatura_ambiente }} °C</div>{% endif %}
-            {% if ensayo.presion_atmosferica_mbar is not none %}<div class="col-md-3"><span class="text-muted small">Presión atmosférica</span><br>{{ ensayo.presion_atmosferica_mbar }} Mbar</div>{% endif %}
-            {% if ensayo.presion_succion_estatica is not none %}<div class="col-md-3"><span class="text-muted small">Presión succión (estática)</span><br>{{ ensayo.presion_succion_estatica }} PSI</div>{% endif %}
-            {% if ensayo.normativa_aplicable %}<div class="col-md-3"><span class="text-muted small">Normativa aplicable</span><br>{{ ensayo.normativa_aplicable }}</div>{% endif %}
+        <div class="pie-nota-doc">
+            IPM Manager — Gestión de mantenimiento de sistemas contra incendio en Uruguay. Documento de trabajo:
+            los valores fuera de límite se marcan en rojo automáticamente, pero el criterio final de aprobación
+            queda en Comentarios y Validación, no en un veredicto calculado.
         </div>
-    </div>
-</div>
-{% endif %}
 
-{% if ensayo.comentarios %}
-<div class="card mb-4">
-    <div class="card-body">
-        <strong>Comentarios</strong>
-        <p class="mb-0 mt-1" style="white-space: pre-wrap;">{{ ensayo.comentarios }}</p>
-    </div>
-</div>
-{% endif %}
-
-<div class="card mb-4">
-    <div class="card-body d-flex justify-content-between align-items-center flex-wrap gap-2">
-        <div>
-            <strong>Validación del Jefe/Administrador:</strong>
-            {% if ensayo.estado_revision == 'Validado' %}
-            <span class="badge badge-Cumplido">Validado</span>
-            <span class="text-muted small">por {{ ensayo.validado_por.nombre_completo or ensayo.validado_por.username }} el {{ ensayo.fecha_validacion.strftime('%d/%m/%Y') }}</span>
-            {% elif ensayo.estado_revision == 'Rechazado' %}
-            <span class="badge badge-Vencido">Rechazado</span>
-            <span class="text-muted small">por {{ ensayo.validado_por.nombre_completo or ensayo.validado_por.username }} el {{ ensayo.fecha_validacion.strftime('%d/%m/%Y') }}</span>
-            {% else %}
-            <span class="badge badge-Pendiente">Pendiente de revisión</span>
-            {% endif %}
-        </div>
         {% if current_user.rol in ('Administrador', 'Jefe') %}
-        <div>
-            <form method="POST" action="{{ url_for('curvas.ensayo_validar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-success">Validar</button>
-            </form>
-            <form method="POST" action="{{ url_for('curvas.ensayo_rechazar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline">
-                <button type="submit" class="btn btn-sm btn-outline-danger">Rechazar</button>
-            </form>
-        </div>
+        <form method="POST" action="{{ url_for('curvas.ensayo_eliminar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="form-confirmar-password no-imprimir mt-3" data-sin-bloqueo
+              data-mensaje="¿Eliminar el ensayo del {{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}? Esta acción no se puede deshacer.">
+            <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar ensayo</button>
+        </form>
         {% endif %}
     </div>
 </div>
-
-<h4 class="mt-4">Comparativa</h4>
-<div class="table-responsive">
-<table class="table table-sm data-table">
-    <thead><tr><th>Caudal</th><th>0%</th><th>50%</th><th>100%</th><th>150%</th></tr></thead>
-    <tbody>
-        <tr><td>Caudal (GPM)</td>{% for g in ensayo.puntos_gpm() %}<td>{{ g|round(0) if g is not none else '-' }}</td>{% endfor %}</tr>
-        <tr><td>RPM ensayada</td><td>{{ ensayo.rpm_punto_0 }}</td><td>{{ ensayo.rpm_punto_50 }}</td><td>{{ ensayo.rpm_punto_100 }}</td><td>{{ ensayo.rpm_punto_150 }}</td></tr>
-        <tr><td>Presión descarga (PSI)</td><td>{{ ensayo.presion_descarga_punto_0 }}</td><td>{{ ensayo.presion_descarga_punto_50 }}</td><td>{{ ensayo.presion_descarga_punto_100 }}</td><td>{{ ensayo.presion_descarga_punto_150 }}</td></tr>
-        <tr><td>Presión succión (PSI)</td><td>{{ ensayo.presion_succion_punto_0 }}</td><td>{{ ensayo.presion_succion_punto_50 }}</td><td>{{ ensayo.presion_succion_punto_100 }}</td><td>{{ ensayo.presion_succion_punto_150 }}</td></tr>
-        <tr><td>Presión neta (PSI)</td><td>{{ ensayo.presion_neta_punto_0 }}</td><td>{{ ensayo.presion_neta_punto_50 }}</td><td>{{ ensayo.presion_neta_punto_100 }}</td><td>{{ ensayo.presion_neta_punto_150 }}</td></tr>
-        {% if ajustadas %}
-        <tr class="fw-bold"><td>Presión neta ajustada (PSI)</td><td>{{ ajustadas[0] }}</td><td>{{ ajustadas[1] }}</td><td>{{ ajustadas[2] }}</td><td>{{ ajustadas[3] }}</td></tr>
-        {% endif %}
-        <tr><td>Pot. absorbida (kW)</td>{% for a in ensayo.puntos_potencia_absorbida() %}<td>{{ a if a is not none else 's/d' }}</td>{% endfor %}</tr>
-    </tbody>
-</table>
 </div>
-
-{% if curva %}
-<h5 class="mt-4">Curva de fábrica (referencia)</h5>
-<div class="table-responsive">
-<table class="table table-sm mb-4">
-    <thead><tr><th>Caudal</th><th>0%</th><th>50%</th><th>100%</th><th>150%</th></tr></thead>
-    <tbody>
-        <tr><td>RPM</td><td colspan="4">{{ curva.rpm_nominal }}</td></tr>
-        <tr><td>Presión neta (PSI)</td><td>{{ curva.punto_0_presion }}</td><td>{{ curva.punto_50_presion }}</td><td>{{ curva.punto_100_presion }}</td><td>{{ curva.punto_150_presion }}</td></tr>
-        {% if curva.potencias()|reject('none')|list|length > 0 %}
-        <tr><td>Potencia nominal (kW)</td>{% for p in curva.potencias() %}<td>{{ p if p is not none else '-' }}</td>{% endfor %}</tr>
-        {% endif %}
-    </tbody>
-</table>
-</div>
-{% endif %}
-
-{% if grafico %}
-<h4 class="mt-4">Gráfico: fábrica, ensayo sin ajustar y ensayo ajustado</h4>
-<div class="card mb-4">
-    <div class="card-body">
-        <canvas id="grafico-ensayo" height="110"></canvas>
-    </div>
-</div>
-{% endif %}
-
-{% if validacion %}
-<h4 class="mt-4">Validación NFPA 25</h4>
-<div class="table-responsive">
-<table class="table table-sm mb-4">
-    <thead><tr><th>Criterio</th><th>Valor del ensayo</th><th>Límite</th><th>Resultado</th></tr></thead>
-    <tbody>
-        {% for criterio in validacion.values() %}
-        <tr>
-            <td>{{ criterio.descripcion }}</td>
-            <td>{{ criterio.valor_ensayo }}</td>
-            <td>{{ criterio.limite }}</td>
-            <td class="fw-bold {{ 'text-success' if criterio.paso else 'text-danger' }}">{{ 'APRUEBA' if criterio.paso else 'NO APRUEBA' }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-</div>
-{% endif %}
-
-{% if current_user.rol in ('Administrador', 'Jefe') %}
-<form method="POST" action="{{ url_for('curvas.ensayo_eliminar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="form-confirmar-password" data-sin-bloqueo
-      data-mensaje="¿Eliminar el ensayo del {{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}? Esta acción no se puede deshacer.">
-    <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar ensayo</button>
-</form>
-{% endif %}
 
 {% if grafico %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script>
 const grafico = {{ grafico|tojson }};
-const estilos = getComputedStyle(document.documentElement);
-const colorFabrica = estilos.getPropertyValue('--ink').trim();
-const colorEnsayo = estilos.getPropertyValue('--accent').trim();
-const colorSinAjustar = estilos.getPropertyValue('--bs-warning').trim();
-const colorGrilla = estilos.getPropertyValue('--border').trim();
-Chart.defaults.color = estilos.getPropertyValue('--ink-muted').trim();
-Chart.defaults.borderColor = colorGrilla;
 new Chart(document.getElementById('grafico-ensayo'), {
     type: 'line',
     data: {
@@ -197,68 +245,52 @@ new Chart(document.getElementById('grafico-ensayo'), {
             {
                 label: 'Curva de fábrica',
                 data: grafico.fabrica.suave_x.map(function (x, i) { return { x: x, y: grafico.fabrica.suave_y[i] }; }),
-                borderColor: colorFabrica,
-                backgroundColor: colorFabrica,
-                pointRadius: 0,
-                borderWidth: 2,
+                borderColor: '#1A2233', backgroundColor: '#1A2233', pointRadius: 0, borderWidth: 2,
             },
             {
                 label: 'Fábrica (puntos)',
                 data: grafico.caudales.map(function (c, i) { return { x: c, y: grafico.fabrica.puntos[i] }; }),
-                borderColor: colorFabrica,
-                backgroundColor: colorFabrica,
-                showLine: false,
-                pointRadius: 4,
+                borderColor: '#1A2233', backgroundColor: '#1A2233', showLine: false, pointRadius: 4,
             },
             {
                 label: 'Ensayo (ajustado a RPM nominal)',
                 data: grafico.ensayo.suave_x.map(function (x, i) { return { x: x, y: grafico.ensayo.suave_y[i] }; }),
-                borderColor: colorEnsayo,
-                backgroundColor: colorEnsayo,
-                pointRadius: 0,
-                borderWidth: 2,
+                borderColor: '#E2131D', backgroundColor: '#E2131D', pointRadius: 0, borderWidth: 2,
             },
             {
                 label: 'Ensayo (puntos)',
                 data: grafico.caudales.map(function (c, i) { return { x: c, y: grafico.ensayo.puntos[i] }; }),
-                borderColor: colorEnsayo,
-                backgroundColor: colorEnsayo,
-                showLine: false,
-                pointRadius: 4,
+                borderColor: '#E2131D', backgroundColor: '#E2131D', showLine: false, pointRadius: 4,
             },
             {
                 label: 'Ensayo (sin ajustar)',
                 data: grafico.sin_ajustar.suave_x.map(function (x, i) { return { x: x, y: grafico.sin_ajustar.suave_y[i] }; }),
-                borderColor: colorSinAjustar,
-                backgroundColor: colorSinAjustar,
-                pointRadius: 0,
-                borderWidth: 2,
-                borderDash: [6, 4],
+                borderColor: '#B5730A', backgroundColor: '#B5730A', pointRadius: 0, borderWidth: 2, borderDash: [6, 4],
             },
             {
                 label: 'Ensayo sin ajustar (puntos)',
                 data: grafico.caudales.map(function (c, i) { return { x: c, y: grafico.sin_ajustar.puntos[i] }; }),
-                borderColor: colorSinAjustar,
-                backgroundColor: colorSinAjustar,
-                showLine: false,
-                pointRadius: 4,
-                pointStyle: 'triangle',
+                borderColor: '#B5730A', backgroundColor: '#B5730A', showLine: false, pointRadius: 4, pointStyle: 'triangle',
             },
         ],
     },
     options: {
         parsing: false,
-        scales: {
-            x: { type: 'linear', title: { display: true, text: 'Caudal (%)' }, ticks: { stepSize: 50 } },
-            y: { title: { display: true, text: 'Presión neta (PSI)' } },
-        },
         plugins: {
-            legend: {
-                labels: { filter: function (item) { return item.text.indexOf('(puntos)') === -1; } },
-            },
+            legend: { display: false },
+        },
+        scales: {
+            x: { type: 'linear', title: { display: true, text: grafico.eje_x_label } },
+            y: { title: { display: true, text: 'Presión neta (PSI)' } },
         },
     },
 });
 </script>
 {% endif %}
+
+<script>
+document.getElementById('chk-ft').addEventListener('change', ev => {
+    document.getElementById('hoja').classList.toggle('mostrar-ft', ev.target.checked);
+});
+</script>
 {% endblock %}
