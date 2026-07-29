@@ -1,149 +1,159 @@
 {% extends "base.html" %}
 {% block title %}{{ instalacion.nombre }}{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('clientes.detalle', cliente_id=instalacion.cliente_id) }}">&larr; {{ instalacion.cliente.nombre }}</a></p>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>{{ instalacion.nombre }}</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>{{ instalacion.nombre }}</h1>
-    <div>
-        <a href="{{ url_for('instalaciones.editar', instalacion_id=instalacion.id) }}" class="btn btn-outline-secondary">Editar</a>
-        <a href="{{ url_for('historial.ver', instalacion_id=instalacion.id) }}" class="btn btn-outline-dark">Histórico técnico</a>
-        <a href="{{ url_for('observaciones.nueva', instalacion_id=instalacion.id) }}" class="btn btn-outline-warning">+ Observación</a>
-        <a href="{{ url_for('equipos.nuevo', instalacion_id=instalacion.id) }}" class="btn btn-outline-info">+ Equipo</a>
-        <a href="{{ url_for('instalaciones.informacion', instalacion_id=instalacion.id) }}" class="btn btn-outline-info">Información de instalación</a>
-        <a href="{{ url_for('contratos.nuevo', instalacion_id=instalacion.id) }}" class="btn btn-outline-primary">+ Contrato</a>
-        <a href="{{ url_for('visitas.nueva', instalacion_id=instalacion.id) }}" class="btn btn-primary">+ Visita manual</a>
+            <p class="mb-1"><a href="{{ url_for('clientes.detalle', cliente_id=instalacion.cliente_id) }}">&larr; {{ instalacion.cliente.nombre }}</a></p>
+
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+                <p class="text-muted mb-0">{{ instalacion.direccion or '' }}</p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('instalaciones.editar', instalacion_id=instalacion.id) }}" class="btn btn-outline-secondary btn-sm">Editar</a>
+                    <a href="{{ url_for('historial.ver', instalacion_id=instalacion.id) }}" class="btn btn-outline-dark btn-sm">Histórico técnico</a>
+                    <a href="{{ url_for('observaciones.nueva', instalacion_id=instalacion.id) }}" class="btn btn-outline-warning btn-sm">+ Observación</a>
+                    <a href="{{ url_for('equipos.nuevo', instalacion_id=instalacion.id) }}" class="btn btn-outline-info btn-sm">+ Equipo</a>
+                    <a href="{{ url_for('instalaciones.informacion', instalacion_id=instalacion.id) }}" class="btn btn-outline-info btn-sm">Información de instalación</a>
+                    <a href="{{ url_for('contratos.nuevo', instalacion_id=instalacion.id) }}" class="btn btn-outline-primary btn-sm">+ Contrato</a>
+                    <a href="{{ url_for('visitas.nueva', instalacion_id=instalacion.id) }}" class="btn btn-dark btn-sm">+ Visita manual</a>
+                </div>
+            </div>
+
+            {% set abiertas = instalacion.deficiencias|selectattr('resuelto', 'equalto', false)|list %}
+            {% if abiertas %}
+            <div class="seccion-titulo-doc">Observaciones abiertas</div>
+            <div class="table-responsive">
+            <table class="table table-sm data-table">
+                <thead><tr><th>Fecha</th><th>Clasificación</th><th>Descripción</th><th>Revisión</th><th></th></tr></thead>
+                <tbody>
+                    {% for obs in abiertas %}
+                    <tr>
+                        <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+                        <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+                        <td>{{ obs.descripcion }}</td>
+                        <td>
+                            {% if obs.estado_revision == 'Aprobada' %}<span class="badge badge-Cumplido">Aprobada</span>
+                            {% else %}<span class="badge badge-Pendiente">Pendiente de revisión</span>{% endif %}
+                        </td>
+                        <td>
+                            <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>
+                            </form>
+                            {% if obs.estado_revision != 'Aprobada' %}
+                            <a href="{{ url_for('observaciones.editar', observacion_id=obs.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            {% if current_user.rol in ('Administrador', 'Jefe') %}
+                            <form method="POST" action="{{ url_for('observaciones.aprobar', observacion_id=obs.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Aprobar</button>
+                            </form>
+                            {% endif %}
+                            {% endif %}
+                            {% if current_user.rol in ('Administrador', 'Jefe') %}
+                            <form method="POST" action="{{ url_for('observaciones.eliminar', observacion_id=obs.id) }}" class="d-inline"
+                                  onsubmit="return confirm('¿Eliminar esta observación? No se puede deshacer.');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
+
+            <div class="seccion-titulo-doc">Equipos</div>
+            {% set manifolds = instalacion.equipos|selectattr('tipo', 'equalto', 'Manifold')|list %}
+            {% set eca_sueltos = instalacion.equipos|selectattr('tipo', 'equalto', 'ECA')|selectattr('manifold_id', 'equalto', none)|list %}
+            {% set otros_equipos = instalacion.equipos|rejectattr('tipo', 'in', ['Manifold', 'ECA'])|list %}
+            {% if instalacion.equipos %}
+            <ul class="list-group mb-3">
+                {% for m in manifolds %}
+                <li class="list-group-item">
+                    <div class="d-flex justify-content-between">
+                        <strong><i class="bi bi-diagram-3"></i> {{ m.nombre }} <span class="badge bg-secondary">Manifold</span></strong>
+                        <a href="{{ url_for('equipos.editar', equipo_id=m.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                    </div>
+                    {% if m.equipos_hijos %}
+                    <ul class="mt-2 mb-0">
+                        {% for r in m.equipos_hijos %}
+                        <li class="d-flex justify-content-between align-items-center">
+                            <span>{{ r.nombre }} <small class="text-muted">{{ r.ubicacion or '' }}</small></span>
+                            <a href="{{ url_for('equipos.editar', equipo_id=r.id) }}" class="btn btn-sm btn-link">Editar</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p class="text-muted small mb-0 mt-2">Sin ECA asignados a este manifold todavía.</p>
+                    {% endif %}
+                </li>
+                {% endfor %}
+                {% for r in eca_sueltos %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>{{ r.nombre }} <span class="badge bg-secondary">ECA suelto</span> <small class="text-muted">{{ r.ubicacion or '' }}</small></span>
+                    <a href="{{ url_for('equipos.editar', equipo_id=r.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                </li>
+                {% endfor %}
+                {% for e in otros_equipos %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>{{ e.nombre }} <span class="badge bg-secondary">{{ e.tipo }}</span> <small class="text-muted">{{ e.ubicacion or '' }}</small></span>
+                    <a href="{{ url_for('equipos.editar', equipo_id=e.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <p class="text-muted">Todavía no se cargaron equipos (ECA, manifolds, bombas) en esta instalación.</p>
+            {% endif %}
+
+            <div class="seccion-titulo-doc">Contratos</div>
+            <div class="table-responsive">
+            <table class="table table-sm data-table">
+                <thead><tr><th>Contrato</th><th>Vigencia</th><th>Servicios</th><th>Estado</th><th></th></tr></thead>
+                <tbody>
+                    {% for contrato in contratos %}
+                    <tr>
+                        <td><a href="{{ url_for('contratos.detalle', contrato_id=contrato.id) }}">{{ contrato.nombre }}</a></td>
+                        <td>{{ contrato.fecha_inicio.strftime('%m/%Y') }} - {{ contrato.fecha_fin.strftime('%m/%Y') }}</td>
+                        <td>{{ contrato.servicios|length }}</td>
+                        <td><span class="badge badge-{{ contrato.estado.replace(' ', '.') }}">{{ contrato.estado }}</span></td>
+                        <td><a href="{{ url_for('contratos.editar', contrato_id=contrato.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-muted text-center py-3">Sin contratos cargados todavía.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+            <div class="seccion-titulo-doc">Historial de visitas</div>
+            <div class="table-responsive">
+            <table class="table table-sm data-table tabla-col-fija">
+                <thead><tr><th>Fecha</th><th>Técnico</th><th>Servicios incluidos</th><th>Estado</th><th></th></tr></thead>
+                <tbody>
+                    {% for visita in visitas %}
+                    <tr>
+                        <td>{{ visita.fecha.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ visita.nombre_tecnico }}</td>
+                        <td>{{ visita.items|map(attribute='servicio.nombre')|join(', ') if visita.items else '-' }}</td>
+                        <td><span class="badge badge-{{ visita.estado.replace(' ', '.') }}">{{ visita.estado }}</span></td>
+                        <td><a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-muted text-center py-3">Todavía no se registraron visitas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+            <form method="POST" action="{{ url_for('instalaciones.eliminar', instalacion_id=instalacion.id) }}" class="mt-4 form-confirmar-password" data-sin-bloqueo
+                  data-mensaje="¿Eliminar '{{ instalacion.nombre }}'? Se borran también sus contratos, visitas y equipos. Esta acción no se puede deshacer.">
+                <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar instalación</button>
+            </form>
+
+        </div>
     </div>
 </div>
-<p class="text-muted">{{ instalacion.direccion or '' }}</p>
-
-{% set abiertas = instalacion.deficiencias|selectattr('resuelto', 'equalto', false)|list %}
-{% if abiertas %}
-<h4 class="mt-4">Observaciones abiertas</h4>
-<div class="table-responsive">
-<table class="table table-sm data-table">
-    <thead><tr><th>Fecha</th><th>Clasificación</th><th>Descripción</th><th>Revisión</th><th></th></tr></thead>
-    <tbody>
-        {% for obs in abiertas %}
-        <tr>
-            <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
-            <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
-            <td>{{ obs.descripcion }}</td>
-            <td>
-                {% if obs.estado_revision == 'Aprobada' %}<span class="badge badge-Cumplido">Aprobada</span>
-                {% else %}<span class="badge badge-Pendiente">Pendiente de revisión</span>{% endif %}
-            </td>
-            <td>
-                <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}" class="d-inline">
-                    <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>
-                </form>
-                {% if obs.estado_revision != 'Aprobada' %}
-                <a href="{{ url_for('observaciones.editar', observacion_id=obs.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-                {% if current_user.rol in ('Administrador', 'Jefe') %}
-                <form method="POST" action="{{ url_for('observaciones.aprobar', observacion_id=obs.id) }}" class="d-inline">
-                    <button type="submit" class="btn btn-sm btn-outline-primary">Aprobar</button>
-                </form>
-                {% endif %}
-                {% endif %}
-                {% if current_user.rol in ('Administrador', 'Jefe') %}
-                <form method="POST" action="{{ url_for('observaciones.eliminar', observacion_id=obs.id) }}" class="d-inline"
-                      onsubmit="return confirm('¿Eliminar esta observación? No se puede deshacer.');">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-                </form>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-</div>
-{% endif %}
-
-<h4 class="mt-4">Equipos</h4>
-{% set manifolds = instalacion.equipos|selectattr('tipo', 'equalto', 'Manifold')|list %}
-{% set eca_sueltos = instalacion.equipos|selectattr('tipo', 'equalto', 'ECA')|selectattr('manifold_id', 'equalto', none)|list %}
-{% set otros_equipos = instalacion.equipos|rejectattr('tipo', 'in', ['Manifold', 'ECA'])|list %}
-{% if instalacion.equipos %}
-<ul class="list-group mb-3">
-    {% for m in manifolds %}
-    <li class="list-group-item">
-        <div class="d-flex justify-content-between">
-            <strong><i class="bi bi-diagram-3"></i> {{ m.nombre }} <span class="badge bg-secondary">Manifold</span></strong>
-            <a href="{{ url_for('equipos.editar', equipo_id=m.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-        </div>
-        {% if m.equipos_hijos %}
-        <ul class="mt-2 mb-0">
-            {% for r in m.equipos_hijos %}
-            <li class="d-flex justify-content-between align-items-center">
-                <span>{{ r.nombre }} <small class="text-muted">{{ r.ubicacion or '' }}</small></span>
-                <a href="{{ url_for('equipos.editar', equipo_id=r.id) }}" class="btn btn-sm btn-link">Editar</a>
-            </li>
-            {% endfor %}
-        </ul>
-        {% else %}
-        <p class="text-muted small mb-0 mt-2">Sin ECA asignados a este manifold todavía.</p>
-        {% endif %}
-    </li>
-    {% endfor %}
-    {% for r in eca_sueltos %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        <span>{{ r.nombre }} <span class="badge bg-secondary">ECA suelto</span> <small class="text-muted">{{ r.ubicacion or '' }}</small></span>
-        <a href="{{ url_for('equipos.editar', equipo_id=r.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-    </li>
-    {% endfor %}
-    {% for e in otros_equipos %}
-    <li class="list-group-item d-flex justify-content-between align-items-center">
-        <span>{{ e.nombre }} <span class="badge bg-secondary">{{ e.tipo }}</span> <small class="text-muted">{{ e.ubicacion or '' }}</small></span>
-        <a href="{{ url_for('equipos.editar', equipo_id=e.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-    </li>
-    {% endfor %}
-</ul>
-{% else %}
-<p class="text-muted">Todavía no se cargaron equipos (ECA, manifolds, bombas) en esta instalación.</p>
-{% endif %}
-
-<h4 class="mt-4">Contratos</h4>
-<div class="table-responsive">
-<table class="table table-sm data-table">
-    <thead><tr><th>Contrato</th><th>Vigencia</th><th>Servicios</th><th>Estado</th><th></th></tr></thead>
-    <tbody>
-        {% for contrato in contratos %}
-        <tr>
-            <td><a href="{{ url_for('contratos.detalle', contrato_id=contrato.id) }}">{{ contrato.nombre }}</a></td>
-            <td>{{ contrato.fecha_inicio.strftime('%m/%Y') }} - {{ contrato.fecha_fin.strftime('%m/%Y') }}</td>
-            <td>{{ contrato.servicios|length }}</td>
-            <td><span class="badge badge-{{ contrato.estado.replace(' ', '.') }}">{{ contrato.estado }}</span></td>
-            <td><a href="{{ url_for('contratos.editar', contrato_id=contrato.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a></td>
-        </tr>
-        {% else %}
-        <tr><td colspan="5" class="text-muted text-center py-3">Sin contratos cargados todavía.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-</div>
-
-<h4 class="mt-4">Historial de visitas</h4>
-<div class="table-responsive">
-<table class="table table-sm data-table tabla-col-fija">
-    <thead><tr><th>Fecha</th><th>Técnico</th><th>Servicios incluidos</th><th>Estado</th><th></th></tr></thead>
-    <tbody>
-        {% for visita in visitas %}
-        <tr>
-            <td>{{ visita.fecha.strftime('%d/%m/%Y') }}</td>
-            <td>{{ visita.nombre_tecnico }}</td>
-            <td>{{ visita.items|map(attribute='servicio.nombre')|join(', ') if visita.items else '-' }}</td>
-            <td><span class="badge badge-{{ visita.estado.replace(' ', '.') }}">{{ visita.estado }}</span></td>
-            <td><a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a></td>
-        </tr>
-        {% else %}
-        <tr><td colspan="5" class="text-muted text-center py-3">Todavía no se registraron visitas.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-</div>
-
-<form method="POST" action="{{ url_for('instalaciones.eliminar', instalacion_id=instalacion.id) }}" class="mt-4 form-confirmar-password" data-sin-bloqueo
-      data-mensaje="¿Eliminar '{{ instalacion.nombre }}'? Se borran también sus contratos, visitas y equipos. Esta acción no se puede deshacer.">
-    <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar instalación</button>
-</form>
 {% endblock %}
