@@ -50,13 +50,10 @@ html[data-bs-theme="dark"] {
 .hoja-doc { max-width: 1040px; margin: 0 auto; background: var(--superficie-doc); border-radius: .6rem;
     box-shadow: 0 4px 22px rgba(20,30,45,.12); overflow: hidden; color: var(--tinta-doc); }
 
-.encabezado-doc { background: var(--azul-oscuro); color: #fff; padding: 1.1rem 1.6rem; display: flex;
-    align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap; }
-.encabezado-doc .marca { display: flex; align-items: center; gap: .6rem; }
-.encabezado-doc .marca img { height: 30px; width: auto; }
-.encabezado-doc h1 { margin: 0; font-size: 1.25rem; font-weight: 700; text-align: right; color: #fff; }
-.encabezado-doc .sub { font-size: .74rem; opacity: .85; text-align: right; margin-top: .15rem; }
-.filete-rojo-doc { height: 3px; background: var(--rojo); }
+.encabezado-doc { background: var(--azul-oscuro); color: #fff; font-size: .74rem; text-transform: uppercase;
+    letter-spacing: .06em; font-weight: 700; padding: .55rem 1.6rem .5rem; border-bottom: 3px solid var(--rojo); }
+.encabezado-doc h1 { margin: 0; font: inherit; color: inherit; }
+.encabezado-doc .sub { font-size: .74rem; opacity: .85; text-transform: none; letter-spacing: normal; }
 
 .cuerpo-doc { padding: 1.5rem 1.6rem 2.2rem; }
 .seccion-titulo-doc {

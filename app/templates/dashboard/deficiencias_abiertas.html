@@ -4,12 +4,8 @@
 <div class="fondo-doc-wrap">
     <div class="hoja-doc">
         <div class="encabezado-doc">
-            <div class="marca">
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="">
-            </div>
             <h1>Deficiencias abiertas</h1>
         </div>
-        <div class="filete-rojo-doc"></div>
         <div class="cuerpo-doc">
             <p class="text-muted mb-3"><a href="{{ url_for('dashboard.inicio') }}">&larr; Volver al Inicio</a> — {{ deficiencias|length }} observación{{ 'es' if deficiencias|length != 1 else '' }} sin resolver.</p>
 

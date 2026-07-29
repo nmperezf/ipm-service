@@ -870,18 +870,16 @@ html[data-bs-theme="dark"] .hoja-doc { box-shadow: 0 4px 22px rgba(0,0,0,.35); }
 .encabezado-doc {
     background: #000;
     color: #fff;
-    padding: 1.1rem 1.6rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    flex-wrap: wrap;
+    font-family: var(--font-display);
+    font-size: .74rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    font-weight: 700;
+    padding: .55rem 1.6rem .5rem;
+    border-bottom: 3px solid var(--accent);
 }
-.encabezado-doc .marca { display: flex; align-items: center; gap: .6rem; }
-.encabezado-doc .marca img { height: 28px; width: auto; }
-.encabezado-doc h1 { margin: 0; font-size: 1.2rem; font-weight: 700; color: #fff; }
-.encabezado-doc .sub { font-size: .78rem; color: rgba(255,255,255,.7); }
-.filete-rojo-doc { height: 3px; background: var(--accent); }
+.encabezado-doc h1 { margin: 0; font: inherit; color: inherit; }
+.encabezado-doc .sub { font-size: .78rem; color: rgba(255,255,255,.7); text-transform: none; letter-spacing: normal; }
 
 .cuerpo-doc { padding: 1.5rem 1.6rem 2rem; }
 
