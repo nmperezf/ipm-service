@@ -100,6 +100,17 @@ PRIORIDADES_OT = ["Baja", "Media", "Alta", "Urgente"]
 # a mano desde TipoEquipo y no estén en esta lista van al final, alfabético.
 CATEGORIAS_EQUIPO_ORDEN = ["Sala de bombas", "Estaciones de control y alarma", "Bocas de incendio", "Otros equipos"]
 
+# Tipos de equipo de sala de bombas que son la bomba principal del sistema
+# (electro u motobomba) — los únicos que llevan ensayo de curva de caudal
+# NFPA 25 (anual). La bomba jockey y la reserva de agua quedan afuera: no
+# son la bomba principal, no llevan ese ensayo.
+TIPOS_BOMBA_PRINCIPAL = ("Bomba", "Electrobomba", "Motobomba")
+
+# Tipos que además muestran/guardan datos de placa y de motor en la ficha
+# del equipo — los mismos de arriba más la bomba jockey (tiene motor propio
+# aunque no lleve curva de caudal).
+TIPOS_CON_DATOS_PLACA = TIPOS_BOMBA_PRINCIPAL + ("Bomba jockey",)
+
 ESTADOS_CANERIA = [
     "Buen estado",
     "Corrosión superficial",
@@ -830,9 +841,9 @@ class Equipo(db.Model):
     manifold_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True)
     activo = db.Column(db.Boolean, default=True, nullable=False)
 
-    # Datos de placa, solo aplican cuando tipo == "Bomba" (ver módulo de
-    # curva de caudal). Quedan nullable porque no tienen sentido para el
-    # resto de los tipos de equipo.
+    # Datos de placa, solo aplican para tipo in TIPOS_CON_DATOS_PLACA (ver
+    # módulo de curva de caudal). Quedan nullable porque no tienen sentido
+    # para el resto de los tipos de equipo.
     modelo = db.Column(db.String(150), nullable=True)
     serie = db.Column(db.String(150), nullable=True)
     caudal_nominal = db.Column(db.Float, nullable=True)  # GPM
@@ -841,9 +852,9 @@ class Equipo(db.Model):
     anio_fabricacion = db.Column(db.Integer, nullable=True)
     otros_datos_placa = db.Column(db.Text, nullable=True)
 
-    # Datos de motor, también solo para tipo == "Bomba". Campos fijos en vez
-    # de un formulario dinámico: son bastante estándar en la industria
-    # (NFPA 20), así que no hace falta que cada cliente los redefina.
+    # Datos de motor, también solo para tipo in TIPOS_CON_DATOS_PLACA. Campos
+    # fijos en vez de un formulario dinámico: son bastante estándar en la
+    # industria (NFPA 20), así que no hace falta que cada cliente los redefina.
     tipo_motor = db.Column(db.String(20), nullable=True)  # "Eléctrico" / "Diesel"
     motor_potencia_hp = db.Column(db.Float, nullable=True)  # común a los dos tipos
     # Solo si tipo_motor == "Eléctrico"

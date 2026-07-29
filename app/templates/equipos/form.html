@@ -47,7 +47,7 @@
 
                 <div id="bomba-wrapper" class="card mb-3">
                     <div class="card-body">
-                        <h6 class="text-muted">Datos de placa (para curva de caudal / NFPA 25)</h6>
+                        <h6 class="text-muted">Datos de placa (curva de caudal / NFPA 25 solo para Bomba, Electrobomba y Motobomba)</h6>
                         <div class="row">
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">Modelo</label>
@@ -157,10 +157,12 @@
     </div>
 </div>
 <script>
+const TIPOS_CON_DATOS_PLACA = ['Bomba', 'Electrobomba', 'Motobomba', 'Bomba jockey'];
+
 function toggleManifold() {
     const tipo = document.getElementById('tipo').value;
     document.getElementById('manifold-wrapper').style.display = (tipo === 'ECA') ? 'block' : 'none';
-    document.getElementById('bomba-wrapper').style.display = (tipo === 'Bomba') ? 'block' : 'none';
+    document.getElementById('bomba-wrapper').style.display = TIPOS_CON_DATOS_PLACA.includes(tipo) ? 'block' : 'none';
 }
 
 function toggleMotor() {

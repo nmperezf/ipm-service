@@ -10,7 +10,7 @@ from app.auth_utils import (
     verificar_escritura_cliente,
     verificar_password_confirmacion,
 )
-from app.models import CurvaFabrica, EnsayoCaudal, Equipo
+from app.models import TIPOS_BOMBA_PRINCIPAL, CurvaFabrica, EnsayoCaudal, Equipo
 from app.notificaciones import notificar_gestion, notificar_usuario
 from app.pdf_curva_caudal import generar_pdf_ensayo
 from app.utils import calcular_presion_ajustada, curva_suavizada, validar_nfpa25
@@ -21,7 +21,7 @@ PUNTOS = ["0", "50", "100", "150"]
 
 
 def _verificar_es_bomba(equipo):
-    if equipo.tipo != "Bomba":
+    if equipo.tipo not in TIPOS_BOMBA_PRINCIPAL:
         abort(404)
 
 

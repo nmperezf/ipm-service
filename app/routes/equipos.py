@@ -8,7 +8,7 @@ from app.auth_utils import (
     verificar_escritura_cliente,
     verificar_password_confirmacion,
 )
-from app.models import Equipo, Formulario, Instalacion, nombres_tipos_equipo
+from app.models import Equipo, Formulario, Instalacion, TIPOS_BOMBA_PRINCIPAL, TIPOS_CON_DATOS_PLACA, nombres_tipos_equipo
 from app.notificaciones import notificar_gestion
 from app.utils import construir_secciones_historico
 
@@ -16,10 +16,11 @@ equipos_bp = Blueprint("equipos", __name__, url_prefix="/equipos")
 
 
 def _aplicar_datos_bomba(equipo, form):
-    """Campos de placa y de motor, que solo se completan cuando
-    tipo == 'Bomba' — se guardan igual si vienen en el form (el toggle es
-    solo visual), pero quedan en None para cualquier otro tipo de equipo."""
-    if form.get("tipo") != "Bomba":
+    """Campos de placa y de motor, que solo se completan para los tipos en
+    TIPOS_CON_DATOS_PLACA — se guardan igual si vienen en el form (el
+    toggle es solo visual), pero quedan en None para cualquier otro tipo
+    de equipo."""
+    if form.get("tipo") not in TIPOS_CON_DATOS_PLACA:
         equipo.modelo = None
         equipo.serie = None
         equipo.caudal_nominal = None
@@ -184,7 +185,7 @@ def detalle(equipo_id):
     deficiencias_resueltas = [o for o in equipo.deficiencias if o.resuelto]
 
     ultimos_ensayos = []
-    if equipo.tipo == "Bomba":
+    if equipo.tipo in TIPOS_BOMBA_PRINCIPAL:
         ultimos_ensayos = sorted(equipo.ensayos_caudal, key=lambda e: e.fecha_ensayo, reverse=True)[:3]
 
     return render_template(

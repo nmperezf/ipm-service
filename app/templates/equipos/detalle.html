@@ -22,7 +22,7 @@
                 </div>
             </div>
 
-            {% if equipo.tipo == 'Bomba' %}
+            {% if equipo.tipo in ('Bomba', 'Electrobomba', 'Motobomba') %}
             <div class="seccion-titulo-doc">Curva de caudal</div>
             <div class="card mb-3">
                 <div class="card-body">

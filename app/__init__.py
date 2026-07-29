@@ -135,6 +135,10 @@ def _seed_tipos_equipo():
         ("ECA", "Estaciones de control y alarma"),
         ("Manifold", "Estaciones de control y alarma"),
         ("Bomba", "Sala de bombas"),
+        ("Electrobomba", "Sala de bombas"),
+        ("Motobomba", "Sala de bombas"),
+        ("Bomba jockey", "Sala de bombas"),
+        ("Reserva de agua", "Sala de bombas"),
         ("BIE", "Bocas de incendio"),
         ("Otro", "Otros equipos"),
     ]

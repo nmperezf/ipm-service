@@ -4,7 +4,7 @@ from flask import Blueprint, abort, render_template
 from flask_login import current_user
 
 from app.auth_utils import rol_requerido
-from app.models import CLASIFICACIONES_OBSERVACION, Equipo, Visita, categorias_equipo_agrupadas
+from app.models import CLASIFICACIONES_OBSERVACION, TIPOS_BOMBA_PRINCIPAL, Equipo, Visita, categorias_equipo_agrupadas
 from app.utils import checklists_aprobados_de_equipo, construir_secciones_historico
 
 portal_bp = Blueprint("portal", __name__, url_prefix="/portal")
@@ -232,7 +232,7 @@ def equipo_detalle(equipo_id):
     ]
 
     ultimos_ensayos = []
-    if equipo.tipo == "Bomba":
+    if equipo.tipo in TIPOS_BOMBA_PRINCIPAL:
         validados = [e for e in equipo.ensayos_caudal if e.estado_revision == "Validado"]
         ultimos_ensayos = sorted(validados, key=lambda e: e.fecha_ensayo, reverse=True)[:3]
 
