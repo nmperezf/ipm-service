@@ -489,7 +489,7 @@ small, .small, .text-muted {
 
 .badge-Pendiente { background: #EEF1F4; color: #5B6673; }
 .badge-Programado { background: #EAF1FA; color: #1A2233; }
-.badge-En.proceso, .badge-En\ proceso { background: #FDF2E3; color: #A8630A; }
+.badge-En\.proceso, .badge-En\ proceso { background: #FDF2E3; color: #A8630A; }
 .badge-Realizado, .badge-Cumplido { background: #E5F4EC; color: #1F8A54; }
 .badge-Vencido { background: #FBEAE7; color: #E2131D; }
 .badge-Cancelado { background: #F1F2F4; color: #7A828C; }
@@ -814,7 +814,7 @@ html[data-bs-theme="dark"] .calendario-dia.fuera-de-mes {
 
 html[data-bs-theme="dark"] .badge-Pendiente { background: #232B3B; color: #9AA3B2; }
 html[data-bs-theme="dark"] .badge-Programado { background: #18233A; color: #8FB3E8; }
-html[data-bs-theme="dark"] .badge-En.proceso,
+html[data-bs-theme="dark"] .badge-En\.proceso,
 html[data-bs-theme="dark"] .badge-En\ proceso { background: #3A2A0E; color: #F0A93E; }
 html[data-bs-theme="dark"] .badge-Realizado,
 html[data-bs-theme="dark"] .badge-Cumplido { background: #123324; color: #4ADE96; }
@@ -1085,3 +1085,24 @@ html[data-bs-theme="dark"] .desglose-clasif .mini-chip { background: rgba(255,25
 .chips-deficiencias-doc .mini-chip.no-critica { background: var(--warn-soft); color: var(--bs-warning); }
 .chips-deficiencias-doc .mini-chip.desactivacion { background: var(--info-soft); color: var(--bs-info); }
 .chips-deficiencias-doc .mini-chip.sin-novedad { background: var(--ok-soft); color: var(--bs-success); }
+
+/* ---- Órdenes de trabajo: lista (buscador, resumen, prioridad) ------------ */
+
+/* Separación entre filas más suave que el borde estándar de .table */
+.ot-tabla-lista tbody td { border-bottom-color: rgba(26,34,51,.07); }
+html[data-bs-theme="dark"] .ot-tabla-lista tbody td { border-bottom-color: rgba(255,255,255,.065); }
+
+.ot-fila-urgente { box-shadow: inset 3px 0 0 var(--accent); }
+.ot-fila-urgente.alta { box-shadow: inset 3px 0 0 var(--bs-warning); }
+
+.ot-tecnico-sin-asignar { color: var(--bs-warning); font-weight: 600; font-size: .84rem; }
+
+.ot-fecha-apertura { display: flex; flex-direction: column; gap: .1rem; }
+.ot-dias { font-size: .72rem; color: var(--ink-muted); }
+.ot-dias.flag { color: var(--bs-warning); font-weight: 600; }
+
+.enlace-cliente-ot { color: var(--ink-muted); text-decoration: none; transition: color .15s ease; }
+.enlace-cliente-ot:hover { color: var(--ink); }
+
+.ot-link-numero { color: var(--ink); font-weight: 700; text-decoration: none; transition: color .15s ease; }
+.ot-link-numero:hover { color: var(--accent); }

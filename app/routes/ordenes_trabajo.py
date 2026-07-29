@@ -45,24 +45,38 @@ def _verificar_acceso_ot(ot):
 @rol_requerido("Administrador", "Jefe", "Técnico")
 def listar():
     """Cola de trabajo. El Administrador/Jefe ve todas las OT de su
-    empresa, con filtro por estado disponible. El Técnico ve solo las que
-    tiene asignadas, y solo lo que le queda por hacer (sin Finalizada ni
-    Cancelada, sin filtro de estado — va directo a lo suyo)."""
+    empresa, con buscador y filtro por estado en el cliente (JS, sin
+    recargar). El Técnico ve solo las que tiene asignadas, y solo lo que
+    le queda por hacer (sin Finalizada ni Cancelada, sin buscador ni
+    resumen — va directo a lo suyo)."""
     ids_clientes = [c.id for c in clientes_visibles().all()]
     query = OrdenTrabajo.query.join(Instalacion).filter(Instalacion.cliente_id.in_(ids_clientes))
 
     if current_user.rol == "Técnico":
         query = query.filter(OrdenTrabajo.tecnico_id == current_user.id)
         query = query.filter(OrdenTrabajo.estado.notin_(["Finalizada", "Cancelada"]))
-        estado_filtro = ""
-    else:
-        estado_filtro = request.args.get("estado", "")
-        if estado_filtro:
-            query = query.filter(OrdenTrabajo.estado == estado_filtro)
 
     ordenes = query.order_by(OrdenTrabajo.fecha_apertura.desc()).all()
+
+    hoy = date.today()
+    abiertas = [o for o in ordenes if o.estado not in ("Finalizada", "Cancelada")]
+    urgentes = [o for o in abiertas if o.prioridad in ("Urgente", "Alta")]
+    sin_asignar = [o for o in abiertas if not o.tecnico_id]
+    finalizadas_mes = [
+        o
+        for o in ordenes
+        if o.estado == "Finalizada" and o.fecha_cierre and o.fecha_cierre.year == hoy.year and o.fecha_cierre.month == hoy.month
+    ]
+
     return render_template(
-        "ordenes_trabajo/list.html", ordenes=ordenes, estados=ESTADOS_OT, estado_filtro=estado_filtro
+        "ordenes_trabajo/list.html",
+        ordenes=ordenes,
+        estados=ESTADOS_OT,
+        hoy=hoy,
+        abiertas=abiertas,
+        urgentes=urgentes,
+        sin_asignar=sin_asignar,
+        finalizadas_mes=finalizadas_mes,
     )
 
 

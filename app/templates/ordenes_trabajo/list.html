@@ -9,32 +9,72 @@
         <div class="cuerpo-doc">
 
             {% if current_user.rol != 'Técnico' %}
-            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-                <div class="btn-group flex-wrap">
-                    <a href="{{ url_for('ordenes.listar') }}" class="btn btn-sm {{ 'btn-dark' if not estado_filtro else 'btn-outline-dark' }}">Todas</a>
+            <div class="grid-atencion">
+                <div class="card-atencion">
+                    <span class="num">{{ abiertas|length }}</span>
+                    <span class="etiqueta">Abiertas</span>
+                    <span class="sub">pendiente, asignada, en proceso o pausada</span>
+                </div>
+                <div class="card-atencion critico">
+                    <span class="num">{{ urgentes|length }}</span>
+                    <span class="etiqueta">Urgentes</span>
+                    <span class="sub">prioridad urgente o alta, sin cerrar</span>
+                </div>
+                <div class="card-atencion alerta">
+                    <span class="num">{{ sin_asignar|length }}</span>
+                    <span class="etiqueta">Sin técnico asignado</span>
+                    <span class="sub">necesitan asignación</span>
+                </div>
+                <div class="card-atencion ok">
+                    <span class="num">{{ finalizadas_mes|length }}</span>
+                    <span class="etiqueta">Finalizadas este mes</span>
+                </div>
+            </div>
+
+            <div class="barra-herramientas-doc">
+                <div class="buscador-doc">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="buscador-ot" placeholder="Buscar por N°, cliente o técnico...">
+                </div>
+                <div class="chips-filtro-doc" id="chips-filtro-ot">
+                    <span class="chip-filtro-doc activo" data-filtro="">Todas ({{ ordenes|length }})</span>
                     {% for e in estados %}
-                    <a href="{{ url_for('ordenes.listar', estado=e) }}" class="btn btn-sm {{ 'btn-dark' if estado_filtro == e else 'btn-outline-dark' }}">{{ e }}</a>
+                    <span class="chip-filtro-doc" data-filtro="{{ e }}">{{ e }}</span>
                     {% endfor %}
                 </div>
-                {% if current_user.rol in ('Administrador', 'Jefe') %}
-                <a href="{{ url_for('ordenes.nueva') }}" class="btn btn-primary btn-sm">+ Nueva OT correctiva</a>
-                {% endif %}
+                <a href="{{ url_for('ordenes.nueva') }}" class="btn btn-dark btn-sm">+ Nueva OT correctiva</a>
             </div>
             {% endif %}
 
             <div class="table-responsive">
-            <table class="table table-hover data-table tabla-col-fija tabla-tarjetas">
-                <thead><tr><th>N°</th><th>Tipo</th><th>Cliente</th><th>Instalación</th><th>Técnico</th><th>Prioridad</th><th>Fecha apertura</th><th>Estado</th></tr></thead>
+            <table class="table table-hover data-table tabla-col-fija tabla-tarjetas ot-tabla-lista" id="tabla-ot">
+                <thead><tr><th>N°</th><th>Tipo</th><th>Cliente</th><th>Instalación</th><th>Técnico</th><th>Prioridad</th><th>Apertura</th><th>Estado</th></tr></thead>
                 <tbody>
                     {% for ot in ordenes %}
-                    <tr>
-                        <td data-label="N°"><a href="{{ url_for('ordenes.detalle', ot_id=ot.id) }}">{{ ot.numero }}</a></td>
+                    {% set dias = (hoy - ot.fecha_apertura).days %}
+                    {% set abierta = ot.estado not in ('Finalizada', 'Cancelada') %}
+                    {% set urgente_fila = abierta and ot.prioridad in ('Urgente', 'Alta') %}
+                    <tr class="ot-fila{{ ' ot-fila-urgente' if urgente_fila }}{{ ' alta' if urgente_fila and ot.prioridad == 'Alta' }}"
+                        data-estado="{{ ot.estado }}"
+                        data-buscar="{{ (ot.numero ~ ' ' ~ ot.instalacion.cliente.nombre ~ ' ' ~ ot.instalacion.nombre ~ ' ' ~ ot.nombre_tecnico)|lower }}">
+                        <td data-label="N°"><a class="ot-link-numero" href="{{ url_for('ordenes.detalle', ot_id=ot.id) }}">{{ ot.numero }}</a></td>
                         <td data-label="Tipo">{{ ot.tipo }}</td>
-                        <td data-label="Cliente"><a href="{{ url_for('clientes.detalle', cliente_id=ot.instalacion.cliente_id) }}">{{ ot.instalacion.cliente.nombre }}</a></td>
+                        <td data-label="Cliente"><a class="enlace-cliente-ot" href="{{ url_for('clientes.detalle', cliente_id=ot.instalacion.cliente_id) }}">{{ ot.instalacion.cliente.nombre }}</a></td>
                         <td data-label="Instalación">{{ ot.instalacion.nombre }}</td>
-                        <td data-label="Técnico">{{ ot.nombre_tecnico }}</td>
-                        <td data-label="Prioridad">{{ ot.prioridad }}</td>
-                        <td data-label="Apertura">{{ ot.fecha_apertura.strftime('%d/%m/%Y') }}</td>
+                        <td data-label="Técnico">
+                            {% if ot.nombre_tecnico == '-' %}
+                            <span class="ot-tecnico-sin-asignar">— Sin asignar</span>
+                            {% else %}
+                            {{ ot.nombre_tecnico }}
+                            {% endif %}
+                        </td>
+                        <td data-label="Prioridad"><span class="badge badge-{{ ot.prioridad }}">{{ ot.prioridad }}</span></td>
+                        <td data-label="Apertura">
+                            <div class="ot-fecha-apertura">
+                                <span>{{ ot.fecha_apertura.strftime('%d/%m/%Y') }}</span>
+                                {% if abierta and dias >= 7 %}<span class="ot-dias flag">hace {{ dias }} día{{ 's' if dias != 1 }}</span>{% endif %}
+                            </div>
+                        </td>
                         <td data-label="Estado"><span class="badge badge-{{ ot.estado.replace(' ', '.') }}">{{ ot.estado }}</span></td>
                     </tr>
                     {% else %}
@@ -43,8 +83,44 @@
                 </tbody>
             </table>
             </div>
+            <p class="text-muted text-center py-3 d-none" id="ot-sin-resultados">Ninguna OT coincide con la búsqueda.</p>
 
         </div>
     </div>
 </div>
+
+{% if current_user.rol != 'Técnico' %}
+<script>
+(function () {
+    var filas = Array.prototype.slice.call(document.querySelectorAll('#tabla-ot tbody tr.ot-fila'));
+    var buscador = document.getElementById('buscador-ot');
+    var chips = document.querySelectorAll('#chips-filtro-ot .chip-filtro-doc');
+    var sinResultados = document.getElementById('ot-sin-resultados');
+    var filtroActivo = '';
+
+    function aplicarFiltros() {
+        var texto = (buscador.value || '').toLowerCase().trim();
+        var visibles = 0;
+        filas.forEach(function (fila) {
+            var coincideTexto = !texto || fila.dataset.buscar.indexOf(texto) !== -1;
+            var coincideFiltro = !filtroActivo || fila.dataset.estado === filtroActivo;
+            var visible = coincideTexto && coincideFiltro;
+            fila.style.display = visible ? '' : 'none';
+            if (visible) visibles++;
+        });
+        sinResultados.classList.toggle('d-none', visibles > 0);
+    }
+
+    buscador.addEventListener('input', aplicarFiltros);
+    chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            chips.forEach(function (c) { c.classList.remove('activo'); });
+            chip.classList.add('activo');
+            filtroActivo = chip.dataset.filtro;
+            aplicarFiltros();
+        });
+    });
+})();
+</script>
+{% endif %}
 {% endblock %}
