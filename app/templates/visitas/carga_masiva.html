@@ -1,80 +1,91 @@
 {% extends "base.html" %}
 {% block title %}Carga masiva - {{ tipo.nombre }}{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('formularios.elegir_equipo', item_id=item.id, tipo_formulario_id=tipo.id) }}">&larr; Volver</a></p>
-<div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-    <h1>Carga masiva: {{ tipo.nombre }}</h1>
-    <a href="{{ url_for('observaciones.nueva', instalacion_id=item.visita.instalacion_id, item_id=item.id) }}" class="btn btn-outline-warning btn-sm">+ Observación</a>
-</div>
-<p class="text-muted">
-    {{ equipos|length }} equipo(s) de tipo {{ tipo.tipo_equipo_aplicable }}. Completá lo que corresponda y guardá todo junto — las
-    filas que dejes en blanco no se guardan. Si un equipo ya tenía datos cargados para esta visita, se actualizan.
-    &middot; <a href="{{ url_for('formularios.elegir_equipo', item_id=item.id, tipo_formulario_id=tipo.id) }}">Prefiero cargarlos equipo por equipo</a>
-</p>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Carga masiva: {{ tipo.nombre }}</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<form method="POST">
-    <div class="table-responsive">
-        <table class="table table-sm">
-            <thead>
-                <tr>
-                    <th style="min-width: 160px;">Equipo</th>
-                    {% for campo in tipo.campos() %}
-                    <th style="min-width: 150px;">{{ campo.label }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for equipo in equipos %}
-                {% set datos = formularios_por_equipo[equipo.id].datos() if equipo.id in formularios_por_equipo else {} %}
-                <tr>
-                    <td class="align-middle"><a href="{{ url_for('equipos.detalle', equipo_id=equipo.id) }}"><strong>{{ equipo.nombre }}</strong></a><br><small class="text-muted">{{ equipo.ubicacion or '' }}</small></td>
-                    {% for campo in tipo.campos() %}
-                    <td>
-                        {% set nombre_input = 'campo__' ~ equipo.id ~ '__' ~ campo.campo %}
-                        {% set valor_actual = datos.get(campo.campo) %}
-                        {% if campo.tipo == 'texto_largo' or campo.tipo == 'texto' %}
-                            <input type="text" name="{{ nombre_input }}" class="form-control form-control-sm" value="{{ valor_actual or '' }}">
-                        {% elif campo.tipo == 'numero' %}
-                            <input type="number" step="any" name="{{ nombre_input }}" class="form-control form-control-sm" value="{{ valor_actual if valor_actual is not none else '' }}">
-                        {% elif campo.tipo == 'fecha' %}
-                            <input type="date" name="{{ nombre_input }}" class="form-control form-control-sm" value="{{ valor_actual or '' }}">
-                        {% elif campo.tipo == 'booleano' %}
-                            <select name="{{ nombre_input }}" class="form-select form-select-sm">
-                                <option value="" {% if not valor_actual %}selected{% endif %}></option>
-                                <option value="Sí" {% if valor_actual == 'Sí' %}selected{% endif %}>Sí</option>
-                                <option value="No" {% if valor_actual == 'No' %}selected{% endif %}>No</option>
-                            </select>
-                        {% elif campo.tipo == 'seleccion' %}
-                            <select name="{{ nombre_input }}" class="form-select form-select-sm">
-                                <option value=""></option>
-                                {% for opcion in campo.opciones %}
-                                <option value="{{ opcion }}" {% if valor_actual == opcion %}selected{% endif %}>{{ opcion }}</option>
+            <p class="mb-1"><a href="{{ url_for('formularios.elegir_equipo', item_id=item.id, tipo_formulario_id=tipo.id) }}">&larr; Volver</a></p>
+
+            <div class="d-flex justify-content-end mb-2">
+                <a href="{{ url_for('observaciones.nueva', instalacion_id=item.visita.instalacion_id, item_id=item.id) }}" class="btn btn-outline-warning btn-sm">+ Observación</a>
+            </div>
+            <p class="text-muted">
+                {{ equipos|length }} equipo(s) de tipo {{ tipo.tipo_equipo_aplicable }}. Completá lo que corresponda y guardá todo junto — las
+                filas que dejes en blanco no se guardan. Si un equipo ya tenía datos cargados para esta visita, se actualizan.
+                &middot; <a href="{{ url_for('formularios.elegir_equipo', item_id=item.id, tipo_formulario_id=tipo.id) }}">Prefiero cargarlos equipo por equipo</a>
+            </p>
+
+            <form method="POST">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th style="min-width: 160px;">Equipo</th>
+                                {% for campo in tipo.campos() %}
+                                <th style="min-width: 150px;">{{ campo.label }}</th>
                                 {% endfor %}
-                            </select>
-                        {% elif campo.tipo == 'multi_seleccion' %}
-                            <select name="{{ nombre_input }}" class="form-select form-select-sm" multiple size="3">
-                                {% for opcion in campo.opciones %}
-                                <option value="{{ opcion }}" {% if valor_actual and opcion in valor_actual %}selected{% endif %}>{{ opcion }}</option>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for equipo in equipos %}
+                            {% set datos = formularios_por_equipo[equipo.id].datos() if equipo.id in formularios_por_equipo else {} %}
+                            <tr>
+                                <td class="align-middle"><a href="{{ url_for('equipos.detalle', equipo_id=equipo.id) }}"><strong>{{ equipo.nombre }}</strong></a><br><small class="text-muted">{{ equipo.ubicacion or '' }}</small></td>
+                                {% for campo in tipo.campos() %}
+                                <td>
+                                    {% set nombre_input = 'campo__' ~ equipo.id ~ '__' ~ campo.campo %}
+                                    {% set valor_actual = datos.get(campo.campo) %}
+                                    {% if campo.tipo == 'texto_largo' or campo.tipo == 'texto' %}
+                                        <input type="text" name="{{ nombre_input }}" class="form-control form-control-sm" value="{{ valor_actual or '' }}">
+                                    {% elif campo.tipo == 'numero' %}
+                                        <input type="number" step="any" name="{{ nombre_input }}" class="form-control form-control-sm" value="{{ valor_actual if valor_actual is not none else '' }}">
+                                    {% elif campo.tipo == 'fecha' %}
+                                        <input type="date" name="{{ nombre_input }}" class="form-control form-control-sm" value="{{ valor_actual or '' }}">
+                                    {% elif campo.tipo == 'booleano' %}
+                                        <select name="{{ nombre_input }}" class="form-select form-select-sm">
+                                            <option value="" {% if not valor_actual %}selected{% endif %}></option>
+                                            <option value="Sí" {% if valor_actual == 'Sí' %}selected{% endif %}>Sí</option>
+                                            <option value="No" {% if valor_actual == 'No' %}selected{% endif %}>No</option>
+                                        </select>
+                                    {% elif campo.tipo == 'seleccion' %}
+                                        <select name="{{ nombre_input }}" class="form-select form-select-sm">
+                                            <option value=""></option>
+                                            {% for opcion in campo.opciones %}
+                                            <option value="{{ opcion }}" {% if valor_actual == opcion %}selected{% endif %}>{{ opcion }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    {% elif campo.tipo == 'multi_seleccion' %}
+                                        <select name="{{ nombre_input }}" class="form-select form-select-sm" multiple size="3">
+                                            {% for opcion in campo.opciones %}
+                                            <option value="{{ opcion }}" {% if valor_actual and opcion in valor_actual %}selected{% endif %}>{{ opcion }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    {% else %}
+                                        <input type="text" name="{{ nombre_input }}" class="form-control form-control-sm" value="{{ valor_actual or '' }}">
+                                    {% endif %}
+                                </td>
                                 {% endfor %}
-                            </select>
-                        {% else %}
-                            <input type="text" name="{{ nombre_input }}" class="form-control form-control-sm" value="{{ valor_actual or '' }}">
-                        {% endif %}
-                    </td>
-                    {% endfor %}
-                </tr>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="{{ tipo.campos()|length + 1 }}" class="text-center text-muted py-4">No hay equipos de este tipo cargados en la instalación.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% if equipos %}
+                <button type="submit" class="btn btn-primary">Guardar todo</button>
+                <a href="{{ url_for('formularios.elegir_equipo', item_id=item.id, tipo_formulario_id=tipo.id) }}" class="btn btn-link">Cancelar</a>
                 {% else %}
-                <tr><td colspan="{{ tipo.campos()|length + 1 }}" class="text-center text-muted py-4">No hay equipos de este tipo cargados en la instalación.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+                <a href="{{ url_for('equipos.nuevo', instalacion_id=item.visita.instalacion_id) }}" class="btn btn-outline-info">+ Cargar equipos</a>
+                {% endif %}
+            </form>
 
-    {% if equipos %}
-    <button type="submit" class="btn btn-primary">Guardar todo</button>
-    <a href="{{ url_for('formularios.elegir_equipo', item_id=item.id, tipo_formulario_id=tipo.id) }}" class="btn btn-link">Cancelar</a>
-    {% else %}
-    <a href="{{ url_for('equipos.nuevo', instalacion_id=item.visita.instalacion_id) }}" class="btn btn-outline-info">+ Cargar equipos</a>
-    {% endif %}
-</form>
+        </div>
+    </div>
+</div>
 {% endblock %}

@@ -1,161 +1,172 @@
 {% extends "base.html" %}
 {% block title %}Visita {{ visita.fecha.strftime('%d/%m/%Y') }}{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('instalaciones.detalle', instalacion_id=visita.instalacion_id) }}">&larr; {{ visita.instalacion.nombre }}</a></p>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Visita del {{ visita.fecha.strftime('%d/%m/%Y') }}</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Visita del {{ visita.fecha.strftime('%d/%m/%Y') }}</h1>
-    <div>
-        <span class="badge badge-{{ visita.estado.replace(' ', '.') }} fs-6">{{ visita.estado }}</span>
-        <span class="badge badge-{{ 'Cumplido' if visita.fase == 'Cerrada' else ('Pendiente' if visita.fase == 'En revisión' else 'Programado') }} fs-6">{{ visita.fase }}</span>
+            <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=visita.instalacion_id) }}">&larr; {{ visita.instalacion.nombre }}</a></p>
 
-        {% if visita.fase == 'Abierta' %}
-            {% if current_user.rol == 'Técnico' %}
-            <a href="{{ url_for('visitas.enviar_revision', visita_id=visita.id) }}" class="btn btn-sm btn-outline-primary">Enviar a revisión</a>
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+                <div class="d-flex gap-2 flex-wrap">
+                    <span class="badge badge-{{ visita.estado.replace(' ', '.') }} fs-6">{{ visita.estado }}</span>
+                    <span class="badge badge-{{ 'Cumplido' if visita.fase == 'Cerrada' else ('Pendiente' if visita.fase == 'En revisión' else 'Programado') }} fs-6">{{ visita.fase }}</span>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    {% if visita.fase == 'Abierta' %}
+                        {% if current_user.rol == 'Técnico' %}
+                        <a href="{{ url_for('visitas.enviar_revision', visita_id=visita.id) }}" class="btn btn-sm btn-outline-primary">Enviar a revisión</a>
+                        {% endif %}
+                    {% elif visita.fase == 'En revisión' %}
+                        {% if current_user.rol in ('Administrador', 'Jefe') %}
+                        <a href="{{ url_for('visitas.cerrar', visita_id=visita.id) }}" class="btn btn-sm btn-outline-primary">Cerrar visita</a>
+                        {% endif %}
+                    {% elif visita.fase == 'Cerrada' %}
+                        <a href="{{ url_for('visitas.pdf_devolucion', visita_id=visita.id) }}" class="btn btn-sm btn-outline-dark" target="_blank">Descargar PDF de devolución</a>
+                        {% if current_user.rol in ('Administrador', 'Jefe') %}
+                        <form method="POST" action="{{ url_for('visitas.reabrir', visita_id=visita.id) }}" class="d-inline" onsubmit="return confirm('¿Reabrir esta visita para corregirla? El PDF ya entregado no va a reflejar los cambios hasta que la vuelvas a cerrar.');">
+                            <button type="submit" class="btn btn-sm btn-outline-warning">Reabrir visita</button>
+                        </form>
+                        {% endif %}
+                    {% endif %}
+
+                    {% if current_user.rol in ('Administrador', 'Jefe') %}
+                    <a href="{{ url_for('visitas.editar_nota_cliente', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Nota para el cliente</a>
+                    {% endif %}
+                    {% if visita.fase != 'Cerrada' %}
+                    <a href="{{ url_for('visitas.editar', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Editar / Eliminar</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <p>
+                <strong>Técnico:</strong> {{ visita.nombre_tecnico }}<br>
+                <strong>Contrato:</strong> {{ visita.contrato.nombre if visita.contrato else 'Visita manual (sin contrato)' }}<br>
+                {% if visita.orden_trabajo %}<strong>Orden de trabajo:</strong> <a href="{{ url_for('ordenes.detalle', ot_id=visita.orden_trabajo.id) }}">{{ visita.orden_trabajo.numero }}</a><br>{% endif %}
+                <strong>Observaciones generales:</strong> {{ visita.observaciones or '-' }}<br>
+                {% if visita.nota_cliente %}<strong>Nota para el cliente:</strong> {{ visita.nota_cliente }} <small class="text-muted">({{ visita.nota_cliente_fecha.strftime('%d/%m/%Y') if visita.nota_cliente_fecha else '' }})</small><br>{% endif %}
+                {% if visita.en_revision and not visita.cerrada %}
+                <strong>Enviada a revisión:</strong> {{ visita.fecha_enviada_revision.strftime('%d/%m/%Y') if visita.fecha_enviada_revision else '-' }}{% if visita.enviada_por %} por {{ visita.enviada_por.nombre_completo or visita.enviada_por.username }}{% endif %}<br>
+                <strong>Devolución del técnico:</strong> {{ visita.notas_cierre or '-' }}<br>
+                {% endif %}
+                {% if visita.cerrada %}<strong>Notas de cierre:</strong> {{ visita.notas_cierre or '-' }} <small class="text-muted">(cerrada el {{ visita.fecha_cierre.strftime('%d/%m/%Y') }}{% if visita.cerrada_por %} por {{ visita.cerrada_por.nombre_completo or visita.cerrada_por.username }}{% endif %})</small>{% endif %}
+            </p>
+
+            <div class="seccion-titulo-doc">Servicios de esta visita</div>
+            {% if not visita.items %}
+            <p class="text-muted">Esta visita no tiene servicios asociados de un contrato (es una visita manual).</p>
             {% endif %}
-        {% elif visita.fase == 'En revisión' %}
-            {% if current_user.rol in ('Administrador', 'Jefe') %}
-            <a href="{{ url_for('visitas.cerrar', visita_id=visita.id) }}" class="btn btn-sm btn-outline-primary">Cerrar visita</a>
-            {% endif %}
-        {% elif visita.fase == 'Cerrada' %}
-            <a href="{{ url_for('visitas.pdf_devolucion', visita_id=visita.id) }}" class="btn btn-sm btn-outline-dark" target="_blank">Descargar PDF de devolución</a>
-            {% if current_user.rol in ('Administrador', 'Jefe') %}
-            <form method="POST" action="{{ url_for('visitas.reabrir', visita_id=visita.id) }}" class="d-inline" onsubmit="return confirm('¿Reabrir esta visita para corregirla? El PDF ya entregado no va a reflejar los cambios hasta que la vuelvas a cerrar.');">
-                <button type="submit" class="btn btn-sm btn-outline-warning">Reabrir visita</button>
-            </form>
-            {% endif %}
-        {% endif %}
 
-        {% if current_user.rol in ('Administrador', 'Jefe') %}
-        <a href="{{ url_for('visitas.editar_nota_cliente', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Nota para el cliente</a>
-        {% endif %}
-        {% if visita.fase != 'Cerrada' %}
-        <a href="{{ url_for('visitas.editar', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Editar / Eliminar</a>
-        {% endif %}
-    </div>
-</div>
-
-<p>
-    <strong>Técnico:</strong> {{ visita.nombre_tecnico }}<br>
-    <strong>Contrato:</strong> {{ visita.contrato.nombre if visita.contrato else 'Visita manual (sin contrato)' }}<br>
-    {% if visita.orden_trabajo %}<strong>Orden de trabajo:</strong> <a href="{{ url_for('ordenes.detalle', ot_id=visita.orden_trabajo.id) }}">{{ visita.orden_trabajo.numero }}</a><br>{% endif %}
-    <strong>Observaciones generales:</strong> {{ visita.observaciones or '-' }}<br>
-    {% if visita.nota_cliente %}<strong>Nota para el cliente:</strong> {{ visita.nota_cliente }} <small class="text-muted">({{ visita.nota_cliente_fecha.strftime('%d/%m/%Y') if visita.nota_cliente_fecha else '' }})</small><br>{% endif %}
-    {% if visita.en_revision and not visita.cerrada %}
-    <strong>Enviada a revisión:</strong> {{ visita.fecha_enviada_revision.strftime('%d/%m/%Y') if visita.fecha_enviada_revision else '-' }}{% if visita.enviada_por %} por {{ visita.enviada_por.nombre_completo or visita.enviada_por.username }}{% endif %}<br>
-    <strong>Devolución del técnico:</strong> {{ visita.notas_cierre or '-' }}<br>
-    {% endif %}
-    {% if visita.cerrada %}<strong>Notas de cierre:</strong> {{ visita.notas_cierre or '-' }} <small class="text-muted">(cerrada el {{ visita.fecha_cierre.strftime('%d/%m/%Y') }}{% if visita.cerrada_por %} por {{ visita.cerrada_por.nombre_completo or visita.cerrada_por.username }}{% endif %})</small>{% endif %}
-</p>
-
-<h4 class="mt-4">Servicios de esta visita</h4>
-{% if not visita.items %}
-<p class="text-muted">Esta visita no tiene servicios asociados de un contrato (es una visita manual).</p>
-{% endif %}
-
-{% set puede_editar = not visita.cerrada and not (current_user.rol == 'Técnico' and visita.fase != 'Abierta') %}
-{% if not puede_editar %}
-<div class="alert alert-info">
-    Esta visita está {{ visita.fase|lower }}: ya no se puede modificar nada.
-    {% if visita.cerrada and current_user.rol in ('Administrador', 'Jefe') %}
-    Usá "Reabrir visita" arriba si hace falta corregir algo.
-    {% else %}
-    Si hace falta corregir algo, hablalo con el Administrador/Jefe.
-    {% endif %}
-</div>
-{% endif %}
-
-{% for item in visita.items %}
-{% set grupos_formulario = formularios_por_item[item.id].grupos %}
-{% set formularios_generales = formularios_por_item[item.id].generales %}
-{% set hay_tipos_formulario = formularios_generales|length + (grupos_formulario.values()|map('length')|sum) > 0 %}
-<div class="card mb-3">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center">
-            <h5 class="card-title mb-0">{{ item.servicio.nombre }} <small class="text-muted text-capitalize">({{ item.servicio.frecuencia }})</small></h5>
-            <div>
-                <span class="badge badge-{{ item.estado.replace(' ', '.') }}">{{ item.estado }}</span>
-                {% if puede_editar %}
-                {% if item.estado != 'Cumplido' %}
-                <form method="POST" action="{{ url_for('visitas.marcar_item_cumplido', item_id=item.id) }}" class="d-inline">
-                    <button type="submit" class="btn btn-sm btn-success">Marcar cumplido</button>
-                </form>
+            {% set puede_editar = not visita.cerrada and not (current_user.rol == 'Técnico' and visita.fase != 'Abierta') %}
+            {% if not puede_editar %}
+            <div class="alert alert-info">
+                Esta visita está {{ visita.fase|lower }}: ya no se puede modificar nada.
+                {% if visita.cerrada and current_user.rol in ('Administrador', 'Jefe') %}
+                Usá "Reabrir visita" arriba si hace falta corregir algo.
                 {% else %}
-                <form method="POST" action="{{ url_for('visitas.marcar_item_pendiente', item_id=item.id) }}" class="d-inline">
-                    <button type="submit" class="btn btn-sm btn-outline-secondary">Volver a pendiente</button>
-                </form>
-                {% endif %}
-                <a href="{{ url_for('observaciones.nueva', instalacion_id=visita.instalacion_id, item_id=item.id) }}" class="btn btn-sm btn-outline-warning">+ Observación</a>
+                Si hace falta corregir algo, hablalo con el Administrador/Jefe.
                 {% endif %}
             </div>
-        </div>
+            {% endif %}
 
-        <h6 class="mt-3">Formularios</h6>
-        <div class="d-flex flex-wrap gap-2 mb-2">
-            {% for f in item.formularios %}
-            <a href="{{ url_for('formularios.detalle', formulario_id=f.id) }}" class="btn btn-outline-dark btn-sm">
-                <i class="bi bi-clipboard-check"></i> {{ f.tipo_formulario.nombre }}{% if f.equipo %} — {{ f.equipo.nombre }}{% endif %}
-            </a>
+            {% for item in visita.items %}
+            {% set grupos_formulario = formularios_por_item[item.id].grupos %}
+            {% set formularios_generales = formularios_por_item[item.id].generales %}
+            {% set hay_tipos_formulario = formularios_generales|length + (grupos_formulario.values()|map('length')|sum) > 0 %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">{{ item.servicio.nombre }} <small class="text-muted text-capitalize">({{ item.servicio.frecuencia }})</small></h5>
+                        <div>
+                            <span class="badge badge-{{ item.estado.replace(' ', '.') }}">{{ item.estado }}</span>
+                            {% if puede_editar %}
+                            {% if item.estado != 'Cumplido' %}
+                            <form method="POST" action="{{ url_for('visitas.marcar_item_cumplido', item_id=item.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-success">Marcar cumplido</button>
+                            </form>
+                            {% else %}
+                            <form method="POST" action="{{ url_for('visitas.marcar_item_pendiente', item_id=item.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Volver a pendiente</button>
+                            </form>
+                            {% endif %}
+                            <a href="{{ url_for('observaciones.nueva', instalacion_id=visita.instalacion_id, item_id=item.id) }}" class="btn btn-sm btn-outline-warning">+ Observación</a>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <h6 class="mt-3">Formularios</h6>
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        {% for f in item.formularios %}
+                        <a href="{{ url_for('formularios.detalle', formulario_id=f.id) }}" class="btn btn-outline-dark btn-sm">
+                            <i class="bi bi-clipboard-check"></i> {{ f.tipo_formulario.nombre }}{% if f.equipo %} — {{ f.equipo.nombre }}{% endif %}
+                        </a>
+                        {% endfor %}
+                    </div>
+
+                    {% if puede_editar %}
+                    {% if hay_tipos_formulario %}
+                    <div class="mb-3" style="max-width: 320px;">
+                        <select class="form-select form-select-sm" onchange="if (this.value) { window.location = this.value; }">
+                            <option value="">+ Elegir formulario…</option>
+                            {% for nombre_categoria, tipos in grupos_formulario.items() %}
+                            {% if tipos %}
+                            <optgroup label="{{ nombre_categoria }}">
+                                {% for tipo in tipos %}
+                                <option value="{{ url_for('formularios.carga_masiva', item_id=item.id, tipo_formulario_id=tipo.id) }}">{{ tipo.nombre }}</option>
+                                {% endfor %}
+                            </optgroup>
+                            {% endif %}
+                            {% endfor %}
+                            {% if formularios_generales %}
+                            <optgroup label="Otros formularios">
+                                {% for tipo in formularios_generales %}
+                                <option value="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id) }}">{{ tipo.nombre }}</option>
+                                {% endfor %}
+                            </optgroup>
+                            {% endif %}
+                        </select>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small mb-3">Este cliente todavía no tiene tipos de formulario configurados.</p>
+                    {% endif %}
+                    {% endif %}
+
+                    <h6>Fotos</h6>
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        {% for foto in item.fotos %}
+                        <div class="text-center">
+                            <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" target="_blank">
+                                <img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" style="height:90px; border-radius:6px;">
+                            </a>
+                            {% if puede_editar %}
+                            <form method="POST" action="{{ url_for('fotos.eliminar', foto_id=foto.id) }}" onsubmit="return confirm('¿Eliminar foto?');">
+                                <button type="submit" class="btn btn-sm btn-link text-danger p-0">Eliminar</button>
+                            </form>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if puede_editar %}
+                    <form method="POST" action="{{ url_for('fotos.subir', item_id=item.id) }}" enctype="multipart/form-data" class="row g-2 align-items-end">
+                        <div class="col-auto">
+                            <input type="file" name="foto" accept="image/*" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="col-auto">
+                            <input type="text" name="descripcion" class="form-control form-control-sm" placeholder="Descripción (opcional)">
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Subir foto</button>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
             {% endfor %}
-        </div>
 
-        {% if puede_editar %}
-        {% if hay_tipos_formulario %}
-        <div class="mb-3" style="max-width: 320px;">
-            <select class="form-select form-select-sm" onchange="if (this.value) { window.location = this.value; }">
-                <option value="">+ Elegir formulario…</option>
-                {% for nombre_categoria, tipos in grupos_formulario.items() %}
-                {% if tipos %}
-                <optgroup label="{{ nombre_categoria }}">
-                    {% for tipo in tipos %}
-                    <option value="{{ url_for('formularios.carga_masiva', item_id=item.id, tipo_formulario_id=tipo.id) }}">{{ tipo.nombre }}</option>
-                    {% endfor %}
-                </optgroup>
-                {% endif %}
-                {% endfor %}
-                {% if formularios_generales %}
-                <optgroup label="Otros formularios">
-                    {% for tipo in formularios_generales %}
-                    <option value="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id) }}">{{ tipo.nombre }}</option>
-                    {% endfor %}
-                </optgroup>
-                {% endif %}
-            </select>
         </div>
-        {% else %}
-        <p class="text-muted small mb-3">Este cliente todavía no tiene tipos de formulario configurados.</p>
-        {% endif %}
-        {% endif %}
-
-        <h6>Fotos</h6>
-        <div class="d-flex flex-wrap gap-2 mb-2">
-            {% for foto in item.fotos %}
-            <div class="text-center">
-                <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" target="_blank">
-                    <img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" style="height:90px; border-radius:6px;">
-                </a>
-                {% if puede_editar %}
-                <form method="POST" action="{{ url_for('fotos.eliminar', foto_id=foto.id) }}" onsubmit="return confirm('¿Eliminar foto?');">
-                    <button type="submit" class="btn btn-sm btn-link text-danger p-0">Eliminar</button>
-                </form>
-                {% endif %}
-            </div>
-            {% endfor %}
-        </div>
-        {% if puede_editar %}
-        <form method="POST" action="{{ url_for('fotos.subir', item_id=item.id) }}" enctype="multipart/form-data" class="row g-2 align-items-end">
-            <div class="col-auto">
-                <input type="file" name="foto" accept="image/*" class="form-control form-control-sm" required>
-            </div>
-            <div class="col-auto">
-                <input type="text" name="descripcion" class="form-control form-control-sm" placeholder="Descripción (opcional)">
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-sm btn-outline-primary">Subir foto</button>
-            </div>
-        </form>
-        {% endif %}
     </div>
 </div>
-{% endfor %}
 {% endblock %}

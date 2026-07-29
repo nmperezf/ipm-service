@@ -1,34 +1,45 @@
 {% extends "base.html" %}
 {% block title %}{{ clasificacion }} - {{ cliente.nombre }}{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}">&larr; {{ cliente.nombre }}</a></p>
-<h1>{{ clasificacion }} <span class="text-muted fs-6">({{ observaciones|length }} abiertas)</span></h1>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>{{ clasificacion }}</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<div class="table-responsive">
-<table class="table table-hover data-table">
-    <thead><tr><th>Fecha</th><th>Instalación</th><th>Descripción</th><th></th></tr></thead>
-    <tbody>
-        {% for obs in observaciones %}
-        <tr>
-            <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
-            <td><a href="{{ url_for('instalaciones.detalle', instalacion_id=obs.instalacion_id) }}">{{ obs.instalacion.nombre }}</a></td>
-            <td>{{ obs.descripcion }}</td>
-            <td>
-                <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}" class="d-inline">
-                    <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>
-                </form>
-                {% if current_user.rol in ('Administrador', 'Jefe') %}
-                <form method="POST" action="{{ url_for('observaciones.eliminar', observacion_id=obs.id) }}" class="d-inline"
-                      onsubmit="return confirm('¿Eliminar esta observación? No se puede deshacer.');">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-                </form>
-                {% endif %}
-            </td>
-        </tr>
-        {% else %}
-        <tr><td colspan="4" class="text-center text-muted py-4">Sin observaciones abiertas de este tipo.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+            <p class="mb-1"><a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}">&larr; {{ cliente.nombre }}</a></p>
+            <p class="text-muted">{{ observaciones|length }} abiertas</p>
+
+            <div class="table-responsive">
+            <table class="table table-hover data-table">
+                <thead><tr><th>Fecha</th><th>Instalación</th><th>Descripción</th><th></th></tr></thead>
+                <tbody>
+                    {% for obs in observaciones %}
+                    <tr>
+                        <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+                        <td><a href="{{ url_for('instalaciones.detalle', instalacion_id=obs.instalacion_id) }}">{{ obs.instalacion.nombre }}</a></td>
+                        <td>{{ obs.descripcion }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>
+                            </form>
+                            {% if current_user.rol in ('Administrador', 'Jefe') %}
+                            <form method="POST" action="{{ url_for('observaciones.eliminar', observacion_id=obs.id) }}" class="d-inline"
+                                  onsubmit="return confirm('¿Eliminar esta observación? No se puede deshacer.');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="text-center text-muted py-4">Sin observaciones abiertas de este tipo.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+        </div>
+    </div>
 </div>
 {% endblock %}

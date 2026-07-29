@@ -1,83 +1,93 @@
 {% extends "base.html" %}
 {% block title %}Enviar a revisión{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}">&larr; Volver a la visita</a></p>
-<h1>Enviar a revisión <small class="text-muted fs-6">{{ visita.instalacion.nombre }} — {{ visita.fecha.strftime('%d/%m/%Y') }}</small></h1>
-<p class="text-muted">Una vez enviada, la visita queda congelada para vos — cualquier corrección la hace el Administrador/Jefe directamente al revisarla.</p>
-
-{% if antecedentes %}
-<div class="card mb-3">
-    <div class="card-body">
-        <h5 class="card-title">Antecedentes de esta instalación</h5>
-        <p class="text-muted small">Deficiencias abiertas de visitas anteriores, para tener contexto.</p>
-        <div class="table-responsive">
-<table class="table table-sm mb-0">
-            <thead><tr><th>Fecha</th><th>Clasificación</th><th>Descripción</th></tr></thead>
-            <tbody>
-                {% for obs in antecedentes %}
-                <tr>
-                    <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
-                    <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
-                    <td>{{ obs.descripcion }}</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-</div>
-    </div>
-</div>
-{% endif %}
-
-<h4 class="mt-4">Resumen del servicio</h4>
-{% if resumen %}
-<div class="table-responsive">
-<table class="table table-sm">
-    <thead><tr><th>Área</th><th>Equipos / formularios revisados</th></tr></thead>
-    <tbody>
-        {% for r in resumen %}
-        <tr><td>{{ r.categoria }}</td><td>{{ r.equipos_revisados }}</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-</div>
-{% else %}
-<p class="text-muted">Todavía no se cargó ningún checklist en esta visita.</p>
-{% endif %}
-
-{% if items_sin_cumplir %}
-<div class="alert alert-warning">
-    Ojo: hay {{ items_sin_cumplir|length }} servicio(s) de esta visita que todavía no están marcados como cumplidos
-    ({{ items_sin_cumplir|map(attribute='servicio.nombre')|join(', ') }}). Podés enviar igual, pero revisalo antes si no era la intención.
-</div>
-{% endif %}
-
-<form method="POST" class="mt-4" id="form-envio">
-    <div class="mb-3">
-        <label class="form-label">Tu devolución de la visita</label>
-        <textarea name="notas_cierre" class="form-control" rows="4" placeholder="Contale al Jefe cómo fue la visita, por qué quedó algo pendiente, cualquier cosa a destacar..."></textarea>
-    </div>
-
-    <div class="mb-3">
-        <label class="form-label">Firma del cliente</label>
-        <div>
-            <canvas id="firma-canvas" width="500" height="180" style="border:1px solid var(--border); border-radius:8px; touch-action:none; max-width:100%;"></canvas>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Enviar a revisión</h1>
         </div>
-        <button type="button" id="limpiar-firma" class="btn btn-sm btn-outline-secondary mt-2">Limpiar firma</button>
-        <input type="hidden" name="firma_cliente" id="firma_cliente_input">
-        <div class="form-text">Pasale el dispositivo al cliente para que firme acá arriba, con el dedo o el mouse — es la firma que va a quedar en el PDF de devolución.</div>
-    </div>
+        <div class="cuerpo-doc">
 
-    <div class="mb-3">
-        <label class="form-label">Tu firma (técnico)</label>
-        <div>
-            <canvas id="firma-tecnico-canvas" width="500" height="180" style="border:1px solid var(--border); border-radius:8px; touch-action:none; max-width:100%;"></canvas>
+            <p class="mb-1"><a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}">&larr; Volver a la visita</a></p>
+            <p class="text-muted">{{ visita.instalacion.nombre }} — {{ visita.fecha.strftime('%d/%m/%Y') }}<br>Una vez enviada, la visita queda congelada para vos — cualquier corrección la hace el Administrador/Jefe directamente al revisarla.</p>
+
+            {% if antecedentes %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">Antecedentes de esta instalación</h5>
+                    <p class="text-muted small">Deficiencias abiertas de visitas anteriores, para tener contexto.</p>
+                    <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>Fecha</th><th>Clasificación</th><th>Descripción</th></tr></thead>
+                        <tbody>
+                            {% for obs in antecedentes %}
+                            <tr>
+                                <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+                                <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+                                <td>{{ obs.descripcion }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="seccion-titulo-doc">Resumen del servicio</div>
+            {% if resumen %}
+            <div class="table-responsive">
+            <table class="table table-sm">
+                <thead><tr><th>Área</th><th>Equipos / formularios revisados</th></tr></thead>
+                <tbody>
+                    {% for r in resumen %}
+                    <tr><td>{{ r.categoria }}</td><td>{{ r.equipos_revisados }}</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% else %}
+            <p class="text-muted">Todavía no se cargó ningún checklist en esta visita.</p>
+            {% endif %}
+
+            {% if items_sin_cumplir %}
+            <div class="alert alert-warning">
+                Ojo: hay {{ items_sin_cumplir|length }} servicio(s) de esta visita que todavía no están marcados como cumplidos
+                ({{ items_sin_cumplir|map(attribute='servicio.nombre')|join(', ') }}). Podés enviar igual, pero revisalo antes si no era la intención.
+            </div>
+            {% endif %}
+
+            <form method="POST" class="mt-4" id="form-envio">
+                <div class="mb-3">
+                    <label class="form-label">Tu devolución de la visita</label>
+                    <textarea name="notas_cierre" class="form-control" rows="4" placeholder="Contale al Jefe cómo fue la visita, por qué quedó algo pendiente, cualquier cosa a destacar..."></textarea>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Firma del cliente</label>
+                    <div>
+                        <canvas id="firma-canvas" width="500" height="180" style="border:1px solid var(--border); border-radius:8px; touch-action:none; max-width:100%;"></canvas>
+                    </div>
+                    <button type="button" id="limpiar-firma" class="btn btn-sm btn-outline-secondary mt-2">Limpiar firma</button>
+                    <input type="hidden" name="firma_cliente" id="firma_cliente_input">
+                    <div class="form-text">Pasale el dispositivo al cliente para que firme acá arriba, con el dedo o el mouse — es la firma que va a quedar en el PDF de devolución.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Tu firma (técnico)</label>
+                    <div>
+                        <canvas id="firma-tecnico-canvas" width="500" height="180" style="border:1px solid var(--border); border-radius:8px; touch-action:none; max-width:100%;"></canvas>
+                    </div>
+                    <button type="button" id="limpiar-firma-tecnico" class="btn btn-sm btn-outline-secondary mt-2">Limpiar firma</button>
+                    <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Enviar a revisión</button>
+            </form>
+
         </div>
-        <button type="button" id="limpiar-firma-tecnico" class="btn btn-sm btn-outline-secondary mt-2">Limpiar firma</button>
-        <input type="hidden" name="firma_tecnico" id="firma_tecnico_input">
     </div>
-
-    <button type="submit" class="btn btn-primary">Enviar a revisión</button>
-</form>
+</div>
 <script src="{{ url_for('static', filename='js/firma.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {

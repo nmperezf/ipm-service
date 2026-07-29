@@ -1,80 +1,67 @@
 {% extends "base.html" %}
 {% block title %}Mi instalación{% endblock %}
 {% block content %}
-<h1>{{ cliente.nombre }}</h1>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>{{ cliente.nombre }}</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<div class="row g-2 mb-4">
-    <div class="col-md-3">
-        <a href="{{ url_for('portal.deficiencias', clasificacion='Deficiencia crítica') }}" class="dashboard-card">
-            <div class="card border-danger card-indicador">
-                <div class="valor text-danger">{{ deficiencias['Deficiencia crítica'] }}</div>
-                <div class="text-muted small">Deficiencias críticas</div>
+            <div class="grid-atencion">
+                <a href="{{ url_for('portal.deficiencias', clasificacion='Deficiencia crítica') }}" class="card-atencion critico">
+                    <span class="num">{{ deficiencias['Deficiencia crítica'] }}</span>
+                    <span class="etiqueta">Deficiencias críticas</span>
+                </a>
+                <a href="{{ url_for('portal.deficiencias', clasificacion='Deficiencia no crítica') }}" class="card-atencion alerta">
+                    <span class="num">{{ deficiencias['Deficiencia no crítica'] }}</span>
+                    <span class="etiqueta">Deficiencias no críticas</span>
+                </a>
+                <a href="{{ url_for('portal.deficiencias', clasificacion='Desactivación') }}" class="card-atencion info">
+                    <span class="num">{{ deficiencias['Desactivación'] }}</span>
+                    <span class="etiqueta">Desactivaciones</span>
+                </a>
+                <a href="{{ url_for('portal.deficiencias', clasificacion='Comentario') }}" class="card-atencion">
+                    <span class="num">{{ deficiencias['Comentario'] }}</span>
+                    <span class="etiqueta">Comentarios</span>
+                </a>
             </div>
-        </a>
-    </div>
-    <div class="col-md-3">
-        <a href="{{ url_for('portal.deficiencias', clasificacion='Deficiencia no crítica') }}" class="dashboard-card">
-            <div class="card border-warning card-indicador">
-                <div class="valor text-warning">{{ deficiencias['Deficiencia no crítica'] }}</div>
-                <div class="text-muted small">Deficiencias no críticas</div>
-            </div>
-        </a>
-    </div>
-    <div class="col-md-3">
-        <a href="{{ url_for('portal.deficiencias', clasificacion='Desactivación') }}" class="dashboard-card">
-            <div class="card border-secondary card-indicador">
-                <div class="valor">{{ deficiencias['Desactivación'] }}</div>
-                <div class="text-muted small">Desactivaciones</div>
-            </div>
-        </a>
-    </div>
-    <div class="col-md-3">
-        <a href="{{ url_for('portal.deficiencias', clasificacion='Comentario') }}" class="dashboard-card">
-            <div class="card card-indicador">
-                <div class="valor">{{ deficiencias['Comentario'] }}</div>
-                <div class="text-muted small">Comentarios</div>
-            </div>
-        </a>
-    </div>
-</div>
 
-<div class="row g-2 mb-4">
-    <div class="col-md-6">
-        <div class="card card-indicador">
-            <div class="valor" style="font-size:1.1rem;">{{ indicadores.ultima_visita.strftime('%d/%m/%Y') if indicadores.ultima_visita else '-' }}</div>
-            <div class="text-muted small">Última visita</div>
+            <div class="grid-atencion">
+                <div class="card-atencion" style="grid-column: span 2;">
+                    <span class="num" style="font-size:1.3rem;">{{ indicadores.ultima_visita.strftime('%d/%m/%Y') if indicadores.ultima_visita else '-' }}</span>
+                    <span class="etiqueta">Última visita</span>
+                </div>
+                <a href="{{ url_for('portal.historico') }}" class="card-atencion info" style="grid-column: span 2;">
+                    <span class="num" style="font-size:1.3rem;">Ver histórico técnico</span>
+                    <span class="etiqueta">Visitas cerradas y observaciones aprobadas</span>
+                </a>
+            </div>
+
+            <div class="seccion-titulo-doc">Próximas visitas</div>
+            <div class="table-responsive">
+            <table class="table table-sm data-table">
+                <thead><tr><th>Fecha</th><th>Instalación</th><th>Servicios</th><th>Nota</th></tr></thead>
+                <tbody>
+                    {% for visita in proximas_visitas %}
+                    <tr>
+                        <td>{{ visita.fecha.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ visita.instalacion.nombre }}</td>
+                        <td>{{ visita.items|map(attribute='servicio.nombre')|join(', ') if visita.items else '-' }}</td>
+                        <td>
+                            {% if visita.nota_cliente %}
+                            {{ visita.nota_cliente }} <small class="text-muted">({{ visita.nota_cliente_fecha.strftime('%d/%m/%Y') if visita.nota_cliente_fecha else '' }})</small>
+                            {% else %}-{% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="text-center text-muted py-4">No hay visitas programadas por el momento.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
         </div>
     </div>
-    <div class="col-md-6">
-        <a href="{{ url_for('portal.historico') }}" class="dashboard-card">
-            <div class="card card-indicador">
-                <div class="valor" style="font-size:1.1rem;">Ver histórico técnico</div>
-                <div class="text-muted small">Visitas cerradas y observaciones aprobadas</div>
-            </div>
-        </a>
-    </div>
-</div>
-
-<h4 class="mt-4">Próximas visitas</h4>
-<div class="table-responsive">
-<table class="table table-sm data-table">
-    <thead><tr><th>Fecha</th><th>Instalación</th><th>Servicios</th><th>Nota</th></tr></thead>
-    <tbody>
-        {% for visita in proximas_visitas %}
-        <tr>
-            <td>{{ visita.fecha.strftime('%d/%m/%Y') }}</td>
-            <td>{{ visita.instalacion.nombre }}</td>
-            <td>{{ visita.items|map(attribute='servicio.nombre')|join(', ') if visita.items else '-' }}</td>
-            <td>
-                {% if visita.nota_cliente %}
-                {{ visita.nota_cliente }} <small class="text-muted">({{ visita.nota_cliente_fecha.strftime('%d/%m/%Y') if visita.nota_cliente_fecha else '' }})</small>
-                {% else %}-{% endif %}
-            </td>
-        </tr>
-        {% else %}
-        <tr><td colspan="4" class="text-center text-muted py-4">No hay visitas programadas por el momento.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
 </div>
 {% endblock %}

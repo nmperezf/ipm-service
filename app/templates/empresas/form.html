@@ -1,33 +1,43 @@
 {% extends "base.html" %}
 {% block title %}Nueva empresa{% endblock %}
 {% block content %}
-<h1>Nueva empresa</h1>
-<p class="text-muted">Se crea la empresa junto con su primer usuario Administrador. De ahí en más, ese Administrador gestiona el resto de sus usuarios (técnicos y clientes).</p>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Nueva empresa</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<form method="POST" class="mt-3">
-    <div class="mb-3">
-        <label class="form-label">Nombre de la empresa</label>
-        <input type="text" name="nombre" class="form-control" required>
+            <p class="text-muted">Se crea la empresa junto con su primer usuario Administrador. De ahí en más, ese Administrador gestiona el resto de sus usuarios (técnicos y clientes).</p>
+
+            <form method="POST" class="mt-3">
+                <div class="mb-3">
+                    <label class="form-label">Nombre de la empresa</label>
+                    <input type="text" name="nombre" class="form-control" required>
+                </div>
+
+                <hr>
+                <h5>Primer usuario administrador</h5>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Nombre completo</label>
+                        <input type="text" name="admin_nombre" class="form-control">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Usuario</label>
+                        <input type="text" name="admin_username" class="form-control" required>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Contraseña</label>
+                        <input type="password" name="admin_password" class="form-control" required>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Crear empresa</button>
+                <a href="{{ url_for('empresas.listar') }}" class="btn btn-link">Cancelar</a>
+            </form>
+
+        </div>
     </div>
-
-    <hr>
-    <h5>Primer usuario administrador</h5>
-    <div class="row">
-        <div class="col-md-4 mb-3">
-            <label class="form-label">Nombre completo</label>
-            <input type="text" name="admin_nombre" class="form-control">
-        </div>
-        <div class="col-md-4 mb-3">
-            <label class="form-label">Usuario</label>
-            <input type="text" name="admin_username" class="form-control" required>
-        </div>
-        <div class="col-md-4 mb-3">
-            <label class="form-label">Contraseña</label>
-            <input type="password" name="admin_password" class="form-control" required>
-        </div>
-    </div>
-
-    <button type="submit" class="btn btn-primary">Crear empresa</button>
-    <a href="{{ url_for('empresas.listar') }}" class="btn btn-link">Cancelar</a>
-</form>
+</div>
 {% endblock %}

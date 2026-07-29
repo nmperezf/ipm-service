@@ -1,29 +1,39 @@
 {% extends "base.html" %}
 {% block title %}Mensajes resueltos{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('dashboard.inicio') }}">&larr; Inicio</a></p>
-<h1>Mensajes resueltos</h1>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Mensajes resueltos</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<div class="list-group">
-    {% for m in mensajes %}
-    <div class="list-group-item d-flex justify-content-between align-items-center">
-        <span>
-            <span class="badge badge-{{ m.prioridad }}">{{ m.prioridad }}</span>
-            {% if m.remitente_id == current_user.id %}
-            <span class="text-muted small">Para {{ m.destinatario.nombre_completo or m.destinatario.username }}:</span>
-            {% else %}
-            <span class="text-muted small">De {{ m.remitente.nombre_completo or m.remitente.username }}:</span>
-            {% endif %}
-            {{ m.titulo }}
-            {% if m.cliente %} — <a href="{{ url_for('clientes.detalle', cliente_id=m.cliente_id) }}">{{ m.cliente.nombre }}</a>{% endif %}
-            <small class="text-muted">({{ m.fecha_carga.strftime('%d/%m/%Y') }})</small>
-        </span>
-        <form method="POST" action="{{ url_for('mensajes.reabrir', mensaje_id=m.id) }}" class="d-inline">
-            <button type="submit" class="btn btn-sm btn-outline-secondary">Reabrir</button>
-        </form>
+            <p class="mb-3"><a href="{{ url_for('dashboard.inicio') }}">&larr; Inicio</a></p>
+
+            <div class="list-group">
+                {% for m in mensajes %}
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                    <span>
+                        <span class="badge badge-{{ m.prioridad }}">{{ m.prioridad }}</span>
+                        {% if m.remitente_id == current_user.id %}
+                        <span class="text-muted small">Para {{ m.destinatario.nombre_completo or m.destinatario.username }}:</span>
+                        {% else %}
+                        <span class="text-muted small">De {{ m.remitente.nombre_completo or m.remitente.username }}:</span>
+                        {% endif %}
+                        {{ m.titulo }}
+                        {% if m.cliente %} — <a href="{{ url_for('clientes.detalle', cliente_id=m.cliente_id) }}">{{ m.cliente.nombre }}</a>{% endif %}
+                        <small class="text-muted">({{ m.fecha_carga.strftime('%d/%m/%Y') }})</small>
+                    </span>
+                    <form method="POST" action="{{ url_for('mensajes.reabrir', mensaje_id=m.id) }}" class="d-inline">
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">Reabrir</button>
+                    </form>
+                </div>
+                {% else %}
+                <p class="text-muted">Todavía no hay mensajes resueltos.</p>
+                {% endfor %}
+            </div>
+
+        </div>
     </div>
-    {% else %}
-    <p class="text-muted">Todavía no hay mensajes resueltos.</p>
-    {% endfor %}
 </div>
 {% endblock %}

@@ -1,23 +1,33 @@
 {% extends "base.html" %}
 {% block title %}{{ clasificacion }}{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('portal.inicio') }}">&larr; {{ cliente.nombre }}</a></p>
-<h1>{{ clasificacion }} <span class="text-muted fs-6">({{ observaciones|length }})</span></h1>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>{{ clasificacion }}</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<div class="table-responsive">
-<table class="table table-hover data-table">
-    <thead><tr><th>Fecha</th><th>Instalación</th><th>Descripción</th></tr></thead>
-    <tbody>
-        {% for obs in observaciones %}
-        <tr>
-            <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
-            <td>{{ obs.instalacion.nombre }}</td>
-            <td>{{ obs.descripcion }}</td>
-        </tr>
-        {% else %}
-        <tr><td colspan="3" class="text-center text-muted py-4"><i class="bi bi-check-circle text-success"></i> Sin novedades de este tipo.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+            <p class="text-muted mb-3"><a href="{{ url_for('portal.inicio') }}">&larr; {{ cliente.nombre }}</a> — {{ observaciones|length }} observación{{ 'es' if observaciones|length != 1 else '' }}.</p>
+
+            <div class="table-responsive">
+            <table class="table table-hover data-table">
+                <thead><tr><th>Fecha</th><th>Instalación</th><th>Descripción</th></tr></thead>
+                <tbody>
+                    {% for obs in observaciones %}
+                    <tr>
+                        <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ obs.instalacion.nombre }}</td>
+                        <td>{{ obs.descripcion }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="3" class="text-center text-muted py-4"><i class="bi bi-check-circle text-success"></i> Sin novedades de este tipo.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+        </div>
+    </div>
 </div>
 {% endblock %}

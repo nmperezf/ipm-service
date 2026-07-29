@@ -1,38 +1,48 @@
 {% extends "base.html" %}
 {% block title %}Tipos de equipo{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Tipos de equipo</h1>
-    <a href="{{ url_for('tipos_equipo.nuevo') }}" class="btn btn-primary">+ Nuevo tipo de equipo</a>
-</div>
-<p class="text-muted">
-    Catálogo disponible al cargar un equipo nuevo (ej. ECA, Manifold, Bomba, BIE) y al elegir a qué tipo de
-    equipo aplica un formulario o un servicio tipo. La categoría agrupa la navegación del portal de cliente.
-</p>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Tipos de equipo</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-{% if not grupos %}
-<p class="text-center text-muted py-4">Todavía no hay tipos de equipo cargados.</p>
-{% endif %}
-{% for categoria, tipos in grupos %}
-<h6 class="text-muted text-uppercase mt-3" style="font-size:.72rem; letter-spacing:.04em;">{{ categoria }}</h6>
-<div class="table-responsive">
-<table class="table table-hover data-table">
-    <tbody>
-        {% for t in tipos %}
-        <tr>
-            <td>{{ t.nombre }}</td>
-            <td class="text-end">
-                {% if current_user.rol in ('Administrador', 'Jefe') %}
-                <form method="POST" action="{{ url_for('tipos_equipo.eliminar', tipo_id=t.id) }}" class="d-inline"
-                      onsubmit="return confirm('¿Eliminar el tipo de equipo {{ t.nombre }}?');">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-                </form>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                <p class="text-muted mb-0">
+                    Catálogo disponible al cargar un equipo nuevo (ej. ECA, Manifold, Bomba, BIE) y al elegir a qué tipo de
+                    equipo aplica un formulario o un servicio tipo. La categoría agrupa la navegación del portal de cliente.
+                </p>
+                <a href="{{ url_for('tipos_equipo.nuevo') }}" class="btn btn-primary btn-sm">+ Nuevo tipo de equipo</a>
+            </div>
+
+            {% if not grupos %}
+            <p class="text-center text-muted py-4">Todavía no hay tipos de equipo cargados.</p>
+            {% endif %}
+            {% for categoria, tipos in grupos %}
+            <div class="seccion-titulo-doc">{{ categoria }}</div>
+            <div class="table-responsive">
+            <table class="table table-hover data-table">
+                <tbody>
+                    {% for t in tipos %}
+                    <tr>
+                        <td>{{ t.nombre }}</td>
+                        <td class="text-end">
+                            {% if current_user.rol in ('Administrador', 'Jefe') %}
+                            <form method="POST" action="{{ url_for('tipos_equipo.eliminar', tipo_id=t.id) }}" class="d-inline"
+                                  onsubmit="return confirm('¿Eliminar el tipo de equipo {{ t.nombre }}?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endfor %}
+
+        </div>
+    </div>
 </div>
-{% endfor %}
 {% endblock %}

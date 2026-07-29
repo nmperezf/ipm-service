@@ -1,33 +1,43 @@
 {% extends "base.html" %}
 {% block title %}Formularios{% endblock %}
 {% block content %}
-<h1 class="mb-2">Formularios</h1>
-<p class="text-muted">Catálogos de la empresa. Los formularios propios de cada cliente se editan desde el contrato correspondiente.</p>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Formularios</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<div class="row g-3" style="max-width: 640px;">
-    {% if current_user.rol in ('Administrador', 'Jefe') %}
-    <div class="col-md-6">
-        <a href="{{ url_for('servicios_tipo.listar') }}" class="dashboard-card">
-            <div class="card h-100">
-                <div class="card-body text-center py-4">
-                    <div class="fs-2"><i class="bi bi-gear"></i></div>
-                    <div class="fw-bold mt-2">Servicios tipo</div>
-                    <div class="text-muted small mt-1">Catálogo de servicios de la empresa, con su formulario base</div>
+            <p class="text-muted">Catálogos de la empresa. Los formularios propios de cada cliente se editan desde el contrato correspondiente.</p>
+
+            <div class="row g-3" style="max-width: 640px;">
+                {% if current_user.rol in ('Administrador', 'Jefe') %}
+                <div class="col-md-6">
+                    <a href="{{ url_for('servicios_tipo.listar') }}" class="dashboard-card">
+                        <div class="card h-100">
+                            <div class="card-body text-center py-4">
+                                <div class="fs-2"><i class="bi bi-gear"></i></div>
+                                <div class="fw-bold mt-2">Servicios tipo</div>
+                                <div class="text-muted small mt-1">Catálogo de servicios de la empresa, con su formulario base</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                {% endif %}
+                <div class="col-md-6">
+                    <a href="{{ url_for('tipos_equipo.listar') }}" class="dashboard-card">
+                        <div class="card h-100">
+                            <div class="card-body text-center py-4">
+                                <div class="fs-2"><i class="bi bi-hdd-stack"></i></div>
+                                <div class="fw-bold mt-2">Tipos de equipo</div>
+                                <div class="text-muted small mt-1">Catálogo de equipos (Bomba, ECA, BIE, Manifold...) y sus categorías</div>
+                            </div>
+                        </div>
+                    </a>
                 </div>
             </div>
-        </a>
-    </div>
-    {% endif %}
-    <div class="col-md-6">
-        <a href="{{ url_for('tipos_equipo.listar') }}" class="dashboard-card">
-            <div class="card h-100">
-                <div class="card-body text-center py-4">
-                    <div class="fs-2"><i class="bi bi-hdd-stack"></i></div>
-                    <div class="fw-bold mt-2">Tipos de equipo</div>
-                    <div class="text-muted small mt-1">Catálogo de equipos (Bomba, ECA, BIE, Manifold...) y sus categorías</div>
-                </div>
-            </div>
-        </a>
+
+        </div>
     </div>
 </div>
 {% endblock %}

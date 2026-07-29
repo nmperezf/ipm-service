@@ -1,130 +1,140 @@
 {% extends "base.html" %}
 {% block title %}{{ contrato.nombre }}{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('instalaciones.detalle', instalacion_id=contrato.instalacion_id) }}">&larr; {{ contrato.instalacion.nombre }}</a></p>
-
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>{{ contrato.nombre }}</h1>
-    <a href="{{ url_for('contratos.editar', contrato_id=contrato.id) }}" class="btn btn-outline-secondary">Editar</a>
-</div>
-<p>
-    Vigencia: <strong>{{ contrato.fecha_inicio.strftime('%m/%Y') }}</strong> a <strong>{{ contrato.fecha_fin.strftime('%m/%Y') }}</strong>
-    &nbsp;|&nbsp; Estado: <span class="badge badge-{{ contrato.estado.replace(' ', '.') }}">{{ contrato.estado }}</span>
-</p>
-
-<h4 class="mt-4">Servicios contratados</h4>
-{% if not contrato.servicios %}
-<p class="text-muted">Todavía no agregaste servicios a este contrato.</p>
-{% endif %}
-{% for s in contrato.servicios %}
-{% set tipo_formulario = formularios_por_servicio.get(s.id) %}
-<div class="card mb-2">
-    <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
-            <div>
-                <strong>{{ s.nombre }}</strong>
-                <span class="badge badge-Programado text-capitalize ms-1">{{ s.frecuencia }}</span>
-                <span class="text-muted small ms-2">
-                    {{ s.fechas_ocurrencia()|length }} ejecución(es) en el año, desde {{ s.fecha_base.strftime('%m/%Y') }}
-                    {% if not s.fecha_inicio %}(mismo mes del contrato){% endif %}
-                </span>
-            </div>
-            <div>
-                {% if tipo_formulario %}
-                <a href="{{ url_for('tipos_formulario.editar', tipo_id=tipo_formulario.id, volver_a=url_for('contratos.detalle', contrato_id=contrato.id)) }}" class="btn btn-sm btn-outline-secondary">✏️ Editar campos</a>
-                {% endif %}
-                <form method="POST" action="{{ url_for('contratos.eliminar_servicio', servicio_id=s.id) }}" class="d-inline"
-                      onsubmit="return confirm('¿Eliminar este servicio? Se regenerarán las visitas del contrato.');">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-                </form>
-            </div>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>{{ contrato.nombre }}</h1>
         </div>
+        <div class="cuerpo-doc">
 
-        {% if tipo_formulario %}
-        <div class="formulario-inline mt-2">
-            {% for campo in tipo_formulario.campos() %}
-            <div class="campo-inline"><span class="text-muted">{{ campo.label }}</span><span>{{ etiquetas_tipo_campo.get(campo.tipo, campo.tipo) }}</span></div>
+            <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=contrato.instalacion_id) }}">&larr; {{ contrato.instalacion.nombre }}</a></p>
+
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                <p class="text-muted mb-0">
+                    Vigencia: <strong class="text-body">{{ contrato.fecha_inicio.strftime('%m/%Y') }}</strong> a <strong class="text-body">{{ contrato.fecha_fin.strftime('%m/%Y') }}</strong>
+                    &nbsp;|&nbsp; Estado: <span class="badge badge-{{ contrato.estado.replace(' ', '.') }}">{{ contrato.estado }}</span>
+                </p>
+                <a href="{{ url_for('contratos.editar', contrato_id=contrato.id) }}" class="btn btn-outline-secondary btn-sm">Editar</a>
+            </div>
+
+            <div class="seccion-titulo-doc">Servicios contratados</div>
+            {% if not contrato.servicios %}
+            <p class="text-muted">Todavía no agregaste servicios a este contrato.</p>
+            {% endif %}
+            {% for s in contrato.servicios %}
+            {% set tipo_formulario = formularios_por_servicio.get(s.id) %}
+            <div class="card mb-2">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <strong>{{ s.nombre }}</strong>
+                            <span class="badge badge-Programado text-capitalize ms-1">{{ s.frecuencia }}</span>
+                            <span class="text-muted small ms-2">
+                                {{ s.fechas_ocurrencia()|length }} ejecución(es) en el año, desde {{ s.fecha_base.strftime('%m/%Y') }}
+                                {% if not s.fecha_inicio %}(mismo mes del contrato){% endif %}
+                            </span>
+                        </div>
+                        <div>
+                            {% if tipo_formulario %}
+                            <a href="{{ url_for('tipos_formulario.editar', tipo_id=tipo_formulario.id, volver_a=url_for('contratos.detalle', contrato_id=contrato.id)) }}" class="btn btn-sm btn-outline-secondary">✏️ Editar campos</a>
+                            {% endif %}
+                            <form method="POST" action="{{ url_for('contratos.eliminar_servicio', servicio_id=s.id) }}" class="d-inline"
+                                  onsubmit="return confirm('¿Eliminar este servicio? Se regenerarán las visitas del contrato.');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    {% if tipo_formulario %}
+                    <div class="formulario-inline mt-2">
+                        {% for campo in tipo_formulario.campos() %}
+                        <div class="campo-inline"><span class="text-muted">{{ campo.label }}</span><span>{{ etiquetas_tipo_campo.get(campo.tipo, campo.tipo) }}</span></div>
+                        {% else %}
+                        <span class="text-muted small">Este formulario todavía no tiene campos.</span>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted small mb-0 mt-2">
+                        No se encontró el formulario de este servicio para {{ contrato.instalacion.cliente.nombre }}.
+                        <a href="{{ url_for('tipos_formulario.nuevo', cliente_id=contrato.instalacion.cliente_id, volver_a=url_for('contratos.detalle', contrato_id=contrato.id)) }}">Crear uno</a>.
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+            {% if contrato.servicios %}
+            <p class="text-end">
+                <a href="{{ url_for('tipos_formulario.nuevo', cliente_id=contrato.instalacion.cliente_id, volver_a=url_for('contratos.detalle', contrato_id=contrato.id)) }}" class="small">+ Formulario adicional (sin ligar a un servicio contratado)</a>
+            </p>
+            {% endif %}
+
+            <h5 class="mt-3">Agregar servicio</h5>
+            {% if not servicios_tipo %}
+            <div class="alert alert-warning">
+                Tu empresa todavía no tiene ningún <a href="{{ url_for('servicios_tipo.listar') }}">servicio tipo</a> cargado —
+                creá al menos uno ahí antes de poder agregarlo a un contrato.
+            </div>
             {% else %}
-            <span class="text-muted small">Este formulario todavía no tiene campos.</span>
-            {% endfor %}
+            <form method="POST" action="{{ url_for('contratos.nuevo_servicio', contrato_id=contrato.id) }}" class="row g-2 align-items-end mb-4">
+                <div class="col-md-5">
+                    <label class="form-label">Servicio</label>
+                    <select name="servicio_tipo_id" class="form-select" required>
+                        <option value="">-- Seleccioná --</option>
+                        {% for s in servicios_tipo %}
+                        <option value="{{ s.id }}">{{ s.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">¿Falta el que necesitás? <a href="{{ url_for('servicios_tipo.nuevo') }}">Creá uno nuevo</a> en el catálogo de la empresa.</div>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Frecuencia</label>
+                    <select name="frecuencia" class="form-select" required>
+                        {% for f in frecuencias %}
+                        <option value="{{ f }}">{{ f|capitalize }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Mes de inicio</label>
+                    <input type="month" name="mes_inicio" class="form-control">
+                    <div class="form-text">Vacío = mismo mes del contrato</div>
+                </div>
+                <div class="col-md-2">
+                    <button type="submit" class="btn btn-primary w-100">Agregar</button>
+                </div>
+            </form>
+            {% endif %}
+
+            <div class="seccion-titulo-doc">Visitas generadas automáticamente</div>
+            <p class="text-muted">Cuando varios servicios coinciden en fecha, aparecen agrupados en la misma visita.</p>
+            <div class="table-responsive">
+            <table class="table table-sm data-table">
+                <thead><tr><th>Fecha</th><th>Servicios incluidos</th><th>Estado</th><th></th></tr></thead>
+                <tbody>
+                    {% for visita in visitas %}
+                    <tr>
+                        <td>{{ visita.fecha.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ visita.items|map(attribute='servicio.nombre')|join(', ') }}</td>
+                        <td><span class="badge badge-{{ visita.estado.replace(' ', '.') }}">{{ visita.estado }}</span></td>
+                        <td>
+                            <a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a>
+                            <a href="{{ url_for('visitas.editar', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="text-muted text-center py-3">Agregá al menos un servicio para generar las visitas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+            <form method="POST" action="{{ url_for('contratos.eliminar', contrato_id=contrato.id) }}" class="form-confirmar-password" data-sin-bloqueo
+                  data-mensaje="¿Eliminar '{{ contrato.nombre }}'? Se borran también todos sus servicios, visitas, checklists y fotos asociadas. Esta acción no se puede deshacer.">
+                <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar contrato</button>
+            </form>
+
         </div>
-        {% else %}
-        <p class="text-muted small mb-0 mt-2">
-            No se encontró el formulario de este servicio para {{ contrato.instalacion.cliente.nombre }}.
-            <a href="{{ url_for('tipos_formulario.nuevo', cliente_id=contrato.instalacion.cliente_id, volver_a=url_for('contratos.detalle', contrato_id=contrato.id)) }}">Crear uno</a>.
-        </p>
-        {% endif %}
     </div>
 </div>
-{% endfor %}
-{% if contrato.servicios %}
-<p class="text-end">
-    <a href="{{ url_for('tipos_formulario.nuevo', cliente_id=contrato.instalacion.cliente_id, volver_a=url_for('contratos.detalle', contrato_id=contrato.id)) }}" class="small">+ Formulario adicional (sin ligar a un servicio contratado)</a>
-</p>
-{% endif %}
-
-<h5 class="mt-3">Agregar servicio</h5>
-{% if not servicios_tipo %}
-<div class="alert alert-warning">
-    Tu empresa todavía no tiene ningún <a href="{{ url_for('servicios_tipo.listar') }}">servicio tipo</a> cargado —
-    creá al menos uno ahí antes de poder agregarlo a un contrato.
-</div>
-{% else %}
-<form method="POST" action="{{ url_for('contratos.nuevo_servicio', contrato_id=contrato.id) }}" class="row g-2 align-items-end mb-4">
-    <div class="col-md-5">
-        <label class="form-label">Servicio</label>
-        <select name="servicio_tipo_id" class="form-select" required>
-            <option value="">-- Seleccioná --</option>
-            {% for s in servicios_tipo %}
-            <option value="{{ s.id }}">{{ s.nombre }}</option>
-            {% endfor %}
-        </select>
-        <div class="form-text">¿Falta el que necesitás? <a href="{{ url_for('servicios_tipo.nuevo') }}">Creá uno nuevo</a> en el catálogo de la empresa.</div>
-    </div>
-    <div class="col-md-3">
-        <label class="form-label">Frecuencia</label>
-        <select name="frecuencia" class="form-select" required>
-            {% for f in frecuencias %}
-            <option value="{{ f }}">{{ f|capitalize }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="col-md-2">
-        <label class="form-label">Mes de inicio</label>
-        <input type="month" name="mes_inicio" class="form-control">
-        <div class="form-text">Vacío = mismo mes del contrato</div>
-    </div>
-    <div class="col-md-2">
-        <button type="submit" class="btn btn-primary w-100">Agregar</button>
-    </div>
-</form>
-{% endif %}
-
-<h4 class="mt-4">Visitas generadas automáticamente</h4>
-<p class="text-muted">Cuando varios servicios coinciden en fecha, aparecen agrupados en la misma visita.</p>
-<div class="table-responsive">
-<table class="table table-sm data-table">
-    <thead><tr><th>Fecha</th><th>Servicios incluidos</th><th>Estado</th><th></th></tr></thead>
-    <tbody>
-        {% for visita in visitas %}
-        <tr>
-            <td>{{ visita.fecha.strftime('%d/%m/%Y') }}</td>
-            <td>{{ visita.items|map(attribute='servicio.nombre')|join(', ') }}</td>
-            <td><span class="badge badge-{{ visita.estado.replace(' ', '.') }}">{{ visita.estado }}</span></td>
-            <td>
-                <a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a>
-                <a href="{{ url_for('visitas.editar', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-            </td>
-        </tr>
-        {% else %}
-        <tr><td colspan="4" class="text-muted text-center py-3">Agregá al menos un servicio para generar las visitas.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-</div>
-
-<form method="POST" action="{{ url_for('contratos.eliminar', contrato_id=contrato.id) }}" class="form-confirmar-password" data-sin-bloqueo
-      data-mensaje="¿Eliminar '{{ contrato.nombre }}'? Se borran también todos sus servicios, visitas, checklists y fotos asociadas. Esta acción no se puede deshacer.">
-    <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar contrato</button>
-</form>
 {% endblock %}

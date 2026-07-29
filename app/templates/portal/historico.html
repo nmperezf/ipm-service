@@ -1,55 +1,65 @@
 {% extends "base.html" %}
 {% block title %}Histórico técnico{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('portal.inicio') }}">&larr; {{ cliente.nombre }}</a></p>
-<h1>Histórico técnico</h1>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Histórico técnico</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<h4 class="mt-4">Visitas</h4>
-<div class="table-responsive">
-<table class="table table-sm data-table">
-    <thead><tr><th>Fecha</th><th>Instalación</th><th>Servicios</th><th>Cerrada el</th><th></th></tr></thead>
-    <tbody>
-        {% for visita in visitas %}
-        <tr>
-            <td>{{ visita.fecha.strftime('%d/%m/%Y') }}</td>
-            <td>{{ visita.instalacion.nombre }}</td>
-            <td>{{ visita.items|map(attribute='servicio.nombre')|join(', ') if visita.items else '-' }}</td>
-            <td>{{ visita.fecha_cierre.strftime('%d/%m/%Y') if visita.fecha_cierre else '-' }}</td>
-            <td>
-                {% if visita.checklists_visibles %}
-                <a href="{{ url_for('portal.detalle_visita', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Ver checklists</a>
-                <a href="{{ url_for('visitas.pdf_devolucion', visita_id=visita.id) }}" class="btn btn-sm btn-outline-dark" target="_blank">PDF</a>
-                {% else %}
-                <span class="text-muted small">En revisión</span>
-                {% endif %}
-            </td>
-        </tr>
-        {% else %}
-        <tr><td colspan="5" class="text-center text-muted py-4">Todavía no hay visitas cerradas.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
-</div>
+            <p class="mb-1"><a href="{{ url_for('portal.inicio') }}">&larr; {{ cliente.nombre }}</a></p>
 
-<div class="d-flex justify-content-between align-items-center mt-4">
-    <h4 class="mb-0">Observaciones</h4>
-    <a href="{{ url_for('portal.observaciones_resueltas') }}" class="btn btn-sm btn-outline-secondary">Ver histórico de resueltas</a>
-</div>
-<div class="table-responsive">
-<table class="table table-sm data-table mt-2">
-    <thead><tr><th>Fecha carga</th><th>Instalación</th><th>Clasificación</th><th>Descripción</th></tr></thead>
-    <tbody>
-        {% for obs in observaciones %}
-        <tr>
-            <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
-            <td>{{ obs.instalacion.nombre }}</td>
-            <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
-            <td>{{ obs.descripcion }}</td>
-        </tr>
-        {% else %}
-        <tr><td colspan="4" class="text-center text-muted py-4">Sin observaciones abiertas.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+            <div class="seccion-titulo-doc">Visitas</div>
+            <div class="table-responsive">
+            <table class="table table-sm data-table">
+                <thead><tr><th>Fecha</th><th>Instalación</th><th>Servicios</th><th>Cerrada el</th><th></th></tr></thead>
+                <tbody>
+                    {% for visita in visitas %}
+                    <tr>
+                        <td>{{ visita.fecha.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ visita.instalacion.nombre }}</td>
+                        <td>{{ visita.items|map(attribute='servicio.nombre')|join(', ') if visita.items else '-' }}</td>
+                        <td>{{ visita.fecha_cierre.strftime('%d/%m/%Y') if visita.fecha_cierre else '-' }}</td>
+                        <td>
+                            {% if visita.checklists_visibles %}
+                            <a href="{{ url_for('portal.detalle_visita', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Ver checklists</a>
+                            <a href="{{ url_for('visitas.pdf_devolucion', visita_id=visita.id) }}" class="btn btn-sm btn-outline-dark" target="_blank">PDF</a>
+                            {% else %}
+                            <span class="text-muted small">En revisión</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">Todavía no hay visitas cerradas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+            <div class="seccion-titulo-doc">Observaciones</div>
+            <div class="d-flex justify-content-end mb-2">
+                <a href="{{ url_for('portal.observaciones_resueltas') }}" class="btn btn-sm btn-outline-secondary">Ver histórico de resueltas</a>
+            </div>
+            <div class="table-responsive">
+            <table class="table table-sm data-table">
+                <thead><tr><th>Fecha carga</th><th>Instalación</th><th>Clasificación</th><th>Descripción</th></tr></thead>
+                <tbody>
+                    {% for obs in observaciones %}
+                    <tr>
+                        <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ obs.instalacion.nombre }}</td>
+                        <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+                        <td>{{ obs.descripcion }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="text-center text-muted py-4">Sin observaciones abiertas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+        </div>
+    </div>
 </div>
 {% endblock %}

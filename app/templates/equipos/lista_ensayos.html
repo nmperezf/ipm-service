@@ -1,63 +1,74 @@
 {% extends "base.html" %}
 {% block title %}Ensayos de {{ equipo.nombre }}{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('portal.equipo_detalle', equipo_id=equipo.id) if current_user.rol == 'Cliente' else url_for('equipos.detalle', equipo_id=equipo.id) }}">&larr; {{ equipo.nombre }}</a></p>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Ensayos de curva de caudal</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="mb-0">Ensayos de curva de caudal <small class="text-muted fs-6">{{ equipo.nombre }}</small></h1>
-    {% if equipo.curva_fabrica and current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
-    <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id) }}" class="btn btn-primary">+ Nuevo ensayo</a>
-    {% endif %}
-</div>
+            <p class="mb-1"><a href="{{ url_for('portal.equipo_detalle', equipo_id=equipo.id) if current_user.rol == 'Cliente' else url_for('equipos.detalle', equipo_id=equipo.id) }}">&larr; {{ equipo.nombre }}</a></p>
 
-{% if not equipo.curva_fabrica %}
-<div class="alert alert-warning">
-    Este equipo todavía no tiene curva de fábrica cargada.
-    {% if current_user.rol in ('Administrador', 'Jefe') %}
-    <a href="{{ url_for('curvas.curva_fabrica', equipo_id=equipo.id) }}">Cargala acá</a> antes de registrar un ensayo.
-    {% else %}
-    Pedile a un Administrador o Jefe que la cargue antes de registrar un ensayo.
-    {% endif %}
-</div>
-{% endif %}
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+                <span></span>
+                {% if equipo.curva_fabrica and current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+                <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id) }}" class="btn btn-primary btn-sm">+ Nuevo ensayo</a>
+                {% endif %}
+            </div>
 
-{% if años_disponibles|length > 1 %}
-<div class="btn-group mb-3">
-    <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-sm {{ 'btn-dark' if not año_filtro else 'btn-outline-secondary' }}">Todos</a>
-    {% for año in años_disponibles %}
-    <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id, año=año) }}" class="btn btn-sm {{ 'btn-dark' if año_filtro == año else 'btn-outline-secondary' }}">{{ año }}</a>
-    {% endfor %}
-</div>
-{% endif %}
+            {% if not equipo.curva_fabrica %}
+            <div class="alert alert-warning">
+                Este equipo todavía no tiene curva de fábrica cargada.
+                {% if current_user.rol in ('Administrador', 'Jefe') %}
+                <a href="{{ url_for('curvas.curva_fabrica', equipo_id=equipo.id) }}">Cargala acá</a> antes de registrar un ensayo.
+                {% else %}
+                Pedile a un Administrador o Jefe que la cargue antes de registrar un ensayo.
+                {% endif %}
+            </div>
+            {% endif %}
 
-<div class="table-responsive">
-<table class="table table-hover data-table">
-    <thead><tr><th>Fecha</th><th>Presión @ 100% (PSI)</th><th>NFPA 25</th><th>Validación</th><th></th></tr></thead>
-    <tbody>
-        {% for ensayo in ensayos %}
-        {% set resultado = ensayo.resultado_final() %}
-        <tr>
-            <td>{{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}</td>
-            <td>{{ ensayo.presion_neta_punto_100 }}</td>
-            <td>
-                {% if resultado is none %}<span class="badge bg-secondary">Sin curva de fábrica</span>
-                {% elif resultado %}<span class="badge badge-Cumplido">Cumple NFPA 25</span>
-                {% else %}<span class="badge badge-Vencido">No cumple NFPA 25</span>{% endif %}
-            </td>
-            <td>
-                {% if ensayo.estado_revision == 'Validado' %}<span class="badge badge-Cumplido">Validado</span>
-                {% elif ensayo.estado_revision == 'Rechazado' %}<span class="badge badge-Vencido">Rechazado</span>
-                {% else %}<span class="badge badge-Pendiente">Pendiente</span>{% endif %}
-            </td>
-            <td>
-                <a href="{{ url_for('curvas.ensayo_detalle', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a>
-                <a href="{{ url_for('curvas.ensayo_pdf', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn btn-sm btn-outline-dark" target="_blank">PDF</a>
-            </td>
-        </tr>
-        {% else %}
-        <tr><td colspan="5" class="text-muted text-center py-4">Todavía no hay ensayos cargados para este equipo.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+            {% if años_disponibles|length > 1 %}
+            <div class="btn-group mb-3">
+                <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-sm {{ 'btn-dark' if not año_filtro else 'btn-outline-secondary' }}">Todos</a>
+                {% for año in años_disponibles %}
+                <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id, año=año) }}" class="btn btn-sm {{ 'btn-dark' if año_filtro == año else 'btn-outline-secondary' }}">{{ año }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <div class="table-responsive">
+            <table class="table table-hover data-table">
+                <thead><tr><th>Fecha</th><th>Presión @ 100% (PSI)</th><th>NFPA 25</th><th>Validación</th><th></th></tr></thead>
+                <tbody>
+                    {% for ensayo in ensayos %}
+                    {% set resultado = ensayo.resultado_final() %}
+                    <tr>
+                        <td>{{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ ensayo.presion_neta_punto_100 }}</td>
+                        <td>
+                            {% if resultado is none %}<span class="badge bg-secondary">Sin curva de fábrica</span>
+                            {% elif resultado %}<span class="badge badge-Cumplido">Cumple NFPA 25</span>
+                            {% else %}<span class="badge badge-Vencido">No cumple NFPA 25</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if ensayo.estado_revision == 'Validado' %}<span class="badge badge-Cumplido">Validado</span>
+                            {% elif ensayo.estado_revision == 'Rechazado' %}<span class="badge badge-Vencido">Rechazado</span>
+                            {% else %}<span class="badge badge-Pendiente">Pendiente</span>{% endif %}
+                        </td>
+                        <td>
+                            <a href="{{ url_for('curvas.ensayo_detalle', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a>
+                            <a href="{{ url_for('curvas.ensayo_pdf', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn btn-sm btn-outline-dark" target="_blank">PDF</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-muted text-center py-4">Todavía no hay ensayos cargados para este equipo.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+        </div>
+    </div>
 </div>
 {% endblock %}

@@ -1,151 +1,161 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Editar' if equipo else 'Nuevo' }} equipo{% endblock %}
 {% block content %}
-<h1>{{ 'Editar equipo' if equipo else 'Nuevo equipo' }} <small class="text-muted fs-6">{{ instalacion.nombre }}</small></h1>
-
-<form method="POST" class="mt-3">
-    <div class="row">
-        <div class="col-md-4 mb-3">
-            <label class="form-label d-flex justify-content-between align-items-center">
-                Tipo
-                <a href="{{ url_for('tipos_equipo.nuevo') }}" target="_blank" class="small">+ Nuevo tipo</a>
-            </label>
-            <select name="tipo" class="form-select" id="tipo" onchange="toggleManifold()" required>
-                {% for t in tipos %}
-                <option value="{{ t }}" {% if equipo and equipo.tipo == t %}selected{% endif %}>{{ t }}</option>
-                {% endfor %}
-            </select>
-            <div class="form-text">¿No está el tipo que buscás? Se abre en una pestaña nueva; al volver, actualizá esta página para verlo en la lista.</div>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>{{ 'Editar equipo' if equipo else 'Nuevo equipo' }}</h1>
         </div>
-        <div class="col-md-8 mb-3">
-            <label class="form-label">Nombre / identificador</label>
-            <input type="text" name="nombre" class="form-control" required
-                   placeholder="Ej: ECA 3° piso ala norte"
-                   value="{{ equipo.nombre or '' }}">
-        </div>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Ubicación</label>
-        <input type="text" name="ubicacion" class="form-control" value="{{ equipo.ubicacion or '' }}">
-    </div>
-    <div class="mb-3" id="manifold-wrapper">
-        <label class="form-label">Manifold al que pertenece (opcional)</label>
-        <select name="manifold_id" class="form-select">
-            <option value="">-- ECA suelto, sin manifold --</option>
-            {% for m in manifolds %}
-            <option value="{{ m.id }}" {% if equipo and equipo.manifold_id == m.id %}selected{% endif %}>{{ m.nombre }}</option>
-            {% endfor %}
-        </select>
-    </div>
+        <div class="cuerpo-doc">
 
-    <div id="bomba-wrapper" class="card mb-3">
-        <div class="card-body">
-            <h6 class="text-muted">Datos de placa (para curva de caudal / NFPA 25)</h6>
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Modelo</label>
-                    <input type="text" name="modelo" class="form-control" value="{{ equipo.modelo or '' }}">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">N° de serie</label>
-                    <input type="text" name="serie" class="form-control" value="{{ equipo.serie or '' }}">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Caudal nominal (GPM)</label>
-                    <input type="number" step="any" name="caudal_nominal" class="form-control" value="{{ equipo.caudal_nominal or '' }}">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Presión de diseño (PSI)</label>
-                    <input type="number" step="any" name="presion_diseno" class="form-control" value="{{ equipo.presion_diseno or '' }}">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">RPM nominal</label>
-                    <input type="number" name="rpm_nominal" class="form-control" value="{{ equipo.rpm_nominal or '' }}">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Año de fabricación</label>
-                    <input type="number" name="anio_fabricacion" class="form-control" value="{{ equipo.anio_fabricacion or '' }}">
-                </div>
-            </div>
-            <div class="mb-3">
-                <label class="form-label">Otros datos</label>
-                <textarea name="otros_datos_placa" class="form-control" rows="2" placeholder="Cualquier otro dato de placa relevante">{{ equipo.otros_datos_placa or '' }}</textarea>
-            </div>
+            <p class="text-muted">{{ instalacion.nombre }}</p>
 
-            <h6 class="text-muted mt-2">Motor</h6>
-            <div class="row">
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Tipo de motor</label>
-                    <select name="tipo_motor" id="tipo_motor" class="form-select" onchange="toggleMotor()">
-                        <option value="">-- Sin especificar --</option>
-                        <option value="Eléctrico" {% if equipo and equipo.tipo_motor == 'Eléctrico' %}selected{% endif %}>Eléctrico</option>
-                        <option value="Diesel" {% if equipo and equipo.tipo_motor == 'Diesel' %}selected{% endif %}>Diesel</option>
+            <form method="POST" class="mt-3">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label d-flex justify-content-between align-items-center">
+                            Tipo
+                            <a href="{{ url_for('tipos_equipo.nuevo') }}" target="_blank" class="small">+ Nuevo tipo</a>
+                        </label>
+                        <select name="tipo" class="form-select" id="tipo" onchange="toggleManifold()" required>
+                            {% for t in tipos %}
+                            <option value="{{ t }}" {% if equipo and equipo.tipo == t %}selected{% endif %}>{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">¿No está el tipo que buscás? Se abre en una pestaña nueva; al volver, actualizá esta página para verlo en la lista.</div>
+                    </div>
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label">Nombre / identificador</label>
+                        <input type="text" name="nombre" class="form-control" required
+                               placeholder="Ej: ECA 3° piso ala norte"
+                               value="{{ equipo.nombre or '' }}">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Ubicación</label>
+                    <input type="text" name="ubicacion" class="form-control" value="{{ equipo.ubicacion or '' }}">
+                </div>
+                <div class="mb-3" id="manifold-wrapper">
+                    <label class="form-label">Manifold al que pertenece (opcional)</label>
+                    <select name="manifold_id" class="form-select">
+                        <option value="">-- ECA suelto, sin manifold --</option>
+                        {% for m in manifolds %}
+                        <option value="{{ m.id }}" {% if equipo and equipo.manifold_id == m.id %}selected{% endif %}>{{ m.nombre }}</option>
+                        {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Potencia (HP)</label>
-                    <input type="number" step="any" name="motor_potencia_hp" class="form-control" value="{{ equipo.motor_potencia_hp or '' }}">
-                </div>
-            </div>
 
-            <div id="motor-electrico-wrapper" class="row" style="display:none;">
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Voltaje (V)</label>
-                    <input type="number" step="any" name="motor_voltaje" class="form-control" value="{{ equipo.motor_voltaje or '' }}">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Amperaje (A)</label>
-                    <input type="number" step="any" name="motor_amperaje" class="form-control" value="{{ equipo.motor_amperaje or '' }}">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Fases</label>
-                    <select name="motor_fases" class="form-select">
-                        <option value="">-- --</option>
-                        <option value="1" {% if equipo and equipo.motor_fases == 1 %}selected{% endif %}>Monofásico</option>
-                        <option value="3" {% if equipo and equipo.motor_fases == 3 %}selected{% endif %}>Trifásico</option>
-                    </select>
-                </div>
-            </div>
+                <div id="bomba-wrapper" class="card mb-3">
+                    <div class="card-body">
+                        <h6 class="text-muted">Datos de placa (para curva de caudal / NFPA 25)</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Modelo</label>
+                                <input type="text" name="modelo" class="form-control" value="{{ equipo.modelo or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">N° de serie</label>
+                                <input type="text" name="serie" class="form-control" value="{{ equipo.serie or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Caudal nominal (GPM)</label>
+                                <input type="number" step="any" name="caudal_nominal" class="form-control" value="{{ equipo.caudal_nominal or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Presión de diseño (PSI)</label>
+                                <input type="number" step="any" name="presion_diseno" class="form-control" value="{{ equipo.presion_diseno or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">RPM nominal</label>
+                                <input type="number" name="rpm_nominal" class="form-control" value="{{ equipo.rpm_nominal or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Año de fabricación</label>
+                                <input type="number" name="anio_fabricacion" class="form-control" value="{{ equipo.anio_fabricacion or '' }}">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Otros datos</label>
+                            <textarea name="otros_datos_placa" class="form-control" rows="2" placeholder="Cualquier otro dato de placa relevante">{{ equipo.otros_datos_placa or '' }}</textarea>
+                        </div>
 
-            <div id="motor-diesel-wrapper" class="row" style="display:none;">
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Marca / modelo del motor</label>
-                    <input type="text" name="motor_marca_modelo" class="form-control" value="{{ equipo.motor_marca_modelo or '' }}">
+                        <h6 class="text-muted mt-2">Motor</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Tipo de motor</label>
+                                <select name="tipo_motor" id="tipo_motor" class="form-select" onchange="toggleMotor()">
+                                    <option value="">-- Sin especificar --</option>
+                                    <option value="Eléctrico" {% if equipo and equipo.tipo_motor == 'Eléctrico' %}selected{% endif %}>Eléctrico</option>
+                                    <option value="Diesel" {% if equipo and equipo.tipo_motor == 'Diesel' %}selected{% endif %}>Diesel</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Potencia (HP)</label>
+                                <input type="number" step="any" name="motor_potencia_hp" class="form-control" value="{{ equipo.motor_potencia_hp or '' }}">
+                            </div>
+                        </div>
+
+                        <div id="motor-electrico-wrapper" class="row" style="display:none;">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Voltaje (V)</label>
+                                <input type="number" step="any" name="motor_voltaje" class="form-control" value="{{ equipo.motor_voltaje or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Amperaje (A)</label>
+                                <input type="number" step="any" name="motor_amperaje" class="form-control" value="{{ equipo.motor_amperaje or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Fases</label>
+                                <select name="motor_fases" class="form-select">
+                                    <option value="">-- --</option>
+                                    <option value="1" {% if equipo and equipo.motor_fases == 1 %}selected{% endif %}>Monofásico</option>
+                                    <option value="3" {% if equipo and equipo.motor_fases == 3 %}selected{% endif %}>Trifásico</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div id="motor-diesel-wrapper" class="row" style="display:none;">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Marca / modelo del motor</label>
+                                <input type="text" name="motor_marca_modelo" class="form-control" value="{{ equipo.motor_marca_modelo or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Capacidad tanque combustible (L)</label>
+                                <input type="number" step="any" name="motor_combustible_litros" class="form-control" value="{{ equipo.motor_combustible_litros or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Horas de uso acumuladas</label>
+                                <input type="number" step="any" name="motor_horas_uso" class="form-control" value="{{ equipo.motor_horas_uso or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Estado de batería de arranque</label>
+                                <input type="text" name="motor_estado_bateria" class="form-control" placeholder="Ej: Buena, cambiada 03/2026" value="{{ equipo.motor_estado_bateria or '' }}">
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Capacidad tanque combustible (L)</label>
-                    <input type="number" step="any" name="motor_combustible_litros" class="form-control" value="{{ equipo.motor_combustible_litros or '' }}">
+
+                {% if equipo %}
+                <div class="form-check mb-3">
+                    <input type="checkbox" name="activo" class="form-check-input" id="activo" {% if equipo.activo %}checked{% endif %}>
+                    <label class="form-check-label" for="activo">Activo</label>
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Horas de uso acumuladas</label>
-                    <input type="number" step="any" name="motor_horas_uso" class="form-control" value="{{ equipo.motor_horas_uso or '' }}">
-                </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label">Estado de batería de arranque</label>
-                    <input type="text" name="motor_estado_bateria" class="form-control" placeholder="Ej: Buena, cambiada 03/2026" value="{{ equipo.motor_estado_bateria or '' }}">
-                </div>
-            </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}" class="btn btn-link">Cancelar</a>
+            </form>
+
+            {% if equipo %}
+            <form method="POST" action="{{ url_for('equipos.eliminar', equipo_id=equipo.id) }}" class="mt-4 form-confirmar-password" data-sin-bloqueo
+                  data-mensaje="¿Eliminar '{{ equipo.nombre }}'? Se borran también su curva de fábrica, ensayos, checklists y deficiencias asociadas. Esta acción no se puede deshacer.">
+                <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar equipo</button>
+            </form>
+            {% endif %}
+
         </div>
     </div>
-
-    {% if equipo %}
-    <div class="form-check mb-3">
-        <input type="checkbox" name="activo" class="form-check-input" id="activo" {% if equipo.activo %}checked{% endif %}>
-        <label class="form-check-label" for="activo">Activo</label>
-    </div>
-    {% endif %}
-
-    <button type="submit" class="btn btn-primary">Guardar</button>
-    <a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}" class="btn btn-link">Cancelar</a>
-</form>
-
-{% if equipo %}
-<form method="POST" action="{{ url_for('equipos.eliminar', equipo_id=equipo.id) }}" class="mt-4 form-confirmar-password" data-sin-bloqueo
-      data-mensaje="¿Eliminar '{{ equipo.nombre }}'? Se borran también su curva de fábrica, ensayos, checklists y deficiencias asociadas. Esta acción no se puede deshacer.">
-    <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar equipo</button>
-</form>
-{% endif %}
-
+</div>
 <script>
 function toggleManifold() {
     const tipo = document.getElementById('tipo').value;

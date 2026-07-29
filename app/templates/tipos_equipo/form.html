@@ -1,35 +1,45 @@
 {% extends "base.html" %}
 {% block title %}Nuevo tipo de equipo{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('tipos_equipo.listar') }}">&larr; Tipos de equipo</a></p>
-<h1>Nuevo tipo de equipo</h1>
-<p class="text-muted">
-    Se suma al desplegable de "Tipo" al cargar un equipo, y al de "Tipo de equipo al que aplica" en
-    formularios y servicios tipo.
-</p>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Nuevo tipo de equipo</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<form method="POST">
-    <div class="mb-3">
-        <label class="form-label">Nombre</label>
-        <input type="text" name="nombre" class="form-control" required autofocus
-               placeholder="Ej: Extintor" maxlength="40">
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Categoría</label>
-        <input type="text" name="categoria" class="form-control" list="categorias-existentes"
-               placeholder="Ej: Otros equipos" value="Otros equipos">
-        <datalist id="categorias-existentes">
-            {% for c in categorias %}
-            <option value="{{ c }}">
-            {% endfor %}
-        </datalist>
-        <div class="form-text">
-            Agrupa este tipo en la navegación del portal de cliente. Podés elegir una categoría existente
-            o escribir una nueva.
+            <p class="mb-1"><a href="{{ url_for('tipos_equipo.listar') }}">&larr; Tipos de equipo</a></p>
+            <p class="text-muted">
+                Se suma al desplegable de "Tipo" al cargar un equipo, y al de "Tipo de equipo al que aplica" en
+                formularios y servicios tipo.
+            </p>
+
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label">Nombre</label>
+                    <input type="text" name="nombre" class="form-control" required autofocus
+                           placeholder="Ej: Extintor" maxlength="40">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Categoría</label>
+                    <input type="text" name="categoria" class="form-control" list="categorias-existentes"
+                           placeholder="Ej: Otros equipos" value="Otros equipos">
+                    <datalist id="categorias-existentes">
+                        {% for c in categorias %}
+                        <option value="{{ c }}">
+                        {% endfor %}
+                    </datalist>
+                    <div class="form-text">
+                        Agrupa este tipo en la navegación del portal de cliente. Podés elegir una categoría existente
+                        o escribir una nueva.
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Guardar</button>
+                <a href="{{ url_for('tipos_equipo.listar') }}" class="btn btn-link">Cancelar</a>
+            </form>
+
         </div>
     </div>
-
-    <button type="submit" class="btn btn-primary">Guardar</button>
-    <a href="{{ url_for('tipos_equipo.listar') }}" class="btn btn-link">Cancelar</a>
-</form>
+</div>
 {% endblock %}

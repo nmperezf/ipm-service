@@ -1,91 +1,103 @@
 {% extends "base.html" %}
 {% block title %}Reporte de cumplimiento - {{ cliente.nombre }}{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}">&larr; {{ cliente.nombre }}</a></p>
-<div class="d-flex justify-content-between align-items-center mb-2">
-    <h1>Reporte de cumplimiento <small class="text-muted fs-6">{{ cliente.nombre }}</small></h1>
-    <a href="{{ url_for('clientes.reporte_periodo', cliente_id=cliente.id, fecha_desde=fecha_desde.isoformat(), fecha_hasta=fecha_hasta.isoformat(), pdf=1) }}"
-       class="btn btn-outline-dark" target="_blank">Descargar PDF</a>
-</div>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Reporte de cumplimiento</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<form method="GET" class="row g-2 align-items-end mb-4">
-    <div class="col-auto">
-        <label class="form-label">Desde</label>
-        <input type="date" name="fecha_desde" class="form-control" value="{{ fecha_desde.isoformat() }}">
+            <p class="mb-1"><a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}">&larr; {{ cliente.nombre }}</a></p>
+
+            <div class="d-flex justify-content-end mb-2">
+                <a href="{{ url_for('clientes.reporte_periodo', cliente_id=cliente.id, fecha_desde=fecha_desde.isoformat(), fecha_hasta=fecha_hasta.isoformat(), pdf=1) }}"
+                   class="btn btn-outline-dark btn-sm" target="_blank">Descargar PDF</a>
+            </div>
+
+            <form method="GET" class="row g-2 align-items-end mb-4">
+                <div class="col-auto">
+                    <label class="form-label">Desde</label>
+                    <input type="date" name="fecha_desde" class="form-control" value="{{ fecha_desde.isoformat() }}">
+                </div>
+                <div class="col-auto">
+                    <label class="form-label">Hasta</label>
+                    <input type="date" name="fecha_hasta" class="form-control" value="{{ fecha_hasta.isoformat() }}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-outline-secondary">Actualizar</button>
+                </div>
+            </form>
+
+            <div class="seccion-titulo-doc">Servicios ejecutados en el período</div>
+            {% if not resumen_servicios %}
+            <p class="text-muted">No hubo visitas planificadas en este período.</p>
+            {% else %}
+            <div class="table-responsive">
+            <table class="table table-sm data-table">
+                <thead><tr><th>Instalación</th><th>Total</th><th>Cumplidos</th><th>Pendientes</th><th>Cancelados</th><th>% cumplimiento</th></tr></thead>
+                <tbody>
+                    {% for r in resumen_servicios %}
+                    <tr>
+                        <td>{{ r.instalacion }}</td>
+                        <td>{{ r.total }}</td>
+                        <td>{{ r.cumplidos }}</td>
+                        <td>{{ r.pendientes }}</td>
+                        <td>{{ r.cancelados }}</td>
+                        <td>{{ r.pct }}%</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
+
+            <div class="seccion-titulo-doc">Deficiencias encontradas en el período</div>
+            {% if not deficiencias_periodo %}
+            <p class="text-muted">No se registraron deficiencias nuevas en este período.</p>
+            {% else %}
+            <div class="table-responsive">
+            <table class="table table-sm data-table">
+                <thead><tr><th>Fecha</th><th>Instalación</th><th>Clasificación</th><th>Estado</th><th>Descripción</th></tr></thead>
+                <tbody>
+                    {% for o in deficiencias_periodo %}
+                    <tr class="{{ 'table-danger' if o.clasificacion == 'Deficiencia crítica' }}">
+                        <td>{{ o.fecha_carga.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ o.instalacion.nombre }}</td>
+                        <td><span class="badge badge-{{ o.clasificacion.replace(' ', '.') }}">{{ o.clasificacion }}</span></td>
+                        <td>{{ 'Resuelta' if o.resuelto else ('Aprobada' if o.estado_revision == 'Aprobada' else 'Pendiente de revisión') }}</td>
+                        <td>{{ o.descripcion }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
+
+            <div class="seccion-titulo-doc">Deficiencias abiertas hoy</div>
+            <p class="text-muted small mt-n2">Todas las pendientes, no solo las del período — críticas primero.</p>
+            {% if not deficiencias_abiertas %}
+            <p class="text-muted">No hay deficiencias abiertas para este cliente.</p>
+            {% else %}
+            <div class="table-responsive">
+            <table class="table table-sm data-table">
+                <thead><tr><th>Instalación</th><th>Clasificación</th><th>Antigüedad</th><th>Fecha de carga</th><th>Descripción</th></tr></thead>
+                <tbody>
+                    {% for o in deficiencias_abiertas %}
+                    <tr class="{{ 'table-danger' if o.clasificacion == 'Deficiencia crítica' }}">
+                        <td>{{ o.instalacion.nombre }}</td>
+                        <td><span class="badge badge-{{ o.clasificacion.replace(' ', '.') }}">{{ o.clasificacion }}</span></td>
+                        <td>{{ o.dias_abierta }} día(s)</td>
+                        <td>{{ o.fecha_carga.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ o.descripcion }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
+
+        </div>
     </div>
-    <div class="col-auto">
-        <label class="form-label">Hasta</label>
-        <input type="date" name="fecha_hasta" class="form-control" value="{{ fecha_hasta.isoformat() }}">
-    </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-outline-secondary">Actualizar</button>
-    </div>
-</form>
-
-<h4>Servicios ejecutados en el período</h4>
-{% if not resumen_servicios %}
-<p class="text-muted">No hubo visitas planificadas en este período.</p>
-{% else %}
-<div class="table-responsive">
-<table class="table table-sm data-table">
-    <thead><tr><th>Instalación</th><th>Total</th><th>Cumplidos</th><th>Pendientes</th><th>Cancelados</th><th>% cumplimiento</th></tr></thead>
-    <tbody>
-        {% for r in resumen_servicios %}
-        <tr>
-            <td>{{ r.instalacion }}</td>
-            <td>{{ r.total }}</td>
-            <td>{{ r.cumplidos }}</td>
-            <td>{{ r.pendientes }}</td>
-            <td>{{ r.cancelados }}</td>
-            <td>{{ r.pct }}%</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
 </div>
-{% endif %}
-
-<h4 class="mt-4">Deficiencias encontradas en el período</h4>
-{% if not deficiencias_periodo %}
-<p class="text-muted">No se registraron deficiencias nuevas en este período.</p>
-{% else %}
-<div class="table-responsive">
-<table class="table table-sm data-table">
-    <thead><tr><th>Fecha</th><th>Instalación</th><th>Clasificación</th><th>Estado</th><th>Descripción</th></tr></thead>
-    <tbody>
-        {% for o in deficiencias_periodo %}
-        <tr class="{{ 'table-danger' if o.clasificacion == 'Deficiencia crítica' }}">
-            <td>{{ o.fecha_carga.strftime('%d/%m/%Y') }}</td>
-            <td>{{ o.instalacion.nombre }}</td>
-            <td><span class="badge badge-{{ o.clasificacion.replace(' ', '.') }}">{{ o.clasificacion }}</span></td>
-            <td>{{ 'Resuelta' if o.resuelto else ('Aprobada' if o.estado_revision == 'Aprobada' else 'Pendiente de revisión') }}</td>
-            <td>{{ o.descripcion }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-</div>
-{% endif %}
-
-<h4 class="mt-4">Deficiencias abiertas hoy <small class="text-muted fs-6">todas las pendientes, no solo las del período — críticas primero</small></h4>
-{% if not deficiencias_abiertas %}
-<p class="text-muted">No hay deficiencias abiertas para este cliente.</p>
-{% else %}
-<div class="table-responsive">
-<table class="table table-sm data-table">
-    <thead><tr><th>Instalación</th><th>Clasificación</th><th>Antigüedad</th><th>Fecha de carga</th><th>Descripción</th></tr></thead>
-    <tbody>
-        {% for o in deficiencias_abiertas %}
-        <tr class="{{ 'table-danger' if o.clasificacion == 'Deficiencia crítica' }}">
-            <td>{{ o.instalacion.nombre }}</td>
-            <td><span class="badge badge-{{ o.clasificacion.replace(' ', '.') }}">{{ o.clasificacion }}</span></td>
-            <td>{{ o.dias_abierta }} día(s)</td>
-            <td>{{ o.fecha_carga.strftime('%d/%m/%Y') }}</td>
-            <td>{{ o.descripcion }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-</div>
-{% endif %}
 {% endblock %}

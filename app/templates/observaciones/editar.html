@@ -1,33 +1,43 @@
 {% extends "base.html" %}
 {% block title %}Editar observación{% endblock %}
 {% block content %}
-<h1>Editar observación <small class="text-muted fs-6">{{ observacion.instalacion.nombre }}</small></h1>
-<p class="text-muted">Estado de revisión: <span class="badge badge-Pendiente">{{ observacion.estado_revision }}</span></p>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Editar observación</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<form method="POST" class="mt-3">
-    <div class="mb-3">
-        <label class="form-label">Clasificación</label>
-        <select name="clasificacion" class="form-select" required>
-            {% for c in clasificaciones %}
-            <option value="{{ c }}" {% if observacion.clasificacion == c %}selected{% endif %}>{{ c }}</option>
-            {% endfor %}
-        </select>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Descripción</label>
-        <textarea name="descripcion" class="form-control" rows="4" required>{{ observacion.descripcion }}</textarea>
-    </div>
-    <div class="mb-3">
-        <label class="form-label">Fecha</label>
-        <input type="date" name="fecha_carga" class="form-control" value="{{ observacion.fecha_carga.isoformat() }}">
-    </div>
-    <button type="submit" class="btn btn-primary">Guardar cambios</button>
-    <a href="{{ url_for('instalaciones.detalle', instalacion_id=observacion.instalacion_id) }}" class="btn btn-link">Cancelar</a>
-</form>
+            <p class="text-muted">{{ observacion.instalacion.nombre }} &middot; Estado de revisión: <span class="badge badge-Pendiente">{{ observacion.estado_revision }}</span></p>
 
-{% if current_user.rol in ('Administrador', 'Jefe') %}
-<form method="POST" action="{{ url_for('observaciones.aprobar', observacion_id=observacion.id) }}" class="mt-4">
-    <button type="submit" class="btn btn-success">Guardar y aprobar</button>
-</form>
-{% endif %}
+            <form method="POST" class="mt-3">
+                <div class="mb-3">
+                    <label class="form-label">Clasificación</label>
+                    <select name="clasificacion" class="form-select" required>
+                        {% for c in clasificaciones %}
+                        <option value="{{ c }}" {% if observacion.clasificacion == c %}selected{% endif %}>{{ c }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descripción</label>
+                    <textarea name="descripcion" class="form-control" rows="4" required>{{ observacion.descripcion }}</textarea>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Fecha</label>
+                    <input type="date" name="fecha_carga" class="form-control" value="{{ observacion.fecha_carga.isoformat() }}">
+                </div>
+                <button type="submit" class="btn btn-primary">Guardar cambios</button>
+                <a href="{{ url_for('instalaciones.detalle', instalacion_id=observacion.instalacion_id) }}" class="btn btn-link">Cancelar</a>
+            </form>
+
+            {% if current_user.rol in ('Administrador', 'Jefe') %}
+            <form method="POST" action="{{ url_for('observaciones.aprobar', observacion_id=observacion.id) }}" class="mt-4">
+                <button type="submit" class="btn btn-success">Guardar y aprobar</button>
+            </form>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
 {% endblock %}

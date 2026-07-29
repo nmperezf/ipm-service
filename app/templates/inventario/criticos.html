@@ -1,29 +1,39 @@
 {% extends "base.html" %}
 {% block title %}Repuestos en nivel crítico{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('inventario.dashboard') }}">&larr; Inventario</a></p>
-<h1>Repuestos en nivel crítico <span class="text-muted fs-6">({{ criticos|length }})</span></h1>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Repuestos en nivel crítico</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<div class="table-responsive">
-<table class="table table-hover data-table">
-    <thead><tr><th>Repuesto</th><th>Stock actual</th><th>Stock mínimo</th><th></th></tr></thead>
-    <tbody>
-        {% for r in criticos %}
-        <tr>
-            <td>{{ r.nombre }}</td>
-            <td class="text-warning fw-bold">{{ r.stock_actual }} {{ r.unidad }}</td>
-            <td>{{ r.stock_minimo }} {{ r.unidad }}</td>
-            <td>
-                <form method="POST" action="{{ url_for('inventario.reponer', repuesto_id=r.id) }}" class="d-inline-flex gap-1">
-                    <input type="number" name="cantidad" min="1" class="form-control form-control-sm" style="width:80px" placeholder="Cant." required>
-                    <button type="submit" class="btn btn-sm btn-outline-success">Reponer</button>
-                </form>
-            </td>
-        </tr>
-        {% else %}
-        <tr><td colspan="4" class="text-center text-muted py-4"><i class="bi bi-check-circle text-success"></i> Ningún repuesto está por debajo del mínimo.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
+            <p class="text-muted mb-3"><a href="{{ url_for('inventario.dashboard') }}">&larr; Inventario</a> — {{ criticos|length }} repuesto{{ 's' if criticos|length != 1 else '' }}.</p>
+
+            <div class="table-responsive">
+            <table class="table table-hover data-table">
+                <thead><tr><th>Repuesto</th><th>Stock actual</th><th>Stock mínimo</th><th></th></tr></thead>
+                <tbody>
+                    {% for r in criticos %}
+                    <tr>
+                        <td>{{ r.nombre }}</td>
+                        <td class="text-warning fw-bold">{{ r.stock_actual }} {{ r.unidad }}</td>
+                        <td>{{ r.stock_minimo }} {{ r.unidad }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('inventario.reponer', repuesto_id=r.id) }}" class="d-inline-flex gap-1">
+                                <input type="number" name="cantidad" min="1" class="form-control form-control-sm" style="width:80px" placeholder="Cant." required>
+                                <button type="submit" class="btn btn-sm btn-outline-success">Reponer</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="text-center text-muted py-4"><i class="bi bi-check-circle text-success"></i> Ningún repuesto está por debajo del mínimo.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+        </div>
+    </div>
 </div>
 {% endblock %}

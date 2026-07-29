@@ -1,43 +1,50 @@
 {% extends "base.html" %}
 {% block title %}Órdenes de trabajo{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>{{ 'Mis órdenes de trabajo' if current_user.rol == 'Técnico' else 'Órdenes de trabajo' }}</h1>
-    {% if current_user.rol in ('Administrador', 'Jefe') %}
-    <a href="{{ url_for('ordenes.nueva') }}" class="btn btn-primary">+ Nueva OT correctiva</a>
-    {% endif %}
-</div>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>{{ 'Mis órdenes de trabajo' if current_user.rol == 'Técnico' else 'Órdenes de trabajo' }}</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-{% if current_user.rol != 'Técnico' %}
-<div class="mb-3">
-    <div class="btn-group flex-wrap">
-        <a href="{{ url_for('ordenes.listar') }}" class="btn btn-sm {{ 'btn-dark' if not estado_filtro else 'btn-outline-dark' }}">Todas</a>
-        {% for e in estados %}
-        <a href="{{ url_for('ordenes.listar', estado=e) }}" class="btn btn-sm {{ 'btn-dark' if estado_filtro == e else 'btn-outline-dark' }}">{{ e }}</a>
-        {% endfor %}
+            {% if current_user.rol != 'Técnico' %}
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <div class="btn-group flex-wrap">
+                    <a href="{{ url_for('ordenes.listar') }}" class="btn btn-sm {{ 'btn-dark' if not estado_filtro else 'btn-outline-dark' }}">Todas</a>
+                    {% for e in estados %}
+                    <a href="{{ url_for('ordenes.listar', estado=e) }}" class="btn btn-sm {{ 'btn-dark' if estado_filtro == e else 'btn-outline-dark' }}">{{ e }}</a>
+                    {% endfor %}
+                </div>
+                {% if current_user.rol in ('Administrador', 'Jefe') %}
+                <a href="{{ url_for('ordenes.nueva') }}" class="btn btn-primary btn-sm">+ Nueva OT correctiva</a>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <div class="table-responsive">
+            <table class="table table-hover data-table tabla-col-fija tabla-tarjetas">
+                <thead><tr><th>N°</th><th>Tipo</th><th>Cliente</th><th>Instalación</th><th>Técnico</th><th>Prioridad</th><th>Fecha apertura</th><th>Estado</th></tr></thead>
+                <tbody>
+                    {% for ot in ordenes %}
+                    <tr>
+                        <td data-label="N°"><a href="{{ url_for('ordenes.detalle', ot_id=ot.id) }}">{{ ot.numero }}</a></td>
+                        <td data-label="Tipo">{{ ot.tipo }}</td>
+                        <td data-label="Cliente"><a href="{{ url_for('clientes.detalle', cliente_id=ot.instalacion.cliente_id) }}">{{ ot.instalacion.cliente.nombre }}</a></td>
+                        <td data-label="Instalación">{{ ot.instalacion.nombre }}</td>
+                        <td data-label="Técnico">{{ ot.nombre_tecnico }}</td>
+                        <td data-label="Prioridad">{{ ot.prioridad }}</td>
+                        <td data-label="Apertura">{{ ot.fecha_apertura.strftime('%d/%m/%Y') }}</td>
+                        <td data-label="Estado"><span class="badge badge-{{ ot.estado.replace(' ', '.') }}">{{ ot.estado }}</span></td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="8" class="text-center text-muted py-4">No hay órdenes de trabajo cargadas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+        </div>
     </div>
-</div>
-{% endif %}
-
-<div class="table-responsive">
-<table class="table table-hover data-table tabla-col-fija tabla-tarjetas">
-    <thead><tr><th>N°</th><th>Tipo</th><th>Cliente</th><th>Instalación</th><th>Técnico</th><th>Prioridad</th><th>Fecha apertura</th><th>Estado</th></tr></thead>
-    <tbody>
-        {% for ot in ordenes %}
-        <tr>
-            <td data-label="N°"><a href="{{ url_for('ordenes.detalle', ot_id=ot.id) }}">{{ ot.numero }}</a></td>
-            <td data-label="Tipo">{{ ot.tipo }}</td>
-            <td data-label="Cliente"><a href="{{ url_for('clientes.detalle', cliente_id=ot.instalacion.cliente_id) }}">{{ ot.instalacion.cliente.nombre }}</a></td>
-            <td data-label="Instalación">{{ ot.instalacion.nombre }}</td>
-            <td data-label="Técnico">{{ ot.nombre_tecnico }}</td>
-            <td data-label="Prioridad">{{ ot.prioridad }}</td>
-            <td data-label="Apertura">{{ ot.fecha_apertura.strftime('%d/%m/%Y') }}</td>
-            <td data-label="Estado"><span class="badge badge-{{ ot.estado.replace(' ', '.') }}">{{ ot.estado }}</span></td>
-        </tr>
-        {% else %}
-        <tr><td colspan="8" class="text-center text-muted py-4">No hay órdenes de trabajo cargadas.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
 </div>
 {% endblock %}

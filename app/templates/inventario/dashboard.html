@@ -1,50 +1,54 @@
 {% extends "base.html" %}
 {% block title %}Inventario{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Inventario de repuestos</h1>
-    <a href="{{ url_for('inventario.nuevo') }}" class="btn btn-primary">+ Nuevo repuesto</a>
-</div>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Inventario de repuestos</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<div class="row g-3 mb-4">
-    <div class="col-md-4">
-        <div class="card card-indicador">
-            <div class="valor">{{ repuestos|length }}</div>
-            <div class="text-muted small">Repuestos activos</div>
+            <div class="d-flex justify-content-end mb-3">
+                <a href="{{ url_for('inventario.nuevo') }}" class="btn btn-primary btn-sm">+ Nuevo repuesto</a>
+            </div>
+
+            <div class="grid-atencion">
+                <div class="card-atencion">
+                    <span class="num">{{ repuestos|length }}</span>
+                    <span class="etiqueta">Repuestos activos</span>
+                </div>
+                <a href="{{ url_for('inventario.criticos_lista') }}" class="card-atencion alerta">
+                    <span class="num">{{ criticos|length }}</span>
+                    <span class="etiqueta">En nivel crítico</span>
+                </a>
+            </div>
+
+            <div class="table-responsive">
+            <table class="table table-hover data-table">
+                <thead><tr><th>Repuesto</th><th>Código</th><th>Stock actual</th><th>Stock mínimo</th><th></th></tr></thead>
+                <tbody>
+                    {% for r in repuestos %}
+                    <tr class="{{ 'table-warning' if r.en_nivel_critico }}">
+                        <td>{{ r.nombre }}</td>
+                        <td>{{ r.codigo or '-' }}</td>
+                        <td>{{ r.stock_actual }} {{ r.unidad }}</td>
+                        <td>{{ r.stock_minimo }} {{ r.unidad }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('inventario.reponer', repuesto_id=r.id) }}" class="d-inline-flex gap-1">
+                                <input type="number" name="cantidad" min="1" class="form-control form-control-sm" style="width:80px" placeholder="Cant." required>
+                                <button type="submit" class="btn btn-sm btn-outline-success">Reponer</button>
+                            </form>
+                            <a href="{{ url_for('inventario.editar', repuesto_id=r.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5" class="text-center text-muted py-4">Todavía no cargaste repuestos.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
         </div>
     </div>
-    <div class="col-md-4">
-        <a href="{{ url_for('inventario.criticos_lista') }}" class="dashboard-card">
-            <div class="card border-warning card-indicador">
-                <div class="valor text-warning">{{ criticos|length }}</div>
-                <div class="text-muted small">En nivel crítico</div>
-            </div>
-        </a>
-    </div>
-</div>
-
-<div class="table-responsive">
-<table class="table table-hover data-table">
-    <thead><tr><th>Repuesto</th><th>Código</th><th>Stock actual</th><th>Stock mínimo</th><th></th></tr></thead>
-    <tbody>
-        {% for r in repuestos %}
-        <tr class="{{ 'table-warning' if r.en_nivel_critico }}">
-            <td>{{ r.nombre }}</td>
-            <td>{{ r.codigo or '-' }}</td>
-            <td>{{ r.stock_actual }} {{ r.unidad }}</td>
-            <td>{{ r.stock_minimo }} {{ r.unidad }}</td>
-            <td>
-                <form method="POST" action="{{ url_for('inventario.reponer', repuesto_id=r.id) }}" class="d-inline-flex gap-1">
-                    <input type="number" name="cantidad" min="1" class="form-control form-control-sm" style="width:80px" placeholder="Cant." required>
-                    <button type="submit" class="btn btn-sm btn-outline-success">Reponer</button>
-                </form>
-                <a href="{{ url_for('inventario.editar', repuesto_id=r.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-            </td>
-        </tr>
-        {% else %}
-        <tr><td colspan="5" class="text-center text-muted py-4">Todavía no cargaste repuestos.</td></tr>
-        {% endfor %}
-    </tbody>
-</table>
 </div>
 {% endblock %}

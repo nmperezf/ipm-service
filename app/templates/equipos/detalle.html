@@ -1,214 +1,225 @@
 {% extends "base.html" %}
 {% block title %}{{ equipo.nombre }}{% endblock %}
 {% block content %}
-<p><a href="{{ url_for('instalaciones.detalle', instalacion_id=equipo.instalacion_id) }}">&larr; {{ equipo.instalacion.nombre }}</a></p>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>{{ equipo.nombre }}</h1>
+        </div>
+        <div class="cuerpo-doc">
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>{{ equipo.nombre }} <span class="badge bg-secondary fs-6">{{ equipo.tipo }}</span></h1>
-    <div>
-        <a href="{{ url_for('observaciones.nueva', instalacion_id=equipo.instalacion_id, equipo_id=equipo.id) }}" class="btn btn-outline-warning btn-sm">+ Observación</a>
-        <a href="{{ url_for('equipos.editar', equipo_id=equipo.id) }}" class="btn btn-outline-secondary btn-sm">Editar equipo</a>
+            <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=equipo.instalacion_id) }}">&larr; {{ equipo.instalacion.nombre }}</a></p>
+
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+                <p class="text-muted mb-0">
+                    <span class="badge bg-secondary">{{ equipo.tipo }}</span>
+                    {{ equipo.ubicacion or '' }}
+                    {% if equipo.manifold %} &middot; Depende de: {{ equipo.manifold.nombre }}{% endif %}
+                </p>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('observaciones.nueva', instalacion_id=equipo.instalacion_id, equipo_id=equipo.id) }}" class="btn btn-outline-warning btn-sm">+ Observación</a>
+                    <a href="{{ url_for('equipos.editar', equipo_id=equipo.id) }}" class="btn btn-outline-secondary btn-sm">Editar equipo</a>
+                </div>
+            </div>
+
+            {% if equipo.tipo == 'Bomba' %}
+            <div class="seccion-titulo-doc">Curva de caudal</div>
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row g-2 mb-1 small text-muted">
+                        <div class="col-auto">Modelo: <strong class="text-body">{{ equipo.modelo or '-' }}</strong></div>
+                        <div class="col-auto">N° serie: <strong class="text-body">{{ equipo.serie or '-' }}</strong></div>
+                    </div>
+                    <div class="row g-2 mb-1 small text-muted">
+                        <div class="col-auto">Caudal: <strong class="text-body">{{ equipo.caudal_nominal if equipo.caudal_nominal else '-' }} GPM</strong></div>
+                        <div class="col-auto">Presión de diseño: <strong class="text-body">{{ equipo.presion_diseno if equipo.presion_diseno else '-' }} PSI</strong></div>
+                        <div class="col-auto">RPM nominal: <strong class="text-body">{{ equipo.rpm_nominal or '-' }}</strong></div>
+                        <div class="col-auto">Año fabricación: <strong class="text-body">{{ equipo.anio_fabricacion or '-' }}</strong></div>
+                        <div class="col-auto">Tipo de motor: <strong class="text-body">{{ equipo.tipo_motor or 'Sin especificar' }}</strong></div>
+                    </div>
+                    {% if equipo.otros_datos_placa %}
+                    <p class="small text-muted mb-3"><strong class="text-body">Otros datos:</strong> {{ equipo.otros_datos_placa }}</p>
+                    {% endif %}
+
+                    <div class="row g-2 mb-3 small text-muted">
+                        {% if equipo.motor_potencia_hp %}<div class="col-auto">Potencia: <strong class="text-body">{{ equipo.motor_potencia_hp }} HP</strong></div>{% endif %}
+                        {% if equipo.tipo_motor == 'Eléctrico' %}
+                        <div class="col-auto">Voltaje: <strong class="text-body">{{ equipo.motor_voltaje or '-' }} V</strong></div>
+                        <div class="col-auto">Amperaje: <strong class="text-body">{{ equipo.motor_amperaje or '-' }} A</strong></div>
+                        <div class="col-auto">Fases: <strong class="text-body">{{ 'Monofásico' if equipo.motor_fases == 1 else ('Trifásico' if equipo.motor_fases == 3 else '-') }}</strong></div>
+                        {% elif equipo.tipo_motor == 'Diesel' %}
+                        <div class="col-auto">Marca/modelo: <strong class="text-body">{{ equipo.motor_marca_modelo or '-' }}</strong></div>
+                        <div class="col-auto">Tanque: <strong class="text-body">{{ equipo.motor_combustible_litros or '-' }} L</strong></div>
+                        <div class="col-auto">Horas de uso: <strong class="text-body">{{ equipo.motor_horas_uso or '-' }}</strong></div>
+                        <div class="col-auto">Batería: <strong class="text-body">{{ equipo.motor_estado_bateria or '-' }}</strong></div>
+                        {% endif %}
+                    </div>
+
+                    <div class="mb-3">
+                        {% if current_user.rol in ('Administrador', 'Jefe') %}
+                        <a href="{{ url_for('curvas.curva_fabrica', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-secondary">
+                            {{ 'Editar' if equipo.curva_fabrica else 'Cargar' }} curva de fábrica
+                        </a>
+                        {% endif %}
+                        {% if equipo.curva_fabrica %}
+                        <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-primary">+ Nuevo ensayo</a>
+                        {% endif %}
+                        <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-dark">Ver todos los ensayos</a>
+                    </div>
+
+                    {% if not equipo.curva_fabrica %}
+                    <p class="text-muted small mb-0">Todavía no tiene curva de fábrica cargada.</p>
+                    {% elif not ultimos_ensayos %}
+                    <p class="text-muted small mb-0">Todavía no tiene ensayos de curva de caudal cargados.</p>
+                    {% else %}
+                    <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>Fecha</th><th>Presión @ 100%</th><th>Resultado</th></tr></thead>
+                        <tbody>
+                            {% for ensayo in ultimos_ensayos %}
+                            {% set resultado = ensayo.resultado_final() %}
+                            <tr>
+                                <td><a href="{{ url_for('curvas.ensayo_detalle', equipo_id=equipo.id, ensayo_id=ensayo.id) }}">{{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}</a></td>
+                                <td>{{ ensayo.presion_neta_punto_100 }} PSI</td>
+                                <td>
+                                    {% if resultado %}<span class="badge badge-Cumplido">Cumple NFPA 25</span>
+                                    {% else %}<span class="badge badge-Vencido">No cumple NFPA 25</span>{% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if deficiencias_abiertas %}
+            <div class="seccion-titulo-doc">Deficiencias abiertas</div>
+            <div class="table-responsive">
+            <table class="table table-sm data-table">
+                <thead><tr><th>Fecha</th><th>Clasificación</th><th>Descripción</th><th>Revisión</th><th></th></tr></thead>
+                <tbody>
+                    {% for obs in deficiencias_abiertas %}
+                    <tr>
+                        <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+                        <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+                        <td>{{ obs.descripcion }}</td>
+                        <td>
+                            {% if obs.estado_revision == 'Aprobada' %}
+                            <span class="badge badge-Cumplido">Aprobada</span>
+                            {% if obs.aprobado_por %}<div class="text-muted small">{{ obs.aprobado_por.nombre_completo or obs.aprobado_por.username }} — {{ obs.fecha_aprobacion.strftime('%d/%m/%Y') if obs.fecha_aprobacion }}</div>{% endif %}
+                            {% else %}<span class="badge badge-Pendiente">Pendiente de revisión</span>{% endif %}
+                        </td>
+                        <td>
+                            <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>
+                            </form>
+                            {% if obs.estado_revision != 'Aprobada' %}
+                            <a href="{{ url_for('observaciones.editar', observacion_id=obs.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            {% if current_user.rol in ('Administrador', 'Jefe') %}
+                            <form method="POST" action="{{ url_for('observaciones.aprobar', observacion_id=obs.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Aprobar</button>
+                            </form>
+                            {% endif %}
+                            {% endif %}
+                            {% if current_user.rol in ('Administrador', 'Jefe') %}
+                            <form method="POST" action="{{ url_for('observaciones.eliminar', observacion_id=obs.id) }}" class="d-inline"
+                                  onsubmit="return confirm('¿Eliminar esta observación? No se puede deshacer.');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
+
+            <div class="seccion-titulo-doc">Histórico y trazabilidad</div>
+            {% if not secciones %}
+            <p class="text-muted">Este equipo todavía no tiene ningún checklist completado.</p>
+            {% endif %}
+
+            {% for seccion in secciones %}
+            <h5 class="mt-3">{{ seccion.tipo_formulario.nombre }}</h5>
+
+            {% for campo in seccion.campos_numericos %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <strong>{{ campo.label }}</strong>
+                        {% if campo.minimo is not none %}
+                        <small class="text-muted">mín. {{ campo.minimo }} &middot; máx. {{ campo.maximo }}</small>
+                        {% endif %}
+                    </div>
+                    {% if campo.puntos %}
+                    <svg viewBox="0 0 520 90" style="width:100%; max-width:520px; height:90px;">
+                        <polyline points="{{ campo.puntos }}" fill="none" style="stroke: var(--accent); stroke-width: 2;" />
+                    </svg>
+                    {% else %}
+                    <p class="text-muted small mb-0">Hace falta más de una carga para mostrar la evolución.</p>
+                    {% endif %}
+                    <div class="table-responsive">
+        <table class="table table-sm mb-0 mt-2">
+                        <tbody>
+                            {% for fecha, valor in campo.serie|reverse %}
+                            <tr><td>{{ fecha.strftime('%d/%m/%Y') }}</td><td>{{ valor }}</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+        </div>
+                </div>
+            </div>
+            {% endfor %}
+
+            {% for campo in seccion.campos_otros %}
+            <div class="card mb-3">
+                <div class="card-body">
+                    <strong>{{ campo.label }}</strong>
+                    <div class="table-responsive">
+        <table class="table table-sm mb-0 mt-2 data-table">
+                        <thead><tr><th>Fecha</th><th>Valor</th></tr></thead>
+                        <tbody>
+                            {% for fecha, valor in campo.historial %}
+                            <tr>
+                                <td>{{ fecha.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ valor|join(', ') if valor is iterable and valor is not string else (valor if valor else '-') }}</td>
+                            </tr>
+                            {% else %}
+                            <tr><td colspan="2" class="text-muted text-center">Sin datos cargados.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+        </div>
+                </div>
+            </div>
+            {% endfor %}
+            {% endfor %}
+
+            {% if deficiencias_resueltas %}
+            <h5 class="mt-4">Deficiencias resueltas (histórico)</h5>
+            <div class="table-responsive">
+            <table class="table table-sm data-table">
+                <thead><tr><th>Fecha carga</th><th>Fecha resolución</th><th>Resuelta por</th><th>Clasificación</th><th>Descripción</th></tr></thead>
+                <tbody>
+                    {% for obs in deficiencias_resueltas %}
+                    <tr>
+                        <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ obs.fecha_resolucion.strftime('%d/%m/%Y') if obs.fecha_resolucion else '-' }}</td>
+                        <td>{{ (obs.resuelto_por.nombre_completo or obs.resuelto_por.username) if obs.resuelto_por else '-' }}</td>
+                        <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+                        <td>{{ obs.descripcion }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
+
+        </div>
     </div>
 </div>
-<p class="text-muted">
-    {{ equipo.ubicacion or '' }}
-    {% if equipo.manifold %} &middot; Depende de: {{ equipo.manifold.nombre }}{% endif %}
-</p>
-
-{% if equipo.tipo == 'Bomba' %}
-<h4 class="mt-4">Curva de caudal</h4>
-<div class="card mb-3">
-    <div class="card-body">
-        <div class="row g-2 mb-1 small text-muted">
-            <div class="col-auto">Modelo: <strong class="text-body">{{ equipo.modelo or '-' }}</strong></div>
-            <div class="col-auto">N° serie: <strong class="text-body">{{ equipo.serie or '-' }}</strong></div>
-        </div>
-        <div class="row g-2 mb-1 small text-muted">
-            <div class="col-auto">Caudal: <strong class="text-body">{{ equipo.caudal_nominal if equipo.caudal_nominal else '-' }} GPM</strong></div>
-            <div class="col-auto">Presión de diseño: <strong class="text-body">{{ equipo.presion_diseno if equipo.presion_diseno else '-' }} PSI</strong></div>
-            <div class="col-auto">RPM nominal: <strong class="text-body">{{ equipo.rpm_nominal or '-' }}</strong></div>
-            <div class="col-auto">Año fabricación: <strong class="text-body">{{ equipo.anio_fabricacion or '-' }}</strong></div>
-            <div class="col-auto">Tipo de motor: <strong class="text-body">{{ equipo.tipo_motor or 'Sin especificar' }}</strong></div>
-        </div>
-        {% if equipo.otros_datos_placa %}
-        <p class="small text-muted mb-3"><strong class="text-body">Otros datos:</strong> {{ equipo.otros_datos_placa }}</p>
-        {% endif %}
-
-        <div class="row g-2 mb-3 small text-muted">
-            {% if equipo.motor_potencia_hp %}<div class="col-auto">Potencia: <strong class="text-body">{{ equipo.motor_potencia_hp }} HP</strong></div>{% endif %}
-            {% if equipo.tipo_motor == 'Eléctrico' %}
-            <div class="col-auto">Voltaje: <strong class="text-body">{{ equipo.motor_voltaje or '-' }} V</strong></div>
-            <div class="col-auto">Amperaje: <strong class="text-body">{{ equipo.motor_amperaje or '-' }} A</strong></div>
-            <div class="col-auto">Fases: <strong class="text-body">{{ 'Monofásico' if equipo.motor_fases == 1 else ('Trifásico' if equipo.motor_fases == 3 else '-') }}</strong></div>
-            {% elif equipo.tipo_motor == 'Diesel' %}
-            <div class="col-auto">Marca/modelo: <strong class="text-body">{{ equipo.motor_marca_modelo or '-' }}</strong></div>
-            <div class="col-auto">Tanque: <strong class="text-body">{{ equipo.motor_combustible_litros or '-' }} L</strong></div>
-            <div class="col-auto">Horas de uso: <strong class="text-body">{{ equipo.motor_horas_uso or '-' }}</strong></div>
-            <div class="col-auto">Batería: <strong class="text-body">{{ equipo.motor_estado_bateria or '-' }}</strong></div>
-            {% endif %}
-        </div>
-
-        <div class="mb-3">
-            {% if current_user.rol in ('Administrador', 'Jefe') %}
-            <a href="{{ url_for('curvas.curva_fabrica', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-secondary">
-                {{ 'Editar' if equipo.curva_fabrica else 'Cargar' }} curva de fábrica
-            </a>
-            {% endif %}
-            {% if equipo.curva_fabrica %}
-            <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-primary">+ Nuevo ensayo</a>
-            {% endif %}
-            <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-dark">Ver todos los ensayos</a>
-        </div>
-
-        {% if not equipo.curva_fabrica %}
-        <p class="text-muted small mb-0">Todavía no tiene curva de fábrica cargada.</p>
-        {% elif not ultimos_ensayos %}
-        <p class="text-muted small mb-0">Todavía no tiene ensayos de curva de caudal cargados.</p>
-        {% else %}
-        <div class="table-responsive">
-        <table class="table table-sm mb-0">
-            <thead><tr><th>Fecha</th><th>Presión @ 100%</th><th>Resultado</th></tr></thead>
-            <tbody>
-                {% for ensayo in ultimos_ensayos %}
-                {% set resultado = ensayo.resultado_final() %}
-                <tr>
-                    <td><a href="{{ url_for('curvas.ensayo_detalle', equipo_id=equipo.id, ensayo_id=ensayo.id) }}">{{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}</a></td>
-                    <td>{{ ensayo.presion_neta_punto_100 }} PSI</td>
-                    <td>
-                        {% if resultado %}<span class="badge badge-Cumplido">Cumple NFPA 25</span>
-                        {% else %}<span class="badge badge-Vencido">No cumple NFPA 25</span>{% endif %}
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        </div>
-        {% endif %}
-    </div>
-</div>
-{% endif %}
-
-{% if deficiencias_abiertas %}
-<h4 class="mt-4">Deficiencias abiertas</h4>
-<div class="table-responsive">
-<table class="table table-sm data-table">
-    <thead><tr><th>Fecha</th><th>Clasificación</th><th>Descripción</th><th>Revisión</th><th></th></tr></thead>
-    <tbody>
-        {% for obs in deficiencias_abiertas %}
-        <tr>
-            <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
-            <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
-            <td>{{ obs.descripcion }}</td>
-            <td>
-                {% if obs.estado_revision == 'Aprobada' %}
-                <span class="badge badge-Cumplido">Aprobada</span>
-                {% if obs.aprobado_por %}<div class="text-muted small">{{ obs.aprobado_por.nombre_completo or obs.aprobado_por.username }} — {{ obs.fecha_aprobacion.strftime('%d/%m/%Y') if obs.fecha_aprobacion }}</div>{% endif %}
-                {% else %}<span class="badge badge-Pendiente">Pendiente de revisión</span>{% endif %}
-            </td>
-            <td>
-                <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}" class="d-inline">
-                    <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>
-                </form>
-                {% if obs.estado_revision != 'Aprobada' %}
-                <a href="{{ url_for('observaciones.editar', observacion_id=obs.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-                {% if current_user.rol in ('Administrador', 'Jefe') %}
-                <form method="POST" action="{{ url_for('observaciones.aprobar', observacion_id=obs.id) }}" class="d-inline">
-                    <button type="submit" class="btn btn-sm btn-outline-primary">Aprobar</button>
-                </form>
-                {% endif %}
-                {% endif %}
-                {% if current_user.rol in ('Administrador', 'Jefe') %}
-                <form method="POST" action="{{ url_for('observaciones.eliminar', observacion_id=obs.id) }}" class="d-inline"
-                      onsubmit="return confirm('¿Eliminar esta observación? No se puede deshacer.');">
-                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-                </form>
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-</div>
-{% endif %}
-
-<h4 class="mt-4">Histórico y trazabilidad</h4>
-{% if not secciones %}
-<p class="text-muted">Este equipo todavía no tiene ningún checklist completado.</p>
-{% endif %}
-
-{% for seccion in secciones %}
-<h5 class="mt-3">{{ seccion.tipo_formulario.nombre }}</h5>
-
-{% for campo in seccion.campos_numericos %}
-<div class="card mb-3">
-    <div class="card-body">
-        <div class="d-flex justify-content-between">
-            <strong>{{ campo.label }}</strong>
-            {% if campo.minimo is not none %}
-            <small class="text-muted">mín. {{ campo.minimo }} &middot; máx. {{ campo.maximo }}</small>
-            {% endif %}
-        </div>
-        {% if campo.puntos %}
-        <svg viewBox="0 0 520 90" style="width:100%; max-width:520px; height:90px;">
-            <polyline points="{{ campo.puntos }}" fill="none" style="stroke: var(--accent); stroke-width: 2;" />
-        </svg>
-        {% else %}
-        <p class="text-muted small mb-0">Hace falta más de una carga para mostrar la evolución.</p>
-        {% endif %}
-        <div class="table-responsive">
-<table class="table table-sm mb-0 mt-2">
-            <tbody>
-                {% for fecha, valor in campo.serie|reverse %}
-                <tr><td>{{ fecha.strftime('%d/%m/%Y') }}</td><td>{{ valor }}</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-</div>
-    </div>
-</div>
-{% endfor %}
-
-{% for campo in seccion.campos_otros %}
-<div class="card mb-3">
-    <div class="card-body">
-        <strong>{{ campo.label }}</strong>
-        <div class="table-responsive">
-<table class="table table-sm mb-0 mt-2 data-table">
-            <thead><tr><th>Fecha</th><th>Valor</th></tr></thead>
-            <tbody>
-                {% for fecha, valor in campo.historial %}
-                <tr>
-                    <td>{{ fecha.strftime('%d/%m/%Y') }}</td>
-                    <td>{{ valor|join(', ') if valor is iterable and valor is not string else (valor if valor else '-') }}</td>
-                </tr>
-                {% else %}
-                <tr><td colspan="2" class="text-muted text-center">Sin datos cargados.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-</div>
-    </div>
-</div>
-{% endfor %}
-{% endfor %}
-
-{% if deficiencias_resueltas %}
-<h5 class="mt-4">Deficiencias resueltas (histórico)</h5>
-<div class="table-responsive">
-<table class="table table-sm data-table">
-    <thead><tr><th>Fecha carga</th><th>Fecha resolución</th><th>Resuelta por</th><th>Clasificación</th><th>Descripción</th></tr></thead>
-    <tbody>
-        {% for obs in deficiencias_resueltas %}
-        <tr>
-            <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
-            <td>{{ obs.fecha_resolucion.strftime('%d/%m/%Y') if obs.fecha_resolucion else '-' }}</td>
-            <td>{{ (obs.resuelto_por.nombre_completo or obs.resuelto_por.username) if obs.resuelto_por else '-' }}</td>
-            <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
-            <td>{{ obs.descripcion }}</td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-</div>
-{% endif %}
 {% endblock %}
