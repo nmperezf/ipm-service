@@ -8,17 +8,25 @@
         </div>
         <div class="cuerpo-doc">
 
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
-                {% if current_user.rol == 'Super Admin' %}
-                <p class="text-muted mb-0">Usuarios de todas las empresas. Podés editar o eliminar cualquiera (por ejemplo, para resetear una contraseña, o asignar un reemplazo si un Administrador queda afuera del sistema).</p>
-                {% else %}
-                <span></span>
-                {% endif %}
+            {% if current_user.rol == 'Super Admin' %}
+            <p class="text-muted mb-2">Usuarios de todas las empresas. Podés editar o eliminar cualquiera (por ejemplo, para resetear una contraseña, o asignar un reemplazo si un Administrador queda afuera del sistema).</p>
+            {% endif %}
+
+            <div class="barra-herramientas-doc">
+                <div class="buscador-doc">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="buscador-usuarios" placeholder="Buscar por usuario, nombre o cliente...">
+                </div>
+                <div class="chips-filtro-doc" id="chips-filtro-usuarios">
+                    <span class="chip-filtro-doc activo" data-filtro="todos">Todos ({{ usuarios|length }})</span>
+                    <span class="chip-filtro-doc" data-filtro="activos">Activos ({{ usuarios|selectattr('activo')|list|length }})</span>
+                    <span class="chip-filtro-doc" data-filtro="inactivos">Inactivos ({{ usuarios|rejectattr('activo')|list|length }})</span>
+                </div>
                 <a href="{{ url_for('usuarios.nuevo') }}" class="btn btn-primary btn-sm">+ Nuevo usuario</a>
             </div>
 
             <div class="table-responsive">
-            <table class="table table-hover data-table">
+            <table class="table table-hover data-table" id="tabla-usuarios">
                 <thead><tr>
                     <th>Usuario</th><th>Nombre</th>
                     {% if current_user.rol == 'Super Admin' %}<th>Empresa</th>{% endif %}
@@ -26,7 +34,9 @@
                 </tr></thead>
                 <tbody>
                     {% for u in usuarios %}
-                    <tr>
+                    <tr class="fila-usuario"
+                        data-activo="{{ '1' if u.activo else '0' }}"
+                        data-buscar="{{ (u.username ~ ' ' ~ (u.nombre_completo or '') ~ ' ' ~ u.rol ~ ' ' ~ (u.cliente.nombre if u.cliente else '') ~ ' ' ~ (u.empresa.nombre if u.empresa else ''))|lower }}">
                         <td>{{ u.username }}</td>
                         <td>{{ u.nombre_completo or '-' }}</td>
                         {% if current_user.rol == 'Super Admin' %}<td>{{ u.empresa.nombre if u.empresa else '-' }}</td>{% endif %}
@@ -51,8 +61,44 @@
                 </tbody>
             </table>
             </div>
+            <p class="text-muted text-center py-3 d-none" id="usuarios-sin-resultados">Ningún usuario coincide con la búsqueda.</p>
 
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    var filas = Array.prototype.slice.call(document.querySelectorAll('#tabla-usuarios tbody tr.fila-usuario'));
+    var buscador = document.getElementById('buscador-usuarios');
+    var chips = document.querySelectorAll('#chips-filtro-usuarios .chip-filtro-doc');
+    var sinResultados = document.getElementById('usuarios-sin-resultados');
+    var filtroActivo = 'todos';
+
+    function aplicarFiltros() {
+        var texto = (buscador.value || '').toLowerCase().trim();
+        var visibles = 0;
+        filas.forEach(function (fila) {
+            var coincideTexto = !texto || fila.dataset.buscar.indexOf(texto) !== -1;
+            var coincideFiltro = filtroActivo === 'todos'
+                || (filtroActivo === 'activos' && fila.dataset.activo === '1')
+                || (filtroActivo === 'inactivos' && fila.dataset.activo === '0');
+            var visible = coincideTexto && coincideFiltro;
+            fila.style.display = visible ? '' : 'none';
+            if (visible) visibles++;
+        });
+        sinResultados.classList.toggle('d-none', visibles > 0);
+    }
+
+    buscador.addEventListener('input', aplicarFiltros);
+    chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            chips.forEach(function (c) { c.classList.remove('activo'); });
+            chip.classList.add('activo');
+            filtroActivo = chip.dataset.filtro;
+            aplicarFiltros();
+        });
+    });
+})();
+</script>
 {% endblock %}
