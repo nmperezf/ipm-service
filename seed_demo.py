@@ -13,9 +13,9 @@ from app.models import (
     Empresa,
     Equipo,
     Instalacion,
+    Mensaje,
     Observacion,
     OrdenTrabajo,
-    Recordatorio,
     Repuesto,
     RepuestoUsado,
     ServicioContrato,
@@ -179,15 +179,17 @@ with app.app_context():
         db.session.commit()
         print(f"OT correctiva de ejemplo cargada ({ot_correctiva.numero}), con 1 repuesto consumido.")
 
-        # Recordatorio de ejemplo
-        db.session.add(Recordatorio(
+        # Mensaje interno de ejemplo
+        db.session.add(Mensaje(
             empresa_id=empresa_demo.id,
+            remitente_id=admin_demo.id,
+            destinatario_id=jefe_demo.id,
             cliente_id=cliente.id,
             titulo="Coordinar con el cliente la renovación del contrato antes de marzo",
             prioridad="Urgente",
         ))
         db.session.commit()
-        print("Recordatorio de ejemplo cargado.")
+        print("Mensaje interno de ejemplo cargado.")
 
         # Checklist de BIE de ejemplo (creado como cualquier tipo de formulario
         # se crearía desde la pantalla "Formularios" — se puede editar ahí mismo)
