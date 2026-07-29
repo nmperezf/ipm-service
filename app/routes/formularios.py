@@ -96,6 +96,9 @@ def carga_masiva(item_id, tipo_formulario_id):
                 formulario = Formulario(item_visita_id=item.id, tipo_formulario_id=tipo.id, equipo_id=equipo.id)
                 db.session.add(formulario)
             formulario.set_datos(datos)
+            for obs in equipo.deficiencias:
+                if not obs.resuelto:
+                    obs.confirmar_vigencia(item.visita_id, current_user.id)
             guardados += 1
 
         if guardados:
@@ -190,6 +193,10 @@ def nuevo(item_id, tipo_formulario_id):
             )
             db.session.add(formulario)
         formulario.set_datos(datos)
+        if equipo:
+            for obs in equipo.deficiencias:
+                if not obs.resuelto:
+                    obs.confirmar_vigencia(item.visita_id, current_user.id)
         if es_nuevo:
             notificar_gestion(
                 empresa_id=item.visita.instalacion.cliente.empresa_id,

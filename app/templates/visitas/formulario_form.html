@@ -28,7 +28,10 @@
                     <tr>
                         <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
                         <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
-                        <td>{{ obs.descripcion }}</td>
+                        <td>
+                            {{ obs.descripcion }}
+                            {% if obs.fecha_ultima_confirmacion %}<br><small class="text-muted">Vista por última vez el {{ obs.fecha_ultima_confirmacion.strftime('%d/%m/%Y') }}</small>{% endif %}
+                        </td>
                         <td>
                             <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}" class="d-inline">
                                 <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>

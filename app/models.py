@@ -684,7 +684,13 @@ class Observacion(db.Model):
     elimina. Una vez Aprobada, deja de poder editarse (si hace falta
     corregirla, el Administrador la borra y se carga una nueva). El
     cierre de una visita queda bloqueado mientras tenga observaciones
-    Pendientes."""
+    Pendientes.
+
+    ultima_visita_confirmada_id / fecha_ultima_confirmacion: rastro de que
+    la deficiencia se siguió viendo en visitas posteriores a la que la
+    detectó, sin ser un paso extra para el técnico — se completa solo al
+    guardar un checklist de ese equipo mientras siga abierta (ver
+    Observacion.confirmar_vigencia y formularios.nuevo)."""
 
     __tablename__ = "observaciones"
 
@@ -704,6 +710,13 @@ class Observacion(db.Model):
     resuelto_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
     reabierto_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
     fecha_reapertura = db.Column(db.Date, nullable=True)
+    # Se completan solos (sin que el técnico haga nada aparte) cada vez que
+    # guarda un checklist de un equipo con esta deficiencia todavía
+    # abierta — deja rastro de que se la volvió a ver en esa visita, sin
+    # sumarle un paso más al flujo de carga (ver formularios.nuevo).
+    ultima_visita_confirmada_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=True)
+    fecha_ultima_confirmacion = db.Column(db.Date, nullable=True)
+    confirmada_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
 
     item_visita = db.relationship("ItemVisita", backref="observaciones_registradas")
     equipo = db.relationship("Equipo", backref="deficiencias")
@@ -711,6 +724,13 @@ class Observacion(db.Model):
     aprobado_por = db.relationship("Usuario", foreign_keys=[aprobado_por_id])
     resuelto_por = db.relationship("Usuario", foreign_keys=[resuelto_por_id])
     reabierto_por = db.relationship("Usuario", foreign_keys=[reabierto_por_id])
+    ultima_visita_confirmada = db.relationship("Visita", foreign_keys=[ultima_visita_confirmada_id])
+    confirmada_por = db.relationship("Usuario", foreign_keys=[confirmada_por_id])
+
+    def confirmar_vigencia(self, visita_id, usuario_id=None, fecha=None):
+        self.ultima_visita_confirmada_id = visita_id
+        self.fecha_ultima_confirmacion = fecha or date.today()
+        self.confirmada_por_id = usuario_id
 
     def marcar_resuelta(self, usuario_id=None, fecha=None):
         self.resuelto = True

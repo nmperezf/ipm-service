@@ -69,7 +69,10 @@
                         <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
                         <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
                         <td>{{ obs.equipo.nombre if obs.equipo else '-' }}</td>
-                        <td>{{ obs.descripcion }}</td>
+                        <td>
+                            {{ obs.descripcion }}
+                            {% if obs.fecha_ultima_confirmacion %}<br><small class="text-muted">Vista por última vez el {{ obs.fecha_ultima_confirmacion.strftime('%d/%m/%Y') }}</small>{% endif %}
+                        </td>
                         <td>
                             {% if puede_editar %}
                             <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}" class="d-inline">
