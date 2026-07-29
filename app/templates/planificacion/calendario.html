@@ -1,41 +1,51 @@
 {% extends "base.html" %}
 {% block title %}Calendario{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1>Calendario</h1>
-    <div class="btn-group">
-        <a class="btn btn-outline-secondary" href="{{ url_for('planificacion.calendario', anio=mes_anterior.year, mes=mes_anterior.month) }}">&larr;</a>
-        <span class="btn btn-light disabled text-capitalize">{{ titulo_mes }}</span>
-        <a class="btn btn-outline-secondary" href="{{ url_for('planificacion.calendario', anio=mes_siguiente.year, mes=mes_siguiente.month) }}">&rarr;</a>
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Calendario</h1>
+        </div>
+        <div class="cuerpo-doc">
+
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <p class="text-muted mb-0">Solo se muestran clientes con servicios contratados. Cada chip lleva al detalle de esa orden de trabajo.</p>
+                <div class="btn-group">
+                    <a class="btn btn-outline-secondary" href="{{ url_for('planificacion.calendario', anio=mes_anterior.year, mes=mes_anterior.month) }}">&larr;</a>
+                    <span class="btn btn-light disabled text-capitalize">{{ titulo_mes }}</span>
+                    <a class="btn btn-outline-secondary" href="{{ url_for('planificacion.calendario', anio=mes_siguiente.year, mes=mes_siguiente.month) }}">&rarr;</a>
+                </div>
+            </div>
+
+            <div class="d-flex gap-3 mb-3 small">
+                <span><span class="chip-cliente chip-success" style="display:inline-block; padding:2px 8px;">&nbsp;</span> Completado</span>
+                <span><span class="chip-cliente chip-primary" style="display:inline-block; padding:2px 8px;">&nbsp;</span> Pendientes</span>
+                <span><span class="chip-cliente chip-danger" style="display:inline-block; padding:2px 8px;">&nbsp;</span> Vencido</span>
+                <span><span class="chip-cliente chip-secondary" style="display:inline-block; padding:2px 8px;">&nbsp;</span> Cancelado</span>
+            </div>
+
+            <div class="calendario-grilla mb-2">
+                {% for nombre_dia in ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] %}
+                <div class="text-center fw-bold small">{{ nombre_dia }}</div>
+                {% endfor %}
+            </div>
+
+            {% for semana in semanas %}
+            <div class="calendario-grilla mb-1">
+                {% for dia in semana %}
+                <div class="calendario-dia {{ 'fuera-de-mes' if dia.month != mes }}">
+                    <div class="numero-dia">{{ dia.day }}</div>
+                    {% for visita in visitas_por_dia.get(dia.day, []) if dia.month == mes %}
+                    <a href="{{ url_for('ordenes.detalle', ot_id=visita.orden_trabajo.id) if visita.orden_trabajo else url_for('visitas.detalle', visita_id=visita.id) }}" class="chip-cliente chip-{{ visita.clase_calendario }}" title="{{ visita.etiqueta_calendario }}">
+                        {{ visita.instalacion.cliente.nombre }}
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endfor %}
+
+        </div>
     </div>
 </div>
-<p class="text-muted">Solo se muestran clientes con servicios contratados. Cada chip lleva al detalle de esa orden de trabajo.</p>
-
-<div class="d-flex gap-3 mb-2 small">
-    <span><span class="chip-cliente chip-success" style="display:inline-block; padding:2px 8px;">&nbsp;</span> Completado</span>
-    <span><span class="chip-cliente chip-primary" style="display:inline-block; padding:2px 8px;">&nbsp;</span> Pendientes</span>
-    <span><span class="chip-cliente chip-danger" style="display:inline-block; padding:2px 8px;">&nbsp;</span> Vencido</span>
-    <span><span class="chip-cliente chip-secondary" style="display:inline-block; padding:2px 8px;">&nbsp;</span> Cancelado</span>
-</div>
-
-<div class="calendario-grilla mb-2">
-    {% for nombre_dia in ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'] %}
-    <div class="text-center fw-bold small">{{ nombre_dia }}</div>
-    {% endfor %}
-</div>
-
-{% for semana in semanas %}
-<div class="calendario-grilla mb-1">
-    {% for dia in semana %}
-    <div class="calendario-dia {{ 'fuera-de-mes' if dia.month != mes }}">
-        <div class="numero-dia">{{ dia.day }}</div>
-        {% for visita in visitas_por_dia.get(dia.day, []) if dia.month == mes %}
-        <a href="{{ url_for('ordenes.detalle', ot_id=visita.orden_trabajo.id) if visita.orden_trabajo else url_for('visitas.detalle', visita_id=visita.id) }}" class="chip-cliente chip-{{ visita.clase_calendario }}" title="{{ visita.etiqueta_calendario }}">
-            {{ visita.instalacion.cliente.nombre }}
-        </a>
-        {% endfor %}
-    </div>
-    {% endfor %}
-</div>
-{% endfor %}
 {% endblock %}
