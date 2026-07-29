@@ -1030,3 +1030,60 @@ html[data-bs-theme="dark"] .desglose-clasif .mini-chip { background: rgba(255,25
 
 @media (max-width: 720px) { .grid-atencion { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 480px) { .grid-atencion { grid-template-columns: 1fr; } }
+
+/* ---- Directorio en tarjetas (Clientes) ------------------------------------ */
+
+.barra-herramientas-doc { display: flex; gap: .8rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.4rem; }
+.buscador-doc { flex: 1; min-width: 220px; position: relative; }
+.buscador-doc svg { position: absolute; left: .7rem; top: 50%; transform: translateY(-50%); opacity: .5; pointer-events: none; }
+.buscador-doc input {
+    width: 100%; padding: .55rem .9rem .55rem 2.2rem; border-radius: .5rem; border: 1px solid var(--border);
+    background: var(--surface-muted); color: var(--ink); font-size: .88rem;
+}
+.chips-filtro-doc { display: flex; gap: .4rem; flex-wrap: wrap; }
+.chip-filtro-doc {
+    font-size: .78rem; font-weight: 600; padding: .42rem .85rem; border-radius: 100px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--ink-muted); cursor: pointer; white-space: nowrap;
+}
+.chip-filtro-doc.activo { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+
+.grid-clientes-doc { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+
+.card-cliente-doc {
+    display: flex; flex-direction: column; gap: .8rem; padding: 1.1rem 1.2rem 1.1rem 1.4rem; border-radius: .65rem;
+    border: 1px solid var(--border); background: var(--surface); text-decoration: none; color: inherit;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; position: relative; overflow: hidden;
+}
+.card-cliente-doc:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(20,30,45,.10); border-color: var(--accent); color: inherit; }
+.card-cliente-doc.inactivo { opacity: .6; }
+.card-cliente-doc .filete-lateral-doc { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+.card-cliente-doc.criticas .filete-lateral-doc { background: var(--accent); }
+.card-cliente-doc.alerta .filete-lateral-doc { background: var(--bs-warning); }
+.card-cliente-doc.ok .filete-lateral-doc { background: var(--bs-success); }
+.card-cliente-doc.neutro .filete-lateral-doc { background: var(--border); }
+
+.card-cliente-doc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; }
+.card-cliente-doc .nombre { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; line-height: 1.25; }
+.card-cliente-doc .contacto { font-size: .8rem; color: var(--ink-muted); margin-top: .15rem; }
+
+.estado-pill-doc {
+    font-size: .66rem; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; padding: .2rem .55rem;
+    border-radius: 100px; white-space: nowrap; flex-shrink: 0;
+}
+.estado-pill-doc.activo { background: var(--ok-soft); color: var(--bs-success); }
+.estado-pill-doc.inactivo { background: var(--surface-muted); color: var(--ink-muted); }
+
+.card-cliente-doc-stats { display: flex; gap: 1.4rem; }
+.card-cliente-doc-stats .stat .valor { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 700; line-height: 1; }
+.card-cliente-doc-stats .stat .etiqueta { font-size: .68rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .03em; margin-top: .3rem; display: block; }
+.card-cliente-doc-stats .stat.cumplimiento-alto .valor { color: var(--bs-success); }
+.card-cliente-doc-stats .stat.cumplimiento-medio .valor { color: var(--bs-warning); }
+.card-cliente-doc-stats .stat.cumplimiento-bajo .valor { color: var(--accent); }
+.card-cliente-doc-stats .stat.cumplimiento-nulo .valor { color: var(--ink-muted); }
+
+.chips-deficiencias-doc { display: flex; gap: .35rem; flex-wrap: wrap; margin-top: -.2rem; }
+.chips-deficiencias-doc .mini-chip { font-size: .68rem; font-weight: 700; padding: .15rem .5rem; border-radius: 100px; }
+.chips-deficiencias-doc .mini-chip.critica { background: var(--accent-soft); color: var(--accent); }
+.chips-deficiencias-doc .mini-chip.no-critica { background: var(--warn-soft); color: var(--bs-warning); }
+.chips-deficiencias-doc .mini-chip.desactivacion { background: var(--info-soft); color: var(--bs-info); }
+.chips-deficiencias-doc .mini-chip.sin-novedad { background: var(--ok-soft); color: var(--bs-success); }

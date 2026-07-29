@@ -12,48 +12,134 @@
         <div class="filete-rojo-doc"></div>
         <div class="cuerpo-doc">
 
-            <div class="d-flex justify-content-end mb-3">
+            <div class="barra-herramientas-doc">
+                <div class="buscador-doc">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="buscador-clientes" placeholder="Buscar por nombre o contacto...">
+                </div>
+                <div class="chips-filtro-doc" id="chips-filtro-clientes">
+                    <span class="chip-filtro-doc activo" data-filtro="todos">Todos ({{ clientes|length }})</span>
+                    <span class="chip-filtro-doc" data-filtro="criticas">Con críticas ({{ clientes_con_criticas }})</span>
+                    <span class="chip-filtro-doc" data-filtro="inactivos">Inactivos ({{ clientes|rejectattr('activo')|list|length }})</span>
+                </div>
+                <select id="orden-clientes" class="form-select form-select-sm" style="width:auto;">
+                    <option value="nombre">Ordenar: Nombre (A-Z)</option>
+                    <option value="urgencia">Ordenar: Más urgente primero</option>
+                    <option value="cumplimiento">Ordenar: Cumplimiento (menor a mayor)</option>
+                </select>
                 <a href="{{ url_for('clientes.nuevo') }}" class="btn btn-dark">+ Nuevo cliente</a>
             </div>
 
-            <div class="table-responsive">
-            <table class="table table-hover align-middle data-table tabla-col-fija">
-                <thead>
-                    <tr>
-                        <th>Nombre</th>
-                        <th>Contacto</th>
-                        <th>Teléfono</th>
-                        <th>Instalaciones</th>
-                        <th>Estado</th>
-                        <th></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for cliente in clientes %}
-                    <tr>
-                        <td><a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}">{{ cliente.nombre }}</a></td>
-                        <td>{{ cliente.contacto or '-' }}</td>
-                        <td>{{ cliente.telefono or '-' }}</td>
-                        <td>{{ cliente.instalaciones|length }}</td>
-                        <td>
-                            {% if cliente.activo %}
-                                <span class="badge bg-success">Activo</span>
-                            {% else %}
-                                <span class="badge bg-secondary">Inactivo</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-end">
-                            <a href="{{ url_for('clientes.editar', cliente_id=cliente.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="6" class="text-center text-muted py-4">Todavía no hay clientes cargados.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="grid-clientes-doc" id="grid-clientes">
+                {% for cliente in clientes %}
+                {% set d = cliente.deficiencias_abiertas() %}
+                {% set tiene_criticas = d['Deficiencia crítica'] > 0 %}
+                {% set tiene_alerta = d['Deficiencia no crítica'] > 0 or d['Desactivación'] > 0 or d['Comentario'] > 0 %}
+                {% set cumplimiento = cliente.cumplido_anual_pct() %}
+                {% set variante = 'criticas' if tiene_criticas else ('alerta' if tiene_alerta else ('ok' if cliente.activo else 'neutro')) %}
+                {% set urgencia = 0 if tiene_criticas else (1 if tiene_alerta else 2) %}
+                <a class="card-cliente-doc {{ variante }}{{ ' inactivo' if not cliente.activo }}"
+                   href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}"
+                   data-nombre="{{ cliente.nombre|lower }}"
+                   data-contacto="{{ (cliente.contacto or '')|lower }}"
+                   data-activo="{{ '1' if cliente.activo else '0' }}"
+                   data-criticas="{{ '1' if tiene_criticas else '0' }}"
+                   data-urgencia="{{ urgencia }}"
+                   data-cumplimiento="{{ cumplimiento }}">
+                    <span class="filete-lateral-doc"></span>
+                    <div class="card-cliente-doc-top">
+                        <div>
+                            <div class="nombre">{{ cliente.nombre }}</div>
+                            <div class="contacto">{{ cliente.contacto or 'Sin contacto cargado' }}{{ ' · ' + cliente.telefono if cliente.telefono }}</div>
+                        </div>
+                        <span class="estado-pill-doc {{ 'activo' if cliente.activo else 'inactivo' }}">{{ 'Activo' if cliente.activo else 'Inactivo' }}</span>
+                    </div>
+                    <div class="card-cliente-doc-stats">
+                        <div class="stat">
+                            <span class="valor">{{ cliente.instalaciones|length }}</span>
+                            <span class="etiqueta">Instalaci{{ 'ón' if cliente.instalaciones|length == 1 else 'ones' }}</span>
+                        </div>
+                        {% if cliente.tiene_historial_cumplimiento() %}
+                        <div class="stat {{ 'cumplimiento-alto' if cumplimiento >= 85 else ('cumplimiento-medio' if cumplimiento >= 50 else 'cumplimiento-bajo') }}">
+                            <span class="valor">{{ cumplimiento }}%</span>
+                            <span class="etiqueta">Cumplimiento</span>
+                        </div>
+                        {% else %}
+                        <div class="stat cumplimiento-nulo">
+                            <span class="valor">—</span>
+                            <span class="etiqueta">Sin visitas aún</span>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="chips-deficiencias-doc">
+                        {% if d['Deficiencia crítica'] %}<span class="mini-chip critica">{{ d['Deficiencia crítica'] }} crítica{{ 's' if d['Deficiencia crítica'] != 1 }}</span>{% endif %}
+                        {% if d['Deficiencia no crítica'] %}<span class="mini-chip no-critica">{{ d['Deficiencia no crítica'] }} no crítica{{ 's' if d['Deficiencia no crítica'] != 1 }}</span>{% endif %}
+                        {% if d['Desactivación'] %}<span class="mini-chip desactivacion">{{ d['Desactivación'] }} desactivaci{{ 'ón' if d['Desactivación'] == 1 else 'ones' }}</span>{% endif %}
+                        {% if d['Comentario'] %}<span class="mini-chip desactivacion">{{ d['Comentario'] }} comentario{{ 's' if d['Comentario'] != 1 }}</span>{% endif %}
+                        {% if not tiene_criticas and not tiene_alerta %}<span class="mini-chip sin-novedad">Sin novedades</span>{% endif %}
+                    </div>
+                </a>
+                {% else %}
+                <p class="text-muted">Todavía no hay clientes cargados.</p>
+                {% endfor %}
             </div>
+            <p class="text-muted text-center py-3 d-none" id="sin-resultados-clientes">Ningún cliente coincide con la búsqueda.</p>
 
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    var grid = document.getElementById('grid-clientes');
+    if (!grid) return;
+    var tarjetas = Array.prototype.slice.call(grid.querySelectorAll('.card-cliente-doc'));
+    var buscador = document.getElementById('buscador-clientes');
+    var chips = document.querySelectorAll('#chips-filtro-clientes .chip-filtro-doc');
+    var orden = document.getElementById('orden-clientes');
+    var sinResultados = document.getElementById('sin-resultados-clientes');
+    var filtroActivo = 'todos';
+
+    function aplicarFiltros() {
+        var texto = (buscador.value || '').toLowerCase().trim();
+        var visibles = 0;
+        tarjetas.forEach(function (card) {
+            var coincideTexto = !texto || card.dataset.nombre.indexOf(texto) !== -1 || card.dataset.contacto.indexOf(texto) !== -1;
+            var coincideFiltro = filtroActivo === 'todos'
+                || (filtroActivo === 'criticas' && card.dataset.criticas === '1')
+                || (filtroActivo === 'inactivos' && card.dataset.activo === '0');
+            var visible = coincideTexto && coincideFiltro;
+            card.style.display = visible ? '' : 'none';
+            if (visible) visibles++;
+        });
+        sinResultados.classList.toggle('d-none', visibles > 0);
+    }
+
+    function aplicarOrden() {
+        var criterio = orden.value;
+        var ordenadas = tarjetas.slice().sort(function (a, b) {
+            if (criterio === 'urgencia') {
+                var diff = parseInt(a.dataset.urgencia) - parseInt(b.dataset.urgencia);
+                if (diff !== 0) return diff;
+            } else if (criterio === 'cumplimiento') {
+                var diffC = parseFloat(a.dataset.cumplimiento) - parseFloat(b.dataset.cumplimiento);
+                if (diffC !== 0) return diffC;
+            }
+            return a.dataset.nombre.localeCompare(b.dataset.nombre);
+        });
+        ordenadas.forEach(function (card) { grid.appendChild(card); });
+    }
+
+    buscador.addEventListener('input', aplicarFiltros);
+    chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            chips.forEach(function (c) { c.classList.remove('activo'); });
+            chip.classList.add('activo');
+            filtroActivo = chip.dataset.filtro;
+            aplicarFiltros();
+        });
+    });
+    orden.addEventListener('change', aplicarOrden);
+})();
+</script>
 {% endblock %}

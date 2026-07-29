@@ -209,6 +209,18 @@ class Cliente(db.Model):
         cumplidos = sum(1 for it in items if it.estado == "Cumplido")
         return round((cumplidos / total) * 100, 1) if total else 0.0
 
+    def tiene_historial_cumplimiento(self):
+        """True si hay al menos un ítem de visita contado en
+        cumplido_anual_pct() — para no confundir "0% de cumplimiento"
+        (mal desempeño) con "todavía no hay visitas" (sin dato)."""
+        return any(
+            v.items
+            for inst in self.instalaciones
+            for c in inst.contratos
+            if c.activo
+            for v in c.visitas
+        )
+
     def __repr__(self):
         return f"<Cliente {self.nombre}>"
 

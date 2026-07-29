@@ -27,7 +27,10 @@ def listar():
     if q:
         query = query.filter(Cliente.nombre.ilike(f"%{q}%"))
     clientes = query.order_by(Cliente.nombre).all()
-    return render_template("clientes/list.html", clientes=clientes, q=q)
+    clientes_con_criticas = sum(1 for c in clientes if c.deficiencias_abiertas()["Deficiencia crítica"])
+    return render_template(
+        "clientes/list.html", clientes=clientes, q=q, clientes_con_criticas=clientes_con_criticas
+    )
 
 
 @clientes_bp.route("/nuevo", methods=["GET", "POST"])
