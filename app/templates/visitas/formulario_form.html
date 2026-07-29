@@ -17,6 +17,30 @@
             <p class="text-muted small">Ya había un checklist cargado acá — al guardar se actualiza, no se duplica.</p>
             {% endif %}
 
+            {% set deficiencias_equipo = equipo.deficiencias|rejectattr('resuelto')|list if equipo else [] %}
+            {% if deficiencias_equipo %}
+            <div class="seccion-titulo-doc">Deficiencias abiertas de {{ equipo.nombre }}</div>
+            <div class="table-responsive">
+            <table class="table table-sm data-table">
+                <thead><tr><th>Fecha</th><th>Clasificación</th><th>Descripción</th><th></th></tr></thead>
+                <tbody>
+                    {% for obs in deficiencias_equipo %}
+                    <tr>
+                        <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+                        <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+                        <td>{{ obs.descripcion }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
+
             {% set datos = formulario.datos() if formulario else {} %}
             <form method="POST" class="mt-3">
                 {% if equipo %}<input type="hidden" name="equipo_id" value="{{ equipo.id }}">{% endif %}

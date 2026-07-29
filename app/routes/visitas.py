@@ -170,10 +170,20 @@ def detalle(visita_id):
         tipos_item = [t for t in tipos if t.aplica_a_servicio(item.servicio)]
         grupos, generales = _agrupar_tipos_formulario(tipos_item)
         formularios_por_item[item.id] = {"grupos": grupos, "generales": generales}
+
+    # Para que el técnico vea de entrada qué deficiencias ya estaban
+    # cargadas en esta instalación, sin tener que ir a buscarlas a la
+    # ficha de la instalación. Críticas primero, después por antigüedad.
+    deficiencias_abiertas = sorted(
+        (o for o in visita.instalacion.deficiencias if not o.resuelto),
+        key=lambda o: (o.clasificacion != "Deficiencia crítica", o.fecha_carga),
+    )
+
     return render_template(
         "visitas/detail.html",
         visita=visita,
         formularios_por_item=formularios_por_item,
+        deficiencias_abiertas=deficiencias_abiertas,
     )
 
 

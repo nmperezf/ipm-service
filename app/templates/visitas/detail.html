@@ -55,12 +55,40 @@
                 {% if visita.cerrada %}<strong>Notas de cierre:</strong> {{ visita.notas_cierre or '-' }} <small class="text-muted">(cerrada el {{ visita.fecha_cierre.strftime('%d/%m/%Y') }}{% if visita.cerrada_por %} por {{ visita.cerrada_por.nombre_completo or visita.cerrada_por.username }}{% endif %})</small>{% endif %}
             </p>
 
+            {% set puede_editar = not visita.cerrada and not (current_user.rol == 'Técnico' and visita.fase != 'Abierta') %}
+
+            {% if deficiencias_abiertas %}
+            <div class="seccion-titulo-doc">Deficiencias abiertas de esta instalación</div>
+            <p class="text-muted small mt-n2 mb-2">Cargadas en visitas anteriores (o en esta), todavía sin resolver — revisalas antes de dar la visita por terminada.</p>
+            <div class="table-responsive">
+            <table class="table table-sm data-table">
+                <thead><tr><th>Fecha</th><th>Clasificación</th><th>Equipo</th><th>Descripción</th><th></th></tr></thead>
+                <tbody>
+                    {% for obs in deficiencias_abiertas %}
+                    <tr>
+                        <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+                        <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+                        <td>{{ obs.equipo.nombre if obs.equipo else '-' }}</td>
+                        <td>{{ obs.descripcion }}</td>
+                        <td>
+                            {% if puede_editar %}
+                            <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
+
             <div class="seccion-titulo-doc">Servicios de esta visita</div>
             {% if not visita.items %}
             <p class="text-muted">Esta visita no tiene servicios asociados de un contrato (es una visita manual).</p>
             {% endif %}
 
-            {% set puede_editar = not visita.cerrada and not (current_user.rol == 'Técnico' and visita.fase != 'Abierta') %}
             {% if not puede_editar %}
             <div class="alert alert-info">
                 Esta visita está {{ visita.fase|lower }}: ya no se puede modificar nada.
