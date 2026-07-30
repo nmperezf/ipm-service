@@ -47,6 +47,42 @@ def nuevo():
     return render_template("tipos_equipo/form.html", categorias=categorias_existentes)
 
 
+@tipos_equipo_bp.route("/<int:tipo_id>/editar", methods=["GET", "POST"])
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def editar(tipo_id):
+    tipo = TipoEquipo.query.get_or_404(tipo_id)
+    categorias_existentes = sorted({t.categoria for t in TipoEquipo.query.all()} | set(CATEGORIAS_EQUIPO_ORDEN))
+
+    if request.method == "POST":
+        nombre = request.form["nombre"].strip()
+        categoria = request.form.get("categoria", "").strip() or "Otros equipos"
+
+        duplicado = TipoEquipo.query.filter(TipoEquipo.nombre == nombre, TipoEquipo.id != tipo.id).first()
+        if duplicado:
+            flash(f"Ya existe un tipo de equipo llamado '{nombre}'.", "danger")
+            return render_template("tipos_equipo/form.html", tipo=tipo, categorias=categorias_existentes)
+
+        nombre_anterior = tipo.nombre
+        if nombre != nombre_anterior:
+            # El nombre se guarda como texto en Equipo/TipoFormulario/ServicioTipo
+            # (no hay FK), así que renombrar acá tiene que arrastrar esas referencias.
+            Equipo.query.filter_by(tipo=nombre_anterior).update({"tipo": nombre})
+            TipoFormulario.query.filter_by(tipo_equipo_aplicable=nombre_anterior).update(
+                {"tipo_equipo_aplicable": nombre}
+            )
+            ServicioTipo.query.filter_by(tipo_equipo_aplicable=nombre_anterior).update(
+                {"tipo_equipo_aplicable": nombre}
+            )
+
+        tipo.nombre = nombre
+        tipo.categoria = categoria
+        db.session.commit()
+        flash(f"Tipo de equipo '{tipo.nombre}' actualizado.", "success")
+        return redirect(url_for("tipos_equipo.listar"))
+
+    return render_template("tipos_equipo/form.html", tipo=tipo, categorias=categorias_existentes)
+
+
 @tipos_equipo_bp.route("/<int:tipo_id>/eliminar", methods=["POST"])
 @rol_requerido("Administrador", "Jefe")
 def eliminar(tipo_id):

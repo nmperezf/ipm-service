@@ -102,7 +102,7 @@
                 <thead><tr><th>Fecha</th><th>Clasificación</th><th>Descripción</th><th>Revisión</th><th></th></tr></thead>
                 <tbody>
                     {% for obs in deficiencias_abiertas %}
-                    <tr>
+                    <tr data-href="{{ url_for('historial.ver', instalacion_id=equipo.instalacion_id) }}">
                         <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
                         <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
                         <td>{{ obs.descripcion }}</td>
@@ -206,7 +206,7 @@
                 <thead><tr><th>Fecha carga</th><th>Fecha resolución</th><th>Resuelta por</th><th>Clasificación</th><th>Descripción</th></tr></thead>
                 <tbody>
                     {% for obs in deficiencias_resueltas %}
-                    <tr>
+                    <tr data-href="{{ url_for('historial.ver', instalacion_id=equipo.instalacion_id) }}">
                         <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
                         <td>{{ obs.fecha_resolucion.strftime('%d/%m/%Y') if obs.fecha_resolucion else '-' }}</td>
                         <td>{{ (obs.resuelto_por.nombre_completo or obs.resuelto_por.username) if obs.resuelto_por else '-' }}</td>

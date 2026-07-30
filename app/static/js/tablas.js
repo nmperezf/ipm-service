@@ -21,20 +21,23 @@ function initTabla(tabla) {
         return;
     }
 
-    // --- Fila de filtros, una casilla por columna ---
-    const filaFiltros = document.createElement('tr');
-    filaFiltros.className = 'tabla-filtros';
-    columnas.forEach(function () {
-        const celda = document.createElement('th');
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.className = 'form-control form-control-sm';
-        input.setAttribute('placeholder', 'Filtrar…');
-        input.addEventListener('input', function () { aplicarFiltros(tabla); });
-        celda.appendChild(input);
-        filaFiltros.appendChild(celda);
-    });
-    thead.appendChild(filaFiltros);
+    // --- Buscador único: filtra por el texto completo de la fila ---
+    // (si la página ya trae su propio buscador+chips para esta tabla,
+    // marcada con data-buscador-propio, no se duplica; tampoco vale la
+    // pena mostrarlo sobre tablas con pocas filas, como cada mes de la
+    // hoja de ruta)
+    if (!('buscadorPropio' in tabla.dataset) && tbody.rows.length > 5) {
+        const buscador = document.createElement('div');
+        buscador.className = 'buscador-doc buscador-tabla-doc';
+        buscador.innerHTML =
+            '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>' +
+            '<input type="text" placeholder="Buscar…">';
+        buscador.querySelector('input').addEventListener('input', function (ev) {
+            aplicarFiltro(tabla, ev.target.value);
+        });
+        const contenedor = tabla.closest('.table-responsive') || tabla;
+        contenedor.parentNode.insertBefore(buscador, contenedor);
+    }
 
     // --- Encabezados clickeables para ordenar ---
     columnas.forEach(function (th, indice) {
@@ -45,6 +48,17 @@ function initTabla(tabla) {
         th.appendChild(indicador);
         th.addEventListener('click', function () {
             ordenarPorColumna(tabla, indice, th);
+        });
+    });
+
+    // --- Filas clickeables (<tr data-href="...">), sin interferir con
+    // los links/botones/forms que ya haya adentro de la fila ---
+    Array.from(tbody.rows).forEach(function (fila) {
+        if (!fila.dataset.href) return;
+        fila.classList.add('fila-clickeable');
+        fila.addEventListener('click', function (ev) {
+            if (ev.target.closest('a, button, form, input, select, textarea')) return;
+            window.location = fila.dataset.href;
         });
     });
 }
@@ -100,21 +114,11 @@ function valorCelda(celda) {
     return { texto: texto.toLowerCase(), numero: null };
 }
 
-function aplicarFiltros(tabla) {
-    const filaFiltros = tabla.tHead.querySelector('.tabla-filtros');
-    const valores = Array.from(filaFiltros.cells).map(function (td) {
-        return td.querySelector('input').value.trim().toLowerCase();
-    });
+function aplicarFiltro(tabla, valor) {
+    const busqueda = valor.trim().toLowerCase();
     const tbody = tabla.tBodies[0];
-
     Array.from(tbody.rows).forEach(function (fila) {
-        let visible = true;
-        valores.forEach(function (valor, indice) {
-            if (!valor) return;
-            const celda = fila.cells[indice];
-            const texto = celda ? celda.textContent.toLowerCase() : '';
-            if (!texto.includes(valor)) visible = false;
-        });
-        fila.style.display = visible ? '' : 'none';
+        const texto = fila.textContent.toLowerCase();
+        fila.style.display = !busqueda || texto.includes(busqueda) ? '' : 'none';
     });
 }

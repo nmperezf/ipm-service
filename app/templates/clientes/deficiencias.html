@@ -16,7 +16,7 @@
                 <thead><tr><th>Fecha</th><th>Instalación</th><th>Descripción</th><th></th></tr></thead>
                 <tbody>
                     {% for obs in observaciones %}
-                    <tr>
+                    <tr data-href="{{ url_for('historial.ver', instalacion_id=obs.instalacion_id) }}">
                         <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
                         <td><a href="{{ url_for('instalaciones.detalle', instalacion_id=obs.instalacion_id) }}">{{ obs.instalacion.nombre }}</a></td>
                         <td>{{ obs.descripcion }}</td>

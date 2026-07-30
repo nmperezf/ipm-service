@@ -322,6 +322,14 @@ def cerrar(visita_id):
         firma = request.form.get("firma_cliente")
         if firma:
             visita.firma_cliente = firma
+        # La OT preventiva que generó esta visita se cierra junto con ella
+        # (ver ordenes_trabajo.py: ya bloqueaba finalizar a mano si había
+        # observaciones sin aprobar, así que para cuando se llega hasta acá
+        # siempre está en condiciones de finalizarse). Si alguien ya la
+        # había cancelado a mano, se respeta esa cancelación.
+        if visita.orden_trabajo and visita.orden_trabajo.estado != "Cancelada":
+            visita.orden_trabajo.estado = "Finalizada"
+            visita.orden_trabajo.fecha_cierre = visita.fecha_cierre
         db.session.commit()
         flash("Visita cerrada. Ya podés descargar el PDF de devolución.", "success")
         return redirect(url_for("visitas.detalle", visita_id=visita.id))

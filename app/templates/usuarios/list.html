@@ -26,7 +26,7 @@
             </div>
 
             <div class="table-responsive">
-            <table class="table table-hover data-table" id="tabla-usuarios">
+            <table class="table table-hover data-table" id="tabla-usuarios" data-buscador-propio>
                 <thead><tr>
                     <th>Usuario</th><th>Nombre</th>
                     {% if current_user.rol == 'Super Admin' %}<th>Empresa</th>{% endif %}

@@ -15,6 +15,48 @@
                 <a href="{{ url_for('historial.exportar_csv', instalacion_id=instalacion.id) }}" class="btn btn-outline-dark btn-sm">⬇ Exportar CSV</a>
             </div>
 
+            <div class="seccion-titulo-doc">Observaciones (deficiencias / desactivaciones)</div>
+            <div class="table-responsive">
+            <table class="table table-sm table-hover data-table">
+                <thead><tr><th>Clasificación</th><th>Descripción</th><th>Fecha carga</th><th>Fecha resolución</th><th>Estado</th><th>Visita</th><th></th></tr></thead>
+                <tbody>
+                    {% for obs in observaciones %}
+                    <tr>
+                        <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+                        <td>{{ obs.descripcion }}</td>
+                        <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ obs.fecha_resolucion.strftime('%d/%m/%Y') if obs.fecha_resolucion else '-' }}</td>
+                        <td>
+                            {% if obs.resuelto %}<span class="badge bg-success">Resuelta</span>
+                            {% else %}<span class="badge bg-danger">Abierta</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if obs.visita %}
+                            <a href="{{ url_for('visitas.detalle', visita_id=obs.visita.id) }}" class="btn btn-sm btn-outline-secondary">Ver visita</a>
+                            {% else %}
+                            <span class="text-muted">Cargada a mano</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if obs.resuelto %}
+                            <form method="POST" action="{{ url_for('observaciones.reabrir', observacion_id=obs.id) }}">
+                                <button type="submit" class="btn btn-sm btn-outline-secondary">Reabrir</button>
+                            </form>
+                            {% else %}
+                            <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}">
+                                <button type="submit" class="btn btn-sm btn-outline-success">Resolver</button>
+                            </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="7" class="text-center text-muted py-4">Sin observaciones cargadas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+            <div class="seccion-titulo-doc">Visitas y servicios realizados</div>
             <div class="table-responsive">
             <table class="table table-sm table-hover data-table">
                 <thead>
@@ -39,40 +81,6 @@
                     </tr>
                     {% else %}
                     <tr><td colspan="9" class="text-center text-muted py-4">Esta instalación todavía no tiene historial cargado.</td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            </div>
-
-            <div class="seccion-titulo-doc">Observaciones (deficiencias / desactivaciones)</div>
-            <div class="table-responsive">
-            <table class="table table-sm table-hover data-table">
-                <thead><tr><th>Clasificación</th><th>Descripción</th><th>Fecha carga</th><th>Fecha resolución</th><th>Estado</th><th></th></tr></thead>
-                <tbody>
-                    {% for obs in observaciones %}
-                    <tr>
-                        <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
-                        <td>{{ obs.descripcion }}</td>
-                        <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ obs.fecha_resolucion.strftime('%d/%m/%Y') if obs.fecha_resolucion else '-' }}</td>
-                        <td>
-                            {% if obs.resuelto %}<span class="badge bg-success">Resuelta</span>
-                            {% else %}<span class="badge bg-danger">Abierta</span>{% endif %}
-                        </td>
-                        <td>
-                            {% if obs.resuelto %}
-                            <form method="POST" action="{{ url_for('observaciones.reabrir', observacion_id=obs.id) }}">
-                                <button type="submit" class="btn btn-sm btn-outline-secondary">Reabrir</button>
-                            </form>
-                            {% else %}
-                            <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}">
-                                <button type="submit" class="btn btn-sm btn-outline-success">Resolver</button>
-                            </form>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="6" class="text-center text-muted py-4">Sin observaciones cargadas.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>

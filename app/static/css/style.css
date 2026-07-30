@@ -569,13 +569,12 @@ small, .small, .text-muted {
     font-size: .65rem;
     margin-left: 2px;
 }
-.tabla-filtros th {
-    background: var(--surface);
-    padding: .35rem .5rem !important;
-    border-top: none;
+.fila-clickeable {
+    cursor: pointer;
 }
-.tabla-filtros input {
-    font-size: .78rem;
+.buscador-tabla-doc {
+    max-width: 320px;
+    margin-bottom: .7rem;
 }
 
 /* ---- Tablas como tarjetas apiladas en celular (.tabla-tarjetas) ----------

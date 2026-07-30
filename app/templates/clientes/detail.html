@@ -63,18 +63,22 @@
                     <span class="num">{{ deficiencias['Comentario'] }}</span>
                     <span class="etiqueta">Comentarios</span>
                 </a>
+                <div class="card-atencion info">
+                    <span class="num">{{ indicadores.servicios_pendientes }}</span>
+                    <span class="etiqueta">Servicios pendientes</span>
+                </div>
+                <div class="card-atencion">
+                    <span class="num">&mdash;</span>
+                    <span class="etiqueta">Deficiencias presupuestadas</span>
+                </div>
                 <div class="card-atencion ok">
                     <span class="num">{{ cumplido_anual_pct }}%</span>
                     <span class="etiqueta">Cumplido (año de contrato)</span>
                 </div>
-            </div>
-
-            <div class="grid-atencion">
-                <div class="card-atencion"><span class="num">{{ indicadores.servicios_contratados }}</span><span class="etiqueta">Contratados</span></div>
-                <div class="card-atencion ok"><span class="num">{{ indicadores.servicios_realizados }}</span><span class="etiqueta">Realizados</span></div>
-                <div class="card-atencion info"><span class="num">{{ indicadores.servicios_pendientes }}</span><span class="etiqueta">Pendientes</span></div>
-                <div class="card-atencion critico"><span class="num">{{ indicadores.servicios_vencidos }}</span><span class="etiqueta">Vencidos</span></div>
-                <div class="card-atencion ok"><span class="num">{{ indicadores.cumplimiento_pct }}%</span><span class="etiqueta">Cumplimiento histórico</span></div>
+                <div class="card-atencion ok">
+                    <span class="num">{{ indicadores.cumplimiento_pct }}%</span>
+                    <span class="etiqueta">Cumplimiento histórico</span>
+                </div>
             </div>
 
             <p class="mt-3">

@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}Nuevo tipo de equipo{% endblock %}
+{% block title %}{{ 'Editar tipo de equipo' if tipo else 'Nuevo tipo de equipo' }}{% endblock %}
 {% block content %}
 <div class="fondo-doc-wrap">
     <div class="hoja-doc">
         <div class="encabezado-doc">
-            <h1>Nuevo tipo de equipo</h1>
+            <h1>{{ 'Editar tipo de equipo' if tipo else 'Nuevo tipo de equipo' }}</h1>
         </div>
         <div class="cuerpo-doc">
 
@@ -18,12 +18,17 @@
                 <div class="mb-3">
                     <label class="form-label">Nombre</label>
                     <input type="text" name="nombre" class="form-control" required autofocus
-                           placeholder="Ej: Extintor" maxlength="40">
+                           placeholder="Ej: Extintor" maxlength="40" value="{{ tipo.nombre if tipo else '' }}">
+                    {% if tipo %}
+                    <div class="form-text">
+                        Si cambiás el nombre, se actualiza también en los equipos, formularios y servicios tipo que ya lo usan.
+                    </div>
+                    {% endif %}
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Categoría</label>
                     <input type="text" name="categoria" class="form-control" list="categorias-existentes"
-                           placeholder="Ej: Otros equipos" value="Otros equipos">
+                           placeholder="Ej: Otros equipos" value="{{ tipo.categoria if tipo else 'Otros equipos' }}">
                     <datalist id="categorias-existentes">
                         {% for c in categorias %}
                         <option value="{{ c }}">

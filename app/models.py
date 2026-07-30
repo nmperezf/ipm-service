@@ -757,6 +757,12 @@ class Observacion(db.Model):
     ultima_visita_confirmada = db.relationship("Visita", foreign_keys=[ultima_visita_confirmada_id])
     confirmada_por = db.relationship("Usuario", foreign_keys=[confirmada_por_id])
 
+    @property
+    def visita(self):
+        """La visita en la que se cargó, si vino de un servicio puntual
+        (None para observaciones cargadas a mano, sin item_visita)."""
+        return self.item_visita.visita if self.item_visita_id else None
+
     def confirmar_vigencia(self, visita_id, usuario_id=None, fecha=None):
         self.ultima_visita_confirmada_id = visita_id
         self.fecha_ultima_confirmacion = fecha or date.today()
