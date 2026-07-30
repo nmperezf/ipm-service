@@ -1110,3 +1110,29 @@ html[data-bs-theme="dark"] .ot-tabla-lista tbody td { border-bottom-color: rgba(
 
 .ot-link-numero { color: var(--ink); font-weight: 700; text-decoration: none; transition: color .15s ease; }
 .ot-link-numero:hover { color: var(--accent); }
+
+/* ---- Tarjetas de instalación (ficha del cliente) --------------------- */
+
+.grid-instalaciones-doc { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+
+.card-instalacion-doc {
+    display: flex; flex-direction: column; gap: .8rem; padding: 1.1rem 1.2rem 1.1rem 1.4rem; border-radius: .65rem;
+    border: 1px solid var(--border); background: var(--surface); text-decoration: none; color: inherit;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; position: relative; overflow: hidden;
+}
+.card-instalacion-doc:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(20,30,45,.10); border-color: var(--accent); color: inherit; }
+.card-instalacion-doc .filete-lateral-doc { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+.card-instalacion-doc.critica .filete-lateral-doc { background: var(--accent); }
+.card-instalacion-doc.ok .filete-lateral-doc { background: var(--bs-success); }
+
+.card-instalacion-doc .nombre { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; line-height: 1.25; }
+.card-instalacion-doc .direccion { font-size: .8rem; color: var(--ink-muted); margin-top: .15rem; }
+
+.card-instalacion-doc .stats { display: flex; gap: 1.4rem; }
+.card-instalacion-doc .stats .stat .valor { font-family: var(--font-mono); font-size: 1.2rem; font-weight: 700; line-height: 1; }
+.card-instalacion-doc .stats .stat .etiqueta { font-size: .66rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .03em; margin-top: .25rem; display: block; }
+.card-instalacion-doc .stats .stat.def .valor { color: var(--accent); }
+.card-instalacion-doc .stats .stat.ok .valor { color: var(--bs-success); }
+
+.card-instalacion-doc .proxima { font-size: .78rem; color: var(--ink-muted); border-top: 1px solid var(--border); padding-top: .65rem; }
+.card-instalacion-doc .proxima strong { color: var(--ink); font-weight: 600; }

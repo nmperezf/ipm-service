@@ -8,7 +8,7 @@
         </div>
         <div class="cuerpo-doc">
 
-            <p class="mb-1"><a href="{{ url_for('instalaciones.informacion', instalacion_id=instalacion.id) }}">&larr; Información de instalación</a></p>
+            <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}">&larr; {{ instalacion.nombre }}</a></p>
             <p class="text-muted">{{ instalacion.nombre }} &middot; {{ equipos|length }} equipo(s)</p>
 
             {% for equipo in equipos %}

@@ -1,4 +1,3 @@
-from collections import defaultdict
 from datetime import date, datetime
 
 from dateutil.relativedelta import relativedelta
@@ -9,14 +8,8 @@ from app import db
 from app.auth_utils import clientes_visibles, rol_requerido, verificar_acceso_cliente, verificar_password_confirmacion
 from app.models import Cliente, ItemVisita, Visita
 from app.pdf_reporte_periodo import generar_pdf_reporte_periodo
-from app.utils import actualizar_vencimientos
 
 clientes_bp = Blueprint("clientes", __name__, url_prefix="/clientes")
-
-MESES_ES = [
-    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-]
 
 
 @clientes_bp.route("/")
@@ -66,35 +59,6 @@ def detalle(cliente_id):
         deficiencias=cliente.deficiencias_abiertas(),
         cumplido_anual_pct=cliente.cumplido_anual_pct(),
     )
-
-
-@clientes_bp.route("/<int:cliente_id>/hoja-ruta")
-@rol_requerido("Administrador", "Jefe", "Técnico")
-def hoja_ruta(cliente_id):
-    """Hoja de ruta del cliente: todas las visitas (cumplidas y pendientes/
-    futuras) de todas sus instalaciones, agrupadas por mes."""
-    cliente = Cliente.query.get_or_404(cliente_id)
-    verificar_acceso_cliente(cliente)
-    actualizar_vencimientos()
-
-    visitas = (
-        Visita.query.join(Visita.instalacion)
-        .filter_by(cliente_id=cliente.id)
-        .order_by(Visita.fecha)
-        .all()
-    )
-
-    agrupado = defaultdict(list)
-    for v in visitas:
-        agrupado[(v.fecha.year, v.fecha.month)].append(v)
-
-    meses_ordenados = sorted(agrupado.keys())
-    bloques = [
-        {"titulo": f"{MESES_ES[mes - 1]} {anio}", "visitas": agrupado[(anio, mes)]}
-        for (anio, mes) in meses_ordenados
-    ]
-
-    return render_template("clientes/hoja_ruta.html", cliente=cliente, bloques=bloques)
 
 
 @clientes_bp.route("/<int:cliente_id>/deficiencias/<clasificacion>")

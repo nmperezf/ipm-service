@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 
 from app import db
@@ -11,6 +13,11 @@ from app.models import Cliente, Instalacion
 from app.utils import equipos_por_categoria
 
 instalaciones_bp = Blueprint("instalaciones", __name__, url_prefix="/instalaciones")
+
+MESES_ES = [
+    "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+    "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
+]
 
 
 @instalaciones_bp.route("/nueva/<int:cliente_id>", methods=["GET", "POST"])
@@ -35,36 +42,33 @@ def nueva(cliente_id):
 @instalaciones_bp.route("/<int:instalacion_id>")
 @rol_requerido("Administrador", "Jefe", "Técnico")
 def detalle(instalacion_id):
+    """Ficha de la instalación: equipos agrupados por categoría (antes una
+    pantalla aparte, "Información de instalación"), observaciones
+    abiertas, contratos y su hoja de ruta (todas las visitas, cumplidas y
+    pendientes/futuras, agrupadas por mes — antes solo existía a nivel
+    cliente mezclando todas sus instalaciones)."""
     instalacion = Instalacion.query.get_or_404(instalacion_id)
     verificar_acceso_cliente(instalacion.cliente)
     contratos = sorted(instalacion.contratos, key=lambda c: c.fecha_inicio, reverse=True)
-    visitas = sorted(instalacion.visitas, key=lambda v: v.fecha, reverse=True)
-    return render_template(
-        "instalaciones/detail.html", instalacion=instalacion, contratos=contratos, visitas=visitas
-    )
 
-
-@instalaciones_bp.route("/<int:instalacion_id>/informacion")
-@rol_requerido("Administrador", "Jefe", "Técnico")
-def informacion(instalacion_id):
-    """Información de Instalación: tarjetas por categoría de equipo
-    (Bombas, ECA/Manifold, BIE, Otros — cada una solo un título, sin
-    detalle) y las acciones recomendadas (Observaciones) de la
-    instalación. El detalle de cada equipo vive en su propia ficha."""
-    instalacion = Instalacion.query.get_or_404(instalacion_id)
-    verificar_acceso_cliente(instalacion.cliente)
-
-    acciones_recomendadas = sorted(
-        (o for o in instalacion.deficiencias if not o.resuelto),
-        key=lambda o: o.fecha_carga,
-        reverse=True,
-    )
+    agrupado = defaultdict(list)
+    for v in instalacion.visitas:
+        agrupado[(v.fecha.year, v.fecha.month)].append(v)
+    meses_ordenados = sorted(agrupado.keys(), reverse=True)
+    bloques_hoja_ruta = [
+        {
+            "titulo": f"{MESES_ES[mes - 1]} {anio}",
+            "visitas": sorted(agrupado[(anio, mes)], key=lambda v: v.fecha, reverse=True),
+        }
+        for (anio, mes) in meses_ordenados
+    ]
 
     return render_template(
-        "instalaciones/informacion.html",
+        "instalaciones/detail.html",
         instalacion=instalacion,
+        contratos=contratos,
         categorias=equipos_por_categoria(instalacion),
-        acciones_recomendadas=acciones_recomendadas,
+        bloques_hoja_ruta=bloques_hoja_ruta,
     )
 
 

@@ -261,6 +261,25 @@ class Instalacion(db.Model):
         "Equipo", backref="instalacion", lazy=True, cascade="all, delete-orphan"
     )
 
+    def cumplido_anual_pct(self):
+        """% de servicios cumplidos dentro del año de cada contrato ACTIVO
+        de esta instalación — mismo criterio que Cliente.cumplido_anual_pct,
+        acotado a una sola instalación (para la tarjeta en la ficha del
+        cliente)."""
+        items = [it for c in self.contratos if c.activo for v in c.visitas for it in v.items]
+        total = len(items)
+        cumplidos = sum(1 for it in items if it.estado == "Cumplido")
+        return round((cumplidos / total) * 100, 1) if total else 0.0
+
+    def proxima_visita(self):
+        """Fecha de la próxima visita pendiente (de contrato o manual).
+        None si no hay ninguna programada."""
+        pendientes = [v.fecha for v in self.visitas if v.estado not in ("Realizado", "Cancelado")]
+        return min(pendientes, default=None)
+
+    def deficiencias_abiertas_count(self):
+        return sum(1 for o in self.deficiencias if not o.resuelto)
+
     def __repr__(self):
         return f"<Instalacion {self.nombre}>"
 

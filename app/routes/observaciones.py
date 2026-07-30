@@ -55,7 +55,7 @@ def nueva(instalacion_id):
             tipo="observacion_nueva",
             titulo=f"Observación nueva ({observacion.clasificacion}) — {instalacion.nombre}",
             cliente_id=instalacion.cliente_id,
-            enlace=url_for("instalaciones.informacion", instalacion_id=instalacion.id),
+            enlace=url_for("instalaciones.detalle", instalacion_id=instalacion.id),
             remitente=current_user,
         )
         db.session.commit()
@@ -117,7 +117,7 @@ def aprobar(observacion_id):
             titulo=f"Observación aprobada — {observacion.instalacion.nombre}",
             empresa_id=observacion.instalacion.cliente.empresa_id,
             cliente_id=observacion.instalacion.cliente_id,
-            enlace=url_for("instalaciones.informacion", instalacion_id=observacion.instalacion_id),
+            enlace=url_for("instalaciones.detalle", instalacion_id=observacion.instalacion_id),
             remitente=current_user,
         )
     db.session.commit()
