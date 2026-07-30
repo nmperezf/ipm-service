@@ -184,7 +184,7 @@
                     {% if puede_editar %}
                     <form method="POST" action="{{ url_for('fotos.subir', item_id=item.id) }}" enctype="multipart/form-data" class="row g-2 align-items-end">
                         <div class="col-auto">
-                            <input type="file" name="foto" accept="image/*" class="form-control form-control-sm" required>
+                            <input type="file" name="foto" accept="image/*" capture="environment" class="form-control form-control-sm" required>
                         </div>
                         {% if visita.instalacion.equipos %}
                         <div class="col-auto">
