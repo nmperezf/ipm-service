@@ -17,12 +17,12 @@
             <p class="text-muted">Carga manual — útil para migrar el historial que ya tenés de este cliente, aunque no exista una visita cargada en el sistema.</p>
             {% endif %}
 
-            <form method="POST" class="mt-3">
+            <form method="POST" class="mt-3" enctype="multipart/form-data">
                 {% if item %}<input type="hidden" name="item_id" value="{{ item.id }}">{% endif %}
                 {% if equipo %}<input type="hidden" name="equipo_id" value="{{ equipo.id }}">{% endif %}
                 <div class="mb-3">
                     <label class="form-label">Clasificación</label>
-                    <select name="clasificacion" class="form-select" required>
+                    <select name="clasificacion" id="clasificacion" class="form-select" required onchange="toggleRequierePresupuesto()">
                         {% for c in clasificaciones %}
                         <option value="{{ c }}">{{ c }}</option>
                         {% endfor %}
@@ -37,6 +37,15 @@
                     <input type="date" name="fecha_carga" class="form-control" value="{{ '' }}">
                     <div class="form-text">Dejala vacía para usar la fecha de hoy, o cargá una fecha pasada si estás migrando historial.</div>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">Fotos (opcional)</label>
+                    <input type="file" name="fotos" accept="image/*" class="form-control" multiple>
+                </div>
+                <div class="mb-3 form-check" id="wrapper-requiere-presupuesto">
+                    <input type="checkbox" name="requiere_presupuesto" class="form-check-input" id="requiere_presupuesto">
+                    <label class="form-check-label" for="requiere_presupuesto">Requiere presupuesto</label>
+                    <div class="form-text">Genera un código de seguimiento para que la solicitud no se pierda entre el técnico y quien presupuesta.</div>
+                </div>
                 <button type="submit" class="btn btn-primary">Guardar observación</button>
                 <a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}" class="btn btn-link">Cancelar</a>
             </form>
@@ -44,4 +53,16 @@
         </div>
     </div>
 </div>
+<script type="application/json" id="clasificaciones-con-presupuesto">{{ clasificaciones_con_presupuesto|tojson }}</script>
+<script>
+function toggleRequierePresupuesto() {
+    const conPresupuesto = JSON.parse(document.getElementById('clasificaciones-con-presupuesto').textContent);
+    const clasificacion = document.getElementById('clasificacion').value;
+    const wrapper = document.getElementById('wrapper-requiere-presupuesto');
+    const aplica = conPresupuesto.includes(clasificacion);
+    wrapper.style.display = aplica ? 'block' : 'none';
+    if (!aplica) document.getElementById('requiere_presupuesto').checked = false;
+}
+document.addEventListener('DOMContentLoaded', toggleRequierePresupuesto);
+</script>
 {% endblock %}

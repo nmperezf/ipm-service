@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Presupuestos{% endblock %}
+{% block content %}
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Presupuestos</h1>
+        </div>
+        <div class="cuerpo-doc">
+
+            <p class="text-muted">
+                Trazabilidad de las deficiencias que se marcaron "requiere presupuesto" al cargarlas — no es
+                facturación ni cotización, es que la solicitud no se pierda entre el técnico y quien presupuesta.
+            </p>
+
+            <div class="chips-filtro-doc mb-4">
+                <a href="{{ url_for('presupuestos.listar') }}" class="chip-filtro-doc{{ ' activo' if not estado_filtro }}">Todos</a>
+                {% for estado in estados %}
+                <a href="{{ url_for('presupuestos.listar', estado=estado) }}" class="chip-filtro-doc{{ ' activo' if estado_filtro == estado }}">{{ estado }} ({{ por_estado[estado]|length }})</a>
+                {% endfor %}
+            </div>
+
+            {% set hay_alguno = por_estado.values()|map('length')|sum > 0 %}
+            {% if not hay_alguno %}
+            <div class="estado-vacio-doc">
+                <i class="bi bi-receipt"></i>
+                <p>No hay presupuestos {{ 'con ese estado' if estado_filtro else 'cargados todavía' }}.</p>
+            </div>
+            {% endif %}
+
+            {% for estado in estados %}
+            {% set items = por_estado[estado] %}
+            {% if items and (not estado_filtro or estado_filtro == estado) %}
+            <div class="seccion-titulo-doc">{{ estado }} ({{ items|length }})</div>
+            <div class="table-responsive">
+            <table class="table table-sm table-hover data-table">
+                <thead>
+                    <tr><th>Código</th><th>Cliente</th><th>Instalación</th><th>Deficiencia</th><th>Días abierto</th><th>OT correctiva</th><th></th></tr>
+                </thead>
+                <tbody>
+                    {% for p in items %}
+                    <tr data-href="{{ url_for('presupuestos.detalle', presupuesto_id=p.id) }}">
+                        <td><strong>{{ p.codigo }}</strong></td>
+                        <td>{{ p.observacion.instalacion.cliente.nombre }}</td>
+                        <td>{{ p.observacion.instalacion.nombre }}</td>
+                        <td>{{ p.observacion.descripcion[:60] }}{{ '…' if p.observacion.descripcion|length > 60 }}</td>
+                        <td>
+                            <span class="badge {{ 'bg-warning' if p.dias_abierto > 7 else 'bg-secondary' }}">{{ p.dias_abierto }} día{{ 's' if p.dias_abierto != 1 }}</span>
+                        </td>
+                        <td>
+                            {% if p.ot_correctiva %}
+                            <a href="{{ url_for('ordenes.detalle', ot_id=p.ot_correctiva.id) }}">{{ p.ot_correctiva.numero }}</a>
+                            {% else %}—{% endif %}
+                        </td>
+                        <td><a href="{{ url_for('presupuestos.detalle', presupuesto_id=p.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
+            {% endfor %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

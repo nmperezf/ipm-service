@@ -57,6 +57,23 @@ def generar_pdf_devolucion(visita, resumen_categorias, deficiencias):
     else:
         elementos.append(Paragraph("No se registraron deficiencias en esta visita.", normal))
 
+    deficiencias_con_presupuesto = [d for d in deficiencias if d.requiere_presupuesto and d.presupuesto]
+    if deficiencias_con_presupuesto:
+        elementos.append(Paragraph("Deficiencias que requieren acción", h2))
+        filas = [["Código", "Descripción", "Estado"]]
+        for d in deficiencias_con_presupuesto:
+            filas.append([d.presupuesto.codigo, Paragraph(d.descripcion, celda), d.presupuesto.estado])
+        tabla_presupuestos = Table(filas, colWidths=[3.5 * cm, 10 * cm, 3 * cm])
+        tabla_presupuestos.setStyle(estilo_tabla_encabezado())
+        elementos.append(tabla_presupuestos)
+        elementos.append(
+            Paragraph(
+                "Para solicitar el presupuesto formalmente, mencione el código correspondiente en un mail a "
+                "presupuestos@andrewittenberger.com.uy",
+                normal,
+            )
+        )
+
     elementos.append(Paragraph("Observaciones del técnico", h2))
     elementos.append(Paragraph(visita.notas_cierre or "-", normal))
 

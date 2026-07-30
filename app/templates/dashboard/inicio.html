@@ -110,6 +110,11 @@
                     <span class="etiqueta">Visitas en revisión</span>
                     <span class="sub">esperando tu aprobación</span>
                 </a>
+                <a class="card-atencion alerta" href="{{ url_for('presupuestos.listar') }}">
+                    <span class="num">{{ presupuestos_activos }}</span>
+                    <span class="etiqueta">Presupuestos activos</span>
+                    <span class="sub">pendientes, cotizados o aprobados</span>
+                </a>
                 <a class="card-atencion info" href="{{ url_for('ordenes.listar') }}" style="grid-column: span 2;">
                     <span class="num">{{ ot_pendientes }}</span>
                     <span class="etiqueta">OT abiertas</span>

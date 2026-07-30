@@ -10,10 +10,14 @@ from app.auth_utils import (
     verificar_escritura_cliente,
     verificar_visita_editable,
 )
-from app.models import CLASIFICACIONES_OBSERVACION, Equipo, Instalacion, ItemVisita, Observacion
+from app.models import CLASIFICACIONES_OBSERVACION, Equipo, Foto, Instalacion, ItemVisita, Observacion
 from app.notificaciones import notificar_gestion, notificar_usuario
+from app.routes.fotos import _extension_permitida, _guardar_archivo
+from app.utils import crear_presupuesto
 
 observaciones_bp = Blueprint("observaciones", __name__, url_prefix="/observaciones")
+
+CLASIFICACIONES_CON_PRESUPUESTO = ("Deficiencia crítica", "Deficiencia no crítica")
 
 
 def _parse_fecha(valor, por_defecto=None):
@@ -38,18 +42,46 @@ def nueva(instalacion_id):
     equipo = Equipo.query.get(equipo_id) if equipo_id else None
 
     if request.method == "POST":
+        clasificacion = request.form["clasificacion"]
+        requiere_presupuesto = bool(request.form.get("requiere_presupuesto")) and clasificacion in CLASIFICACIONES_CON_PRESUPUESTO
+
         observacion = Observacion(
             instalacion_id=instalacion.id,
             item_visita_id=item.id if item else None,
             equipo_id=equipo.id if equipo else None,
-            clasificacion=request.form["clasificacion"],
+            clasificacion=clasificacion,
             descripcion=request.form["descripcion"],
             fecha_carga=_parse_fecha(request.form.get("fecha_carga")),
             estado_revision="Pendiente",
             creado_por_id=current_user.id,
+            requiere_presupuesto=requiere_presupuesto,
         )
         db.session.add(observacion)
         db.session.flush()
+
+        for archivo in request.files.getlist("fotos"):
+            if not archivo or archivo.filename == "" or not _extension_permitida(archivo.filename):
+                continue
+            ruta_relativa = _guardar_archivo(
+                archivo, instalacion.cliente.empresa_id, instalacion.cliente_id, instalacion.id,
+                equipo.id if equipo else None,
+            )
+            db.session.add(
+                Foto(
+                    instalacion_id=instalacion.id,
+                    equipo_id=equipo.id if equipo else None,
+                    observacion_id=observacion.id,
+                    nombre_archivo=ruta_relativa,
+                    origen="Visita" if item else "Carga manual",
+                    fecha_toma=date.today(),
+                    subido_por_id=current_user.id,
+                )
+            )
+
+        presupuesto = None
+        if requiere_presupuesto:
+            presupuesto = crear_presupuesto(observacion, current_user.id)
+
         notificar_gestion(
             empresa_id=instalacion.cliente.empresa_id,
             tipo="observacion_nueva",
@@ -59,7 +91,10 @@ def nueva(instalacion_id):
             remitente=current_user,
         )
         db.session.commit()
-        flash("Observación cargada, pendiente de revisión del Administrador.", "success")
+        if presupuesto:
+            flash(f"Observación cargada. Se generó el presupuesto {presupuesto.codigo}.", "success")
+        else:
+            flash("Observación cargada, pendiente de revisión del Administrador.", "success")
         if equipo:
             return redirect(url_for("equipos.detalle", equipo_id=equipo.id))
         if item:
@@ -72,13 +107,18 @@ def nueva(instalacion_id):
         item=item,
         equipo=equipo,
         clasificaciones=CLASIFICACIONES_OBSERVACION,
+        clasificaciones_con_presupuesto=CLASIFICACIONES_CON_PRESUPUESTO,
     )
 
 
 def _verificar_editable(observacion):
     """Una observación Aprobada ya no se puede tocar (ni técnico ni nadie
-    salvo borrarla, que es acción del Administrador)."""
+    salvo borrarla, que es acción del Administrador). Tampoco si ya se
+    presupuestó y el presupuesto avanzó de Pendiente — cambiar la
+    descripción ahí desincronizaría lo que el cliente ya cotizó."""
     if observacion.estado_revision == "Aprobada":
+        abort(403)
+    if observacion.presupuesto and observacion.presupuesto.estado != "Pendiente":
         abort(403)
 
 

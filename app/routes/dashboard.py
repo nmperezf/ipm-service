@@ -16,6 +16,7 @@ from app.models import (
     Observacion,
     OrdenTrabajo,
     PRIORIDADES_OT,
+    Presupuesto,
     ROLES_GESTION,
     Repuesto,
     Usuario,
@@ -114,9 +115,15 @@ def inicio():
     ensayos_pendientes = []
     ensayos_pendientes_total = 0
     carga_tecnicos = []
+    presupuestos_activos = 0
     if es_gestion:
         repuestos_query = Repuesto.query.filter_by(empresa_id=current_user.empresa_id, activo=True)
         repuestos_criticos = sum(1 for r in repuestos_query.all() if r.en_nivel_critico)
+
+        presupuestos_activos = Presupuesto.query.filter(
+            Presupuesto.empresa_id == current_user.empresa_id,
+            Presupuesto.estado.in_(["Pendiente", "Cotizado", "Aprobado"]),
+        ).count()
 
         deficiencias_query = (
             Observacion.query.join(Instalacion, Observacion.instalacion_id == Instalacion.id)
@@ -189,6 +196,7 @@ def inicio():
         ot_pendientes=ot_pendientes,
         visitas_en_revision=visitas_en_revision,
         repuestos_criticos=repuestos_criticos,
+        presupuestos_activos=presupuestos_activos,
         deficiencias_abiertas=deficiencias_abiertas,
         deficiencias_total=deficiencias_total,
         deficiencias_por_clasif=deficiencias_por_clasif,

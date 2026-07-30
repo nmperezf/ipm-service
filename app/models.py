@@ -705,6 +705,7 @@ class Foto(db.Model):
     item_visita_id = db.Column(db.Integer, db.ForeignKey("items_visita.id"), nullable=True)
     instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=True)
     equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True)
+    observacion_id = db.Column(db.Integer, db.ForeignKey("observaciones.id"), nullable=True)
     nombre_archivo = db.Column(db.String(300), nullable=False)  # ruta relativa dentro de UPLOAD_FOLDER
     descripcion = db.Column(db.String(250))
     origen = db.Column(db.String(20), default="Visita", nullable=False)  # ver ORIGENES_FOTO
@@ -714,6 +715,7 @@ class Foto(db.Model):
 
     instalacion = db.relationship("Instalacion", backref="fotos")
     equipo = db.relationship("Equipo", backref="fotos")
+    observacion = db.relationship("Observacion", backref="fotos")
     subido_por = db.relationship("Usuario", foreign_keys=[subido_por_id])
 
     def __repr__(self):
@@ -773,6 +775,10 @@ class Observacion(db.Model):
     ultima_visita_confirmada_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=True)
     fecha_ultima_confirmacion = db.Column(db.Date, nullable=True)
     confirmada_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    # Solo tiene sentido para Deficiencia crítica/no crítica (se valida en
+    # observaciones.nueva) — dispara la creación de un Presupuesto para no
+    # depender de que el mail de solicitud le llegue a quien presupuesta.
+    requiere_presupuesto = db.Column(db.Boolean, default=False, nullable=False)
 
     item_visita = db.relationship("ItemVisita", backref="observaciones_registradas")
     equipo = db.relationship("Equipo", backref="deficiencias")
@@ -782,6 +788,17 @@ class Observacion(db.Model):
     reabierto_por = db.relationship("Usuario", foreign_keys=[reabierto_por_id])
     ultima_visita_confirmada = db.relationship("Visita", foreign_keys=[ultima_visita_confirmada_id])
     confirmada_por = db.relationship("Usuario", foreign_keys=[confirmada_por_id])
+
+    @property
+    def editable(self):
+        """Mismo criterio que observaciones._verificar_editable, para
+        poder ocultar el link de Editar en los templates sin duplicar la
+        condición en cada uno."""
+        if self.estado_revision == "Aprobada":
+            return False
+        if self.presupuesto and self.presupuesto.estado != "Pendiente":
+            return False
+        return True
 
     @property
     def visita(self):
@@ -813,6 +830,108 @@ class Observacion(db.Model):
 
     def __repr__(self):
         return f"<Observacion {self.clasificacion} - {self.instalacion_id}>"
+
+
+# ---------------------------------------------------------------------------
+# Presupuestos — trazabilidad de una deficiencia que necesita presupuestarse
+# ---------------------------------------------------------------------------
+
+ESTADOS_PRESUPUESTO = ["Pendiente", "Cotizado", "Aprobado", "Rechazado", "Cerrado"]
+
+
+class Presupuesto(db.Model):
+    """Trazabilidad de una solicitud de presupuesto disparada por una
+    deficiencia (crítica o no crítica) marcada 'requiere presupuesto' al
+    cargarla. No es facturación ni cotización en sí — es el seguimiento de
+    que la solicitud no se pierda entre el técnico en terreno y quien
+    presupuesta, con un código único para que el cliente lo mencione en su
+    mail de solicitud formal.
+
+    Al aprobarse, genera automáticamente la OT correctiva que ejecuta el
+    trabajo (mismo criterio que ya usa Contrato.generar_visitas() para no
+    depender de que alguien se acuerde de crearla a mano). Al finalizar esa
+    OT (ver ordenes_trabajo.editar), el presupuesto pasa solo a Cerrado y
+    la deficiencia queda resuelta — ver auto-cierre en ese mismo lugar."""
+
+    __tablename__ = "presupuestos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    codigo = db.Column(db.String(20), unique=True, nullable=False)  # PRESUP-2026-0001
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
+    observacion_id = db.Column(db.Integer, db.ForeignKey("observaciones.id"), nullable=False)
+    ot_correctiva_id = db.Column(db.Integer, db.ForeignKey("ordenes_trabajo.id"), nullable=True)
+    estado = db.Column(db.String(20), default="Pendiente", nullable=False)  # ver ESTADOS_PRESUPUESTO
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+
+    empresa = db.relationship("Empresa", backref="presupuestos")
+    observacion = db.relationship("Observacion", backref=db.backref("presupuesto", uselist=False))
+    ot_correctiva = db.relationship("OrdenTrabajo", backref=db.backref("presupuesto_origen", uselist=False))
+    creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
+    auditoria = db.relationship(
+        "PresupuestoAudit",
+        backref="presupuesto",
+        cascade="all, delete-orphan",
+        order_by="PresupuestoAudit.fecha_cambio",
+    )
+
+    @property
+    def dias_abierto(self):
+        return (datetime.utcnow() - self.fecha_creacion).days
+
+    def cambiar_estado(self, nuevo_estado, usuario_id, nota=None):
+        """Cambia de estado y deja rastro en el audit log. Al pasar a
+        Aprobado, genera la OT correctiva si todavía no existe — no
+        depende de que un humano se acuerde de crearla."""
+        estado_anterior = self.estado
+        self.estado = nuevo_estado
+
+        if nuevo_estado == "Aprobado" and not self.ot_correctiva_id:
+            ot = OrdenTrabajo(
+                instalacion_id=self.observacion.instalacion_id,
+                tipo="Correctivo",
+                prioridad="Media",
+                estado="Pendiente",
+                descripcion=f"Ejecución presupuesto {self.codigo}: {self.observacion.descripcion}",
+                fecha_apertura=date.today(),
+            )
+            db.session.add(ot)
+            db.session.flush()
+            ot.asignar_numero()
+            self.ot_correctiva_id = ot.id
+
+        db.session.add(
+            PresupuestoAudit(
+                presupuesto_id=self.id,
+                estado_anterior=estado_anterior,
+                estado_nuevo=nuevo_estado,
+                usuario_id=usuario_id,
+                nota=nota,
+            )
+        )
+
+    def __repr__(self):
+        return f"<Presupuesto {self.codigo} ({self.estado})>"
+
+
+class PresupuestoAudit(db.Model):
+    """Un renglón por cada cambio de estado de un Presupuesto — de solo
+    consulta, nunca se edita ni se borra un renglón ya cargado."""
+
+    __tablename__ = "presupuestos_audit"
+
+    id = db.Column(db.Integer, primary_key=True)
+    presupuesto_id = db.Column(db.Integer, db.ForeignKey("presupuestos.id"), nullable=False)
+    estado_anterior = db.Column(db.String(20), nullable=True)
+    estado_nuevo = db.Column(db.String(20), nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
+    nota = db.Column(db.Text, nullable=True)
+    fecha_cambio = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    usuario = db.relationship("Usuario")
+
+    def __repr__(self):
+        return f"<PresupuestoAudit {self.presupuesto_id} -> {self.estado_nuevo}>"
 
 
 # ---------------------------------------------------------------------------

@@ -1,7 +1,9 @@
 from datetime import date
 
+from sqlalchemy.exc import IntegrityError
+
 from app import db
-from app.models import Contrato, Visita
+from app.models import Contrato, Presupuesto, Visita
 
 
 def actualizar_vencimientos(hoy=None):
@@ -14,6 +16,44 @@ def actualizar_vencimientos(hoy=None):
     for contrato in Contrato.query.filter_by(activo=True).all():
         contrato.actualizar_estado_por_vencimiento(hoy=hoy)
     db.session.commit()
+
+
+def crear_presupuesto(observacion, usuario_id):
+    """Crea el Presupuesto de una deficiencia marcada 'requiere
+    presupuesto', con código único PRESUP-AAAA-NNNN (incremental por
+    empresa y año — pensado para que el cliente lo mencione en el mail de
+    solicitud). No hace commit: queda a cargo del caller, junto con el
+    resto de los cambios de esa misma request.
+
+    El código tiene un índice único a nivel de base — si dos altas chocan
+    en el mismo segundo (condición de carrera improbable a la escala de
+    esta app), se reintenta con el siguiente número en vez de romper con
+    un error feo."""
+    empresa_id = observacion.instalacion.cliente.empresa_id
+    anio = date.today().year
+    prefijo = f"PRESUP-{anio}-"
+
+    ultimo_error = None
+    for _ in range(3):
+        ultimo = (
+            Presupuesto.query.filter(Presupuesto.codigo.like(f"{prefijo}%"), Presupuesto.empresa_id == empresa_id)
+            .order_by(Presupuesto.codigo.desc())
+            .first()
+        )
+        numero = int(ultimo.codigo.rsplit("-", 1)[-1]) + 1 if ultimo else 1
+        presupuesto = Presupuesto(
+            codigo=f"{prefijo}{numero:04d}",
+            empresa_id=empresa_id,
+            observacion_id=observacion.id,
+            creado_por_id=usuario_id,
+        )
+        try:
+            with db.session.begin_nested():
+                db.session.add(presupuesto)
+            return presupuesto
+        except IntegrityError as exc:
+            ultimo_error = exc
+    raise ultimo_error
 
 
 # ---------------------------------------------------------------------------

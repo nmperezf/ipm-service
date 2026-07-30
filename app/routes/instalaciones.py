@@ -72,6 +72,21 @@ def detalle(instalacion_id):
     )
 
 
+@instalaciones_bp.route("/<int:instalacion_id>/fotos")
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def fotos(instalacion_id):
+    """Banco de fotos de toda la instalación en una sola tabla (buscable y
+    ordenable por columna vía tablas.js) — las fichas de cada equipo
+    siguen mostrando su propio mini-grid para contexto rápido, esta
+    pantalla es para revisar/auditar todo junto."""
+    instalacion = Instalacion.query.get_or_404(instalacion_id)
+    verificar_acceso_cliente(instalacion.cliente)
+    fotos_ordenadas = sorted(
+        instalacion.fotos, key=lambda f: f.fecha_toma or f.fecha_subida.date(), reverse=True
+    )
+    return render_template("instalaciones/fotos.html", instalacion=instalacion, fotos=fotos_ordenadas)
+
+
 @instalaciones_bp.route("/<int:instalacion_id>/informacion/<categoria>")
 @rol_requerido("Administrador", "Jefe", "Técnico")
 def equipos_categoria(instalacion_id, categoria):

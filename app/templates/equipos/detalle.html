@@ -25,6 +25,7 @@
 
             {% if equipo.fotos %}
             <div class="seccion-titulo-doc">Fotos ({{ equipo.fotos|length }})</div>
+            <p class="mb-2"><a href="{{ url_for('instalaciones.fotos', instalacion_id=equipo.instalacion_id) }}" class="small">Ver todas las fotos de la instalación →</a></p>
             <div class="d-flex flex-wrap gap-2 mb-3">
                 {% for foto in equipo.fotos|sort(attribute='fecha_toma', reverse=true) %}
                 <div class="text-center">
@@ -138,7 +139,9 @@
                                 <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>
                             </form>
                             {% if obs.estado_revision != 'Aprobada' %}
+                            {% if obs.editable %}
                             <a href="{{ url_for('observaciones.editar', observacion_id=obs.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            {% endif %}
                             {% if current_user.rol in ('Administrador', 'Jefe') %}
                             <form method="POST" action="{{ url_for('observaciones.aprobar', observacion_id=obs.id) }}" class="d-inline">
                                 <button type="submit" class="btn btn-sm btn-outline-primary">Aprobar</button>

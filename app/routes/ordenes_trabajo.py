@@ -178,6 +178,14 @@ def editar(ot_id):
         ot.observaciones = request.form.get("observaciones")
         if ot.estado == "Finalizada" and not ot.fecha_cierre:
             ot.fecha_cierre = date.today()
+        # Si esta OT viene de un presupuesto aprobado, terminarla cierra
+        # también el presupuesto (el trabajo ya se ejecutó) y resuelve la
+        # deficiencia que lo originó — sin depender de que alguien se
+        # acuerde de tocar esas dos pantallas por separado.
+        if ot.estado == "Finalizada" and ot.presupuesto_origen and ot.presupuesto_origen.estado != "Cerrado":
+            presupuesto = ot.presupuesto_origen
+            presupuesto.cambiar_estado("Cerrado", current_user.id, "Cerrado automáticamente al finalizar la OT.")
+            presupuesto.observacion.marcar_resuelta(current_user.id)
         db.session.commit()
         flash(f"Orden {ot.numero} actualizada.", "success")
         return redirect(url_for("ordenes.detalle", ot_id=ot.id))

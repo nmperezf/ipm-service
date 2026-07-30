@@ -166,6 +166,8 @@ def eliminar(foto_id):
     db.session.commit()
     flash("Foto eliminada.", "info")
 
+    if request.referrer:
+        return redirect(request.referrer)
     if destino_visita_id:
         return redirect(url_for("visitas.detalle", visita_id=destino_visita_id))
     if destino_equipo_id:

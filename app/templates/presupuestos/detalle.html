@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}{{ presupuesto.codigo }}{% endblock %}
+{% block content %}
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>{{ presupuesto.codigo }}</h1>
+        </div>
+        <div class="cuerpo-doc">
+
+            <p class="mb-1"><a href="{{ url_for('presupuestos.listar') }}">&larr; Presupuestos</a></p>
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+                <p class="text-muted mb-0">
+                    {{ presupuesto.observacion.instalacion.cliente.nombre }} &middot; {{ presupuesto.observacion.instalacion.nombre }}
+                    &middot; creado {{ presupuesto.fecha_creacion.strftime('%d/%m/%Y') }}
+                    {% if presupuesto.creado_por %}por {{ presupuesto.creado_por.nombre_completo or presupuesto.creado_por.username }}{% endif %}
+                </p>
+                <span class="badge badge-{{ presupuesto.estado }} fs-6">{{ presupuesto.estado }}</span>
+            </div>
+
+            <div class="seccion-titulo-doc">Deficiencia origen</div>
+            <div class="grid-atencion mb-3">
+                <div class="card-atencion {{ 'critico' if presupuesto.observacion.clasificacion == 'Deficiencia crítica' else 'alerta' }}">
+                    <span class="etiqueta">{{ presupuesto.observacion.clasificacion }}</span>
+                </div>
+                <div class="card-atencion">
+                    <span class="num">{{ presupuesto.dias_abierto }}</span>
+                    <span class="etiqueta">Días abierto</span>
+                </div>
+                {% if presupuesto.observacion.equipo %}
+                <a class="card-atencion info" href="{{ url_for('equipos.detalle', equipo_id=presupuesto.observacion.equipo_id) }}">
+                    <span class="etiqueta">{{ presupuesto.observacion.equipo.nombre }}</span>
+                    <span class="sub">Ver equipo →</span>
+                </a>
+                {% endif %}
+            </div>
+            <p>{{ presupuesto.observacion.descripcion }}</p>
+
+            {% if presupuesto.observacion.fotos %}
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                {% for foto in presupuesto.observacion.fotos %}
+                <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" class="foto-lightbox">
+                    <img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" alt="{{ foto.descripcion or '' }}" style="height:110px; border-radius:6px;">
+                </a>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if presupuesto.ot_correctiva %}
+            <div class="seccion-titulo-doc">OT correctiva</div>
+            <p>
+                <a href="{{ url_for('ordenes.detalle', ot_id=presupuesto.ot_correctiva.id) }}">{{ presupuesto.ot_correctiva.numero }}</a>
+                — <span class="badge badge-{{ presupuesto.ot_correctiva.estado.replace(' ', '.') }}">{{ presupuesto.ot_correctiva.estado }}</span>
+            </p>
+            {% endif %}
+
+            {% if siguientes_estados and current_user.rol in ('Administrador', 'Jefe') %}
+            <div class="seccion-titulo-doc">Cambiar estado</div>
+            <form method="POST" class="mb-4">
+                <div class="row g-2 align-items-end">
+                    <div class="col-auto">
+                        <select name="estado" class="form-select form-select-sm" required>
+                            <option value="">-- Elegir --</option>
+                            {% for estado in siguientes_estados %}
+                            <option value="{{ estado }}">{{ estado }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-auto flex-grow-1">
+                        <input type="text" name="nota" class="form-control form-control-sm" placeholder="Nota (opcional) — ej. 'Cotización enviada 16/11'">
+                    </div>
+                    <div class="col-auto">
+                        <button type="submit" class="btn btn-primary btn-sm">Guardar</button>
+                    </div>
+                </div>
+            </form>
+            {% endif %}
+
+            <div class="seccion-titulo-doc">Historial</div>
+            <div class="table-responsive">
+            <table class="table table-sm data-table">
+                <thead><tr><th>Fecha</th><th>Estado</th><th>Usuario</th><th>Nota</th></tr></thead>
+                <tbody>
+                    {% for a in presupuesto.auditoria|reverse %}
+                    <tr>
+                        <td>{{ a.fecha_cambio.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td><span class="badge badge-{{ a.estado_nuevo }}">{{ a.estado_nuevo }}</span></td>
+                        <td>{{ a.usuario.nombre_completo or a.usuario.username }}</td>
+                        <td>{{ a.nota or '-' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="4" class="text-center text-muted py-3">Todavía no tiene cambios de estado.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

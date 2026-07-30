@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Fotos - {{ instalacion.nombre }}{% endblock %}
+{% block content %}
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Fotos de la instalación</h1>
+        </div>
+        <div class="cuerpo-doc">
+
+            <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}">&larr; {{ instalacion.nombre }}</a></p>
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+                <p class="text-muted mb-0">{{ fotos|length }} foto{{ 's' if fotos|length != 1 }} en total, de todos los equipos y visitas.</p>
+                <a href="{{ url_for('fotos.subir_manual', instalacion_id=instalacion.id) }}" class="btn btn-outline-info btn-sm"><i class="bi bi-camera me-1"></i>Foto</a>
+            </div>
+
+            {% if not fotos %}
+            <div class="estado-vacio-doc">
+                <i class="bi bi-camera"></i>
+                <p>Esta instalación todavía no tiene fotos cargadas.</p>
+                <a href="{{ url_for('fotos.subir_manual', instalacion_id=instalacion.id) }}" class="btn btn-dark btn-sm"><i class="bi bi-camera me-1"></i>Cargar la primera</a>
+            </div>
+            {% else %}
+            <div class="table-responsive">
+            <table class="table table-sm table-hover data-table">
+                <thead>
+                    <tr><th></th><th>Fecha</th><th>Equipo</th><th>Origen</th><th>Descripción</th><th></th></tr>
+                </thead>
+                <tbody>
+                    {% for foto in fotos %}
+                    <tr>
+                        <td>
+                            <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" class="foto-lightbox">
+                                <img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" alt="{{ foto.descripcion or '' }}" style="height:50px; width:70px; object-fit:cover; border-radius:4px;">
+                            </a>
+                        </td>
+                        <td>{{ foto.fecha_toma.strftime('%d/%m/%Y') if foto.fecha_toma else '-' }}</td>
+                        <td>
+                            {% if foto.equipo %}
+                            <a href="{{ url_for('equipos.detalle', equipo_id=foto.equipo_id) }}">{{ foto.equipo.nombre }}</a>
+                            {% else %}<span class="text-muted">General</span>{% endif %}
+                        </td>
+                        <td>{{ foto.origen }}</td>
+                        <td>{{ foto.descripcion or '-' }}</td>
+                        <td>
+                            <form method="POST" action="{{ url_for('fotos.eliminar', foto_id=foto.id) }}" onsubmit="return confirm('¿Eliminar foto?');">
+                                <button type="submit" class="btn btn-sm btn-link text-danger p-0">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endblock %}

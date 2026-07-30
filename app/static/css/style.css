@@ -521,6 +521,11 @@ small, .small, .text-muted {
 .badge-Desactivación { background: #F1F2F4; color: #5B6673; }
 .badge-Comentario { background: #EAF1FA; color: #1A2233; }
 
+.badge-Cotizado { background: #EAF1FA; color: #1A2233; }
+.badge-Aprobado { background: #E5F4EC; color: #1F8A54; }
+.badge-Rechazado { background: #FBEAE7; color: #E2131D; }
+.badge-Cerrado { background: #E5F4EC; color: #1F8A54; }
+
 .badge-Urgente { background: #FBEAE7; color: #E2131D; }
 .badge-Alta { background: #FDF2E3; color: #A8630A; }
 .badge-Media { background: #EAF1FA; color: #1A2233; }
@@ -848,6 +853,11 @@ html[data-bs-theme="dark"] .badge-Deficiencia\.crítica { background: #3A1418; c
 html[data-bs-theme="dark"] .badge-Deficiencia\.no\.crítica { background: #3A2A0E; color: #F0A93E; }
 html[data-bs-theme="dark"] .badge-Desactivación { background: #232734; color: #9AA3B2; }
 html[data-bs-theme="dark"] .badge-Comentario { background: #18233A; color: #8FB3E8; }
+
+html[data-bs-theme="dark"] .badge-Cotizado { background: #18233A; color: #8FB3E8; }
+html[data-bs-theme="dark"] .badge-Aprobado { background: #123324; color: #4ADE96; }
+html[data-bs-theme="dark"] .badge-Rechazado { background: #3A1418; color: #FF6B70; }
+html[data-bs-theme="dark"] .badge-Cerrado { background: #123324; color: #4ADE96; }
 
 html[data-bs-theme="dark"] .badge-Urgente { background: #3A1418; color: #FF6B70; }
 html[data-bs-theme="dark"] .badge-Alta { background: #3A2A0E; color: #F0A93E; }
