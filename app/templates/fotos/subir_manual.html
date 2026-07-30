@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Cargar foto - {{ instalacion.nombre }}{% endblock %}
+{% block content %}
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Cargar foto</h1>
+        </div>
+        <div class="cuerpo-doc">
+
+            <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}">&larr; {{ instalacion.nombre }}</a></p>
+            <p class="text-muted">
+                Para una foto suelta (fuera de una visita) o para migrar fotos de un sistema anterior — en ese caso,
+                completá la fecha en que se sacó realmente, no la de hoy.
+            </p>
+
+            <form method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label">Foto</label>
+                    <input type="file" name="foto" accept="image/*" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Equipo (opcional)</label>
+                    <select name="equipo_id" class="form-select">
+                        <option value="">General (no es de un equipo puntual)</option>
+                        {% for equipo in equipos %}
+                        <option value="{{ equipo.id }}" {% if equipo_preseleccionado == equipo.id %}selected{% endif %}>{{ equipo.nombre }} ({{ equipo.tipo }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-6 mb-3">
+                        <label class="form-label">Fecha en que se sacó</label>
+                        <input type="date" name="fecha_toma" class="form-control" value="{{ hoy }}">
+                    </div>
+                    <div class="col-sm-6 mb-3">
+                        <label class="form-label">Origen</label>
+                        <select name="origen" class="form-select">
+                            {% for o in origenes %}
+                            <option value="{{ o }}">{{ o }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Descripción (opcional)</label>
+                    <input type="text" name="descripcion" class="form-control" placeholder="Ej: Placa de datos, vista general, defecto detectado...">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Cargar foto</button>
+                <a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}" class="btn btn-link">Cancelar</a>
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

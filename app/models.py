@@ -95,6 +95,12 @@ ESTADOS_OT = ["Pendiente", "Asignada", "En proceso", "Pausada", "Finalizada", "C
 
 PRIORIDADES_OT = ["Baja", "Media", "Alta", "Urgente"]
 
+# Cómo entró una Foto al sistema: "Visita" para las que se sacan durante un
+# servicio (flujo de siempre), "Carga manual" para las que alguien sube
+# sueltas contra un equipo/instalación sin pasar por una visita, y
+# "Migración" para las que vienen de una base de datos vieja.
+ORIGENES_FOTO = ["Visita", "Carga manual", "Migración"]
+
 # Orden preferido de las categorías de equipo en la navegación (portal de
 # cliente, elegir equipo dentro de una visita). Las categorías que se creen
 # a mano desde TipoEquipo y no estén en esta lista van al final, alfabético.
@@ -682,13 +688,33 @@ class Formulario(db.Model):
 
 
 class Foto(db.Model):
+    """Evidencia fotográfica. Puede venir de un servicio puntual dentro de
+    una visita (item_visita_id, el flujo de siempre) o cargarse suelta
+    contra un equipo/instalación (item_visita_id=None) — para una foto
+    fuera de una visita o para migrar fotos de un sistema anterior.
+
+    instalacion_id/equipo_id quedan completos siempre que se pueda (incluso
+    para las que sí vienen de una visita), para poder armar el banco de
+    fotos por cliente/instalación/equipo sin depender de la cadena
+    item_visita -> visita -> instalación. equipo_id queda en None cuando la
+    foto no es de un equipo puntual (ej. una foto general de la sala)."""
+
     __tablename__ = "fotos"
 
     id = db.Column(db.Integer, primary_key=True)
-    item_visita_id = db.Column(db.Integer, db.ForeignKey("items_visita.id"), nullable=False)
-    nombre_archivo = db.Column(db.String(300), nullable=False)  # nombre en disco
+    item_visita_id = db.Column(db.Integer, db.ForeignKey("items_visita.id"), nullable=True)
+    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=True)
+    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True)
+    nombre_archivo = db.Column(db.String(300), nullable=False)  # ruta relativa dentro de UPLOAD_FOLDER
     descripcion = db.Column(db.String(250))
+    origen = db.Column(db.String(20), default="Visita", nullable=False)  # ver ORIGENES_FOTO
+    fecha_toma = db.Column(db.Date, nullable=True)  # cuándo se sacó, no cuándo se cargó al sistema
     fecha_subida = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    subido_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+
+    instalacion = db.relationship("Instalacion", backref="fotos")
+    equipo = db.relationship("Equipo", backref="fotos")
+    subido_por = db.relationship("Usuario", foreign_keys=[subido_por_id])
 
     def __repr__(self):
         return f"<Foto {self.nombre_archivo}>"

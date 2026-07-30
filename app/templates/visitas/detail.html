@@ -172,6 +172,7 @@
                             <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" target="_blank">
                                 <img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" style="height:90px; border-radius:6px;">
                             </a>
+                            {% if foto.equipo %}<div class="text-muted" style="font-size:.7rem;">{{ foto.equipo.nombre }}</div>{% endif %}
                             {% if puede_editar %}
                             <form method="POST" action="{{ url_for('fotos.eliminar', foto_id=foto.id) }}" onsubmit="return confirm('¿Eliminar foto?');">
                                 <button type="submit" class="btn btn-sm btn-link text-danger p-0">Eliminar</button>
@@ -185,6 +186,16 @@
                         <div class="col-auto">
                             <input type="file" name="foto" accept="image/*" class="form-control form-control-sm" required>
                         </div>
+                        {% if visita.instalacion.equipos %}
+                        <div class="col-auto">
+                            <select name="equipo_id" class="form-select form-select-sm">
+                                <option value="">¿De qué equipo? (opcional)</option>
+                                {% for equipo in visita.instalacion.equipos %}
+                                <option value="{{ equipo.id }}">{{ equipo.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        {% endif %}
                         <div class="col-auto">
                             <input type="text" name="descripcion" class="form-control form-control-sm" placeholder="Descripción (opcional)">
                         </div>

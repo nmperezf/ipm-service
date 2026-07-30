@@ -20,6 +20,8 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-cambiar-en-produccion")
 
-    UPLOAD_FOLDER = os.path.join(basedir, "app", "static", "uploads")
+    # Configurable por variable de entorno para poder apuntar a un volumen
+    # persistente (o, el día de mañana, a otro host) sin tocar código.
+    UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", os.path.join(basedir, "app", "static", "uploads"))
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB por request
     EXTENSIONES_PERMITIDAS = {"png", "jpg", "jpeg", "gif", "webp"}
