@@ -441,6 +441,10 @@ small, .small, .text-muted {
 .table > tbody > tr:nth-child(even) > * {
     background-color: rgba(26,34,51,.018);
 }
+/* Columna que se puede ocultar/mostrar con un toggle (ej. "mostrar ft"
+   en las tablas de ensayo de curva de caudal) */
+.col-opcional { display: none; }
+.mostrar-col-opcional .col-opcional { display: table-cell; }
 .table-hover > tbody > tr:hover > * {
     background-color: rgba(26,34,51,.04);
 }
@@ -965,7 +969,10 @@ html[data-bs-theme="dark"] a.card-atencion:hover { box-shadow: 0 8px 18px rgba(0
 .card-tendencia {
     display: flex; align-items: center; gap: 1.4rem; background: var(--surface-muted);
     border-radius: .6rem; padding: 1.1rem 1.3rem; margin-top: .3rem;
+    transition: transform .14s ease, box-shadow .14s ease;
 }
+a.card-tendencia:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(20,30,45,.10); color: inherit; }
+html[data-bs-theme="dark"] a.card-tendencia:hover { box-shadow: 0 8px 18px rgba(0,0,0,.35); }
 .card-tendencia .valor {
     font-family: var(--font-mono); font-size: 2.1rem; font-weight: 700; color: var(--ink);
 }
@@ -1192,3 +1199,10 @@ a.foto-lightbox:hover img { opacity: .85; }
 }
 .estado-vacio-doc p { margin: 0 0 1rem; font-size: .92rem; color: var(--ink-muted); }
 .estado-vacio-doc .btn { font-size: .82rem; }
+
+/* ---- Impresión ------------------------------------------------------------
+   Utilidad genérica para ocultar algo al imprimir (ej. barra de acciones de
+   un ensayo de curva de caudal antes de exportar a PDF vía window.print()). */
+@media print {
+    .no-imprimir, .ipm-navbar, .ipm-footer, .nav-inferior { display: none !important; }
+}

@@ -21,7 +21,13 @@
                 <a href="{{ url_for('empresas.listar') }}" class="btn btn-link">Cancelar</a>
             </form>
 
-            <h5 class="mt-4">Usuarios de esta empresa</h5>
+            <div class="seccion-titulo-doc">Usuarios de esta empresa</div>
+            {% if not empresa.usuarios %}
+            <div class="estado-vacio-doc">
+                <i class="bi bi-people"></i>
+                <p class="mb-0">Sin usuarios todavía.</p>
+            </div>
+            {% else %}
             <div class="table-responsive">
             <table class="table table-sm data-table">
                 <thead><tr><th>Usuario</th><th>Nombre</th><th>Rol</th><th>Estado</th></tr></thead>
@@ -31,14 +37,13 @@
                         <td>{{ u.username }}</td>
                         <td>{{ u.nombre_completo or '-' }}</td>
                         <td>{{ u.rol }}</td>
-                        <td>{% if u.activo %}<span class="badge bg-success">Activo</span>{% else %}<span class="badge bg-secondary">Inactivo</span>{% endif %}</td>
+                        <td>{% if u.activo %}<span class="badge badge-Activo">Activo</span>{% else %}<span class="badge badge-Cancelado">Inactivo</span>{% endif %}</td>
                     </tr>
-                    {% else %}
-                    <tr><td colspan="4" class="text-center text-muted py-3">Sin usuarios todavía.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
             </div>
+            {% endif %}
 
         </div>
     </div>

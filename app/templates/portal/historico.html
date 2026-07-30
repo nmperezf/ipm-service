@@ -31,7 +31,7 @@
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="5" class="text-center text-muted py-4">Todavía no hay visitas cerradas.</td></tr>
+                    <tr><td colspan="5"><div class="estado-vacio-doc"><i class="bi bi-calendar-x"></i><p class="mb-0">Todavía no hay visitas cerradas.</p></div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -39,7 +39,7 @@
 
             <div class="seccion-titulo-doc">Observaciones</div>
             <div class="d-flex justify-content-end mb-2">
-                <a href="{{ url_for('portal.observaciones_resueltas') }}" class="btn btn-sm btn-outline-secondary">Ver histórico de resueltas</a>
+                <a href="{{ url_for('portal.observaciones_resueltas') }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-clock-history me-1"></i>Ver histórico de resueltas</a>
             </div>
             <div class="table-responsive">
             <table class="table table-sm data-table">
@@ -53,7 +53,7 @@
                         <td>{{ obs.descripcion }}</td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="4" class="text-center text-muted py-4">Sin observaciones abiertas.</td></tr>
+                    <tr><td colspan="4"><div class="estado-vacio-doc"><i class="bi bi-check-circle" style="color: var(--bs-success);"></i><p class="mb-0">Sin observaciones abiertas.</p></div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

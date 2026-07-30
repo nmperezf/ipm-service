@@ -13,7 +13,10 @@
             {% for bloque in instalaciones_data %}
             <div class="seccion-titulo-doc">{{ bloque.instalacion.nombre }}</div>
             {% if not bloque.grupos %}
-            <p class="text-muted">Todavía no hay equipos cargados en esta instalación.</p>
+            <div class="estado-vacio-doc">
+                <i class="bi bi-hdd-stack"></i>
+                <p class="mb-0">Todavía no hay equipos cargados en esta instalación.</p>
+            </div>
             {% else %}
             <div class="grid-atencion">
                 {% for nombre_categoria, equipos in bloque.grupos.items() %}
@@ -25,7 +28,10 @@
             </div>
             {% endif %}
             {% else %}
-            <p class="text-muted">Todavía no hay instalaciones cargadas.</p>
+            <div class="estado-vacio-doc">
+                <i class="bi bi-building"></i>
+                <p class="mb-0">Todavía no hay instalaciones cargadas.</p>
+            </div>
             {% endfor %}
 
         </div>

@@ -27,7 +27,7 @@
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="4" class="text-center text-muted py-4"><i class="bi bi-check-circle text-success"></i> Ningún repuesto está por debajo del mínimo.</td></tr>
+                    <tr><td colspan="4"><div class="estado-vacio-doc"><i class="bi bi-check-circle" style="color: var(--bs-success);"></i><p class="mb-0">Ningún repuesto está por debajo del mínimo.</p></div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

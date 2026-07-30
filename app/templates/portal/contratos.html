@@ -13,7 +13,10 @@
             {% for bloque in instalaciones_data %}
             <div class="seccion-titulo-doc">{{ bloque.instalacion.nombre }}</div>
             {% if not bloque.contratos %}
-            <p class="text-muted">Todavía no hay contratos cargados en esta instalación.</p>
+            <div class="estado-vacio-doc">
+                <i class="bi bi-file-earmark-text"></i>
+                <p class="mb-0">Todavía no hay contratos cargados en esta instalación.</p>
+            </div>
             {% endif %}
             {% for contrato in bloque.contratos %}
             <div class="card mb-3">
@@ -29,7 +32,7 @@
                     </div>
                     {% if contrato.servicios %}
                     <div class="table-responsive mt-3">
-                    <table class="table table-sm mb-0">
+                    <table class="table table-sm mb-0 data-table">
                         <thead><tr><th>Servicio</th><th>Frecuencia</th></tr></thead>
                         <tbody>
                             {% for servicio in contrato.servicios %}
@@ -48,7 +51,10 @@
             </div>
             {% endfor %}
             {% else %}
-            <p class="text-muted">Todavía no hay instalaciones cargadas.</p>
+            <div class="estado-vacio-doc">
+                <i class="bi bi-building"></i>
+                <p class="mb-0">Todavía no hay instalaciones cargadas.</p>
+            </div>
             {% endfor %}
 
         </div>

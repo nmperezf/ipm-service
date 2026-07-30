@@ -21,7 +21,7 @@
                         <td>{{ obs.descripcion }}</td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="3" class="text-center text-muted py-4"><i class="bi bi-check-circle text-success"></i> Sin novedades de este tipo.</td></tr>
+                    <tr><td colspan="3"><div class="estado-vacio-doc"><i class="bi bi-check-circle" style="color: var(--bs-success);"></i><p class="mb-0">Sin novedades de este tipo.</p></div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

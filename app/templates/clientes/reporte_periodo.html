@@ -31,7 +31,10 @@
 
             <div class="seccion-titulo-doc">Servicios ejecutados en el período</div>
             {% if not resumen_servicios %}
-            <p class="text-muted">No hubo visitas planificadas en este período.</p>
+            <div class="estado-vacio-doc">
+                <i class="bi bi-calendar-x"></i>
+                <p class="mb-0">No hubo visitas planificadas en este período.</p>
+            </div>
             {% else %}
             <div class="table-responsive">
             <table class="table table-sm data-table">
@@ -54,7 +57,10 @@
 
             <div class="seccion-titulo-doc">Deficiencias encontradas en el período</div>
             {% if not deficiencias_periodo %}
-            <p class="text-muted">No se registraron deficiencias nuevas en este período.</p>
+            <div class="estado-vacio-doc">
+                <i class="bi bi-check-circle" style="color: var(--bs-success);"></i>
+                <p class="mb-0">No se registraron deficiencias nuevas en este período.</p>
+            </div>
             {% else %}
             <div class="table-responsive">
             <table class="table table-sm data-table">
@@ -77,7 +83,10 @@
             <div class="seccion-titulo-doc">Deficiencias abiertas hoy</div>
             <p class="text-muted small mt-n2">Todas las pendientes, no solo las del período — críticas primero.</p>
             {% if not deficiencias_abiertas %}
-            <p class="text-muted">No hay deficiencias abiertas para este cliente.</p>
+            <div class="estado-vacio-doc">
+                <i class="bi bi-check-circle" style="color: var(--bs-success);"></i>
+                <p class="mb-0">No hay deficiencias abiertas para este cliente.</p>
+            </div>
             {% else %}
             <div class="table-responsive">
             <table class="table table-sm data-table">

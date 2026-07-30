@@ -12,7 +12,7 @@
 
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
                 <p class="text-muted mb-0">
-                    <span class="badge bg-secondary">{{ equipo.tipo }}</span>
+                    <span class="badge badge-Pendiente">{{ equipo.tipo }}</span>
                     {{ equipo.ubicacion or '' }}
                     {% if equipo.manifold %} &middot; Depende de: {{ equipo.manifold.nombre }}{% endif %}
                 </p>
@@ -80,13 +80,13 @@
                     <div class="mb-3">
                         {% if current_user.rol in ('Administrador', 'Jefe') %}
                         <a href="{{ url_for('curvas.curva_fabrica', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-secondary">
-                            {{ 'Editar' if equipo.curva_fabrica else 'Cargar' }} curva de fábrica
+                            <i class="bi bi-pencil me-1"></i>{{ 'Editar' if equipo.curva_fabrica else 'Cargar' }} curva de fábrica
                         </a>
                         {% endif %}
                         {% if equipo.curva_fabrica %}
                         <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg me-1"></i>Nuevo ensayo</a>
                         {% endif %}
-                        <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-dark">Ver todos los ensayos</a>
+                        <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-dark"><i class="bi bi-graph-up me-1"></i>Ver todos los ensayos</a>
                     </div>
 
                     {% if not equipo.curva_fabrica %}
@@ -164,7 +164,10 @@
 
             <div class="seccion-titulo-doc">Histórico y trazabilidad</div>
             {% if not secciones %}
-            <p class="text-muted">Este equipo todavía no tiene ningún checklist completado.</p>
+            <div class="estado-vacio-doc">
+                <i class="bi bi-clipboard-data"></i>
+                <p class="mb-0">Este equipo todavía no tiene ningún checklist completado.</p>
+            </div>
             {% endif %}
 
             {% for seccion in secciones %}
@@ -229,7 +232,7 @@
             {% endfor %}
 
             {% if deficiencias_resueltas %}
-            <h5 class="mt-4">Deficiencias resueltas (histórico)</h5>
+            <div class="seccion-titulo-doc">Deficiencias resueltas (histórico)</div>
             <div class="table-responsive">
             <table class="table table-sm data-table">
                 <thead><tr><th>Fecha carga</th><th>Fecha resolución</th><th>Resuelta por</th><th>Clasificación</th><th>Descripción</th></tr></thead>

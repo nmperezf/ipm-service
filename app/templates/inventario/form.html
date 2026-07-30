@@ -47,7 +47,7 @@
             {% if repuesto %}
             <form method="POST" action="{{ url_for('inventario.eliminar', repuesto_id=repuesto.id) }}" class="mt-4"
                   onsubmit="return confirm('¿Eliminar este repuesto?');">
-                <button type="submit" class="btn btn-outline-danger btn-sm">Eliminar repuesto</button>
+                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar repuesto</button>
             </form>
             {% endif %}
 

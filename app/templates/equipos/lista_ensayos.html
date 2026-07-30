@@ -13,7 +13,7 @@
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
                 <span></span>
                 {% if equipo.curva_fabrica and current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
-                <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id) }}" class="btn btn-primary btn-sm">+ Nuevo ensayo</a>
+                <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id) }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo ensayo</a>
                 {% endif %}
             </div>
 
@@ -47,7 +47,7 @@
                         <td>{{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}</td>
                         <td>{{ ensayo.presion_neta_punto_100 }}</td>
                         <td>
-                            {% if resultado is none %}<span class="badge bg-secondary">Sin curva de fábrica</span>
+                            {% if resultado is none %}<span class="badge badge-Pendiente">Sin curva de fábrica</span>
                             {% elif resultado %}<span class="badge badge-Cumplido">Cumple NFPA 25</span>
                             {% else %}<span class="badge badge-Vencido">No cumple NFPA 25</span>{% endif %}
                         </td>
@@ -62,7 +62,7 @@
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="5" class="text-muted text-center py-4">Todavía no hay ensayos cargados para este equipo.</td></tr>
+                    <tr><td colspan="5"><div class="estado-vacio-doc"><i class="bi bi-graph-up"></i><p class="mb-0">Todavía no hay ensayos cargados para este equipo.</p></div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

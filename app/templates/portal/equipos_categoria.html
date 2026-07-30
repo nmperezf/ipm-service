@@ -24,9 +24,9 @@
                     {% if equipo.tipo in ('Bomba', 'Electrobomba', 'Motobomba') %}
                     <div>
                         {% if not ultimo %}
-                        <span class="badge bg-secondary">Sin ensayos</span>
+                        <span class="badge badge-Pendiente">Sin ensayos</span>
                         {% elif resultado is none %}
-                        <span class="badge bg-secondary">Sin curva de fábrica</span>
+                        <span class="badge badge-Pendiente">Sin curva de fábrica</span>
                         {% elif resultado %}
                         <span class="badge badge-Cumplido">Cumple NFPA 25</span>
                         {% else %}

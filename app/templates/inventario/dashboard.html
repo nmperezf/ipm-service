@@ -9,7 +9,7 @@
         <div class="cuerpo-doc">
 
             <div class="d-flex justify-content-end mb-3">
-                <a href="{{ url_for('inventario.nuevo') }}" class="btn btn-primary btn-sm">+ Nuevo repuesto</a>
+                <a href="{{ url_for('inventario.nuevo') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo repuesto</a>
             </div>
 
             <div class="grid-atencion">
@@ -38,11 +38,11 @@
                                 <input type="number" name="cantidad" min="1" class="form-control form-control-sm" style="width:80px" placeholder="Cant." required>
                                 <button type="submit" class="btn btn-sm btn-outline-success">Reponer</button>
                             </form>
-                            <a href="{{ url_for('inventario.editar', repuesto_id=r.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            <a href="{{ url_for('inventario.editar', repuesto_id=r.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Editar</a>
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="5" class="text-center text-muted py-4">Todavía no cargaste repuestos.</td></tr>
+                    <tr><td colspan="5"><div class="estado-vacio-doc"><i class="bi bi-box-seam"></i><p class="mb-0">Todavía no cargaste repuestos.</p></div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

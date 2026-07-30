@@ -9,9 +9,16 @@
         <div class="cuerpo-doc">
 
             <div class="d-flex justify-content-end mb-3">
-                <a href="{{ url_for('empresas.nueva') }}" class="btn btn-primary btn-sm">+ Nueva empresa</a>
+                <a href="{{ url_for('empresas.nueva') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nueva empresa</a>
             </div>
 
+            {% if not empresas %}
+            <div class="estado-vacio-doc">
+                <i class="bi bi-building"></i>
+                <p>Todavía no hay empresas cargadas.</p>
+                <a href="{{ url_for('empresas.nueva') }}" class="btn btn-dark btn-sm"><i class="bi bi-plus-lg me-1"></i>Nueva empresa</a>
+            </div>
+            {% else %}
             <div class="table-responsive">
             <table class="table table-hover data-table">
                 <thead><tr><th>Nombre</th><th>Usuarios</th><th>Estado</th><th></th></tr></thead>
@@ -21,17 +28,16 @@
                         <td>{{ empresa.nombre }}</td>
                         <td>{{ empresa.usuarios|length }}</td>
                         <td>
-                            {% if empresa.activo %}<span class="badge bg-success">Activa</span>
-                            {% else %}<span class="badge bg-secondary">Inactiva</span>{% endif %}
+                            {% if empresa.activo %}<span class="badge badge-Activo">Activa</span>
+                            {% else %}<span class="badge badge-Cancelado">Inactiva</span>{% endif %}
                         </td>
-                        <td><a href="{{ url_for('empresas.editar', empresa_id=empresa.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a></td>
+                        <td><a href="{{ url_for('empresas.editar', empresa_id=empresa.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Editar</a></td>
                     </tr>
-                    {% else %}
-                    <tr><td colspan="4" class="text-center text-muted py-4">Todavía no hay empresas cargadas.</td></tr>
                     {% endfor %}
                 </tbody>
             </table>
             </div>
+            {% endif %}
 
         </div>
     </div>

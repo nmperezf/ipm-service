@@ -29,7 +29,10 @@
                     </form>
                 </div>
                 {% else %}
-                <p class="text-muted">Todavía no hay mensajes resueltos.</p>
+                <div class="estado-vacio-doc">
+                    <i class="bi bi-chat-left-text"></i>
+                    <p class="mb-0">Todavía no hay mensajes resueltos.</p>
+                </div>
                 {% endfor %}
             </div>
 

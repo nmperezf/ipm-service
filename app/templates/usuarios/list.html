@@ -22,7 +22,7 @@
                     <span class="chip-filtro-doc" data-filtro="activos">Activos ({{ usuarios|selectattr('activo')|list|length }})</span>
                     <span class="chip-filtro-doc" data-filtro="inactivos">Inactivos ({{ usuarios|rejectattr('activo')|list|length }})</span>
                 </div>
-                <a href="{{ url_for('usuarios.nuevo') }}" class="btn btn-primary btn-sm">+ Nuevo usuario</a>
+                <a href="{{ url_for('usuarios.nuevo') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo usuario</a>
             </div>
 
             <div class="table-responsive">
@@ -43,20 +43,20 @@
                         <td>{{ u.rol }}</td>
                         <td>{{ u.cliente.nombre if u.cliente else '-' }}</td>
                         <td>
-                            {% if u.activo %}<span class="badge bg-success">Activo</span>
-                            {% else %}<span class="badge bg-secondary">Inactivo</span>{% endif %}
+                            {% if u.activo %}<span class="badge badge-Activo">Activo</span>
+                            {% else %}<span class="badge badge-Cancelado">Inactivo</span>{% endif %}
                         </td>
                         <td>
-                            <a href="{{ url_for('usuarios.editar', usuario_id=u.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a>
+                            <a href="{{ url_for('usuarios.editar', usuario_id=u.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Editar</a>
                             {% if u.id != current_user.id %}
                             <form method="POST" action="{{ url_for('usuarios.eliminar', usuario_id=u.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar a {{ u.username }}? No se puede deshacer.');">
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>Eliminar</button>
                             </form>
                             {% endif %}
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="7" class="text-center text-muted py-4">Todavía no hay usuarios cargados.</td></tr>
+                    <tr><td colspan="7"><div class="estado-vacio-doc"><i class="bi bi-people"></i><p class="mb-0">Todavía no hay usuarios cargados.</p></div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

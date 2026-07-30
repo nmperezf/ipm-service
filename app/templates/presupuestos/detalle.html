@@ -89,7 +89,7 @@
                         <td>{{ a.nota or '-' }}</td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="4" class="text-center text-muted py-3">Todavía no tiene cambios de estado.</td></tr>
+                    <tr><td colspan="4"><div class="estado-vacio-doc"><i class="bi bi-clock-history"></i><p class="mb-0">Todavía no tiene cambios de estado.</p></div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

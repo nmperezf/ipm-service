@@ -123,8 +123,7 @@
             </div>
 
             <div class="seccion-titulo-doc">Cumplimiento de mantenimiento</div>
-            <a href="{{ url_for('dashboard.cumplimiento_mensual') }}" class="text-decoration-none">
-                <div class="card-tendencia">
+            <a href="{{ url_for('dashboard.cumplimiento_mensual') }}" class="card-tendencia text-decoration-none">
                     <div>
                         <div class="valor">{{ cumplimiento_pct }}% <small>{{ titulo_mes }}</small>
                             {% if cumplimiento_tendencia is not none %}
@@ -135,7 +134,6 @@
                         </div>
                         <div class="detalle">{{ cumplidos_mes }} de {{ total_mes }} ítems de visita cumplidos a tiempo</div>
                     </div>
-                </div>
             </a>
 
             {% if carga_tecnicos %}

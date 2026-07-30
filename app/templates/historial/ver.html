@@ -12,7 +12,7 @@
 
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
                 <p class="text-muted mb-0">{{ instalacion.nombre }} — {{ instalacion.cliente.nombre }}. Registro completo de todas las visitas, servicios, formularios y evidencia fotográfica. Para modificar un registro, entrá a la visita correspondiente.</p>
-                <a href="{{ url_for('historial.exportar_csv', instalacion_id=instalacion.id) }}" class="btn btn-outline-dark btn-sm">⬇ Exportar CSV</a>
+                <a href="{{ url_for('historial.exportar_csv', instalacion_id=instalacion.id) }}" class="btn btn-outline-dark btn-sm"><i class="bi bi-download me-1"></i>Exportar CSV</a>
             </div>
 
             <div class="seccion-titulo-doc">Observaciones (deficiencias / desactivaciones)</div>
@@ -27,8 +27,8 @@
                         <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
                         <td>{{ obs.fecha_resolucion.strftime('%d/%m/%Y') if obs.fecha_resolucion else '-' }}</td>
                         <td>
-                            {% if obs.resuelto %}<span class="badge bg-success">Resuelta</span>
-                            {% else %}<span class="badge bg-danger">Abierta</span>{% endif %}
+                            {% if obs.resuelto %}<span class="badge badge-Cumplido">Resuelta</span>
+                            {% else %}<span class="badge badge-Vencido">Abierta</span>{% endif %}
                         </td>
                         <td>
                             {% if obs.visita %}
@@ -50,7 +50,7 @@
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="7" class="text-center text-muted py-4">Sin observaciones cargadas.</td></tr>
+                    <tr><td colspan="7"><div class="estado-vacio-doc"><i class="bi bi-exclamation-triangle"></i><p class="mb-0">Sin observaciones cargadas.</p></div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>
@@ -80,7 +80,7 @@
                         <td><a href="{{ url_for('visitas.detalle', visita_id=f.visita_id) }}" class="btn btn-sm btn-outline-secondary">Ver / Editar</a></td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="9" class="text-center text-muted py-4">Esta instalación todavía no tiene historial cargado.</td></tr>
+                    <tr><td colspan="9"><div class="estado-vacio-doc"><i class="bi bi-clock-history"></i><p class="mb-0">Esta instalación todavía no tiene historial cargado.</p></div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

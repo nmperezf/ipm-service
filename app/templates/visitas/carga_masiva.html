@@ -11,7 +11,7 @@
             <p class="mb-1"><a href="{{ url_for('formularios.elegir_equipo', item_id=item.id, tipo_formulario_id=tipo.id) }}">&larr; Volver</a></p>
 
             <div class="d-flex justify-content-end mb-2">
-                <a href="{{ url_for('observaciones.nueva', instalacion_id=item.visita.instalacion_id, item_id=item.id) }}" class="btn btn-outline-warning btn-sm">+ Observación</a>
+                <a href="{{ url_for('observaciones.nueva', instalacion_id=item.visita.instalacion_id, item_id=item.id) }}" class="btn btn-outline-warning btn-sm"><i class="bi bi-exclamation-triangle me-1"></i>Observación</a>
             </div>
             <p class="text-muted">
                 {{ equipos|length }} equipo(s) de tipo {{ tipo.tipo_equipo_aplicable }}. Completá lo que corresponda y guardá todo junto — las
@@ -71,7 +71,7 @@
                                 {% endfor %}
                             </tr>
                             {% else %}
-                            <tr><td colspan="{{ tipo.campos()|length + 1 }}" class="text-center text-muted py-4">No hay equipos de este tipo cargados en la instalación.</td></tr>
+                            <tr><td colspan="{{ tipo.campos()|length + 1 }}"><div class="estado-vacio-doc"><i class="bi bi-hdd-stack"></i><p class="mb-0">No hay equipos de este tipo cargados en la instalación.</p></div></td></tr>
                             {% endfor %}
                         </tbody>
                     </table>
@@ -81,7 +81,7 @@
                 <button type="submit" class="btn btn-primary">Guardar todo</button>
                 <a href="{{ url_for('formularios.elegir_equipo', item_id=item.id, tipo_formulario_id=tipo.id) }}" class="btn btn-link">Cancelar</a>
                 {% else %}
-                <a href="{{ url_for('equipos.nuevo', instalacion_id=item.visita.instalacion_id) }}" class="btn btn-outline-info">+ Cargar equipos</a>
+                <a href="{{ url_for('equipos.nuevo', instalacion_id=item.visita.instalacion_id) }}" class="btn btn-outline-info"><i class="bi bi-plus-lg me-1"></i>Cargar equipos</a>
                 {% endif %}
             </form>
 

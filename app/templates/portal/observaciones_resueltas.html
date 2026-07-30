@@ -23,7 +23,7 @@
                         <td>{{ obs.fecha_resolucion.strftime('%d/%m/%Y') if obs.fecha_resolucion else '-' }}</td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="5" class="text-center text-muted py-4">Todavía no hay observaciones resueltas.</td></tr>
+                    <tr><td colspan="5"><div class="estado-vacio-doc"><i class="bi bi-check-circle" style="color: var(--bs-success);"></i><p class="mb-0">Todavía no hay observaciones resueltas.</p></div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

@@ -10,7 +10,7 @@
 
             <p class="mb-1"><a href="{{ url_for('portal.equipos') }}">&larr; Mis equipos</a></p>
             <p class="text-muted">
-                <span class="badge bg-secondary">{{ equipo.tipo }}</span>
+                <span class="badge badge-Pendiente">{{ equipo.tipo }}</span>
                 {{ equipo.ubicacion or '' }}
                 {% if equipo.manifold %} &middot; Depende de: {{ equipo.manifold.nombre }}{% endif %}
             </p>
@@ -35,11 +35,14 @@
                     {% endif %}
 
                     <div class="mb-3">
-                        <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-dark">Ver todos los ensayos</a>
+                        <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-dark"><i class="bi bi-graph-up me-1"></i>Ver todos los ensayos</a>
                     </div>
 
                     {% if not ultimos_ensayos %}
-                    <p class="text-muted small mb-0">Todavía no hay ensayos de curva de caudal validados para este equipo.</p>
+                    <div class="estado-vacio-doc">
+                        <i class="bi bi-graph-up"></i>
+                        <p class="mb-0">Todavía no hay ensayos de curva de caudal validados para este equipo.</p>
+                    </div>
                     {% else %}
                     <div class="table-responsive">
                     <table class="table table-sm mb-0">
@@ -85,7 +88,10 @@
 
             <div class="seccion-titulo-doc">Histórico y trazabilidad</div>
             {% if not secciones %}
-            <p class="text-muted">Todavía no hay checklists cerrados y aprobados para este equipo.</p>
+            <div class="estado-vacio-doc">
+                <i class="bi bi-clipboard-data"></i>
+                <p class="mb-0">Todavía no hay checklists cerrados y aprobados para este equipo.</p>
+            </div>
             {% endif %}
 
             {% for seccion in secciones %}
