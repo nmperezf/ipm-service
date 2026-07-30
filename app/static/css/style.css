@@ -436,10 +436,24 @@ small, .small, .text-muted {
     background: var(--surface-muted);
 }
 .table > :not(caption) > * > * {
-    padding: .65rem .75rem;
+    padding: .7rem .75rem;
+}
+.table > tbody > tr:nth-child(even) > * {
+    background-color: rgba(26,34,51,.018);
 }
 .table-hover > tbody > tr:hover > * {
     background-color: rgba(26,34,51,.04);
+}
+/* Filas que navegan a algo (ver tablas.js) llevan un filete de color a la
+   izquierda al pasar el mouse, mismo lenguaje visual que las tarjetas de
+   Cliente/Instalación con su filete lateral. */
+.fila-clickeable {
+    cursor: pointer;
+    box-shadow: inset 3px 0 0 transparent;
+    transition: box-shadow .12s ease;
+}
+.fila-clickeable:hover {
+    box-shadow: inset 3px 0 0 var(--accent);
 }
 
 /* Columna congelada: para tablas anchas que scrollean horizontal en
@@ -568,9 +582,6 @@ small, .small, .text-muted {
 .indicador-orden {
     font-size: .65rem;
     margin-left: 2px;
-}
-.fila-clickeable {
-    cursor: pointer;
 }
 .buscador-tabla-doc {
     max-width: 320px;
@@ -803,6 +814,9 @@ html[data-bs-theme="dark"] .card {
 html[data-bs-theme="dark"] .dashboard-card:hover .card {
     box-shadow: 0 6px 16px rgba(0,0,0,.4);
 }
+html[data-bs-theme="dark"] .table > tbody > tr:nth-child(even) > * {
+    background-color: rgba(255,255,255,.018);
+}
 html[data-bs-theme="dark"] .table-hover > tbody > tr:hover > * {
     background-color: rgba(255,255,255,.045);
 }
@@ -921,9 +935,11 @@ html[data-bs-theme="dark"] .hoja-doc { box-shadow: 0 4px 22px rgba(0,0,0,.35); }
 
 .card-atencion {
     border-radius: .6rem; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: .3rem;
-    text-decoration: none; color: inherit; transition: transform .1s; background: var(--surface-muted);
+    text-decoration: none; color: inherit; background: var(--surface-muted);
+    transition: transform .14s ease, box-shadow .14s ease;
 }
-.card-atencion:hover { transform: translateY(-1px); }
+a.card-atencion:hover { transform: translateY(-2px); box-shadow: 0 8px 18px rgba(20,30,45,.10); color: inherit; }
+html[data-bs-theme="dark"] a.card-atencion:hover { box-shadow: 0 8px 18px rgba(0,0,0,.35); }
 .card-atencion .num { font-family: var(--font-mono); font-size: 1.9rem; font-weight: 700; line-height: 1; }
 .card-atencion .etiqueta { font-size: .8rem; font-weight: 600; }
 .card-atencion .sub { font-size: .74rem; color: var(--ink-muted); }
@@ -1135,3 +1151,34 @@ html[data-bs-theme="dark"] .ot-tabla-lista tbody td { border-bottom-color: rgba(
 
 .card-instalacion-doc .proxima { font-size: .78rem; color: var(--ink-muted); border-top: 1px solid var(--border); padding-top: .65rem; }
 .card-instalacion-doc .proxima strong { color: var(--ink); font-weight: 600; }
+
+/* ---- Visor de fotos (lightbox) --------------------------------------- */
+
+a.foto-lightbox { cursor: zoom-in; display: inline-block; }
+a.foto-lightbox img { transition: opacity .12s ease; }
+a.foto-lightbox:hover img { opacity: .85; }
+
+.lightbox-doc {
+    position: fixed; inset: 0; z-index: 1080; display: flex; align-items: center; justify-content: center;
+    background: rgba(10,13,20,.92); opacity: 0; pointer-events: none; transition: opacity .15s ease;
+}
+.lightbox-doc.activo { opacity: 1; pointer-events: auto; }
+.lightbox-doc img {
+    max-width: min(92vw, 1100px); max-height: 88vh; border-radius: .4rem; box-shadow: 0 12px 40px rgba(0,0,0,.5);
+}
+.lightbox-doc-cerrar {
+    position: absolute; top: 1.2rem; right: 1.5rem; background: none; border: none; color: #fff;
+    font-size: 2.2rem; line-height: 1; cursor: pointer; opacity: .85;
+}
+.lightbox-doc-cerrar:hover { opacity: 1; }
+
+/* ---- Estado vacío --------------------------------------------------------
+   Para reemplazar un simple <p class="text-muted"> en las pantallas donde
+   todavía no hay nada cargado — mismo mensaje, con más presencia visual. */
+
+.estado-vacio-doc { text-align: center; padding: 2.6rem 1.5rem; }
+.estado-vacio-doc i {
+    font-size: 2.1rem; color: var(--border); display: block; margin-bottom: .8rem;
+}
+.estado-vacio-doc p { margin: 0 0 1rem; font-size: .92rem; color: var(--ink-muted); }
+.estado-vacio-doc .btn { font-size: .82rem; }

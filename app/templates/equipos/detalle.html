@@ -17,9 +17,9 @@
                     {% if equipo.manifold %} &middot; Depende de: {{ equipo.manifold.nombre }}{% endif %}
                 </p>
                 <div class="d-flex gap-2 flex-wrap">
-                    <a href="{{ url_for('fotos.subir_manual', instalacion_id=equipo.instalacion_id, equipo_id=equipo.id) }}" class="btn btn-outline-info btn-sm">+ Foto</a>
-                    <a href="{{ url_for('observaciones.nueva', instalacion_id=equipo.instalacion_id, equipo_id=equipo.id) }}" class="btn btn-outline-warning btn-sm">+ Observación</a>
-                    <a href="{{ url_for('equipos.editar', equipo_id=equipo.id) }}" class="btn btn-outline-secondary btn-sm">Editar equipo</a>
+                    <a href="{{ url_for('fotos.subir_manual', instalacion_id=equipo.instalacion_id, equipo_id=equipo.id) }}" class="btn btn-outline-info btn-sm"><i class="bi bi-camera me-1"></i>Foto</a>
+                    <a href="{{ url_for('observaciones.nueva', instalacion_id=equipo.instalacion_id, equipo_id=equipo.id) }}" class="btn btn-outline-warning btn-sm"><i class="bi bi-exclamation-triangle me-1"></i>Observación</a>
+                    <a href="{{ url_for('equipos.editar', equipo_id=equipo.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Editar equipo</a>
                 </div>
             </div>
 
@@ -28,8 +28,8 @@
             <div class="d-flex flex-wrap gap-2 mb-3">
                 {% for foto in equipo.fotos|sort(attribute='fecha_toma', reverse=true) %}
                 <div class="text-center">
-                    <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" target="_blank">
-                        <img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" style="height:110px; border-radius:6px;">
+                    <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" class="foto-lightbox">
+                        <img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" alt="{{ foto.descripcion or '' }}" style="height:110px; border-radius:6px;">
                     </a>
                     <div class="text-muted" style="font-size:.7rem;">
                         {{ foto.fecha_toma.strftime('%d/%m/%Y') if foto.fecha_toma else '-' }}
@@ -83,7 +83,7 @@
                         </a>
                         {% endif %}
                         {% if equipo.curva_fabrica %}
-                        <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-primary">+ Nuevo ensayo</a>
+                        <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg me-1"></i>Nuevo ensayo</a>
                         {% endif %}
                         <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-dark">Ver todos los ensayos</a>
                     </div>
@@ -178,7 +178,12 @@
                     </div>
                     {% if campo.puntos %}
                     <svg viewBox="0 0 520 90" style="width:100%; max-width:520px; height:90px;">
+                        <line x1="12" y1="20" x2="508" y2="20" style="stroke: var(--border); stroke-width: 1;" />
+                        <line x1="12" y1="45" x2="508" y2="45" style="stroke: var(--border); stroke-width: 1;" />
+                        <line x1="12" y1="70" x2="508" y2="70" style="stroke: var(--border); stroke-width: 1;" />
+                        <polygon points="{{ campo.area }}" style="fill: var(--accent); opacity: .08;" />
                         <polyline points="{{ campo.puntos }}" fill="none" style="stroke: var(--accent); stroke-width: 2;" />
+                        <circle cx="{{ campo.punto_final.x }}" cy="{{ campo.punto_final.y }}" r="3.5" style="fill: var(--accent);" />
                     </svg>
                     {% else %}
                     <p class="text-muted small mb-0">Hace falta más de una carga para mostrar la evolución.</p>

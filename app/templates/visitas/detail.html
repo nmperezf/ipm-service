@@ -18,26 +18,26 @@
                 <div class="d-flex gap-2 flex-wrap">
                     {% if visita.fase == 'Abierta' %}
                         {% if current_user.rol == 'Técnico' %}
-                        <a href="{{ url_for('visitas.enviar_revision', visita_id=visita.id) }}" class="btn btn-sm btn-outline-primary">Enviar a revisión</a>
+                        <a href="{{ url_for('visitas.enviar_revision', visita_id=visita.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-send me-1"></i>Enviar a revisión</a>
                         {% endif %}
                     {% elif visita.fase == 'En revisión' %}
                         {% if current_user.rol in ('Administrador', 'Jefe') %}
-                        <a href="{{ url_for('visitas.cerrar', visita_id=visita.id) }}" class="btn btn-sm btn-outline-primary">Cerrar visita</a>
+                        <a href="{{ url_for('visitas.cerrar', visita_id=visita.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-lock me-1"></i>Cerrar visita</a>
                         {% endif %}
                     {% elif visita.fase == 'Cerrada' %}
-                        <a href="{{ url_for('visitas.pdf_devolucion', visita_id=visita.id) }}" class="btn btn-sm btn-outline-dark" target="_blank">Descargar PDF de devolución</a>
+                        <a href="{{ url_for('visitas.pdf_devolucion', visita_id=visita.id) }}" class="btn btn-sm btn-outline-dark" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>Descargar PDF de devolución</a>
                         {% if current_user.rol in ('Administrador', 'Jefe') %}
                         <form method="POST" action="{{ url_for('visitas.reabrir', visita_id=visita.id) }}" class="d-inline" onsubmit="return confirm('¿Reabrir esta visita para corregirla? El PDF ya entregado no va a reflejar los cambios hasta que la vuelvas a cerrar.');">
-                            <button type="submit" class="btn btn-sm btn-outline-warning">Reabrir visita</button>
+                            <button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-unlock me-1"></i>Reabrir visita</button>
                         </form>
                         {% endif %}
                     {% endif %}
 
                     {% if current_user.rol in ('Administrador', 'Jefe') %}
-                    <a href="{{ url_for('visitas.editar_nota_cliente', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Nota para el cliente</a>
+                    <a href="{{ url_for('visitas.editar_nota_cliente', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chat-left-text me-1"></i>Nota para el cliente</a>
                     {% endif %}
                     {% if visita.fase != 'Cerrada' %}
-                    <a href="{{ url_for('visitas.editar', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Editar / Eliminar</a>
+                    <a href="{{ url_for('visitas.editar', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Editar / Eliminar</a>
                     {% endif %}
                 </div>
             </div>
@@ -169,8 +169,8 @@
                     <div class="d-flex flex-wrap gap-2 mb-2">
                         {% for foto in item.fotos %}
                         <div class="text-center">
-                            <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" target="_blank">
-                                <img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" style="height:90px; border-radius:6px;">
+                            <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" class="foto-lightbox">
+                                <img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" alt="{{ foto.descripcion or '' }}" style="height:90px; border-radius:6px;">
                             </a>
                             {% if foto.equipo %}<div class="text-muted" style="font-size:.7rem;">{{ foto.equipo.nombre }}</div>{% endif %}
                             {% if puede_editar %}

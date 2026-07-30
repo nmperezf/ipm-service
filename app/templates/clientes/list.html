@@ -23,9 +23,16 @@
                     <option value="urgencia">Ordenar: Más urgente primero</option>
                     <option value="cumplimiento">Ordenar: Cumplimiento (menor a mayor)</option>
                 </select>
-                <a href="{{ url_for('clientes.nuevo') }}" class="btn btn-dark">+ Nuevo cliente</a>
+                <a href="{{ url_for('clientes.nuevo') }}" class="btn btn-dark"><i class="bi bi-plus-lg me-1"></i>Nuevo cliente</a>
             </div>
 
+            {% if not clientes %}
+            <div class="estado-vacio-doc">
+                <i class="bi bi-people"></i>
+                <p>Todavía no hay clientes cargados.</p>
+                <a href="{{ url_for('clientes.nuevo') }}" class="btn btn-dark btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo cliente</a>
+            </div>
+            {% endif %}
             <div class="grid-clientes-doc" id="grid-clientes">
                 {% for cliente in clientes %}
                 {% set d = cliente.deficiencias_abiertas() %}
@@ -75,8 +82,6 @@
                         {% if not tiene_criticas and not tiene_alerta %}<span class="mini-chip sin-novedad">Sin novedades</span>{% endif %}
                     </div>
                 </a>
-                {% else %}
-                <p class="text-muted">Todavía no hay clientes cargados.</p>
                 {% endfor %}
             </div>
             <p class="text-muted text-center py-3 d-none" id="sin-resultados-clientes">Ningún cliente coincide con la búsqueda.</p>

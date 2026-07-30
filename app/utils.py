@@ -38,20 +38,26 @@ def serie_numerica(formularios, nombre_campo):
 
 
 def polilinea_svg(serie, ancho=520, alto=90, padding=12):
-    """Puntos para un <polyline> de una gráfica simple, sin dependencias
-    de JS: solo necesita al menos 2 valores numéricos para dibujar algo."""
+    """Puntos para el gráfico de evolución de un campo: la línea, el
+    relleno de área (mismo trazado cerrado contra la base) y las
+    coordenadas del último punto para destacarlo. Solo necesita al menos
+    2 valores numéricos para dibujar algo — si no, todo queda en None."""
     if len(serie) < 2:
-        return None, None, None
+        return None, None, None, None, None
     valores = [v for _, v in serie]
     minimo, maximo = min(valores), max(valores)
     rango = (maximo - minimo) or 1
     n = len(serie)
-    puntos = []
+    base = alto - padding
+    coords = []
     for i, (_, v) in enumerate(serie):
         x = padding + (ancho - 2 * padding) * (i / (n - 1))
-        y = alto - padding - (alto - 2 * padding) * ((v - minimo) / rango)
-        puntos.append(f"{x:.1f},{y:.1f}")
-    return " ".join(puntos), minimo, maximo
+        y = base - (alto - 2 * padding) * ((v - minimo) / rango)
+        coords.append((x, y))
+    puntos = " ".join(f"{x:.1f},{y:.1f}" for x, y in coords)
+    area = f"{puntos} {coords[-1][0]:.1f},{base:.1f} {coords[0][0]:.1f},{base:.1f}"
+    punto_final = {"x": round(coords[-1][0], 1), "y": round(coords[-1][1], 1)}
+    return puntos, minimo, maximo, area, punto_final
 
 
 def construir_secciones_historico(formularios):
@@ -70,9 +76,17 @@ def construir_secciones_historico(formularios):
         for campo in tipo_formulario.campos():
             if campo["tipo"] == "numero":
                 serie = serie_numerica(lista, campo["campo"])
-                puntos, minimo, maximo = polilinea_svg(serie)
+                puntos, minimo, maximo, area, punto_final = polilinea_svg(serie)
                 campos_numericos.append(
-                    {"label": campo["label"], "serie": serie, "puntos": puntos, "minimo": minimo, "maximo": maximo}
+                    {
+                        "label": campo["label"],
+                        "serie": serie,
+                        "puntos": puntos,
+                        "minimo": minimo,
+                        "maximo": maximo,
+                        "area": area,
+                        "punto_final": punto_final,
+                    }
                 )
             else:
                 historial = [(f.fecha_creacion, f.datos().get(campo["campo"])) for f in reversed(lista)]
