@@ -38,8 +38,20 @@
                     <div class="form-text">Dejala vacía para usar la fecha de hoy, o cargá una fecha pasada si estás migrando historial.</div>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Fotos (opcional)</label>
-                    <input type="file" name="fotos" accept="image/*" capture="environment" class="form-control" multiple>
+                    <label class="form-label d-block">Fotos (opcional)</label>
+                    <div class="selector-foto-doc" data-multiple>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <label class="btn btn-outline-secondary btn-sm mb-0">
+                                <i class="bi bi-camera me-1"></i>Tomar foto
+                                <input type="file" name="fotos" accept="image/*" capture="environment" class="d-none">
+                            </label>
+                            <label class="btn btn-outline-secondary btn-sm mb-0">
+                                <i class="bi bi-images me-1"></i>Elegir de galería
+                                <input type="file" name="fotos" accept="image/*" multiple class="d-none">
+                            </label>
+                        </div>
+                        <div class="form-text texto-seleccion-doc"></div>
+                    </div>
                 </div>
                 <div class="mb-3 form-check" id="wrapper-requiere-presupuesto">
                     <input type="checkbox" name="requiere_presupuesto" class="form-check-input" id="requiere_presupuesto">
