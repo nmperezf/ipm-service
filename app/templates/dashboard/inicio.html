@@ -8,8 +8,7 @@
         </div>
         <div class="cuerpo-doc">
 
-            <div class="eyebrow-doc">Inicio</div>
-            <div class="saludo-doc">Hola, {{ current_user.nombre_completo or current_user.username }} <span>— {{ hoy.strftime('%d/%m/%Y') }}</span></div>
+            <div class="saludo-inicio">Hola, {{ current_user.nombre_completo or current_user.username }}<span class="fecha">— {{ hoy.strftime('%d/%m/%Y') }}</span></div>
 
             <form method="GET" action="{{ url_for('dashboard.inicio') }}" class="mb-4">
                 <div class="input-group">
@@ -35,11 +34,11 @@
             {# ============ VISTA JEFE / ADMINISTRADOR ============ #}
 
             <div class="seccion-titulo-doc">Necesita tu atención</div>
-            <div class="grid-atencion">
+            <div class="log-prioridad">
 
-                <details class="card-expandible critico" style="grid-column: span 2;">
+                <details class="card-expandible critico">
                     <summary>
-                        <span class="num">{{ deficiencias_total }}</span>
+                        <span class="num">{{ '%02d'|format(deficiencias_total) }}</span>
                         <span class="textos">
                             <span class="etiqueta">Deficiencias abiertas</span>
                             <span class="desglose-clasif">
@@ -71,51 +70,33 @@
                     {% endif %}
                 </details>
 
-                <details class="card-expandible alerta" style="grid-column: span 2;">
-                    <summary>
-                        <span class="num">{{ ensayos_pendientes_total }}</span>
-                        <span class="textos">
-                            <span class="etiqueta">Ensayos pendientes de validación</span>
-                            <span class="sub">cargados por un técnico, esperan tu firma</span>
-                        </span>
-                        <span class="flecha">▶</span>
-                    </summary>
-                    <ul class="lista-expandible">
-                        {% for e in ensayos_pendientes %}
-                        <li>
-                            <a class="fila-expandible" href="{{ url_for('curvas.ensayo_detalle', equipo_id=e.equipo_id, ensayo_id=e.id) }}">
-                                <span class="cuerpo">
-                                    <div class="desc">Curva de caudal — {{ e.equipo.nombre }}</div>
-                                    <div class="meta">{{ e.equipo.instalacion.cliente.nombre }} · cargado {{ e.fecha_creacion.strftime('%d/%m') }}{% if e.creado_por %} por {{ e.creado_por.nombre_completo or e.creado_por.username }}{% endif %}</div>
-                                </span>
-                                <span class="ir">Ver ensayo →</span>
-                            </a>
-                        </li>
-                        {% else %}
-                        <li class="text-muted">No hay ensayos pendientes.</li>
-                        {% endfor %}
-                    </ul>
-                    {% if ensayos_pendientes_total > ensayos_pendientes|length %}
-                    <a class="ver-todas-doc" href="{{ url_for('dashboard.ensayos_pendientes_lista') }}">Ver los {{ ensayos_pendientes_total }} →</a>
-                    {% endif %}
-                </details>
+                <a class="fila-log alerta" href="{{ url_for('dashboard.visitas_en_revision_lista') }}">
+                    <span class="num">{{ '%02d'|format(visitas_en_revision) }}</span>
+                    <span class="textos">
+                        <span class="etiqueta">Visitas por aprobar</span>
+                        <span class="meta">{% if visitas_en_revision %}esperando tu aprobación{% else %}sin visitas esperando tu aprobación{% endif %}</span>
+                    </span>
+                    <span class="flecha">▶</span>
+                </a>
+            </div>
 
-                <a class="card-atencion alerta" href="{{ url_for('inventario.criticos_lista') }}">
-                    <span class="num">{{ repuestos_criticos }}</span>
+            <div class="rail-stats">
+                <a class="stat{{ ' calmo' if repuestos_criticos == 0 }}" href="{{ url_for('inventario.criticos_lista') }}">
+                    <span class="num">{{ '%02d'|format(repuestos_criticos) }}</span>
                     <span class="etiqueta">Repuestos en stock crítico</span>
                     <span class="sub">por debajo del mínimo</span>
                 </a>
-                <a class="card-atencion info" href="{{ url_for('dashboard.visitas_en_revision_lista') }}">
-                    <span class="num">{{ visitas_en_revision }}</span>
-                    <span class="etiqueta">Visitas en revisión</span>
-                    <span class="sub">esperando tu aprobación</span>
+                <a class="stat{{ ' calmo' if ensayos_pendientes_total == 0 }}" href="{{ url_for('dashboard.ensayos_pendientes_lista') }}">
+                    <span class="num">{{ '%02d'|format(ensayos_pendientes_total) }}</span>
+                    <span class="etiqueta">Ensayos por validar</span>
+                    <span class="sub">{% if ensayos_pendientes_total %}cargados por un técnico, esperan tu firma{% else %}sin ensayos esperando firma{% endif %}</span>
                 </a>
-                <a class="card-atencion alerta" href="{{ url_for('presupuestos.listar') }}">
-                    <span class="num">{{ presupuestos_activos }}</span>
+                <a class="stat{{ ' calmo' if presupuestos_activos == 0 }}" href="{{ url_for('presupuestos.listar') }}">
+                    <span class="num">{{ '%02d'|format(presupuestos_activos) }}</span>
                     <span class="etiqueta">Presupuestos activos</span>
                     <span class="sub">pendientes, cotizados o aprobados</span>
                 </a>
-                <a class="card-atencion info" href="{{ url_for('ordenes.listar') }}">
+                <a class="stat" href="{{ url_for('ordenes.listar') }}">
                     <span class="num">{{ ot_pendientes }}</span>
                     <span class="etiqueta">OT abiertas</span>
                     <span class="sub">en toda la empresa</span>
@@ -123,17 +104,19 @@
             </div>
 
             <div class="seccion-titulo-doc">Cumplimiento de mantenimiento</div>
-            <a href="{{ url_for('dashboard.cumplimiento_mensual') }}" class="card-tendencia text-decoration-none">
-                    <div>
-                        <div class="valor">{{ cumplimiento_pct }}% <small>{{ titulo_mes }}</small>
-                            {% if cumplimiento_tendencia is not none %}
-                            <span class="pill-tendencia {{ 'subio' if cumplimiento_tendencia >= 0 else 'bajo' }}">
-                                {{ '▲' if cumplimiento_tendencia >= 0 else '▼' }} {{ '%+.1f'|format(cumplimiento_tendencia) }} vs. mes pasado
-                            </span>
-                            {% endif %}
-                        </div>
-                        <div class="detalle">{{ cumplidos_mes }} de {{ total_mes }} ítems de visita cumplidos a tiempo</div>
-                    </div>
+            {% set tend_clase = 'subio' if cumplimiento_tendencia and cumplimiento_tendencia > 0 else ('bajo' if cumplimiento_tendencia and cumplimiento_tendencia < 0 else 'plano') %}
+            {% set tend_flecha = '▲' if cumplimiento_tendencia and cumplimiento_tendencia > 0 else ('▼' if cumplimiento_tendencia and cumplimiento_tendencia < 0 else '＝') %}
+            <a href="{{ url_for('dashboard.cumplimiento_mensual') }}" class="panel-cumplimiento">
+                <div class="fila-cumplimiento">
+                    <div class="valor-cumplimiento">{{ cumplimiento_pct }}%<small>{{ titulo_mes }}</small></div>
+                    {% if cumplimiento_tendencia is not none %}
+                    <span class="pill-tendencia {{ tend_clase }}">
+                        {{ tend_flecha }} {{ '%+.1f'|format(cumplimiento_tendencia) }} vs. mes pasado
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="gauge-doc"><span class="relleno" style="width: {{ cumplimiento_pct }}%"></span></div>
+                <div class="detalle-cumplimiento">{{ cumplidos_mes }} de {{ total_mes }} ítems de visita cumplidos a tiempo</div>
             </a>
 
             {% if carga_tecnicos %}
