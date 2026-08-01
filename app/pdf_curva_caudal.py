@@ -63,9 +63,9 @@ class _BandaSeccion(Flowable):
         c.restoreState()
 
 NOMBRES_CRITERIO = {
-    "criterio_1": "Presión a caudal 0%",
-    "criterio_2": "Presión a caudal nominal (100%)",
-    "criterio_3": "Presión a sobrecarga (150%)",
+    "criterio_1": "Presión a 0%",
+    "criterio_2": "Presión a 100% (nominal)",
+    "criterio_3": "Presión a 150% (sobrecarga)",
 }
 
 
@@ -88,6 +88,28 @@ def _grafico_curvas(gpm, presiones_fabrica, presiones_ensayo_ajustadas, presione
     xs_ensayo, ys_ensayo = curva_suavizada(gpm, presiones_ensayo_ajustadas)
     ax.plot(xs_ensayo, ys_ensayo, color="#E2131D", linewidth=2, label="Ensayo (ajustado a RPM nominal)")
     ax.scatter(gpm, presiones_ensayo_ajustadas, color="#E2131D", zorder=3)
+
+    # Referencias NFPA 25 — no son datos medidos, son los dos puntos que
+    # define la norma: el punto nominal (100% del caudal, a la presión
+    # nominal de fábrica) y el mínimo aprobado en sobrecarga (150% del
+    # caudal, 65% de esa misma presión nominal). Se marcan con una cruz
+    # en un color y símbolo que no usa ninguna otra serie del gráfico,
+    # para que se lean como referencia y no como una curva más.
+    gpm_nominal, presion_nominal = gpm[2], presiones_fabrica[2]
+    gpm_sobrecarga = gpm[3]
+    presion_minima_nfpa = presion_nominal * 0.65
+    ax.scatter(
+        [gpm_nominal, gpm_sobrecarga], [presion_nominal, presion_minima_nfpa],
+        color="#6B32C9", marker="x", s=90, linewidths=2.2, zorder=5, label="Referencia",
+    )
+    ax.annotate(
+        "100%", (gpm_nominal, presion_nominal), textcoords="offset points", xytext=(8, 6),
+        fontsize=8, color="#6B32C9", fontweight="bold",
+    )
+    ax.annotate(
+        "65%", (gpm_sobrecarga, presion_minima_nfpa), textcoords="offset points", xytext=(8, 6),
+        fontsize=8, color="#6B32C9", fontweight="bold",
+    )
 
     ax.set_xlabel("Caudal (GPM)")
     ax.set_ylabel("Presión neta (PSI)")
@@ -122,17 +144,21 @@ def generar_pdf_ensayo(ensayo):
         return _BandaSeccion(texto)
 
     def tabla_identificacion(pares):
-        """pares: lista de (label, valor) -> grilla de 3 columnas sin bordes."""
+        """pares: lista de (label, valor) -> grilla de 2 columnas sin bordes,
+        ancho total ANCHO_CONTENIDO (igual que el resto de las tablas del
+        documento). Dos columnas en vez de tres para que "Lugar" (cliente
+        + instalación, el valor más largo de la ficha) entre siempre en
+        una sola línea."""
         filas, fila = [], []
         for label, valor in pares:
             fila.append(Paragraph(f"<font size=6.5 color='#6B7280'>{label.upper()}</font><br/><b>{valor}</b>", celda))
-            if len(fila) == 3:
+            if len(fila) == 2:
                 filas.append(fila)
                 fila = []
         if fila:
-            fila += [""] * (3 - len(fila))
+            fila += [""] * (2 - len(fila))
             filas.append(fila)
-        t = Table(filas, colWidths=[5.4 * cm] * 3)
+        t = Table(filas, colWidths=[ANCHO_CONTENIDO / 2] * 2)
         t.setStyle(TableStyle([
             ("VALIGN", (0, 0), (-1, -1), "TOP"),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
@@ -191,7 +217,7 @@ def generar_pdf_ensayo(ensayo):
                 f"{pct}%", gpm_punto, curva_fabrica.rpm_nominal, presiones_fabrica[i],
                 potencias_fabrica[i] if potencias_fabrica[i] is not None else "-",
             ])
-        tabla_fabrica = Table(filas_fabrica, colWidths=[2.4 * cm, 2.6 * cm, 2.2 * cm, 3.4 * cm, 3.4 * cm])
+        tabla_fabrica = Table(filas_fabrica, colWidths=[3.1 * cm, 3.3 * cm, 2.8 * cm, 4.4 * cm, 4.4 * cm])
         tabla_fabrica.setStyle(estilo_tabla_base)
         elementos.append(tabla_fabrica)
     else:
@@ -231,11 +257,15 @@ def generar_pdf_ensayo(ensayo):
     gpm_ensayo = ensayo.puntos_gpm()
     potencias_absorbidas = ensayo.puntos_potencia_absorbida()
 
+    # Encabezados cortos a propósito — con los 9 valores de una fila de
+    # ensayo, la única forma de que entren en una sola línea sin agrandar
+    # la tabla más allá del ancho del resto del documento es acortar el
+    # texto y bajar la fuente; el pie de la tabla ya aclara las fórmulas.
     encabezado_ensayo = [
-        "Caudal (%)", "Caudal (GPM)", "RPM ensayada", "Presión descarga", "Presión succión",
-        "Presión neta", "Presión ajustada", "Variación", "Pot. absorbida",
+        "Caudal (%)", "Caudal (GPM)", "RPM", "P. descarga", "P. succión",
+        "P. neta", "P. ajustada", "Variación", "Pot. abs.",
     ]
-    filas_ensayo = [[Paragraph(f"<font size=8><b>{h}</b></font>", celda) for h in encabezado_ensayo]]
+    filas_ensayo = [[Paragraph(f"<font size=7.5><b>{h}</b></font>", celda) for h in encabezado_ensayo]]
     for i, pct in enumerate([0, 50, 100, 150]):
         filas_ensayo.append([
             f"{pct}%",
@@ -244,7 +274,10 @@ def generar_pdf_ensayo(ensayo):
             f"{variaciones[i]:+.1f}%" if variaciones[i] is not None else "-",
             potencias_absorbidas[i] if potencias_absorbidas[i] is not None else "s/d",
         ])
-    tabla_ensayo = Table(filas_ensayo, colWidths=[1.6 * cm, 1.9 * cm, 2 * cm, 1.9 * cm, 1.8 * cm, 1.8 * cm, 1.9 * cm, 1.9 * cm, 1.9 * cm])
+    tabla_ensayo = Table(
+        filas_ensayo,
+        colWidths=[2 * cm, 2.2 * cm, 1.8 * cm, 2.2 * cm, 2 * cm, 2 * cm, 2.2 * cm, 1.8 * cm, 1.8 * cm],
+    )
     tabla_ensayo.setStyle(estilo_tabla_base)
     elementos.append(tabla_ensayo)
     elementos.append(Paragraph(
@@ -271,12 +304,12 @@ def generar_pdf_ensayo(ensayo):
     elementos.append(Spacer(1, 0.3 * cm))
     validacion = ensayo.validacion_nfpa25()
     if validacion:
-        filas_validacion = [["Criterio", "Fórmula", "Valor de ensayo", "Límite", "Estado"]]
+        filas_validacion = [["Criterio", "Fórmula", "Valor", "Límite", "Estado"]]
         estilos_fila = []
         for i, (clave, criterio) in enumerate(validacion.items(), start=1):
             estado = "✓ CUMPLE" if criterio["paso"] else "✗ NO CUMPLE"
             filas_validacion.append([
-                Paragraph(NOMBRES_CRITERIO.get(clave, clave), celda),
+                Paragraph(f"<font size=8.5><b>{NOMBRES_CRITERIO.get(clave, clave)}</b></font>", celda),
                 Paragraph(f"<font size=7.5 color='#6B7280'>{criterio['descripcion']}</font>", celda),
                 f"{criterio['valor_ensayo']:.1f} PSI",
                 f"{criterio['limite']:.1f} PSI",
@@ -289,7 +322,7 @@ def generar_pdf_ensayo(ensayo):
                 ("FONTNAME", (4, i), (4, i), "Helvetica-Bold"),
                 ("BACKGROUND", (4, i), (4, i), color_fondo),
             ]
-        tabla_validacion = Table(filas_validacion, colWidths=[4.1 * cm, 5.8 * cm, 2.6 * cm, 2.3 * cm, 2.7 * cm])
+        tabla_validacion = Table(filas_validacion, colWidths=[6 * cm, 5.3 * cm, 2.3 * cm, 2.2 * cm, 2.2 * cm])
         tabla_validacion.setStyle(TableStyle([
             ("BACKGROUND", (0, 0), (-1, 0), SURFACE_MUTED),
             ("TEXTCOLOR", (0, 0), (-1, 0), INK),
@@ -322,7 +355,7 @@ def generar_pdf_ensayo(ensayo):
         validado_por, fecha_val = "—", "—"
     tabla_validacion_final = Table(
         [["Estado", "Validado por", "Fecha"], [ensayo.estado_revision, validado_por, fecha_val]],
-        colWidths=[5.4 * cm] * 3,
+        colWidths=[ANCHO_CONTENIDO / 3] * 3,
     )
     tabla_validacion_final.setStyle(estilo_tabla_base)
     elementos.append(tabla_validacion_final)
