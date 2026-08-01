@@ -150,7 +150,7 @@ class Cliente(db.Model):
     instalaciones = db.relationship(
         "Instalacion", backref="cliente", lazy=True, cascade="all, delete-orphan"
     )
-    empresa = db.relationship("Empresa", backref="clientes")
+    empresa = db.relationship("Empresa", backref=db.backref("clientes", cascade="all, delete-orphan"))
 
     def indicadores(self):
         """Indicadores agregados de todas las instalaciones del cliente."""
@@ -657,7 +657,7 @@ class ServicioTipo(db.Model):
     por_equipo = db.Column(db.Boolean, default=False, nullable=False)
     tipo_equipo_aplicable = db.Column(db.String(40), nullable=True)  # nombre de un TipoEquipo
 
-    empresa = db.relationship("Empresa", backref="servicios_tipo")
+    empresa = db.relationship("Empresa", backref=db.backref("servicios_tipo", cascade="all, delete-orphan"))
 
     def campos(self):
         import json
@@ -678,7 +678,7 @@ class Formulario(db.Model):
     datos_json = db.Column(db.Text)  # respuestas, según el schema del tipo
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
-    tipo_formulario = db.relationship("TipoFormulario")
+    tipo_formulario = db.relationship("TipoFormulario", backref=db.backref("formularios", cascade="all, delete-orphan"))
     equipo = db.relationship("Equipo", backref="formularios")
 
     def datos(self):
@@ -729,7 +729,7 @@ class Foto(db.Model):
     instalacion = db.relationship("Instalacion", backref="fotos")
     equipo = db.relationship("Equipo", backref="fotos")
     observacion = db.relationship("Observacion", backref="fotos")
-    subido_por = db.relationship("Usuario", foreign_keys=[subido_por_id])
+    subido_por = db.relationship("Usuario", backref="fotos_subidas", foreign_keys=[subido_por_id])
 
     def __repr__(self):
         return f"<Foto {self.nombre_archivo}>"
@@ -795,12 +795,12 @@ class Observacion(db.Model):
 
     item_visita = db.relationship("ItemVisita", backref="observaciones_registradas")
     equipo = db.relationship("Equipo", backref="deficiencias")
-    creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
-    aprobado_por = db.relationship("Usuario", foreign_keys=[aprobado_por_id])
-    resuelto_por = db.relationship("Usuario", foreign_keys=[resuelto_por_id])
-    reabierto_por = db.relationship("Usuario", foreign_keys=[reabierto_por_id])
-    ultima_visita_confirmada = db.relationship("Visita", foreign_keys=[ultima_visita_confirmada_id])
-    confirmada_por = db.relationship("Usuario", foreign_keys=[confirmada_por_id])
+    creado_por = db.relationship("Usuario", backref="observaciones_creadas", foreign_keys=[creado_por_id])
+    aprobado_por = db.relationship("Usuario", backref="observaciones_aprobadas", foreign_keys=[aprobado_por_id])
+    resuelto_por = db.relationship("Usuario", backref="observaciones_resueltas", foreign_keys=[resuelto_por_id])
+    reabierto_por = db.relationship("Usuario", backref="observaciones_reabiertas", foreign_keys=[reabierto_por_id])
+    ultima_visita_confirmada = db.relationship("Visita", backref="observaciones_confirmadas_aqui", foreign_keys=[ultima_visita_confirmada_id])
+    confirmada_por = db.relationship("Usuario", backref="observaciones_confirmadas", foreign_keys=[confirmada_por_id])
 
     @property
     def editable(self):
@@ -877,10 +877,10 @@ class Presupuesto(db.Model):
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
 
-    empresa = db.relationship("Empresa", backref="presupuestos")
+    empresa = db.relationship("Empresa", backref=db.backref("presupuestos", cascade="all, delete-orphan"))
     observacion = db.relationship("Observacion", backref=db.backref("presupuesto", uselist=False, cascade="all, delete-orphan"))
     ot_correctiva = db.relationship("OrdenTrabajo", backref=db.backref("presupuesto_origen", uselist=False))
-    creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
+    creado_por = db.relationship("Usuario", backref="presupuestos_creados", foreign_keys=[creado_por_id])
     auditoria = db.relationship(
         "PresupuestoAudit",
         backref="presupuesto",
@@ -941,7 +941,7 @@ class PresupuestoAudit(db.Model):
     nota = db.Column(db.Text, nullable=True)
     fecha_cambio = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
-    usuario = db.relationship("Usuario")
+    usuario = db.relationship("Usuario", backref=db.backref("presupuestos_audit", cascade="all, delete-orphan"))
 
     def __repr__(self):
         return f"<PresupuestoAudit {self.presupuesto_id} -> {self.estado_nuevo}>"
@@ -1182,8 +1182,8 @@ class EnsayoCaudal(db.Model):
             "ensayos_caudal", lazy=True, cascade="all, delete-orphan", order_by="EnsayoCaudal.fecha_ensayo"
         ),
     )
-    creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
-    validado_por = db.relationship("Usuario", foreign_keys=[validado_por_id])
+    creado_por = db.relationship("Usuario", backref="ensayos_caudal_creados", foreign_keys=[creado_por_id])
+    validado_por = db.relationship("Usuario", backref="ensayos_caudal_validados", foreign_keys=[validado_por_id])
 
     def validar(self, usuario_id):
         self.estado_revision = "Validado"
@@ -1344,8 +1344,8 @@ class Repuesto(db.Model):
     stock_minimo = db.Column(db.Integer, default=0, nullable=False)
     activo = db.Column(db.Boolean, default=True, nullable=False)
 
-    usos = db.relationship("RepuestoUsado", backref="repuesto", lazy=True)
-    empresa = db.relationship("Empresa", backref="repuestos")
+    usos = db.relationship("RepuestoUsado", backref="repuesto", lazy=True, cascade="all, delete-orphan")
+    empresa = db.relationship("Empresa", backref=db.backref("repuestos", cascade="all, delete-orphan"))
 
     @property
     def en_nivel_critico(self):
@@ -1397,9 +1397,9 @@ class Mensaje(db.Model):
     fecha_carga = db.Column(db.Date, default=date.today, nullable=False)
 
     cliente = db.relationship("Cliente", backref="mensajes")
-    empresa = db.relationship("Empresa", backref="mensajes")
-    remitente = db.relationship("Usuario", backref="mensajes_enviados", foreign_keys=[remitente_id])
-    destinatario = db.relationship("Usuario", backref="mensajes_recibidos", foreign_keys=[destinatario_id])
+    empresa = db.relationship("Empresa", backref=db.backref("mensajes", cascade="all, delete-orphan"))
+    remitente = db.relationship("Usuario", backref=db.backref("mensajes_enviados", cascade="all, delete-orphan"), foreign_keys=[remitente_id])
+    destinatario = db.relationship("Usuario", backref=db.backref("mensajes_recibidos", cascade="all, delete-orphan"), foreign_keys=[destinatario_id])
 
     def __repr__(self):
         return f"<Mensaje {self.titulo}>"
@@ -1441,8 +1441,9 @@ class Notificacion(db.Model):
     leido = db.Column(db.Boolean, default=False, nullable=False)
     fecha_carga = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
-    destinatario = db.relationship("Usuario", backref="notificaciones", foreign_keys=[destinatario_id])
-    remitente = db.relationship("Usuario", foreign_keys=[remitente_id])
+    empresa = db.relationship("Empresa", backref=db.backref("notificaciones", cascade="all, delete-orphan"))
+    destinatario = db.relationship("Usuario", backref=db.backref("notificaciones", cascade="all, delete-orphan"), foreign_keys=[destinatario_id])
+    remitente = db.relationship("Usuario", backref="notificaciones_enviadas", foreign_keys=[remitente_id])
     cliente = db.relationship("Cliente", backref="notificaciones")
 
     @property
