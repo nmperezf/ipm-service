@@ -1443,7 +1443,7 @@ class Notificacion(db.Model):
 
     destinatario = db.relationship("Usuario", backref="notificaciones", foreign_keys=[destinatario_id])
     remitente = db.relationship("Usuario", foreign_keys=[remitente_id])
-    cliente = db.relationship("Cliente")
+    cliente = db.relationship("Cliente", backref="notificaciones")
 
     @property
     def descripcion_tipo(self):
