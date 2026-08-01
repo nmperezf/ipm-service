@@ -19,7 +19,7 @@
                         <td>{{ item.visita.fecha.strftime('%d/%m/%Y') }}</td>
                         <td><a href="{{ url_for('clientes.detalle', cliente_id=item.visita.instalacion.cliente_id) }}">{{ item.visita.instalacion.cliente.nombre }}</a></td>
                         <td>
-                            {{ item.servicio.nombre }}
+                            {{ item.nombre_mostrado }}
                             {% if item.observaciones %}<br><small class="text-muted">{{ item.observaciones }}</small>
                             {% elif item.visita.observaciones %}<br><small class="text-muted">{{ item.visita.observaciones }}</small>{% endif %}
                         </td>

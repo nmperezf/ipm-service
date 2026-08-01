@@ -15,7 +15,7 @@
                    class="btn btn-outline-secondary btn-sm">Editar</a>
             </div>
             <p class="text-muted">
-                Servicio: {{ formulario.item_visita.servicio.nombre }}
+                Servicio: {{ formulario.item_visita.nombre_mostrado }}
                 {% if formulario.equipo %} &middot; Equipo: {{ formulario.equipo.nombre }}{% endif %} &middot;
                 Registrado el {{ formulario.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
             </p>

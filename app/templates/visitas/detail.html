@@ -89,7 +89,7 @@
 
             <div class="seccion-titulo-doc">Servicios de esta visita</div>
             {% if not visita.items %}
-            <p class="text-muted">Esta visita no tiene servicios asociados de un contrato (es una visita manual).</p>
+            <p class="text-muted">Esta visita todavía no tiene ítems cargados. Agregá uno abajo para poder subir formularios y fotos.</p>
             {% endif %}
 
             {% if not puede_editar %}
@@ -110,7 +110,10 @@
             <div class="card mb-3">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">{{ item.servicio.nombre }} <small class="text-muted text-capitalize">({{ item.servicio.frecuencia }})</small></h5>
+                        <h5 class="card-title mb-0">
+                            {{ item.nombre_mostrado }}
+                            {% if item.servicio %}<small class="text-muted text-capitalize">({{ item.servicio.frecuencia }})</small>{% else %}<small class="text-muted">(ítem suelto)</small>{% endif %}
+                        </h5>
                         <div>
                             <span class="badge badge-{{ item.estado.replace(' ', '.') }}">{{ item.estado }}</span>
                             {% if puede_editar %}
@@ -124,6 +127,11 @@
                             </form>
                             {% endif %}
                             <a href="{{ url_for('observaciones.nueva', instalacion_id=visita.instalacion_id, item_id=item.id) }}" class="btn btn-sm btn-outline-warning">+ Observación</a>
+                            {% if not item.servicio_contrato_id and not item.formularios and not item.fotos %}
+                            <form method="POST" action="{{ url_for('visitas.eliminar_item', item_id=item.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar este ítem?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                            </form>
+                            {% endif %}
                             {% endif %}
                         </div>
                     </div>
@@ -219,6 +227,18 @@
                 </div>
             </div>
             {% endfor %}
+
+            {% if puede_editar %}
+            <form method="POST" action="{{ url_for('visitas.agregar_item', visita_id=visita.id) }}" class="row g-2 align-items-end mb-4">
+                <div class="col-auto" style="min-width: 280px;">
+                    <label class="form-label mb-1">+ Agregar ítem a la visita</label>
+                    <input type="text" name="nombre_libre" class="form-control form-control-sm" placeholder="Ej: Revisión general, matafuegos, etc.">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-sm btn-outline-dark">Agregar</button>
+                </div>
+            </form>
+            {% endif %}
 
         </div>
     </div>

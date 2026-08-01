@@ -12,7 +12,7 @@
             {% if equipo %}
             <p class="text-muted">Ligada al equipo: <strong>{{ equipo.nombre }}</strong></p>
             {% elif item %}
-            <p class="text-muted">Ligada al servicio: <strong>{{ item.servicio.nombre }}</strong></p>
+            <p class="text-muted">Ligada al servicio: <strong>{{ item.nombre_mostrado }}</strong></p>
             {% else %}
             <p class="text-muted">Carga manual — útil para migrar el historial que ya tenés de este cliente, aunque no exista una visita cargada en el sistema.</p>
             {% endif %}

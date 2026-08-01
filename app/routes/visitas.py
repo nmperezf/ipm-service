@@ -165,9 +165,11 @@ def detalle(visita_id):
     # Cada servicio de la visita ofrece solo los tipos de formulario que
     # aplican a él (ver TipoFormulario.aplica_a_servicio) — uno sin
     # servicios configurados aparece para todos, sin romper lo de siempre.
+    # Un ítem suelto (sin contrato, item.servicio es None) no tiene
+    # tipo_equipo_aplicable de dónde filtrar, así que ofrece todos.
     formularios_por_item = {}
     for item in visita.items:
-        tipos_item = [t for t in tipos if t.aplica_a_servicio(item.servicio)]
+        tipos_item = [t for t in tipos if not item.servicio or t.aplica_a_servicio(item.servicio)]
         grupos, generales = _agrupar_tipos_formulario(tipos_item)
         formularios_por_item[item.id] = {"grupos": grupos, "generales": generales}
 
@@ -227,7 +229,7 @@ def marcar_item_cumplido(item_id):
     verificar_visita_editable(visita)
     visita.marcar_item_cumplido(item_id)
     db.session.commit()
-    flash(f"'{item.servicio.nombre}' marcado como cumplido.", "success")
+    flash(f"'{item.nombre_mostrado}' marcado como cumplido.", "success")
     return redirect(url_for("visitas.detalle", visita_id=visita.id))
 
 
@@ -240,7 +242,47 @@ def marcar_item_pendiente(item_id):
     verificar_visita_editable(visita)
     visita.marcar_item_pendiente(item_id)
     db.session.commit()
-    flash(f"'{item.servicio.nombre}' marcado como pendiente.", "info")
+    flash(f"'{item.nombre_mostrado}' marcado como pendiente.", "info")
+    return redirect(url_for("visitas.detalle", visita_id=visita.id))
+
+
+@visitas_bp.route("/<int:visita_id>/items/agregar", methods=["POST"])
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def agregar_item(visita_id):
+    """Agrega un ítem suelto (sin servicio de contrato) a la visita, para
+    cargar algo puntual: una revisión no contemplada en el contrato, o
+    directamente el único ítem de una visita de cliente esporádico sin
+    contrato armado (ver visitas.nueva)."""
+    visita = Visita.query.get_or_404(visita_id)
+    verificar_escritura_cliente(visita.instalacion.cliente)
+    verificar_visita_editable(visita)
+    nombre = (request.form.get("nombre_libre") or "").strip()
+    if not nombre:
+        flash("Escribí una descripción para el ítem antes de agregarlo.", "danger")
+        return redirect(url_for("visitas.detalle", visita_id=visita.id))
+    item = ItemVisita(visita_id=visita.id, nombre_libre=nombre, estado="Pendiente")
+    db.session.add(item)
+    db.session.commit()
+    flash(f"'{nombre}' agregado a la visita.", "success")
+    return redirect(url_for("visitas.detalle", visita_id=visita.id))
+
+
+@visitas_bp.route("/items/<int:item_id>/eliminar", methods=["POST"])
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def eliminar_item(item_id):
+    """Solo para ítems sueltos que todavía no tienen nada cargado — evita
+    perder formularios o fotos ya subidos por error de un click."""
+    item = ItemVisita.query.get_or_404(item_id)
+    visita = item.visita
+    verificar_escritura_cliente(visita.instalacion.cliente)
+    verificar_visita_editable(visita)
+    if item.servicio_contrato_id or item.formularios or item.fotos:
+        flash("Ese ítem ya tiene datos cargados o viene del contrato — no se puede eliminar.", "danger")
+        return redirect(url_for("visitas.detalle", visita_id=visita.id))
+    nombre = item.nombre_mostrado
+    db.session.delete(item)
+    db.session.commit()
+    flash(f"'{nombre}' eliminado de la visita.", "info")
     return redirect(url_for("visitas.detalle", visita_id=visita.id))
 
 

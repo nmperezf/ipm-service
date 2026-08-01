@@ -554,21 +554,34 @@ class Visita(db.Model):
 
 class ItemVisita(db.Model):
     """Cada servicio contratado dentro de una visita agrupada; se marca
-    cumplido/pendiente de forma independiente del resto."""
+    cumplido/pendiente de forma independiente del resto.
+
+    servicio_contrato_id es opcional: un ítem "suelto" (sin contrato, ver
+    visitas.agregar_item) no tiene ServicioContrato y en cambio usa
+    nombre_libre — para visitas puntuales de clientes esporádicos que no
+    tienen contrato armado, o para agregar algo no contemplado en el
+    contrato durante una visita ya planificada."""
 
     __tablename__ = "items_visita"
 
     id = db.Column(db.Integer, primary_key=True)
     visita_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=False)
-    servicio_contrato_id = db.Column(db.Integer, db.ForeignKey("servicios_contrato.id"), nullable=False)
+    servicio_contrato_id = db.Column(db.Integer, db.ForeignKey("servicios_contrato.id"), nullable=True)
+    nombre_libre = db.Column(db.String(200), nullable=True)
     estado = db.Column(db.String(30), default="Pendiente", nullable=False)
     observaciones = db.Column(db.Text)
 
     formularios = db.relationship("Formulario", backref="item_visita", lazy=True, cascade="all, delete-orphan")
     fotos = db.relationship("Foto", backref="item_visita", lazy=True, cascade="all, delete-orphan")
 
+    @property
+    def nombre_mostrado(self):
+        if self.servicio:
+            return self.servicio.nombre
+        return self.nombre_libre or "Ítem de visita"
+
     def __repr__(self):
-        return f"<ItemVisita {self.servicio.nombre if self.servicio else ''}>"
+        return f"<ItemVisita {self.servicio.nombre if self.servicio else self.nombre_libre or ''}>"
 
 
 # ---------------------------------------------------------------------------
