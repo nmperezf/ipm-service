@@ -25,6 +25,8 @@ def _aplicar_datos_bomba(equipo, form):
         equipo.serie = None
         equipo.caudal_nominal = None
         equipo.presion_diseno = None
+        equipo.presion_maxima = None
+        equipo.presion_sobrecarga = None
         equipo.rpm_nominal = None
         equipo.anio_fabricacion = None
         equipo.otros_datos_placa = None
@@ -37,6 +39,10 @@ def _aplicar_datos_bomba(equipo, form):
     equipo.caudal_nominal = float(caudal) if caudal else None
     presion = form.get("presion_diseno") or None
     equipo.presion_diseno = float(presion) if presion else None
+    presion_max = form.get("presion_maxima") or None
+    equipo.presion_maxima = float(presion_max) if presion_max else None
+    presion_sobrecarga = form.get("presion_sobrecarga") or None
+    equipo.presion_sobrecarga = float(presion_sobrecarga) if presion_sobrecarga else None
     rpm = form.get("rpm_nominal") or None
     equipo.rpm_nominal = int(float(rpm)) if rpm else None
     anio = form.get("anio_fabricacion") or None

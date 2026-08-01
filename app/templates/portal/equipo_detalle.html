@@ -25,7 +25,9 @@
                     </div>
                     <div class="row g-2 mb-3 small text-muted">
                         <div class="col-auto">Caudal: <strong class="text-body">{{ equipo.caudal_nominal if equipo.caudal_nominal else '-' }} GPM</strong></div>
-                        <div class="col-auto">Presión de diseño: <strong class="text-body">{{ equipo.presion_diseno if equipo.presion_diseno else '-' }} PSI</strong></div>
+                        <div class="col-auto">PSIG: <strong class="text-body">{{ equipo.presion_diseno if equipo.presion_diseno else '-' }}</strong></div>
+                        <div class="col-auto">PSI MAX: <strong class="text-body">{{ equipo.presion_maxima if equipo.presion_maxima else '-' }}</strong></div>
+                        <div class="col-auto">PSI 1.5: <strong class="text-body">{{ equipo.presion_sobrecarga if equipo.presion_sobrecarga else '-' }}</strong></div>
                         <div class="col-auto">RPM nominal: <strong class="text-body">{{ equipo.rpm_nominal or '-' }}</strong></div>
                         <div class="col-auto">Año fabricación: <strong class="text-body">{{ equipo.anio_fabricacion or '-' }}</strong></div>
                         <div class="col-auto">Tipo de motor: <strong class="text-body">{{ equipo.tipo_motor or 'Sin especificar' }}</strong></div>

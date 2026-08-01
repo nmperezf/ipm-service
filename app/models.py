@@ -561,19 +561,27 @@ class ItemVisita(db.Model):
 
     servicio_contrato_id es opcional: un ítem "suelto" (sin contrato, ver
     visitas.agregar_item) no tiene ServicioContrato y en cambio usa
-    nombre_libre — para visitas puntuales de clientes esporádicos que no
-    tienen contrato armado, o para agregar algo no contemplado en el
-    contrato durante una visita ya planificada."""
+    equipo_id (eligiendo de los equipos ya cargados a la instalación) y/o
+    nombre_libre (texto a mano, para algo que no es de un equipo puntual)
+    — para visitas puntuales de clientes esporádicos que no tienen
+    contrato armado, o para agregar algo no contemplado en el contrato
+    durante una visita ya planificada. Con equipo_id, el selector de
+    formularios se filtra por el tipo de ese equipo (igual que un
+    servicio de contrato con tipo_equipo_aplicable) y linkea directo al
+    formulario sin pasar por el paso de "elegir equipo" — ya se sabe
+    cuál es."""
 
     __tablename__ = "items_visita"
 
     id = db.Column(db.Integer, primary_key=True)
     visita_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=False)
     servicio_contrato_id = db.Column(db.Integer, db.ForeignKey("servicios_contrato.id"), nullable=True)
+    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True)
     nombre_libre = db.Column(db.String(200), nullable=True)
     estado = db.Column(db.String(30), default="Pendiente", nullable=False)
     observaciones = db.Column(db.Text)
 
+    equipo = db.relationship("Equipo", backref="items_visita")
     formularios = db.relationship("Formulario", backref="item_visita", lazy=True, cascade="all, delete-orphan")
     fotos = db.relationship("Foto", backref="item_visita", lazy=True, cascade="all, delete-orphan")
 
@@ -581,6 +589,8 @@ class ItemVisita(db.Model):
     def nombre_mostrado(self):
         if self.servicio:
             return self.servicio.nombre
+        if self.equipo:
+            return self.equipo.nombre
         return self.nombre_libre or "Ítem de visita"
 
     def __repr__(self):
@@ -620,21 +630,26 @@ class TipoFormulario(db.Model):
 
         return json.loads(self.schema_json) if self.schema_json else []
 
-    def aplica_a_servicio(self, servicio_contrato):
-        """True si este tipo de formulario debería ofrecerse para ese
-        servicio de un contrato. Sin tipo de equipo propio (formulario
-        general, ej. checklist mensual) aplica a cualquier servicio. Con
-        tipo de equipo, solo aplica si cae en la misma categoría que el
-        tipo de equipo del servicio (ver categoria_de_tipo_equipo) — si el
-        servicio no tiene tipo de equipo asignado, no se filtra nada
+    def aplica_a_tipo_equipo(self, tipo_equipo_aplicable):
+        """True si este tipo de formulario debería ofrecerse para un tipo
+        de equipo dado (el nombre tal cual, ej. "ECA" — ver TipoEquipo).
+        Sin tipo de equipo propio (formulario general, ej. checklist
+        mensual) aplica siempre. Con tipo de equipo, solo aplica si cae en
+        la misma categoría (ver categoria_de_tipo_equipo) — si no hay
+        ningún tipo de equipo de referencia, no se filtra nada
         (comportamiento de siempre)."""
         if not self.tipo_equipo_aplicable:
             return True
-        if not servicio_contrato.tipo_equipo_aplicable:
+        if not tipo_equipo_aplicable:
             return True
         return categoria_de_tipo_equipo(self.tipo_equipo_aplicable) == categoria_de_tipo_equipo(
-            servicio_contrato.tipo_equipo_aplicable
+            tipo_equipo_aplicable
         )
+
+    def aplica_a_servicio(self, servicio_contrato):
+        """Igual que aplica_a_tipo_equipo, para un servicio de un
+        contrato (ver ese método para el criterio)."""
+        return self.aplica_a_tipo_equipo(servicio_contrato.tipo_equipo_aplicable if servicio_contrato else None)
 
     def __repr__(self):
         return f"<TipoFormulario {self.nombre}>"
@@ -1038,7 +1053,9 @@ class Equipo(db.Model):
     modelo = db.Column(db.String(150), nullable=True)
     serie = db.Column(db.String(150), nullable=True)
     caudal_nominal = db.Column(db.Float, nullable=True)  # GPM
-    presion_diseno = db.Column(db.Float, nullable=True)  # PSI
+    presion_diseno = db.Column(db.Float, nullable=True)  # PSIG, a caudal nominal (100%)
+    presion_maxima = db.Column(db.Float, nullable=True)  # PSI MAX, a caudal 0% (churn)
+    presion_sobrecarga = db.Column(db.Float, nullable=True)  # PSI a 150% del caudal nominal
     rpm_nominal = db.Column(db.Integer, nullable=True)
     anio_fabricacion = db.Column(db.Integer, nullable=True)
     otros_datos_placa = db.Column(db.Text, nullable=True)

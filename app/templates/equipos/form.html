@@ -62,8 +62,16 @@
                                 <input type="number" step="any" name="caudal_nominal" class="form-control" value="{{ equipo.caudal_nominal or '' }}">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">Presión de diseño (PSI)</label>
+                                <label class="form-label">PSIG</label>
                                 <input type="number" step="any" name="presion_diseno" class="form-control" value="{{ equipo.presion_diseno or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">PSI MAX</label>
+                                <input type="number" step="any" name="presion_maxima" class="form-control" value="{{ equipo.presion_maxima or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">PSI 1.5</label>
+                                <input type="number" step="any" name="presion_sobrecarga" class="form-control" value="{{ equipo.presion_sobrecarga or '' }}">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">RPM nominal</label>

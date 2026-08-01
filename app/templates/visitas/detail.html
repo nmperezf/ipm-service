@@ -115,7 +115,9 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <h5 class="card-title mb-0">
                             {{ item.nombre_mostrado }}
-                            {% if item.servicio %}<small class="text-muted text-capitalize">({{ item.servicio.frecuencia }})</small>{% else %}<small class="text-muted">(ítem suelto)</small>{% endif %}
+                            {% if item.servicio %}<small class="text-muted text-capitalize">({{ item.servicio.frecuencia }})</small>
+                            {% elif item.equipo %}<small class="text-muted">({{ item.equipo.tipo }}{% if item.nombre_libre %} · {{ item.nombre_libre }}{% endif %})</small>
+                            {% else %}<small class="text-muted">(ítem suelto)</small>{% endif %}
                         </h5>
                         <div>
                             <span class="badge badge-{{ item.estado.replace(' ', '.') }}">{{ item.estado }}</span>
@@ -181,7 +183,11 @@
                             {% if tipos %}
                             <optgroup label="{{ nombre_categoria }}">
                                 {% for tipo in tipos %}
+                                {% if item.equipo %}
+                                <option value="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id, equipo_id=item.equipo_id) }}">{{ tipo.nombre }}</option>
+                                {% else %}
                                 <option value="{{ url_for('formularios.carga_masiva', item_id=item.id, tipo_formulario_id=tipo.id) }}">{{ tipo.nombre }}</option>
+                                {% endif %}
                                 {% endfor %}
                             </optgroup>
                             {% endif %}
@@ -189,7 +195,11 @@
                             {% if formularios_generales %}
                             <optgroup label="Otros formularios">
                                 {% for tipo in formularios_generales %}
+                                {% if item.equipo %}
+                                <option value="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id, equipo_id=item.equipo_id) }}">{{ tipo.nombre }}</option>
+                                {% else %}
                                 <option value="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id) }}">{{ tipo.nombre }}</option>
+                                {% endif %}
                                 {% endfor %}
                             </optgroup>
                             {% endif %}
@@ -258,8 +268,22 @@
 
             {% if puede_editar %}
             <form method="POST" action="{{ url_for('visitas.agregar_item', visita_id=visita.id) }}" class="row g-2 align-items-end mb-4">
-                <div class="col-auto" style="min-width: 280px;">
-                    <label class="form-label mb-1">+ Agregar ítem a la visita</label>
+                <div class="col-auto" style="min-width: 240px;">
+                    <label class="form-label mb-1">+ Agregar ítem a la visita — Equipo</label>
+                    <select name="equipo_id" class="form-select form-select-sm">
+                        <option value="">-- Sin equipo específico --</option>
+                        {% for categoria, equipos_cat in equipos_agrupados %}
+                        <optgroup label="{{ categoria }}">
+                            {% for eq in equipos_cat %}
+                            <option value="{{ eq.id }}">{{ eq.nombre }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">Si elegís un equipo, el formulario que corresponde va a estar pronto para cargar.</div>
+                </div>
+                <div class="col-auto" style="min-width: 240px;">
+                    <label class="form-label mb-1">Descripción (opcional si elegiste un equipo)</label>
                     <input type="text" name="nombre_libre" class="form-control form-control-sm" placeholder="Ej: Revisión general, matafuegos, etc.">
                 </div>
                 <div class="col-auto">
