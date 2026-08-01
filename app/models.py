@@ -472,7 +472,7 @@ class Visita(db.Model):
 
     items = db.relationship("ItemVisita", backref="visita", lazy=True, cascade="all, delete-orphan")
 
-    instalacion = db.relationship("Instalacion", backref=db.backref("visitas", lazy=True))
+    instalacion = db.relationship("Instalacion", backref=db.backref("visitas", lazy=True, cascade="all, delete-orphan"))
     cerrada_por = db.relationship("Usuario", backref="visitas_cerradas", foreign_keys=[cerrada_por_id])
     enviada_por = db.relationship("Usuario", backref="visitas_enviadas_revision", foreign_keys=[enviada_por_id])
 
@@ -878,7 +878,7 @@ class Presupuesto(db.Model):
     creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
 
     empresa = db.relationship("Empresa", backref="presupuestos")
-    observacion = db.relationship("Observacion", backref=db.backref("presupuesto", uselist=False))
+    observacion = db.relationship("Observacion", backref=db.backref("presupuesto", uselist=False, cascade="all, delete-orphan"))
     ot_correctiva = db.relationship("OrdenTrabajo", backref=db.backref("presupuesto_origen", uselist=False))
     creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
     auditoria = db.relationship(
@@ -1304,7 +1304,7 @@ class OrdenTrabajo(db.Model):
     fecha_apertura = db.Column(db.Date, default=date.today, nullable=False)
     fecha_cierre = db.Column(db.Date, nullable=True)
 
-    instalacion = db.relationship("Instalacion", backref="ordenes_trabajo")
+    instalacion = db.relationship("Instalacion", backref=db.backref("ordenes_trabajo", cascade="all, delete-orphan"))
     tecnico_usuario = db.relationship("Usuario", backref="ordenes_trabajo_asignadas")
     visita = db.relationship(
         "Visita", backref=db.backref("orden_trabajo", uselist=False, cascade="all, delete-orphan", single_parent=True)
