@@ -400,6 +400,9 @@ class ServicioContrato(db.Model):
     # formulario" de la visita para que solo ofrezca los tipos de formulario
     # del mismo tipo de equipo (por categoría, ver categoria_de_tipo_equipo).
     tipo_equipo_aplicable = db.Column(db.String(40), nullable=True)
+    # Copiado de ServicioTipo.es_curva_caudal al agregar el servicio (ver
+    # contratos.nuevo_servicio) — mismo criterio que tipo_equipo_aplicable.
+    es_curva_caudal = db.Column(db.Boolean, default=False, nullable=False)
 
     items = db.relationship("ItemVisita", backref="servicio", lazy=True, cascade="all, delete-orphan")
 
@@ -656,6 +659,11 @@ class ServicioTipo(db.Model):
     schema_json = db.Column(db.Text, nullable=False)
     por_equipo = db.Column(db.Boolean, default=False, nullable=False)
     tipo_equipo_aplicable = db.Column(db.String(40), nullable=True)  # nombre de un TipoEquipo
+    # Si está marcado, agregar este servicio a un contrato no genera un
+    # TipoFormulario genérico — en la visita, el ítem correspondiente ofrece
+    # directamente "Cargar ensayo de curva de caudal" (ver visitas.detalle /
+    # curvas.ensayo_nuevo) en vez del selector de formularios de siempre.
+    es_curva_caudal = db.Column(db.Boolean, default=False, nullable=False)
 
     empresa = db.relationship("Empresa", backref=db.backref("servicios_tipo", cascade="all, delete-orphan"))
 
@@ -1159,6 +1167,14 @@ class EnsayoCaudal(db.Model):
     creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
+    # Si el ensayo se cargó desde el ítem de una visita programada (servicio
+    # de contrato con es_curva_caudal=True), queda linkeado acá — nullable
+    # porque el alta suelta desde la ficha del equipo (fuera de una visita)
+    # sigue funcionando igual que siempre. No cascadea: si se borra el
+    # ítem/visita, el ensayo (dato real medido en la bomba) se conserva,
+    # solo pierde la referencia a qué visita lo generó.
+    item_visita_id = db.Column(db.Integer, db.ForeignKey("items_visita.id"), nullable=True)
+
     # Firma del Jefe/Administrador, independiente del cálculo NFPA25 (ver
     # resultado_nfpa25): el técnico carga el ensayo como Pendiente, y solo
     # Administrador/Jefe puede validarlo o rechazarlo — mismo patrón que
@@ -1184,6 +1200,7 @@ class EnsayoCaudal(db.Model):
     )
     creado_por = db.relationship("Usuario", backref="ensayos_caudal_creados", foreign_keys=[creado_por_id])
     validado_por = db.relationship("Usuario", backref="ensayos_caudal_validados", foreign_keys=[validado_por_id])
+    item_visita = db.relationship("ItemVisita", backref="ensayos_caudal")
 
     def validar(self, usuario_id):
         self.estado_revision = "Validado"

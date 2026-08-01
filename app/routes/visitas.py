@@ -13,6 +13,7 @@ from app.auth_utils import (
 from app import db
 from app.models import (
     ESTADOS_VISITA,
+    TIPOS_BOMBA_PRINCIPAL,
     Formulario,
     Instalacion,
     ItemVisita,
@@ -167,8 +168,20 @@ def detalle(visita_id):
     # servicios configurados aparece para todos, sin romper lo de siempre.
     # Un ítem suelto (sin contrato, item.servicio es None) no tiene
     # tipo_equipo_aplicable de dónde filtrar, así que ofrece todos.
+    # Un ítem de curva de caudal no usa el selector de formularios — ofrece
+    # directamente las bombas de la instalación (filtradas por
+    # tipo_equipo_aplicable si el servicio lo definió) para cargar el
+    # ensayo de cada una (ver curvas.ensayo_nuevo).
     formularios_por_item = {}
+    equipos_bomba_por_item = {}
     for item in visita.items:
+        if item.servicio and item.servicio.es_curva_caudal:
+            tipo_filtro = item.servicio.tipo_equipo_aplicable
+            tipos_bomba = (tipo_filtro,) if tipo_filtro else TIPOS_BOMBA_PRINCIPAL
+            equipos_bomba_por_item[item.id] = [
+                e for e in visita.instalacion.equipos if e.activo and e.tipo in tipos_bomba
+            ]
+            continue
         tipos_item = [t for t in tipos if not item.servicio or t.aplica_a_servicio(item.servicio)]
         grupos, generales = _agrupar_tipos_formulario(tipos_item)
         formularios_por_item[item.id] = {"grupos": grupos, "generales": generales}
@@ -185,6 +198,7 @@ def detalle(visita_id):
         "visitas/detail.html",
         visita=visita,
         formularios_por_item=formularios_por_item,
+        equipos_bomba_por_item=equipos_bomba_por_item,
         deficiencias_abiertas=deficiencias_abiertas,
     )
 
@@ -276,7 +290,7 @@ def eliminar_item(item_id):
     visita = item.visita
     verificar_escritura_cliente(visita.instalacion.cliente)
     verificar_visita_editable(visita)
-    if item.servicio_contrato_id or item.formularios or item.fotos:
+    if item.servicio_contrato_id or item.formularios or item.fotos or item.ensayos_caudal:
         flash("Ese ítem ya tiene datos cargados o viene del contrato — no se puede eliminar.", "danger")
         return redirect(url_for("visitas.detalle", visita_id=visita.id))
     nombre = item.nombre_mostrado

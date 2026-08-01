@@ -104,9 +104,12 @@
             {% endif %}
 
             {% for item in visita.items %}
+            {% set es_curva_caudal_item = item.id in equipos_bomba_por_item %}
+            {% if not es_curva_caudal_item %}
             {% set grupos_formulario = formularios_por_item[item.id].grupos %}
             {% set formularios_generales = formularios_por_item[item.id].generales %}
             {% set hay_tipos_formulario = formularios_generales|length + (grupos_formulario.values()|map('length')|sum) > 0 %}
+            {% endif %}
             <div class="card mb-3">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
@@ -136,6 +139,30 @@
                         </div>
                     </div>
 
+                    {% if es_curva_caudal_item %}
+                    <h6 class="mt-3">Ensayos de curva de caudal</h6>
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        {% for e in item.ensayos_caudal %}
+                        <a href="{{ url_for('curvas.ensayo_detalle', equipo_id=e.equipo_id, ensayo_id=e.id) }}" class="btn btn-outline-dark btn-sm">
+                            <i class="bi bi-graph-up"></i> {{ e.equipo.nombre }} — {{ e.fecha_ensayo.strftime('%d/%m/%Y') }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% if puede_editar %}
+                    {% set equipos_bomba = equipos_bomba_por_item[item.id] %}
+                    {% if equipos_bomba %}
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        {% for equipo in equipos_bomba %}
+                        <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id, item_id=item.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-graph-up"></i> Cargar ensayo — {{ equipo.nombre }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted small mb-3">Esta instalación no tiene ninguna bomba cargada como equipo todavía.</p>
+                    {% endif %}
+                    {% endif %}
+                    {% else %}
                     <h6 class="mt-3">Formularios</h6>
                     <div class="d-flex flex-wrap gap-2 mb-2">
                         {% for f in item.formularios %}
@@ -170,6 +197,7 @@
                     </div>
                     {% else %}
                     <p class="text-muted small mb-3">Este cliente todavía no tiene tipos de formulario configurados.</p>
+                    {% endif %}
                     {% endif %}
                     {% endif %}
 

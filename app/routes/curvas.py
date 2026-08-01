@@ -10,7 +10,7 @@ from app.auth_utils import (
     verificar_escritura_cliente,
     verificar_password_confirmacion,
 )
-from app.models import TIPOS_BOMBA_PRINCIPAL, CurvaFabrica, EnsayoCaudal, Equipo
+from app.models import TIPOS_BOMBA_PRINCIPAL, CurvaFabrica, EnsayoCaudal, Equipo, ItemVisita
 from app.notificaciones import notificar_gestion, notificar_usuario
 from app.pdf_curva_caudal import generar_pdf_ensayo
 from app.utils import calcular_presion_ajustada, curva_suavizada, validar_nfpa25
@@ -143,18 +143,34 @@ def ensayos(equipo_id):
     )
 
 
+def _item_visita_del_ensayo(equipo, item_id):
+    """Ítem de visita (curva de caudal) al que se le va a linkear el
+    ensayo, si vino de ese flujo — valida que sea de la misma instalación
+    para que no se pueda colgar un ensayo de un ítem ajeno por URL."""
+    if not item_id:
+        return None
+    item = ItemVisita.query.get_or_404(item_id)
+    if item.visita.instalacion_id != equipo.instalacion_id:
+        abort(404)
+    return item
+
+
 @curvas_bp.route("/<int:equipo_id>/ensayo/nuevo", methods=["GET", "POST"])
 @rol_requerido("Administrador", "Jefe", "Técnico")
 def ensayo_nuevo(equipo_id):
     equipo = Equipo.query.get_or_404(equipo_id)
     _verificar_es_bomba(equipo)
     verificar_escritura_cliente(equipo.instalacion.cliente)
+    item_id = request.values.get("item_id", type=int)
+    item = _item_visita_del_ensayo(equipo, item_id)
 
     if not equipo.curva_fabrica:
         flash(
             f"'{equipo.nombre}' todavía no tiene curva de fábrica cargada — cargala antes de registrar un ensayo.",
             "danger",
         )
+        if item:
+            return redirect(url_for("visitas.detalle", visita_id=item.visita_id))
         return redirect(url_for("equipos.detalle", equipo_id=equipo.id))
 
     if request.method == "POST":
@@ -163,18 +179,23 @@ def ensayo_nuevo(equipo_id):
             datos_puntos = _parse_puntos_ensayo(request.form)
         except (KeyError, ValueError):
             flash("Completá los 4 puntos (RPM, presión de descarga y succión) con valores numéricos.", "danger")
-            return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica, ensayo=None)
+            return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica, ensayo=None, item=item)
 
         if EnsayoCaudal.query.filter_by(equipo_id=equipo.id, fecha_ensayo=fecha_ensayo).first():
             flash(f"Ya hay un ensayo cargado para '{equipo.nombre}' con fecha {fecha_ensayo.strftime('%d/%m/%Y')}.", "danger")
-            return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica, ensayo=None)
+            return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica, ensayo=None, item=item)
 
-        ensayo = EnsayoCaudal(equipo_id=equipo.id, fecha_ensayo=fecha_ensayo, creado_por_id=current_user.id)
+        ensayo = EnsayoCaudal(
+            equipo_id=equipo.id, fecha_ensayo=fecha_ensayo, creado_por_id=current_user.id,
+            item_visita_id=item.id if item else None,
+        )
         _aplicar_puntos_ensayo(ensayo, datos_puntos)
         _aplicar_condiciones_prueba(ensayo, request.form)
         ensayo.comentarios = request.form.get("comentarios") or None
         db.session.add(ensayo)
         db.session.flush()
+        if item:
+            item.visita.marcar_item_cumplido(item.id)
         notificar_gestion(
             empresa_id=current_user.empresa_id,
             tipo="ensayo_nuevo",
@@ -185,9 +206,11 @@ def ensayo_nuevo(equipo_id):
         )
         db.session.commit()
         flash(f"Ensayo del {fecha_ensayo.strftime('%d/%m/%Y')} guardado para '{equipo.nombre}'.", "success")
+        if item:
+            return redirect(url_for("visitas.detalle", visita_id=item.visita_id))
         return redirect(url_for("curvas.ensayo_detalle", equipo_id=equipo.id, ensayo_id=ensayo.id))
 
-    return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica, ensayo=None)
+    return render_template("equipos/formulario_ensayo.html", equipo=equipo, curva=equipo.curva_fabrica, ensayo=None, item=item)
 
 
 @curvas_bp.route("/<int:equipo_id>/ensayo/<int:ensayo_id>/editar", methods=["GET", "POST"])
