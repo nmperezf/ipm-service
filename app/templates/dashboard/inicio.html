@@ -191,7 +191,7 @@
                 <summary>
                     <span class="textos">
                         <span class="etiqueta">Mensajes internos</span>
-                        <span class="sub">chat interno con el resto del equipo</span>
+                        <span class="sub">chat con el equipo — y recordatorios para vos mismo</span>
                     </span>
                     {% if mensajes_abiertos %}<span class="badge badge-Urgente">{{ mensajes_abiertos|length }} sin resolver</span>{% endif %}
                     <span class="flecha">▶</span>
@@ -201,6 +201,7 @@
                         <div class="col-md-3">
                             <select name="destinatario_id" class="form-select" required>
                                 <option value="">-- Para quién --</option>
+                                <option value="{{ current_user.id }}">📌 A mí mismo (recordatorio)</option>
                                 {% for u in destinatarios_mensaje %}
                                 <option value="{{ u.id }}">{{ u.nombre_completo or u.username }} ({{ u.rol }})</option>
                                 {% endfor %}
@@ -232,21 +233,26 @@
                     <div class="d-flex justify-content-end mb-2">
                         <a href="{{ url_for('mensajes.resueltos') }}" class="btn btn-sm btn-outline-secondary">Ver resueltos</a>
                     </div>
-                    <div class="list-group">
+                    <div class="log-prioridad">
                         {% for m in mensajes_abiertos %}
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>
+                        <details class="card-expandible {{ m.severidad }}" id="mensaje-{{ m.id }}">
+                            <summary>
+                                <span class="textos">
+                                    <span class="etiqueta">{{ m.titulo }}</span>
+                                    <span class="sub">
+                                        {% if m.es_para_mi %}Recordatorio personal
+                                        {% elif m.remitente_id == current_user.id %}Para {{ m.destinatario.nombre_completo or m.destinatario.username }}
+                                        {% else %}De {{ m.remitente.nombre_completo or m.remitente.username }}{% endif %}
+                                        {% if m.cliente %} · {{ m.cliente.nombre }}{% endif %}
+                                    </span>
+                                </span>
+                                {% if m.es_para_mi %}<span class="desglose-clasif"><span class="mini-chip">📌 para mí</span></span>{% endif %}
                                 <span class="badge badge-{{ m.prioridad }}">{{ m.prioridad }}</span>
-                                {% if m.remitente_id == current_user.id %}
-                                <span class="text-muted small">Para {{ m.destinatario.nombre_completo or m.destinatario.username }}:</span>
-                                {% else %}
-                                <span class="text-muted small">De {{ m.remitente.nombre_completo or m.remitente.username }}:</span>
-                                {% endif %}
-                                {{ m.titulo }}
-                                {% if m.cliente %} — <a href="{{ url_for('clientes.detalle', cliente_id=m.cliente_id) }}">{{ m.cliente.nombre }}</a>{% endif %}
-                                <small class="text-muted">({{ m.fecha_carga.strftime('%d/%m/%Y') }})</small>
-                            </span>
-                            <span>
+                                <span class="hora">{{ m.fecha_carga.strftime('%d/%m/%Y') }}</span>
+                                <span class="flecha">▶</span>
+                            </summary>
+                            <div style="padding: 0 1.1rem 1rem; display: flex; gap: .5rem; flex-wrap: wrap;">
+                                {% if m.cliente %}<a href="{{ url_for('clientes.detalle', cliente_id=m.cliente_id) }}" class="btn btn-sm btn-outline-secondary">Ver {{ m.cliente.nombre }}</a>{% endif %}
                                 <form method="POST" action="{{ url_for('mensajes.resolver', mensaje_id=m.id) }}" class="d-inline">
                                     <button type="submit" class="btn btn-sm btn-outline-success">Resuelto</button>
                                 </form>
@@ -254,8 +260,8 @@
                                       onsubmit="return confirm('¿Eliminar este mensaje?');">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                                 </form>
-                            </span>
-                        </div>
+                            </div>
+                        </details>
                         {% else %}
                         <p class="text-muted mb-0">No hay mensajes abiertos.</p>
                         {% endfor %}

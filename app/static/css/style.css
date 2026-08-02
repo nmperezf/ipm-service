@@ -1060,6 +1060,9 @@ a.fila-log:hover { box-shadow: var(--shadow-doc); color: inherit; }
 .fila-log.alerta, details.card-expandible.alerta { border-left-color: var(--bs-warning); }
 .fila-log.alerta .num, details.card-expandible.alerta summary .num,
 .fila-log.alerta .etiqueta, details.card-expandible.alerta summary .etiqueta { color: var(--bs-warning); }
+.fila-log.info, details.card-expandible.info { border-left-color: var(--bs-info); }
+.fila-log.info .num, details.card-expandible.info summary .num,
+.fila-log.info .etiqueta, details.card-expandible.info summary .etiqueta { color: var(--bs-info); }
 
 .fila-log .num { font-family: var(--font-mono); font-weight: 700; font-size: 1.5rem; min-width: 2.2ch; text-align: right; flex-shrink: 0; }
 .fila-log .textos { flex: 1; min-width: 0; }
@@ -1076,6 +1079,7 @@ details.card-expandible summary .num { font-family: var(--font-mono); font-weigh
 details.card-expandible summary .textos { flex: 1; display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
 details.card-expandible summary .etiqueta { font-size: .95rem; font-weight: 600; }
 details.card-expandible summary .sub { font-size: .8rem; color: var(--ink-muted); }
+details.card-expandible summary .hora { font-family: var(--font-mono); font-size: .74rem; color: var(--ink-faint); white-space: nowrap; flex-shrink: 0; }
 details.card-expandible summary .flecha { color: var(--ink-faint); transition: transform .15s; flex-shrink: 0; }
 details.card-expandible[open] summary .flecha { transform: rotate(90deg); }
 

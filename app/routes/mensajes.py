@@ -22,8 +22,9 @@ def _verificar_participante(mensaje):
 @rol_requerido("Administrador", "Jefe", "Técnico")
 def nuevo():
     destinatario = Usuario.query.get_or_404(int(request.form["destinatario_id"]))
-    if destinatario.empresa_id != current_user.empresa_id or destinatario.id == current_user.id:
+    if destinatario.empresa_id != current_user.empresa_id:
         abort(403)
+    es_para_mi = destinatario.id == current_user.id
     cliente_id = request.form.get("cliente_id") or None
     mensaje = Mensaje(
         empresa_id=current_user.empresa_id,
@@ -35,17 +36,25 @@ def nuevo():
     )
     db.session.add(mensaje)
     db.session.flush()
+    titulo_notif = (
+        f"Recordatorio: {mensaje.titulo}"
+        if es_para_mi
+        else f"Mensaje de {current_user.nombre_completo or current_user.username}: {mensaje.titulo}"
+    )
     notificar_usuario(
         destinatario,
         tipo="mensaje_nuevo",
-        titulo=f"Mensaje de {current_user.nombre_completo or current_user.username}: {mensaje.titulo}",
+        titulo=titulo_notif,
         empresa_id=current_user.empresa_id,
         cliente_id=mensaje.cliente_id,
-        enlace=url_for("dashboard.inicio"),
-        remitente=current_user,
+        enlace=url_for("dashboard.inicio", _anchor=f"mensaje-{mensaje.id}"),
+        # Sin remitente para el recordatorio personal: notificar_usuario no
+        # avisa si destinatario == remitente (evita que un evento propio se
+        # autonotifique), y acá sí queremos el aviso.
+        remitente=None if es_para_mi else current_user,
     )
     db.session.commit()
-    flash("Mensaje enviado.", "success")
+    flash("Recordatorio guardado." if es_para_mi else "Mensaje enviado.", "success")
     return redirect(url_for("dashboard.inicio"))
 
 

@@ -226,6 +226,25 @@
             a.addEventListener('click', cerrar);
         });
     })();
+
+    (function () {
+        // Llegar por un link de notificación a algo adentro de un <details>
+        // cerrado (ej. un mensaje puntual en "Mensajes internos") — el navegador
+        // solo auto-abre un <details> cerrado cuando el objetivo del anchor está
+        // ADENTRO de él, no cuando el objetivo ES el <details> en sí, así que acá
+        // se cubre ese caso: abre el propio elemento (si es un <details>) y toda
+        // la cadena de <details> ancestros, y recién ahí hace scroll.
+        if (!location.hash) { return; }
+        var target;
+        try { target = document.querySelector(location.hash); } catch (e) { return; }
+        if (!target) { return; }
+        var el = target.tagName === 'DETAILS' ? target : target.closest('details');
+        while (el) {
+            el.open = true;
+            el = el.parentElement ? el.parentElement.closest('details') : null;
+        }
+        target.scrollIntoView({ block: 'center' });
+    })();
 </script>
 </body>
 </html>

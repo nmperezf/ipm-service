@@ -1434,9 +1434,11 @@ class RepuestoUsado(db.Model):
 class Mensaje(db.Model):
     """Nota dirigida de un usuario a otro (ej. Jefe -> Técnico o
     Técnico -> Jefe), con destinatario explícito — no es un tablón
-    compartido. Puede asociarse a un cliente opcionalmente, con una
-    prioridad (misma escala que las OT). Antes 'Recordatorio': ese nombre
-    ya no describe bien que ahora tiene remitente y destinatario."""
+    compartido. También puede ser un recordatorio personal (remitente_id
+    == destinatario_id, ver mensajes.nuevo) para cualquier rol — no es
+    solo chat de equipo. Puede asociarse a un cliente opcionalmente, con
+    una prioridad (misma escala que las OT). Antes 'Recordatorio': ese
+    nombre ya no describe bien que ahora tiene remitente y destinatario."""
 
     __tablename__ = "mensajes"
 
@@ -1455,6 +1457,18 @@ class Mensaje(db.Model):
     empresa = db.relationship("Empresa", backref=db.backref("mensajes", cascade="all, delete-orphan"))
     remitente = db.relationship("Usuario", backref=db.backref("mensajes_enviados", cascade="all, delete-orphan"), foreign_keys=[remitente_id])
     destinatario = db.relationship("Usuario", backref=db.backref("mensajes_recibidos", cascade="all, delete-orphan"), foreign_keys=[destinatario_id])
+
+    @property
+    def es_para_mi(self):
+        """True si es un recordatorio personal (mismo usuario como
+        remitente y destinatario) en vez de un mensaje a otra persona."""
+        return self.remitente_id == self.destinatario_id
+
+    @property
+    def severidad(self):
+        """Clase de color del ribete de la tarjeta (ver .card-expandible en
+        style.css), según la prioridad — misma escala que las OT."""
+        return {"Urgente": "critico", "Alta": "alerta", "Media": "info"}.get(self.prioridad, "")
 
     def __repr__(self):
         return f"<Mensaje {self.titulo}>"
@@ -1475,6 +1489,44 @@ TIPOS_NOTIFICACION = {
     "ensayo_validado": "Ensayo validado",
     "ensayo_rechazado": "Ensayo rechazado",
     "observacion_aprobada": "Observación aprobada",
+}
+
+# Para el título de una tarjeta agrupada ("3 formularios cargados"): la
+# forma en plural de cada tipo — lo que no está acá no suele agruparse
+# (ver notificaciones._agrupar), así que cae en descripcion_tipo tal cual.
+TIPOS_NOTIFICACION_PLURAL = {
+    "ensayo_nuevo": "nuevos ensayos de curva de caudal",
+    "observacion_nueva": "observaciones nuevas",
+    "equipo_nuevo": "equipos nuevos",
+    "formulario_cargado": "formularios cargados",
+    "ot_asignada": "órdenes de trabajo asignadas",
+    "ensayo_validado": "ensayos validados",
+    "ensayo_rechazado": "ensayos rechazados",
+    "observacion_aprobada": "observaciones aprobadas",
+}
+
+# Clase de color del ribete de la tarjeta (ver .card-expandible en
+# style.css) — lo que no está acá cae en "info" (azul, informativo/FYI).
+SEVERIDAD_NOTIFICACION = {
+    "observacion_nueva": "critico",
+    "ensayo_rechazado": "critico",
+    "ensayo_nuevo": "alerta",
+    "visita_revision": "alerta",
+}
+
+# Texto del link de cada tarjeta/fila en notificaciones/list.html — el
+# verbo concreto de la acción que corresponde a ese tipo de evento.
+VERBOS_NOTIFICACION = {
+    "ensayo_nuevo": "Validar ahora →",
+    "visita_revision": "Ver visita →",
+    "observacion_nueva": "Ver observación →",
+    "equipo_nuevo": "Ver equipo →",
+    "formulario_cargado": "Ver visita →",
+    "mensaje_nuevo": "Ir al mensaje →",
+    "ot_asignada": "Ver OT →",
+    "ensayo_validado": "Ver ensayo →",
+    "ensayo_rechazado": "Ver ensayo →",
+    "observacion_aprobada": "Ver observación →",
 }
 
 
@@ -1504,6 +1556,18 @@ class Notificacion(db.Model):
     @property
     def descripcion_tipo(self):
         return TIPOS_NOTIFICACION.get(self.tipo, self.tipo)
+
+    @property
+    def descripcion_tipo_plural(self):
+        return TIPOS_NOTIFICACION_PLURAL.get(self.tipo, self.descripcion_tipo)
+
+    @property
+    def severidad(self):
+        return SEVERIDAD_NOTIFICACION.get(self.tipo, "info")
+
+    @property
+    def verbo_accion(self):
+        return VERBOS_NOTIFICACION.get(self.tipo, "Ver →")
 
     def __repr__(self):
         return f"<Notificacion {self.tipo} -> {self.destinatario_id}>"
