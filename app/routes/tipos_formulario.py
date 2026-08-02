@@ -19,6 +19,11 @@ def nuevo(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
     verificar_escritura_cliente(cliente)
     volver_a = request.values.get("volver_a") or url_for("clientes.detalle", cliente_id=cliente.id)
+    # Al venir de un ítem de visita ligado a un equipo (ver visitas.detalle),
+    # se sugiere ese tipo de equipo para no tener que adivinarlo — evita
+    # crear un tipo de formulario mal etiquetado (ej. tipo_equipo_aplicable
+    # que no corresponde al nombre del formulario).
+    tipo_equipo_sugerido = request.values.get("tipo_equipo_aplicable") or None
 
     if request.method == "POST":
         campos = armar_campos_desde_formulario(request.form)
@@ -26,14 +31,14 @@ def nuevo(cliente_id):
             flash("Agregá al menos un campo antes de guardar.", "danger")
             return render_template(
                 "tipos_formulario/form.html", tipo=None, cliente=cliente, tipos_equipo=nombres_tipos_equipo(),
-                tipos_campo=TIPOS_CAMPO, volver_a=volver_a,
+                tipos_campo=TIPOS_CAMPO, volver_a=volver_a, tipo_equipo_sugerido=tipo_equipo_sugerido,
             )
 
         if TipoFormulario.query.filter_by(cliente_id=cliente.id, nombre=request.form["nombre"]).first():
             flash(f"Este cliente ya tiene un tipo de formulario llamado '{request.form['nombre']}'.", "danger")
             return render_template(
                 "tipos_formulario/form.html", tipo=None, cliente=cliente, tipos_equipo=nombres_tipos_equipo(),
-                tipos_campo=TIPOS_CAMPO, volver_a=volver_a,
+                tipos_campo=TIPOS_CAMPO, volver_a=volver_a, tipo_equipo_sugerido=tipo_equipo_sugerido,
             )
 
         tipo_formulario = TipoFormulario(
@@ -51,7 +56,7 @@ def nuevo(cliente_id):
 
     return render_template(
         "tipos_formulario/form.html", tipo=None, cliente=cliente, tipos_equipo=nombres_tipos_equipo(),
-        tipos_campo=TIPOS_CAMPO, volver_a=volver_a,
+        tipos_campo=TIPOS_CAMPO, volver_a=volver_a, tipo_equipo_sugerido=tipo_equipo_sugerido,
     )
 
 

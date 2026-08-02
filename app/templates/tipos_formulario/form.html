@@ -29,7 +29,7 @@
                     <div class="card-body">
                         <div class="form-check mb-2">
                             <input type="checkbox" name="por_equipo" class="form-check-input" id="por_equipo"
-                                   {% if tipo and tipo.por_equipo %}checked{% endif %} onchange="toggleTipoEquipo()">
+                                   {% if (tipo and tipo.por_equipo) or tipo_equipo_sugerido %}checked{% endif %} onchange="toggleTipoEquipo()">
                             <label class="form-check-label" for="por_equipo">
                                 Se completa una vez por cada equipo (ej: un checklist por cada BIE, por cada ECA)
                             </label>
@@ -38,9 +38,10 @@
                             <label class="form-label">Tipo de equipo al que aplica</label>
                             <select name="tipo_equipo_aplicable" class="form-select" style="max-width: 300px;">
                                 {% for t in tipos_equipo %}
-                                <option value="{{ t }}" {% if tipo and tipo.tipo_equipo_aplicable == t %}selected{% endif %}>{{ t }}</option>
+                                <option value="{{ t }}" {% if (tipo and tipo.tipo_equipo_aplicable == t) or (not tipo and tipo_equipo_sugerido == t) %}selected{% endif %}>{{ t }}</option>
                                 {% endfor %}
                             </select>
+                            {% if tipo_equipo_sugerido %}<div class="form-text">Sugerido a partir del equipo desde el que veniste. Cambialo si no corresponde.</div>{% endif %}
                         </div>
                     </div>
                 </div>

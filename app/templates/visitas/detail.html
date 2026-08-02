@@ -206,7 +206,14 @@
                         </select>
                     </div>
                     {% else %}
-                    <p class="text-muted small mb-3">Este cliente todavía no tiene tipos de formulario configurados.</p>
+                    <p class="text-muted small mb-3">
+                        {% if item.equipo %}
+                        Todavía no hay un tipo de formulario para equipos "{{ item.equipo.tipo }}" en este cliente.
+                        {% else %}
+                        Este cliente todavía no tiene tipos de formulario configurados.
+                        {% endif %}
+                        <a href="{{ url_for('tipos_formulario.nuevo', cliente_id=visita.instalacion.cliente_id, tipo_equipo_aplicable=item.equipo.tipo if item.equipo else None, volver_a=url_for('visitas.detalle', visita_id=visita.id)) }}">Crear uno</a>.
+                    </p>
                     {% endif %}
                     {% endif %}
                     {% endif %}
