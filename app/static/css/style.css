@@ -170,7 +170,23 @@ body {
     display: flex;
     flex-direction: column;
 }
-body > .container {
+/* Encadenado flex (body > .app-shell > .zona-contenido > .container-fluid) para
+   que el pie de página quede siempre al fondo de la pantalla, incluso con
+   poco contenido — ver .app-shell / .sidebar-derecho para el layout de
+   la barra lateral en desktop (≥992px), que usa flex-direction:row acá
+   sin romper esta cadena. */
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto;
+}
+.zona-contenido {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto;
+    min-width: 0;
+}
+.zona-contenido > .container-fluid {
     flex: 1 0 auto;
 }
 
@@ -285,52 +301,60 @@ small, .small, .text-muted {
 }
 
 /* ---- Panel lateral (PC, ≥992px) -------------------------------------------
-   Reemplaza los links horizontales por un cajón que se desliza desde la
-   derecha — evita que la navbar siga rompiéndose a medida que se suman
-   secciones. Por debajo de 992px sigue el patrón de siempre (navbar-toggler
-   + colapsable arriba, barra de accesos abajo), sin cambios. */
+   Barra lateral fija (no un cajón modal): siempre visible en pantallas
+   grandes, con opción de ocultarla para aprovechar todo el ancho (estado
+   guardado en localStorage, ver base.html). Por debajo de 992px no se
+   renderiza (d-none d-lg-flex) — ahí sigue el patrón de siempre: navbar +
+   colapsable arriba, barra de accesos abajo, sin cambios. */
 
-.sidebar-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.45);
-    z-index: 1040;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity .2s ease;
+@media (min-width: 992px) {
+    .app-shell { flex-direction: row; align-items: flex-start; }
 }
-.sidebar-overlay.visible {
-    opacity: 1;
-    visibility: visible;
-}
+
 .sidebar-derecho {
-    position: fixed;
-    top: 56px;
-    right: 0;
-    height: calc(100vh - 56px);
-    width: 328px;
-    max-width: 88vw;
-    background: #000000;
-    z-index: 1045;
     flex-direction: column;
-    transform: translateX(100%);
-    transition: transform .25s ease;
-    box-shadow: -4px 0 24px rgba(0,0,0,.3);
+    background: #000000;
+    width: 264px;
+    flex-shrink: 0;
 }
-.sidebar-derecho.abierto {
-    transform: translateX(0);
+@media (min-width: 992px) {
+    .sidebar-derecho {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        border-right: 1px solid rgba(255,255,255,.08);
+        transition: width .18s ease, opacity .18s ease;
+        overflow: hidden;
+    }
+    html.sidebar-oculta .sidebar-derecho {
+        width: 0;
+        opacity: 0;
+        border-right: none;
+    }
 }
 .sidebar-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 1.5rem 1.4rem 1.2rem;
+    padding: 1.3rem 1.4rem 1.1rem;
     border-bottom: 1px solid rgba(255,255,255,.1);
+    white-space: nowrap;
 }
+.sidebar-marca {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: .98rem;
+    color: #fff;
+    margin-bottom: .9rem;
+}
+.sidebar-marca .brand-mark { height: 24px; width: auto; }
 .sidebar-usuario {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 1.15rem;
+    font-size: 1rem;
     letter-spacing: -.01em;
     color: #fff;
 }
@@ -371,6 +395,7 @@ small, .small, .text-muted {
     padding: .6rem 0;
     overflow-y: auto;
     flex: 1;
+    white-space: nowrap;
 }
 .sidebar-nav .nav-item {
     margin: 0;
@@ -415,6 +440,7 @@ small, .small, .text-muted {
 .sidebar-footer {
     padding: 1.1rem 1.4rem calc(1.1rem + env(safe-area-inset-bottom));
     border-top: 1px solid rgba(255,255,255,.1);
+    white-space: nowrap;
 }
 .sidebar-footer .sidebar-link {
     padding: .4rem 0;
@@ -425,6 +451,26 @@ small, .small, .text-muted {
     background: none;
     border-left-color: transparent;
 }
+
+/* Franja utilitaria (tema + notificaciones) arriba del contenido en desktop
+   — con la navbar de arriba oculta a partir de 992px, esto es lo que la
+   reemplaza. El botón para volver a mostrar la barra lateral vive acá
+   también, oculto salvo cuando la barra está escondida. */
+.barra-utilitaria { display: none; }
+@media (min-width: 992px) {
+    .barra-utilitaria {
+        display: flex; align-items: center; gap: .2rem; padding: .7rem 1.4rem 0;
+    }
+    #sidebar-mostrar { display: none; }
+    html.sidebar-oculta #sidebar-mostrar { display: flex; }
+}
+.btn-utilitario {
+    background: none; border: none; color: var(--ink-muted); width: 2.15rem; height: 2.15rem;
+    border-radius: .4rem; display: flex; align-items: center; justify-content: center;
+    font-size: 1.05rem; position: relative; cursor: pointer; flex-shrink: 0;
+}
+.btn-utilitario:hover { background: var(--surface-muted); color: var(--ink); }
+.btn-utilitario .punto-no-leido-navbar { border-color: var(--surface); }
 
 /* ---- Cards --------------------------------------------------------------- */
 
@@ -1019,6 +1065,23 @@ html[data-bs-theme="dark"] .chip-secondary { background: #232734; color: #8A93A0
 .saludo-inicio { font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; letter-spacing: -.01em; margin-bottom: 1.4rem; }
 .saludo-inicio .fecha { font-family: var(--font-mono); font-weight: 500; font-size: .85rem; color: var(--ink-muted); margin-left: .6rem; }
 
+/* ==========================================================================
+   Página ancha — alternativa a "hoja de documento" para pantallas que se
+   benefician de usar todo el ancho (Inicio, Órdenes de trabajo): sin el
+   recuadro centrado de 1100px, con más aire a los costados en vez de una
+   tarjeta flotando en medio de la pantalla.
+   ========================================================================== */
+
+.pagina-ancha { padding: 1.6rem 2rem 3rem; max-width: 1800px; margin: 0 auto; }
+
+.grid-inicio { display: grid; grid-template-columns: 1fr; gap: 1.6rem; align-items: start; }
+@media (min-width: 1100px) {
+    .grid-inicio { grid-template-columns: minmax(0, 1fr) 340px; }
+}
+.columna-principal { min-width: 0; }
+.columna-lateral { min-width: 0; display: flex; flex-direction: column; gap: 1.6rem; }
+
+
 /* ---- Tarjetas de atención (usadas fuera de Inicio: cliente, instalación,
    inventario, OT, presupuesto, portal) --------------------------------------- */
 
@@ -1092,15 +1155,26 @@ html[data-bs-theme="dark"] .desglose-clasif .mini-chip { background: rgba(255,25
 .lista-expandible {
     list-style: none; margin: 0; padding: 0 1.1rem 1rem; display: flex; flex-direction: column; gap: .5rem;
 }
+.lista-expandible li { display: flex; align-items: stretch; gap: .4rem; }
 .fila-expandible {
     display: flex; align-items: center; gap: .7rem; padding: .6rem .7rem; border-radius: .5rem;
     border: 1px solid var(--border); font-size: .82rem; text-decoration: none; color: inherit; background: var(--surface-muted);
+    flex: 1; min-width: 0;
 }
 .fila-expandible:hover { border-color: var(--accent); }
 .fila-expandible .cuerpo { flex: 1; min-width: 0; }
 .fila-expandible .desc { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fila-expandible .meta { font-size: .74rem; color: var(--ink-muted); }
 .fila-expandible .ir { font-size: .74rem; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+
+.fila-log-wrap { display: flex; align-items: stretch; gap: .4rem; }
+.fila-log-wrap .fila-log { flex: 1; min-width: 0; }
+.btn-eliminar-fila {
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 2.2rem; border-radius: .5rem; border: 1px solid var(--border);
+    background: var(--surface); color: var(--ink-faint); cursor: pointer; font-size: .95rem; padding: 0;
+}
+.btn-eliminar-fila:hover { color: var(--accent); border-color: var(--accent); }
 .ver-todas-doc {
     display: block; text-align: center; font-size: .78rem; font-weight: 700; color: var(--accent);
     text-decoration: none; padding: .6rem .5rem 1rem;
@@ -1128,6 +1202,9 @@ html[data-bs-theme="dark"] .desglose-clasif .mini-chip { background: rgba(255,25
     .rail-stats > .stat { border-left: none !important; border-top: 1px solid var(--border); }
     .rail-stats > .stat:first-child { border-top: none; }
 }
+.rail-stats.rail-stats-vertical { grid-template-columns: 1fr; }
+.rail-stats.rail-stats-vertical > .stat { border-left: none; border-top: 1px solid var(--border); }
+.rail-stats.rail-stats-vertical > .stat:first-child { border-top: none; }
 
 /* ---- Inicio: cumplimiento de mantenimiento --------------------------------- */
 
@@ -1247,26 +1324,62 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .chips-deficiencias-doc .mini-chip.desactivacion { background: var(--info-soft); color: var(--bs-info); }
 .chips-deficiencias-doc .mini-chip.sin-novedad { background: var(--ok-soft); color: var(--bs-success); }
 
-/* ---- Órdenes de trabajo: lista (buscador, resumen, prioridad) ------------ */
+/* ---- Órdenes de trabajo: lista + detalle lado a lado ---------------------
+   Vista tipo "bandeja" (lista angosta a la izquierda, detalle completo a la
+   derecha) — elegir una OT no navega a otra pantalla, así se puede revisar
+   varias sin perder la lista de vista. ver ordenes_trabajo.py: listar() y
+   detalle() comparten los datos de la lista y renderizan el mismo template. */
 
-/* Separación entre filas más suave que el borde estándar de .table */
-.ot-tabla-lista tbody td { border-bottom-color: rgba(26,34,51,.07); }
-html[data-bs-theme="dark"] .ot-tabla-lista tbody td { border-bottom-color: rgba(255,255,255,.065); }
+.split-ot { display: flex; gap: 1.4rem; align-items: flex-start; }
+.panel-lista-ot { width: 380px; flex-shrink: 0; display: flex; flex-direction: column; gap: 1rem; }
+.panel-detalle-ot { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: .6rem; box-shadow: var(--shadow-doc); }
+@media (min-width: 1101px) {
+    /* Clavada arriba mientras se recorre una lista larga — no se pierde de
+       vista al scrollear, y si su propio contenido es más alto que la
+       pantalla, scrollea internamente en vez de arrastrar todo. */
+    .panel-detalle-ot { position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto; }
+}
+@media (max-width: 1100px) {
+    .split-ot { flex-direction: column; }
+    .panel-lista-ot { width: 100%; }
+}
 
-.ot-fila-urgente { box-shadow: inset 3px 0 0 var(--accent); }
-.ot-fila-urgente.alta { box-shadow: inset 3px 0 0 var(--bs-warning); }
+.lista-ot { display: flex; flex-direction: column; gap: .5rem; }
+.fila-ot {
+    display: block; background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--border-strong); border-radius: .5rem; padding: .7rem .85rem;
+    text-decoration: none; color: inherit;
+}
+.fila-ot:hover { border-color: var(--ink-faint); color: inherit; }
+.fila-ot.urgente { border-left-color: var(--accent); }
+.fila-ot.alta { border-left-color: var(--bs-warning); }
+.fila-ot.seleccionada { background: var(--surface-muted); box-shadow: inset 0 0 0 1px var(--border-strong); }
+.fila-ot .top-fila { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
+.fila-ot .numero { font-family: var(--font-mono); font-size: .74rem; color: var(--ink-faint); font-weight: 700; }
+.fila-ot .desc { font-weight: 600; font-size: .88rem; margin-top: .3rem; }
+.fila-ot .meta { font-size: .76rem; color: var(--ink-muted); margin-top: .15rem; }
+.fila-ot .meta .sin-asignar { color: var(--bs-warning); font-weight: 600; }
 
-.ot-tecnico-sin-asignar { color: var(--bs-warning); font-weight: 600; font-size: .84rem; }
+.detalle-ot-cab {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;
+    padding: 1.5rem 1.7rem 1.1rem; border-bottom: 1px solid var(--border);
+}
+.detalle-ot-cab h2 { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; margin: 0 0 .4rem; }
+.detalle-ot-cuerpo { padding: 1.5rem 1.7rem 2rem; }
 
-.ot-fecha-apertura { display: flex; flex-direction: column; gap: .1rem; }
-.ot-dias { font-size: .72rem; color: var(--ink-muted); }
-.ot-dias.flag { color: var(--bs-warning); font-weight: 600; }
+.grid-info-ot {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px;
+    background: var(--border); border: 1px solid var(--border); border-radius: .6rem; overflow: hidden; margin-bottom: 1.6rem;
+}
+.grid-info-ot .campo-info { background: var(--surface); padding: .8rem 1rem; }
+.grid-info-ot .campo-info .l { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-muted); margin-bottom: .3rem; }
+.grid-info-ot .campo-info .v { font-size: .92rem; font-weight: 600; }
+.grid-info-ot .campo-info .v.muted { color: var(--ink-faint); font-weight: 500; }
 
-.enlace-cliente-ot { color: var(--ink-muted); text-decoration: none; transition: color .15s ease; }
-.enlace-cliente-ot:hover { color: var(--ink); }
-
-.ot-link-numero { color: var(--ink); font-weight: 700; text-decoration: none; transition: color .15s ease; }
-.ot-link-numero:hover { color: var(--accent); }
+.panel-detalle-ot .empty-detalle {
+    display: flex; align-items: center; justify-content: center; min-height: 320px;
+    color: var(--ink-faint); font-size: .9rem; padding: 2rem;
+}
 
 /* ---- Tarjetas de instalación (ficha del cliente) --------------------- */
 
@@ -1329,5 +1442,5 @@ a.foto-lightbox:hover img { opacity: .85; }
    Utilidad genérica para ocultar algo al imprimir (ej. barra de acciones de
    un ensayo de curva de caudal antes de exportar a PDF vía window.print()). */
 @media print {
-    .no-imprimir, .ipm-navbar, .ipm-footer, .nav-inferior { display: none !important; }
+    .no-imprimir, .ipm-navbar, .ipm-footer, .nav-inferior, .sidebar-derecho, .barra-utilitaria { display: none !important; }
 }
