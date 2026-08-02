@@ -51,6 +51,7 @@
 {% endif %}
 {% endmacro %}
 
+{% if current_user.is_authenticated %}
 <nav class="navbar navbar-dark ipm-navbar mb-4 d-lg-none">
     <div class="container-fluid px-3 px-lg-4">
         <a class="navbar-brand" href="{{ url_for('dashboard.inicio') }}">
@@ -61,7 +62,7 @@
             <button type="button" class="theme-toggle-btn theme-toggle-trigger" title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
                 <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
             </button>
-            {% if current_user.is_authenticated and current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+            {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
             <a href="{{ url_for('notificaciones.listar') }}" class="theme-toggle-btn position-relative" title="Notificaciones" aria-label="Notificaciones">
                 <i class="bi bi-bell"></i>
                 {% if notificaciones_no_leidas %}<span class="punto-no-leido-navbar" title="{{ notificaciones_no_leidas }} sin leer"></span>{% endif %}
@@ -77,12 +78,8 @@
                 {{ nav_items('nav-link') }}
             </ul>
             <ul class="navbar-nav">
-                {% if current_user.is_authenticated %}
                 <li class="nav-item"><span class="nav-link"><i class="bi bi-person-circle"></i> {{ current_user.nombre_completo or current_user.username }} <small class="text-white-50">({{ current_user.rol }})</small></span></li>
                 <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</a></li>
-                {% else %}
-                <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}"><i class="bi bi-box-arrow-in-right"></i> Iniciar sesión</a></li>
-                {% endif %}
             </ul>
         </div>
     </div>
@@ -95,10 +92,8 @@
             <a class="sidebar-marca" href="{{ url_for('dashboard.inicio') }}">
                 <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="brand-mark"> IPM Manager
             </a>
-            {% if current_user.is_authenticated %}
             <div class="sidebar-usuario">{{ current_user.nombre_completo or current_user.username }}</div>
             <div class="sidebar-rol">{{ current_user.rol }}</div>
-            {% endif %}
         </div>
         <button type="button" id="sidebar-close" class="sidebar-close-btn" title="Ocultar menú" aria-label="Ocultar menú">
             <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="12 4 6 10 12 16"/></svg>
@@ -108,11 +103,7 @@
         {{ nav_items('sidebar-link', con_grupos=True) }}
     </ul>
     <div class="sidebar-footer">
-        {% if current_user.is_authenticated %}
         <a class="sidebar-link" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</a>
-        {% else %}
-        <a class="sidebar-link" href="{{ url_for('auth.login') }}"><i class="bi bi-box-arrow-in-right"></i> Iniciar sesión</a>
-        {% endif %}
     </div>
 </aside>
 
@@ -125,7 +116,7 @@
         <button type="button" class="btn-utilitario theme-toggle-trigger" title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
             <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
         </button>
-        {% if current_user.is_authenticated and current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+        {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
         <a href="{{ url_for('notificaciones.listar') }}" class="btn-utilitario position-relative" title="Notificaciones" aria-label="Notificaciones">
             <i class="bi bi-bell"></i>
             {% if notificaciones_no_leidas %}<span class="punto-no-leido-navbar" title="{{ notificaciones_no_leidas }} sin leer"></span>{% endif %}
@@ -144,8 +135,11 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
+        {% endif %}
 
         {% block content %}{% endblock %}
+
+        {% if current_user.is_authenticated %}
     </div>
 
     <footer class="ipm-footer">
@@ -154,7 +148,6 @@
 </div>
 </div>
 
-{% if current_user.is_authenticated %}
 <nav class="nav-inferior">
     {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
     <a href="{{ url_for('dashboard.inicio') }}"><i class="bi bi-house"></i>Inicio</a>

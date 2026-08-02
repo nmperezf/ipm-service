@@ -816,6 +816,60 @@ small, .small, .text-muted {
     letter-spacing: .03em;
     color: rgba(255,255,255,.65);
 }
+@media (min-width: 992px) {
+    /* Clavado abajo como la barra lateral — antes solo llegaba al fondo
+       en páginas cortas; en una página larga quedaba perdido al final del
+       scroll en vez de ser parte fija del chrome de la app. */
+    .zona-contenido { padding-bottom: 2.6rem; }
+    .ipm-footer {
+        position: fixed; left: 264px; right: 0; bottom: 0; z-index: 500;
+        transition: left .18s ease;
+    }
+    html.sidebar-oculta .ipm-footer { left: 0; }
+}
+
+/* ---- Login (pantalla completa, sin el chrome de la app) ------------------ */
+
+.login-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+@media (min-width: 860px) {
+    .login-shell { flex-direction: row; }
+}
+.login-marca {
+    background: #000000;
+    color: #fff;
+    flex-shrink: 0;
+    padding: 2.2rem 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+@media (min-width: 860px) {
+    .login-marca { width: 40%; max-width: 480px; padding: 3rem 3.2rem; }
+}
+.login-marca-top { display: flex; align-items: center; gap: .6rem; font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
+.login-marca-top .brand-mark { height: 30px; width: auto; }
+.login-marca-mid { margin: auto 0; padding: 2.5rem 0; }
+.login-marca-mid h1 {
+    font-family: var(--font-display); font-weight: 700; font-size: 2rem; line-height: 1.15;
+    letter-spacing: -.01em; color: #fff; max-width: 20ch;
+    display: block; border: none; padding: 0; margin: 0 0 1rem;
+}
+.login-marca-mid p { color: rgba(255,255,255,.62); font-size: .92rem; max-width: 34ch; margin: 0; }
+.login-marca-foot { font-family: var(--font-mono); font-size: .68rem; letter-spacing: .04em; color: rgba(255,255,255,.4); }
+
+.login-panel {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 2.5rem 1.5rem; background: var(--surface); position: relative;
+}
+.login-theme-toggle { position: absolute; top: 1.2rem; right: 1.2rem; }
+.login-form-wrap { width: 100%; max-width: 360px; }
+.login-form-wrap h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; margin: 0 0 .3rem; }
+.login-form-wrap .sub { color: var(--ink-muted); font-size: .88rem; margin-bottom: 1.8rem; }
+.login-form-wrap label { font-size: .82rem; font-weight: 600; margin-bottom: .3rem; }
 
 /* ---- Barra de navegación inferior en celular (mobile-first) --------------
    Los accesos más usados, al alcance del pulgar — patrón estándar en apps
