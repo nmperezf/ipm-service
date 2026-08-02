@@ -1,12 +1,8 @@
 {% extends "base.html" %}
 {% block title %}Inventario{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Inventario de repuestos</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Inventario de repuestos</h1>
 
             <div class="d-flex justify-content-end mb-3">
                 <a href="{{ url_for('inventario.nuevo') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo repuesto</a>
@@ -48,7 +44,5 @@
             </table>
             </div>
 
-        </div>
-    </div>
 </div>
 {% endblock %}
