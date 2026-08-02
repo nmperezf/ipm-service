@@ -10,6 +10,31 @@
 
             <p class="mb-1"><a href="{{ volver_a or url_for('clientes.detalle', cliente_id=cliente.id) }}">&larr; Volver</a></p>
             <p class="text-muted mb-1">{{ cliente.nombre }}</p>
+
+            {% if not tipo and catalogo %}
+            <div class="seccion-titulo-doc">Traer del catálogo</div>
+            <p class="text-muted small">Ya armado, con sus campos — no hace falta cargarlos de nuevo.</p>
+            <div class="row g-2 mb-4">
+                {% for s in catalogo %}
+                <div class="col-md-6 col-lg-4">
+                    <form method="POST" action="{{ url_for('tipos_formulario.importar', cliente_id=cliente.id) }}" class="h-100">
+                        <input type="hidden" name="servicio_tipo_id" value="{{ s.id }}">
+                        {% if volver_a %}<input type="hidden" name="volver_a" value="{{ volver_a }}">{% endif %}
+                        <button type="submit" class="btn btn-outline-secondary w-100 h-100 text-start">
+                            <strong>{{ s.nombre }}</strong>
+                            {% if s.tipo_equipo_aplicable and s.tipo_equipo_aplicable == tipo_equipo_sugerido %}
+                            <span class="badge bg-success ms-1">Coincide</span>
+                            {% endif %}
+                            <br>
+                            <span class="text-muted small">{{ s.campos()|length }} campo(s){% if s.tipo_equipo_aplicable %} · por equipo ({{ s.tipo_equipo_aplicable }}){% endif %}</span>
+                        </button>
+                    </form>
+                </div>
+                {% endfor %}
+            </div>
+            <p class="text-muted small">¿Ninguno de estos sirve? Armalo a mano abajo.</p>
+            {% endif %}
+
             <p class="text-muted">Armá el checklist agregando los campos que necesites. Cada campo se guarda con la etiqueta que le pongas.</p>
 
             <form method="POST">

@@ -132,20 +132,7 @@ def nuevo_servicio(contrato_id):
     # bomba (ver visitas.detalle), así que no hace falta importar un
     # TipoFormulario para esto.
     if not servicio_tipo.es_curva_caudal:
-        # Importa el formulario base al cliente — si ya tenía uno con ese
-        # nombre (lo importó antes, o lo cargó a mano), se reutiliza tal cual
-        # en vez de duplicar; de ahí en más queda como una copia independiente.
-        tipo_formulario = TipoFormulario.query.filter_by(cliente_id=cliente.id, nombre=servicio_tipo.nombre).first()
-        if not tipo_formulario:
-            tipo_formulario = TipoFormulario(
-                cliente_id=cliente.id,
-                nombre=servicio_tipo.nombre,
-                descripcion=servicio_tipo.descripcion,
-                por_equipo=servicio_tipo.por_equipo,
-                tipo_equipo_aplicable=servicio_tipo.tipo_equipo_aplicable,
-                schema_json=servicio_tipo.schema_json,
-            )
-            db.session.add(tipo_formulario)
+        TipoFormulario.desde_catalogo(servicio_tipo, cliente.id)
 
     fecha_inicio_servicio = _parse_mes(request.form.get("mes_inicio"))  # None = usa el del contrato
     servicio = ServicioContrato(

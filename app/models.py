@@ -651,6 +651,27 @@ class TipoFormulario(db.Model):
         contrato (ver ese método para el criterio)."""
         return self.aplica_a_tipo_equipo(servicio_contrato.tipo_equipo_aplicable if servicio_contrato else None)
 
+    @classmethod
+    def desde_catalogo(cls, servicio_tipo, cliente_id):
+        """Importa (copia) un ServicioTipo del catálogo de la empresa como
+        un TipoFormulario propio del cliente, para no tener que armar los
+        campos a mano cada vez — si el cliente ya tenía uno con ese nombre
+        (lo importó antes, o lo cargó a mano), se reutiliza tal cual en vez
+        de duplicar; de ahí en más queda como una copia independiente."""
+        existente = cls.query.filter_by(cliente_id=cliente_id, nombre=servicio_tipo.nombre).first()
+        if existente:
+            return existente
+        tipo_formulario = cls(
+            cliente_id=cliente_id,
+            nombre=servicio_tipo.nombre,
+            descripcion=servicio_tipo.descripcion,
+            por_equipo=servicio_tipo.por_equipo,
+            tipo_equipo_aplicable=servicio_tipo.tipo_equipo_aplicable,
+            schema_json=servicio_tipo.schema_json,
+        )
+        db.session.add(tipo_formulario)
+        return tipo_formulario
+
     def __repr__(self):
         return f"<TipoFormulario {self.nombre}>"
 
