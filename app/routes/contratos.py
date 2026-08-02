@@ -66,7 +66,7 @@ def nuevo(instalacion_id):
 def detalle(contrato_id):
     contrato = Contrato.query.get_or_404(contrato_id)
     verificar_acceso_cliente(contrato.instalacion.cliente)
-    visitas = sorted(contrato.visitas, key=lambda v: v.fecha)
+    visitas = sorted(contrato.visitas, key=lambda v: v.fecha, reverse=True)
     cliente = contrato.instalacion.cliente
     servicios_tipo = ServicioTipo.query.filter_by(empresa_id=cliente.empresa_id).order_by(ServicioTipo.nombre).all()
     # El formulario de cada servicio contratado es la copia que se importó

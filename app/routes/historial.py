@@ -63,7 +63,7 @@ def _filas_historial(instalacion):
                     "visita_id": visita.id,
                 }
             )
-    return sorted(filas, key=lambda f: f["fecha"])
+    return sorted(filas, key=lambda f: f["fecha"], reverse=True)
 
 
 @historial_bp.route("/<int:instalacion_id>")

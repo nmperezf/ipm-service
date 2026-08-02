@@ -260,7 +260,7 @@ def cumplimiento_mensual():
         ItemVisita.query.join(Visita)
         .filter(Visita.id.in_(ids_visitas_visibles))
         .filter(Visita.fecha >= inicio_mes, Visita.fecha <= fin_mes)
-        .order_by(Visita.fecha)
+        .order_by(Visita.fecha.desc())
         .all()
     )
 
@@ -278,5 +278,5 @@ def visitas_en_revision_lista():
     Administrador/Jefe las apruebe y cierre."""
     visitas = _visitas_visibles().filter(
         Visita.en_revision == True, Visita.cerrada == False  # noqa: E712
-    ).order_by(Visita.fecha_enviada_revision).all()
+    ).order_by(Visita.fecha_enviada_revision.desc()).all()
     return render_template("dashboard/visitas_en_revision.html", visitas=visitas)

@@ -1365,7 +1365,8 @@ class OrdenTrabajo(db.Model):
         "Visita", backref=db.backref("orden_trabajo", uselist=False, cascade="all, delete-orphan", single_parent=True)
     )
     repuestos_usados = db.relationship(
-        "RepuestoUsado", backref="orden_trabajo", lazy=True, cascade="all, delete-orphan"
+        "RepuestoUsado", backref="orden_trabajo", lazy=True, cascade="all, delete-orphan",
+        order_by="RepuestoUsado.fecha.desc()",
     )
 
     def asignar_numero(self):

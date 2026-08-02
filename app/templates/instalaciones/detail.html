@@ -64,7 +64,7 @@
             </div>
             {% endif %}
 
-            {% set abiertas = instalacion.deficiencias|selectattr('resuelto', 'equalto', false)|list %}
+            {% set abiertas = instalacion.deficiencias|selectattr('resuelto', 'equalto', false)|sort(attribute='fecha_carga', reverse=True)|list %}
             {% if abiertas %}
             <div class="seccion-titulo-doc">Observaciones abiertas</div>
             <div class="table-responsive">

@@ -187,8 +187,8 @@ def detalle(equipo_id):
     )
     secciones = construir_secciones_historico(formularios)
 
-    deficiencias_abiertas = [o for o in equipo.deficiencias if not o.resuelto]
-    deficiencias_resueltas = [o for o in equipo.deficiencias if o.resuelto]
+    deficiencias_abiertas = sorted((o for o in equipo.deficiencias if not o.resuelto), key=lambda o: o.fecha_carga, reverse=True)
+    deficiencias_resueltas = sorted((o for o in equipo.deficiencias if o.resuelto), key=lambda o: o.fecha_carga, reverse=True)
 
     ultimos_ensayos = []
     if equipo.tipo in TIPOS_BOMBA_PRINCIPAL:
