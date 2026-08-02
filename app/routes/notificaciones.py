@@ -1,4 +1,4 @@
-from flask import Blueprint, abort, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user
 
 from app import db
@@ -52,6 +52,18 @@ def ir(notificacion_id):
     n.leido = True
     db.session.commit()
     return redirect(n.enlace or url_for("notificaciones.listar"))
+
+
+@notificaciones_bp.route("/<int:notificacion_id>/eliminar", methods=["POST"])
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def eliminar(notificacion_id):
+    n = Notificacion.query.get_or_404(notificacion_id)
+    if n.destinatario_id != current_user.id:
+        abort(403)
+    db.session.delete(n)
+    db.session.commit()
+    flash("Notificación eliminada.", "info")
+    return redirect(url_for("notificaciones.listar"))
 
 
 @notificaciones_bp.route("/marcar-leidas", methods=["POST"])

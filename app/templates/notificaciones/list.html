@@ -43,6 +43,9 @@
                                 </span>
                                 <span class="ir">{{ n.verbo_accion }}</span>
                             </a>
+                            <form method="POST" action="{{ url_for('notificaciones.eliminar', notificacion_id=n.id) }}" onsubmit="return confirm('¿Eliminar esta notificación?');">
+                                <button type="submit" class="btn-eliminar-fila" title="Eliminar">✕</button>
+                            </form>
                         </li>
                         {% endfor %}
                     </ul>
@@ -60,13 +63,18 @@
             <div class="seccion-titulo-doc">Leídas recientemente</div>
             <div class="log-prioridad">
                 {% for n in leidas %}
-                <a class="fila-log" href="{{ url_for('notificaciones.ir', notificacion_id=n.id) }}">
-                    <span class="textos">
-                        <span class="etiqueta">{{ n.titulo }}</span>
-                        <span class="meta">{% if n.cliente %}{{ n.cliente.nombre }} · {% endif %}{{ n.fecha_carga.strftime('%d/%m/%Y %H:%M') }}</span>
-                    </span>
-                    <span class="flecha">▶</span>
-                </a>
+                <div class="fila-log-wrap">
+                    <a class="fila-log" href="{{ url_for('notificaciones.ir', notificacion_id=n.id) }}">
+                        <span class="textos">
+                            <span class="etiqueta">{{ n.titulo }}</span>
+                            <span class="meta">{% if n.cliente %}{{ n.cliente.nombre }} · {% endif %}{{ n.fecha_carga.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </span>
+                        <span class="flecha">▶</span>
+                    </a>
+                    <form method="POST" action="{{ url_for('notificaciones.eliminar', notificacion_id=n.id) }}" onsubmit="return confirm('¿Eliminar esta notificación?');">
+                        <button type="submit" class="btn-eliminar-fila" title="Eliminar">✕</button>
+                    </form>
+                </div>
                 {% endfor %}
             </div>
             {% endif %}
