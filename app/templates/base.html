@@ -27,6 +27,9 @@
 {% if current_user.is_authenticated and current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
 <li class="nav-item"><a class="{{ clase }}" href="{{ url_for('clientes.listar') }}"><i class="bi bi-people"></i> Clientes</a></li>
 <li class="nav-item"><a class="{{ clase }}" href="{{ url_for('planificacion.calendario') }}"><i class="bi bi-calendar3"></i> Calendario</a></li>
+{% if current_user.rol in ('Administrador', 'Jefe') %}
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('coordinacion.index') }}"><i class="bi bi-telephone"></i> Coordinación</a></li>
+{% endif %}
 <li class="nav-item"><a class="{{ clase }}" href="{{ url_for('ordenes.listar') }}"><i class="bi bi-clipboard-check"></i> Órdenes de trabajo</a></li>
 <li class="nav-item"><a class="{{ clase }}" href="{{ url_for('inventario.dashboard') }}"><i class="bi bi-box-seam"></i> Inventario</a></li>
 <li class="nav-item"><a class="{{ clase }}" href="{{ url_for('formularios.hub') }}"><i class="bi bi-clipboard-check"></i> Formularios</a></li>

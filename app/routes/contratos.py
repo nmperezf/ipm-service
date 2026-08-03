@@ -53,8 +53,8 @@ def nuevo(instalacion_id):
         db.session.commit()
         flash(
             f"Contrato '{contrato.nombre}' creado (vigente hasta {contrato.fecha_fin.strftime('%m/%Y')}). "
-            "Ahora agregá los servicios contratados para generar las visitas automáticamente. "
-            "El día exacto de cada visita se termina de definir más adelante, cuando el cliente lo confirme.",
+            "Ahora agregá los servicios contratados. Cada mes vas a poder coordinar con el cliente "
+            "la fecha real de la visita desde la pantalla de Coordinación.",
             "success",
         )
         return redirect(url_for("contratos.detalle", contrato_id=contrato.id))
@@ -146,17 +146,16 @@ def nuevo_servicio(contrato_id):
     )
     db.session.add(servicio)
     db.session.commit()
-    # Regenera automáticamente todas las visitas del contrato agrupando por fecha
-    contrato.generar_visitas()
     if servicio.fechas_ocurrencia():
         flash(
-            f"Servicio '{servicio.nombre}' agregado. Visitas del contrato regeneradas y agrupadas por fecha.",
+            f"Servicio '{servicio.nombre}' agregado. Se va a incluir la próxima vez que se generen las "
+            "solicitudes de coordinación del mes que le toque.",
             "success",
         )
     else:
         flash(
-            f"Servicio '{servicio.nombre}' agregado, pero no generó ninguna visita dentro de lo que queda "
-            "del año de contrato (el mes de inicio elegido + la frecuencia excede la fecha de fin del contrato).",
+            f"Servicio '{servicio.nombre}' agregado, pero no cae ningún mes dentro de lo que queda del año "
+            "de contrato (el mes de inicio elegido + la frecuencia excede la fecha de fin del contrato).",
             "warning",
         )
     return redirect(url_for("contratos.detalle", contrato_id=contrato.id))
@@ -170,6 +169,5 @@ def eliminar_servicio(servicio_id):
     verificar_escritura_cliente(contrato.instalacion.cliente)
     db.session.delete(servicio)
     db.session.commit()
-    contrato.generar_visitas()
-    flash(f"Servicio '{servicio.nombre}' eliminado y visitas regeneradas.", "info")
+    flash(f"Servicio '{servicio.nombre}' eliminado.", "info")
     return redirect(url_for("contratos.detalle", contrato_id=contrato.id))

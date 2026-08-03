@@ -7,6 +7,7 @@ import json
 from datetime import date
 
 from app import create_app, db
+from app.coordinacion import coordinar_solicitud, servicios_del_mes
 from app.models import (
     Cliente,
     Contrato,
@@ -21,6 +22,7 @@ from app.models import (
     RepuestoUsado,
     ServicioContrato,
     ServicioTipo,
+    SolicitudCoordinacion,
     TipoFormulario,
     Usuario,
     Visita,
@@ -138,10 +140,27 @@ with app.app_context():
         db.session.add_all(servicios)
         db.session.commit()
 
-        # Genera automáticamente todas las visitas del año, agrupando por fecha
-        contrato.generar_visitas()
+        # Simula un contrato que ya viene andando: los meses hasta hoy quedan
+        # con su visita ya coordinada (como si el coordinador ya hubiera
+        # llamado), y los meses futuros quedan como solicitud pendiente —
+        # así la pantalla de Coordinación tiene algo real para mostrar.
+        admin_usuario = Usuario.query.filter_by(username="admin1").first()
+        hoy = date.today()
+        meses_vistos = set()
+        for servicio in servicios:
+            for fecha in servicio.fechas_ocurrencia():
+                if (fecha.year, fecha.month) in meses_vistos:
+                    continue
+                meses_vistos.add((fecha.year, fecha.month))
+                solicitud = SolicitudCoordinacion(contrato_id=contrato.id, anio=fecha.year, mes=fecha.month)
+                db.session.add(solicitud)
+                db.session.flush()
+                if fecha <= hoy:
+                    coordinar_solicitud(solicitud, fecha, None, admin_usuario)
+        db.session.commit()
 
-        print(f"Datos de ejemplo cargados. Se generaron {len(contrato.visitas)} visitas para el contrato.")
+        print(f"Datos de ejemplo cargados. Se generaron {len(contrato.visitas)} visitas coordinadas y "
+              f"{SolicitudCoordinacion.query.filter_by(contrato_id=contrato.id, coordinada=False).count()} solicitudes pendientes.")
 
         # Observación de ejemplo, para ver el dashboard funcionando
         observacion = Observacion(

@@ -43,7 +43,7 @@
                             <a href="{{ url_for('tipos_formulario.editar', tipo_id=tipo_formulario.id, volver_a=url_for('contratos.detalle', contrato_id=contrato.id)) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Editar campos</a>
                             {% endif %}
                             <form method="POST" action="{{ url_for('contratos.eliminar_servicio', servicio_id=s.id) }}" class="d-inline"
-                                  onsubmit="return confirm('¿Eliminar este servicio? Se regenerarán las visitas del contrato.');">
+                                  onsubmit="return confirm('¿Eliminar este servicio? No se va a incluir en los próximos meses a coordinar. Las visitas ya coordinadas no se modifican.');">
                                 <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>Eliminar</button>
                             </form>
                         </div>
@@ -109,8 +109,8 @@
             </form>
             {% endif %}
 
-            <div class="seccion-titulo-doc">Visitas generadas automáticamente</div>
-            <p class="text-muted">Cuando varios servicios coinciden en fecha, aparecen agrupados en la misma visita.</p>
+            <div class="seccion-titulo-doc">Visitas coordinadas</div>
+            <p class="text-muted">Cuando varios servicios coinciden en fecha, aparecen agrupados en la misma visita. Las visitas se crean al <a href="{{ url_for('coordinacion.index') }}">coordinar la fecha con el cliente</a> — no antes.</p>
             <div class="table-responsive">
             <table class="table table-sm data-table">
                 <thead><tr><th>Fecha</th><th>Servicios incluidos</th><th>Estado</th><th></th></tr></thead>
@@ -126,7 +126,7 @@
                         </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="4"><div class="estado-vacio-doc"><i class="bi bi-calendar-x"></i><p class="mb-0">Agregá al menos un servicio para generar las visitas.</p></div></td></tr>
+                    <tr><td colspan="4"><div class="estado-vacio-doc"><i class="bi bi-calendar-x"></i><p class="mb-0">Todavía no hay visitas coordinadas para este contrato.</p></div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

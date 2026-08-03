@@ -297,8 +297,9 @@ class Instalacion(db.Model):
 
 class Contrato(db.Model):
     """Un contrato dura 1 año. Agrupa uno o más servicios, cada uno con su
-    propia frecuencia. Al crearse, genera automáticamente todas las visitas
-    del año, agrupando en una misma fecha los servicios que coincidan."""
+    propia frecuencia. No genera las visitas del año de una — cada mes hay
+    que coordinar con el cliente la fecha real antes de que exista la
+    Visita/OT (ver SolicitudCoordinacion y app/coordinacion.py)."""
 
     __tablename__ = "contratos"
 
@@ -320,56 +321,6 @@ class Contrato(db.Model):
     @staticmethod
     def calcular_fecha_fin(fecha_inicio):
         return fecha_inicio + relativedelta(years=1)
-
-    def generar_visitas(self):
-        """Genera (o regenera) automáticamente todas las visitas del año de
-        contrato, agrupando por fecha los servicios que coincidan. Se llama
-        al crear el contrato o al agregar/quitar un servicio."""
-        # Borra visitas futuras aún no realizadas para regenerar limpio;
-        # conserva las ya realizadas o canceladas manualmente como historial.
-        visitas_a_conservar = [v for v in self.visitas if v.estado in ("Realizado", "Cancelado")]
-        fechas_conservadas = {v.fecha for v in visitas_a_conservar}
-
-        for v in list(self.visitas):
-            if v.estado not in ("Realizado", "Cancelado"):
-                db.session.delete(v)
-        db.session.flush()
-
-        fechas_por_servicio = {
-            s.id: s.fechas_ocurrencia() for s in self.servicios if s.activo
-        }
-        todas_fechas = sorted(set().union(*fechas_por_servicio.values())) if fechas_por_servicio else []
-
-        for fecha in todas_fechas:
-            if fecha in fechas_conservadas:
-                continue  # ya hay una visita real/cancelada en esa fecha
-            visita = Visita(
-                instalacion_id=self.instalacion_id,
-                contrato_id=self.id,
-                fecha=fecha,
-                estado="Pendiente",
-            )
-            db.session.add(visita)
-            db.session.flush()
-            for servicio_id, fechas in fechas_por_servicio.items():
-                if fecha in fechas:
-                    db.session.add(
-                        ItemVisita(visita_id=visita.id, servicio_contrato_id=servicio_id, estado="Pendiente")
-                    )
-
-            # Cada visita planificada recibe su propia OT preventiva
-            ot = OrdenTrabajo(
-                instalacion_id=self.instalacion_id,
-                visita_id=visita.id,
-                tipo="Preventivo",
-                prioridad="Media",
-                estado="Pendiente",
-                fecha_apertura=fecha,
-            )
-            db.session.add(ot)
-            db.session.flush()
-            ot.asignar_numero()
-        db.session.commit()
 
     def actualizar_estado_por_vencimiento(self, hoy=None):
         hoy = hoy or date.today()
@@ -434,6 +385,92 @@ class ServicioContrato(db.Model):
 
     def __repr__(self):
         return f"<ServicioContrato {self.nombre} ({self.frecuencia})>"
+
+
+# ---------------------------------------------------------------------------
+# Coordinación mensual — reemplaza la generación automática de todo el año
+# de visitas de una: cada mes, un Administrador/Jefe llama a cada cliente
+# con servicio contratado y confirma la fecha real antes de que exista la
+# Visita/OT (ver app/coordinacion.py). Así el técnico nunca ve una OT cuya
+# fecha nadie confirmó.
+# ---------------------------------------------------------------------------
+
+
+class SolicitudCoordinacion(db.Model):
+    """Una instalación con servicio(s) contratado(s) que tocan en un mes
+    dado, pendiente de coordinar. generar_solicitudes_mes() la crea; al
+    coordinar (ver coordinar_solicitud()) se crean recién ahí la Visita,
+    los ItemVisita y la OrdenTrabajo — con la fecha real, no la que
+    calcula el contrato. Un solo renglón por (contrato, año, mes): si el
+    contrato tiene varios servicios que caen ese mes, se agrupan en una
+    sola coordinación (y en una sola Visita), igual que ya se agrupaban
+    por fecha antes."""
+
+    __tablename__ = "solicitudes_coordinacion"
+    __table_args__ = (
+        db.UniqueConstraint("contrato_id", "anio", "mes", name="uq_solicitud_contrato_anio_mes"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    contrato_id = db.Column(db.Integer, db.ForeignKey("contratos.id"), nullable=False)
+    anio = db.Column(db.Integer, nullable=False)
+    mes = db.Column(db.Integer, nullable=False)  # 1-12
+    coordinada = db.Column(db.Boolean, default=False, nullable=False)
+    fecha_coordinada = db.Column(db.Date, nullable=True)
+    notas = db.Column(db.Text, nullable=True)
+    coordinado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    fecha_coordinacion = db.Column(db.DateTime, nullable=True)
+    visita_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    contrato = db.relationship("Contrato", backref=db.backref("solicitudes_coordinacion", cascade="all, delete-orphan"))
+    coordinado_por = db.relationship("Usuario")
+    visita = db.relationship("Visita")
+
+    @property
+    def estado_derivado(self):
+        """sin_coordinar / coordinada / asignada / en_ejecucion / ejecutada
+        — no se guarda aparte, sale de combinar coordinada + la OT que
+        haya nacido de la Visita coordinada (si ya tiene técnico y en qué
+        estado está)."""
+        if not self.coordinada:
+            return "sin_coordinar"
+        ot = self.visita.orden_trabajo if self.visita else None
+        if not ot or not ot.tecnico_id:
+            return "coordinada"
+        if ot.estado == "Finalizada":
+            return "ejecutada"
+        if ot.estado == "En proceso":
+            return "en_ejecucion"
+        return "asignada"
+
+    def __repr__(self):
+        return f"<SolicitudCoordinacion contrato={self.contrato_id} {self.anio}-{self.mes:02d}>"
+
+
+class CoordinacionAudit(db.Model):
+    """Un renglón por cada vez que se coordina o recoordina una solicitud —
+    de solo consulta, nunca se edita ni se borra un renglón ya cargado
+    (mismo patrón que PresupuestoAudit)."""
+
+    __tablename__ = "coordinacion_audit"
+
+    id = db.Column(db.Integer, primary_key=True)
+    solicitud_id = db.Column(db.Integer, db.ForeignKey("solicitudes_coordinacion.id"), nullable=False)
+    fecha_anterior = db.Column(db.Date, nullable=True)
+    fecha_nueva = db.Column(db.Date, nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
+    nota = db.Column(db.Text, nullable=True)
+    fecha_cambio = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    solicitud = db.relationship(
+        "SolicitudCoordinacion",
+        backref=db.backref("auditoria", cascade="all, delete-orphan", order_by="CoordinacionAudit.fecha_cambio.desc()"),
+    )
+    usuario = db.relationship("Usuario")
+
+    def __repr__(self):
+        return f"<CoordinacionAudit solicitud={self.solicitud_id} -> {self.fecha_nueva}>"
 
 
 # ---------------------------------------------------------------------------
@@ -905,8 +942,8 @@ class Presupuesto(db.Model):
     mail de solicitud formal.
 
     Al aprobarse, genera automáticamente la OT correctiva que ejecuta el
-    trabajo (mismo criterio que ya usa Contrato.generar_visitas() para no
-    depender de que alguien se acuerde de crearla a mano). Al finalizar esa
+    trabajo, para no depender de que alguien se acuerde de crearla a mano.
+    Al finalizar esa
     OT (ver ordenes_trabajo.editar), el presupuesto pasa solo a Cerrado y
     la deficiencia queda resuelta — ver auto-cierre en ese mismo lugar."""
 
@@ -1338,10 +1375,10 @@ class OrdenTrabajo(db.Model):
       observaciones, y puede tener repuestos consumidos (RepuestoUsado),
       que descuentan stock del inventario automáticamente.
 
-    Cada Visita generada automáticamente por un contrato recibe su propia
-    OT preventiva (ver Contrato.generar_visitas). El trabajo correctivo se
-    carga directamente como una OT nueva, sin pasar por contrato ni
-    servicio."""
+    Cada Visita nacida de coordinar una solicitud del mes recibe su propia
+    OT preventiva (ver app/coordinacion.py: coordinar_solicitud). El
+    trabajo correctivo se carga directamente como una OT nueva, sin pasar
+    por contrato ni servicio."""
 
     __tablename__ = "ordenes_trabajo"
 

@@ -309,6 +309,13 @@ small, .small, .text-muted {
 
 @media (min-width: 992px) {
     .app-shell { flex-direction: row; align-items: flex-start; }
+    /* .zona-contenido hereda flex:1 0 auto de la regla base (para la
+       cadena de pie de página fijo en modo columna) — acá el eje
+       principal pasa a ser horizontal, y ese mismo flex-shrink:0 le
+       impedía angostarse por debajo del contenido (una tabla ancha,
+       p.ej.), forzando scroll horizontal de toda la página en vez de
+       quedar contenido con su propio .table-responsive. */
+    .zona-contenido { flex-shrink: 1; }
 }
 
 .sidebar-derecho {
@@ -655,6 +662,12 @@ small, .small, .text-muted {
 .badge-Alta { background: #FDF2E3; color: #A8630A; }
 .badge-Media { background: #EAF1FA; color: #1A2233; }
 .badge-Baja { background: #F1F2F4; color: #7A828C; }
+
+.badge-sin_coordinar { background: var(--accent-soft); color: var(--accent); }
+.badge-coordinada { background: var(--info-soft); color: var(--bs-info); }
+.badge-asignada { background: var(--warn-soft); color: var(--bs-warning); }
+.badge-en_ejecucion { background: var(--warn-soft); color: var(--bs-warning); }
+.badge-ejecutada { background: var(--ok-soft); color: var(--bs-success); }
 
 /* ---- Calendario mensual --------------------------------------------------- */
 
@@ -1362,6 +1375,7 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 }
 .estado-pill-doc.activo { background: var(--ok-soft); color: var(--bs-success); }
 .estado-pill-doc.inactivo { background: var(--surface-muted); color: var(--ink-muted); }
+.estado-pill-doc.critico { background: var(--accent-soft); color: var(--accent); }
 
 .card-cliente-doc-stats { display: flex; gap: 1.4rem; }
 .card-cliente-doc-stats .stat .valor { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 700; line-height: 1; }
@@ -1371,6 +1385,23 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .card-cliente-doc-stats .stat.cumplimiento-bajo .valor { color: var(--accent); }
 .card-cliente-doc-stats .stat.cumplimiento-nulo .valor { color: var(--ink-muted); }
 
+.grid-repuestos-doc { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+.card-repuesto-doc {
+    display: flex; flex-direction: column; gap: .8rem; padding: 1.1rem 1.2rem 1.1rem 1.4rem; border-radius: .65rem;
+    border: 1px solid var(--border); background: var(--surface); position: relative; overflow: hidden;
+}
+.card-repuesto-doc .filete-lateral-doc { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--border); }
+.card-repuesto-doc.critico .filete-lateral-doc { background: var(--accent); }
+.card-repuesto-doc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; }
+.card-repuesto-doc .nombre { font-family: var(--font-display); font-size: 1rem; font-weight: 700; line-height: 1.25; }
+.card-repuesto-doc .codigo { font-size: .78rem; color: var(--ink-muted); margin-top: .15rem; font-family: var(--font-mono); }
+.card-repuesto-doc-stats { display: flex; gap: 1.4rem; }
+.card-repuesto-doc-stats .stat .valor { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 700; line-height: 1; }
+.card-repuesto-doc-stats .stat.critico .valor { color: var(--accent); }
+.card-repuesto-doc-stats .stat .etiqueta { font-size: .68rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .03em; margin-top: .3rem; display: block; }
+.card-repuesto-doc-acciones { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; padding-top: .3rem; border-top: 1px solid var(--border); }
+.card-repuesto-doc-acciones input[type="number"] { width: 5.5rem; }
+
 .chips-deficiencias-doc { display: flex; gap: .35rem; flex-wrap: wrap; margin-top: -.2rem; }
 .chips-deficiencias-doc .mini-chip { font-size: .68rem; font-weight: 700; padding: .15rem .5rem; border-radius: 100px; }
 .chips-deficiencias-doc .mini-chip.critica { background: var(--accent-soft); color: var(--accent); }
@@ -1378,24 +1409,24 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .chips-deficiencias-doc .mini-chip.desactivacion { background: var(--info-soft); color: var(--bs-info); }
 .chips-deficiencias-doc .mini-chip.sin-novedad { background: var(--ok-soft); color: var(--bs-success); }
 
-/* ---- Órdenes de trabajo: lista + detalle lado a lado ---------------------
-   Vista tipo "bandeja" (lista angosta a la izquierda, detalle completo a la
-   derecha) — elegir una OT no navega a otra pantalla, así se puede revisar
-   varias sin perder la lista de vista. ver ordenes_trabajo.py: listar() y
-   detalle() comparten los datos de la lista y renderizan el mismo template. */
+/* ---- Lista + detalle lado a lado (genérico) -------------------------------
+   Vista tipo "bandeja": lista angosta a la izquierda, detalle completo a la
+   derecha. Usado por Órdenes de trabajo (elegir una fila navega, server-
+   rendered) y Clientes (elegir una fila solo togglea qué panel ya
+   renderizado se muestra, ver clientes/list.html — sin recargar). */
 
-.split-ot { display: flex; gap: 1.4rem; align-items: flex-start; }
-.panel-lista-ot { width: 380px; flex-shrink: 0; display: flex; flex-direction: column; gap: 1rem; }
-.panel-detalle-ot { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: .6rem; box-shadow: var(--shadow-doc); }
+.split-panel { display: flex; gap: 1.4rem; align-items: flex-start; }
+.panel-lista { width: 380px; flex-shrink: 0; display: flex; flex-direction: column; gap: 1rem; }
+.panel-detalle { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: .6rem; box-shadow: var(--shadow-doc); }
 @media (min-width: 1101px) {
     /* Clavada arriba mientras se recorre una lista larga — no se pierde de
        vista al scrollear, y si su propio contenido es más alto que la
        pantalla, scrollea internamente en vez de arrastrar todo. */
-    .panel-detalle-ot { position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto; }
+    .panel-detalle { position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto; }
 }
 @media (max-width: 1100px) {
-    .split-ot { flex-direction: column; }
-    .panel-lista-ot { width: 100%; }
+    .split-panel { flex-direction: column; }
+    .panel-lista { width: 100%; }
 }
 
 .lista-ot { display: flex; flex-direction: column; gap: .5rem; }
@@ -1407,6 +1438,7 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .fila-ot:hover { border-color: var(--ink-faint); color: inherit; }
 .fila-ot.urgente { border-left-color: var(--accent); }
 .fila-ot.alta { border-left-color: var(--bs-warning); }
+.fila-ot.media { border-left-color: var(--bs-info); }
 .fila-ot.seleccionada { background: var(--surface-muted); box-shadow: inset 0 0 0 1px var(--border-strong); }
 .fila-ot .top-fila { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
 .fila-ot .numero { font-family: var(--font-mono); font-size: .74rem; color: var(--ink-faint); font-weight: 700; }
@@ -1414,26 +1446,93 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .fila-ot .meta { font-size: .76rem; color: var(--ink-muted); margin-top: .15rem; }
 .fila-ot .meta .sin-asignar { color: var(--bs-warning); font-weight: 600; }
 
-.detalle-ot-cab {
+.detalle-cab {
     display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;
     padding: 1.5rem 1.7rem 1.1rem; border-bottom: 1px solid var(--border);
 }
-.detalle-ot-cab h2 { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; margin: 0 0 .4rem; }
-.detalle-ot-cuerpo { padding: 1.5rem 1.7rem 2rem; }
+.detalle-cab h2 { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; margin: 0 0 .4rem; }
+.detalle-cuerpo { padding: 1.5rem 1.7rem 2rem; }
 
-.grid-info-ot {
+.grid-info {
     display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px;
     background: var(--border); border: 1px solid var(--border); border-radius: .6rem; overflow: hidden; margin-bottom: 1.6rem;
 }
-.grid-info-ot .campo-info { background: var(--surface); padding: .8rem 1rem; }
-.grid-info-ot .campo-info .l { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-muted); margin-bottom: .3rem; }
-.grid-info-ot .campo-info .v { font-size: .92rem; font-weight: 600; }
-.grid-info-ot .campo-info .v.muted { color: var(--ink-faint); font-weight: 500; }
+.grid-info .campo-info { background: var(--surface); padding: .8rem 1rem; }
+.grid-info .campo-info .l { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-muted); margin-bottom: .3rem; }
+.grid-info .campo-info .v { font-size: .92rem; font-weight: 600; }
+.grid-info .campo-info .v.muted { color: var(--ink-faint); font-weight: 500; }
 
-.panel-detalle-ot .empty-detalle {
+.panel-detalle .empty-detalle {
     display: flex; align-items: center; justify-content: center; min-height: 320px;
     color: var(--ink-faint); font-size: .9rem; padding: 2rem;
 }
+
+/* ---- Clientes: fila compacta de la lista + panel de vista previa ---------
+   Elegir un cliente no navega ni recarga — todas las vistas previas ya
+   están en el DOM (ver clientes/list.html) y un toggle de JS (data-cliente)
+   muestra la que corresponde. "Ver ficha completa" sigue siendo un link
+   normal a clientes.detalle para editar/gestionar contratos. */
+
+.fila-cliente {
+    display: flex; align-items: center; gap: .6rem; background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--border-strong); border-radius: .5rem; padding: .5rem .7rem;
+    cursor: pointer; width: 100%; text-align: left;
+}
+.fila-cliente:hover { border-color: var(--ink-faint); }
+.fila-cliente.critica { border-left-color: var(--accent); }
+.fila-cliente.alerta { border-left-color: var(--bs-warning); }
+.fila-cliente.seleccionada { background: var(--surface-muted); box-shadow: inset 0 0 0 1px var(--border-strong); }
+.fila-cliente.inactivo { opacity: .6; }
+.fila-cliente .cuerpo { flex: 1; min-width: 0; }
+.fila-cliente .nombre { font-weight: 600; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fila-cliente .meta { font-size: .72rem; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fila-cliente .punto-estado { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--border-strong); }
+.fila-cliente.critica .punto-estado { background: var(--accent); }
+.fila-cliente.alerta .punto-estado { background: var(--bs-warning); }
+.fila-cliente:not(.critica):not(.alerta) .punto-estado { background: var(--bs-success); }
+.fila-cliente.inactivo .punto-estado { background: var(--ink-faint); }
+
+.vista-previa-cliente { display: none; }
+.vista-previa-cliente.activa { display: block; }
+
+/* ---- Coordinación de visitas ---------------------------------------------
+   Mismo patrón de lista+detalle que Clientes/OT — ver app/coordinacion.py
+   para la lógica de negocio. */
+
+.selector-mes { display: flex; align-items: center; gap: .5rem; background: var(--surface); border: 1px solid var(--border); border-radius: .5rem; padding: .3rem .4rem; box-shadow: var(--shadow-doc); }
+.selector-mes a.paso-mes { color: var(--ink-muted); text-decoration: none; width: 1.8rem; height: 1.8rem; border-radius: .35rem; display: flex; align-items: center; justify-content: center; font-size: .9rem; }
+.selector-mes a.paso-mes:hover { background: var(--surface-muted); color: var(--ink); }
+.selector-mes select { border: none; background: none; font-family: var(--font-display); font-weight: 700; font-size: .95rem; color: var(--ink); padding: 0 .3rem; }
+
+.fila-coord {
+    display: flex; align-items: center; gap: .6rem; background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--border-strong); border-radius: .5rem; padding: .6rem .8rem;
+    cursor: pointer; width: 100%; text-align: left;
+}
+.fila-coord:hover { border-color: var(--ink-faint); }
+.fila-coord.sin_coordinar { border-left-color: var(--accent); }
+.fila-coord.coordinada { border-left-color: var(--bs-info); }
+.fila-coord.asignada, .fila-coord.en_ejecucion { border-left-color: var(--bs-warning); }
+.fila-coord.ejecutada { border-left-color: var(--bs-success); }
+.fila-coord.seleccionada { background: var(--surface-muted); box-shadow: inset 0 0 0 1px var(--border-strong); }
+.fila-coord .cuerpo { flex: 1; min-width: 0; }
+.fila-coord .top-fila { display: flex; justify-content: space-between; gap: .5rem; align-items: baseline; }
+.fila-coord .nombre { font-weight: 700; font-size: .88rem; }
+.fila-coord .cliente { font-size: .74rem; color: var(--ink-muted); }
+.fila-coord .meta { font-size: .74rem; color: var(--ink-muted); margin-top: .2rem; }
+
+.form-coordinar { background: var(--surface-alt); border: 1px dashed var(--border-strong); border-radius: .6rem; padding: 1.2rem; }
+.form-coordinar .fila-campos { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: .9rem; }
+.form-coordinar .campo label { display: block; font-size: .78rem; font-weight: 600; margin-bottom: .35rem; }
+.form-coordinar .campo.fecha { max-width: 220px; }
+
+.timeline { display: flex; flex-direction: column; }
+.evento-tl { display: flex; gap: .8rem; padding: .6rem 0; border-bottom: 1px solid var(--border); font-size: .84rem; }
+.evento-tl:last-child { border-bottom: none; }
+.evento-tl .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--bs-info); margin-top: .45rem; flex-shrink: 0; }
+.evento-tl .cuando { font-family: var(--font-mono); font-size: .72rem; color: var(--ink-faint); min-width: 9rem; margin-top: .1rem; }
+.evento-tl .que { font-weight: 500; }
+.evento-tl .quien { color: var(--ink-muted); font-size: .78rem; }
 
 /* ---- Tarjetas de instalación (ficha del cliente) --------------------- */
 
