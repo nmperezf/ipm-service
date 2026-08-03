@@ -20,11 +20,6 @@ class Config:
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-cambiar-en-produccion")
 
-    # Para "Sugerir con IA" al armar un checklist (ver utils.sugerir_referencia_nfpa).
-    # Sin esto configurado, el botón sigue ahí pero avisa que no está disponible
-    # en vez de romper la pantalla.
-    ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
-
     # Configurable por variable de entorno para poder apuntar a un volumen
     # persistente (o, el día de mañana, a otro host) sin tocar código.
     UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", os.path.join(basedir, "app", "static", "uploads"))

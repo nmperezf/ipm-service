@@ -6,28 +6,9 @@ from flask_login import current_user
 from app import db
 from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_escritura_cliente
 from app.models import Cliente, Formulario, ServicioTipo, TipoFormulario, categoria_de_tipo_equipo, nombres_tipos_equipo
-from app.utils import TIPOS_CAMPO, armar_campos_desde_formulario, sugerir_referencia_nfpa
+from app.utils import TIPOS_CAMPO, armar_campos_desde_formulario
 
 tipos_formulario_bp = Blueprint("tipos_formulario", __name__, url_prefix="/tipos-formulario")
-
-
-@tipos_formulario_bp.route("/sugerir-nfpa", methods=["POST"])
-@rol_requerido("Administrador", "Jefe", "Técnico")
-def sugerir_nfpa():
-    """Sugiere (vía IA) la referencia NFPA de un campo mientras se arma un
-    checklist — botón "Sugerir con IA" en el constructor de campos. Devuelve
-    un borrador para revisar, nunca se guarda sin que alguien lo confirme."""
-    datos = request.get_json(silent=True) or {}
-    label = (datos.get("label") or "").strip()
-    if not label:
-        return {"error": "Falta la etiqueta del campo."}, 400
-    tipo_equipo = (datos.get("tipo_equipo") or "").strip() or None
-    categoria = categoria_de_tipo_equipo(tipo_equipo) if tipo_equipo else None
-    try:
-        cita, nota = sugerir_referencia_nfpa(label, tipo_equipo, categoria)
-    except RuntimeError as e:
-        return {"error": str(e)}, 502
-    return {"cita": cita, "nota": nota}
 
 
 @tipos_formulario_bp.route("/<int:cliente_id>/nuevo", methods=["GET", "POST"])
