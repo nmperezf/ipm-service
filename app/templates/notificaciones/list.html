@@ -1,12 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Notificaciones{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Notificaciones</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Notificaciones</h1>
+
+    <div style="max-width: 900px;">
 
             {% if grupos_no_leidas %}
             <div class="d-flex justify-content-end mb-3">
@@ -79,7 +77,6 @@
             </div>
             {% endif %}
 
-        </div>
     </div>
 </div>
 {% endblock %}

@@ -4,8 +4,8 @@
 <div class="pagina-ancha">
     <h1>{{ 'Mis órdenes de trabajo' if current_user.rol == 'Técnico' else 'Órdenes de trabajo' }}</h1>
 
-    <div class="split-ot">
-        <div class="panel-lista-ot">
+    <div class="split-panel">
+        <div class="panel-lista">
 
             {% if current_user.rol != 'Técnico' %}
             <div class="grid-atencion">
@@ -47,8 +47,8 @@
                 {% for ot in ordenes %}
                 {% set dias = (hoy - ot.fecha_apertura).days %}
                 {% set abierta = ot.estado not in ('Finalizada', 'Cancelada') %}
-                {% set urgente_fila = abierta and ot.prioridad in ('Urgente', 'Alta') %}
-                <a class="fila-ot{{ ' urgente' if urgente_fila and ot.prioridad == 'Urgente' }}{{ ' alta' if urgente_fila and ot.prioridad == 'Alta' }}{{ ' seleccionada' if ot_actual and ot.id == ot_actual.id }}"
+                {% set clase_prioridad = {'Urgente': 'urgente', 'Alta': 'alta', 'Media': 'media'}.get(ot.prioridad, '') if abierta else '' %}
+                <a class="fila-ot{{ ' ' + clase_prioridad if clase_prioridad }}{{ ' seleccionada' if ot_actual and ot.id == ot_actual.id }}"
                    href="{{ url_for('ordenes.detalle', ot_id=ot.id) }}"
                    data-estado="{{ ot.estado }}"
                    data-buscar="{{ (ot.numero ~ ' ' ~ ot.instalacion.cliente.nombre ~ ' ' ~ ot.instalacion.nombre ~ ' ' ~ ot.nombre_tecnico)|lower }}">
@@ -72,13 +72,13 @@
 
         </div>
 
-        <div class="panel-detalle-ot">
+        <div class="panel-detalle">
             {% if not ot_actual %}
             <div class="empty-detalle">Elegí una OT de la lista para ver el detalle.</div>
             {% else %}
             {% set ot = ot_actual %}
 
-            <div class="detalle-ot-cab">
+            <div class="detalle-cab">
                 <div>
                     <h2>{{ ot.numero }} — {{ ot.descripcion or ot.tipo }}</h2>
                     <span class="badge badge-{{ ot.estado.replace(' ', '.') }} fs-6">{{ ot.estado }}</span>
@@ -91,9 +91,9 @@
                 </div>
             </div>
 
-            <div class="detalle-ot-cuerpo">
+            <div class="detalle-cuerpo">
 
-                <div class="grid-info-ot">
+                <div class="grid-info">
                     <div class="campo-info"><div class="l">Tipo</div><div class="v">{{ ot.tipo }}</div></div>
                     <div class="campo-info"><div class="l">Prioridad</div><div class="v"><span class="badge badge-{{ ot.prioridad }}">{{ ot.prioridad }}</span></div></div>
                     <div class="campo-info"><div class="l">Cliente</div><div class="v"><a href="{{ url_for('clientes.detalle', cliente_id=ot.instalacion.cliente_id) }}">{{ ot.instalacion.cliente.nombre }}</a></div></div>

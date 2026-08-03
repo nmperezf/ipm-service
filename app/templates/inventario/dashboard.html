@@ -4,45 +4,55 @@
 <div class="pagina-ancha">
     <h1>Inventario de repuestos</h1>
 
-            <div class="d-flex justify-content-end mb-3">
-                <a href="{{ url_for('inventario.nuevo') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo repuesto</a>
-            </div>
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{{ url_for('inventario.nuevo') }}" class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo repuesto</a>
+    </div>
 
-            <div class="grid-atencion">
-                <div class="card-atencion">
-                    <span class="num">{{ repuestos|length }}</span>
-                    <span class="etiqueta">Repuestos activos</span>
+    <div class="grid-atencion">
+        <div class="card-atencion">
+            <span class="num">{{ repuestos|length }}</span>
+            <span class="etiqueta">Repuestos activos</span>
+        </div>
+        <a href="{{ url_for('inventario.criticos_lista') }}" class="card-atencion critico">
+            <span class="num">{{ criticos|length }}</span>
+            <span class="etiqueta">En nivel crítico</span>
+        </a>
+    </div>
+
+    {% if not repuestos %}
+    <div class="estado-vacio-doc"><i class="bi bi-box-seam"></i><p class="mb-0">Todavía no cargaste repuestos.</p></div>
+    {% endif %}
+    <div class="grid-repuestos-doc">
+        {% for r in repuestos %}
+        <div class="card-repuesto-doc{{ ' critico' if r.en_nivel_critico }}">
+            <span class="filete-lateral-doc"></span>
+            <div class="card-repuesto-doc-top">
+                <div>
+                    <div class="nombre">{{ r.nombre }}</div>
+                    <div class="codigo">{{ r.codigo or 'Sin código' }}</div>
                 </div>
-                <a href="{{ url_for('inventario.criticos_lista') }}" class="card-atencion alerta">
-                    <span class="num">{{ criticos|length }}</span>
-                    <span class="etiqueta">En nivel crítico</span>
-                </a>
+                {% if r.en_nivel_critico %}<span class="estado-pill-doc critico">Crítico</span>{% endif %}
             </div>
-
-            <div class="table-responsive">
-            <table class="table table-hover data-table">
-                <thead><tr><th>Repuesto</th><th>Código</th><th>Stock actual</th><th>Stock mínimo</th><th></th></tr></thead>
-                <tbody>
-                    {% for r in repuestos %}
-                    <tr class="{{ 'table-warning' if r.en_nivel_critico }}">
-                        <td>{{ r.nombre }}</td>
-                        <td>{{ r.codigo or '-' }}</td>
-                        <td>{{ r.stock_actual }} {{ r.unidad }}</td>
-                        <td>{{ r.stock_minimo }} {{ r.unidad }}</td>
-                        <td>
-                            <form method="POST" action="{{ url_for('inventario.reponer', repuesto_id=r.id) }}" class="d-inline-flex gap-1">
-                                <input type="number" name="cantidad" min="1" class="form-control form-control-sm" style="width:80px" placeholder="Cant." required>
-                                <button type="submit" class="btn btn-sm btn-outline-success">Reponer</button>
-                            </form>
-                            <a href="{{ url_for('inventario.editar', repuesto_id=r.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Editar</a>
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="5"><div class="estado-vacio-doc"><i class="bi bi-box-seam"></i><p class="mb-0">Todavía no cargaste repuestos.</p></div></td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="card-repuesto-doc-stats">
+                <div class="stat{{ ' critico' if r.en_nivel_critico }}">
+                    <span class="valor">{{ r.stock_actual }}</span>
+                    <span class="etiqueta">Stock actual ({{ r.unidad }})</span>
+                </div>
+                <div class="stat">
+                    <span class="valor">{{ r.stock_minimo }}</span>
+                    <span class="etiqueta">Stock mínimo ({{ r.unidad }})</span>
+                </div>
             </div>
+            <div class="card-repuesto-doc-acciones">
+                <form method="POST" action="{{ url_for('inventario.reponer', repuesto_id=r.id) }}" class="d-inline-flex gap-1">
+                    <input type="number" name="cantidad" min="1" class="form-control form-control-sm" placeholder="Cant." required>
+                    <button type="submit" class="btn btn-sm btn-outline-success">Reponer</button>
+                </form>
+                <a href="{{ url_for('inventario.editar', repuesto_id=r.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Editar</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
 
 </div>
 {% endblock %}
