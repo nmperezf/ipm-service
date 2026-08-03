@@ -58,7 +58,7 @@
                         </div>
                         <div id="tipo-equipo-wrapper" style="display:none;">
                             <label class="form-label">Tipo de equipo al que aplica</label>
-                            <select name="tipo_equipo_aplicable" class="form-select" style="max-width: 300px;">
+                            <select name="tipo_equipo_aplicable" id="tipo_equipo_aplicable" class="form-select" style="max-width: 300px;">
                                 {% for t in tipos_equipo %}
                                 <option value="{{ t }}" {% if (tipo and tipo.tipo_equipo_aplicable == t) or (not tipo and tipo_equipo_sugerido == t) %}selected{% endif %}>{{ t }}</option>
                                 {% endfor %}
@@ -73,9 +73,10 @@
     <table class="table table-sm align-middle" id="tabla-campos">
                     <thead>
                         <tr>
-                            <th style="width: 35%">Etiqueta (lo que ve el técnico)</th>
-                            <th style="width: 20%">Tipo de campo</th>
-                            <th style="width: 35%">Opciones (solo para selección/checklist, separadas por coma)</th>
+                            <th style="width: 28%">Etiqueta (lo que ve el técnico)</th>
+                            <th style="width: 15%">Tipo de campo</th>
+                            <th style="width: 25%">Opciones (solo para selección/checklist, separadas por coma)</th>
+                            <th style="width: 27%">Referencia NFPA (opcional)</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -108,7 +109,7 @@ function opcionesTiposCampo() {
 }
 
 function agregarFila(campo) {
-    campo = campo || { campo: '', tipo: 'texto', label: '', opciones: [] };
+    campo = campo || { campo: '', tipo: 'texto', label: '', opciones: [], norma: '' };
     const tbody = document.getElementById('cuerpo-campos');
     const fila = document.createElement('tr');
     fila.innerHTML =
@@ -118,6 +119,11 @@ function agregarFila(campo) {
         opcionesTiposCampo() + '</select></td>' +
         '<td><input type="text" name="campo_opciones" class="form-control form-control-sm" placeholder="opción 1, opción 2..." value="' +
         ((campo.opciones || []).join(', ')).replace(/"/g, '&quot;') + '"></td>' +
+        '<td><div class="d-flex gap-1">' +
+        '<input type="text" name="campo_norma" class="form-control form-control-sm" placeholder="Ej: NFPA 25 §8.3.1" value="' +
+        (campo.norma || '').replace(/"/g, '&quot;') + '">' +
+        '<button type="button" class="btn btn-sm btn-outline-secondary flex-shrink-0" onclick="sugerirNFPA(this)" title="Sugerir con IA (revisar antes de guardar)"><i class="bi bi-stars"></i></button>' +
+        '</div></td>' +
         '<td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest(\'tr\').remove()">Quitar</button></td>';
     tbody.appendChild(fila);
     fila.querySelector('select[name="campo_tipo"]').value = campo.tipo || 'texto';
@@ -129,6 +135,39 @@ function toggleOpciones(select) {
     const inputOpciones = fila.querySelector('input[name="campo_opciones"]');
     const necesitaOpciones = select.value === 'seleccion' || select.value === 'multi_seleccion';
     inputOpciones.style.display = necesitaOpciones ? 'block' : 'none';
+}
+
+function sugerirNFPA(boton) {
+    const fila = boton.closest('tr');
+    const label = fila.querySelector('input[name="campo_label"]').value.trim();
+    if (!label) {
+        alert('Escribí primero la etiqueta del campo.');
+        return;
+    }
+    const tipoEquipoSelect = document.getElementById('tipo_equipo_aplicable');
+    const porEquipo = document.getElementById('por_equipo');
+    const tipoEquipo = (tipoEquipoSelect && porEquipo && porEquipo.checked) ? tipoEquipoSelect.value : '';
+    const inputNorma = fila.querySelector('input[name="campo_norma"]');
+    const iconoOriginal = boton.innerHTML;
+    boton.disabled = true;
+    boton.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+
+    fetch('{{ url_for("tipos_formulario.sugerir_nfpa") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label: label, tipo_equipo: tipoEquipo })
+    })
+        .then(function (r) { return r.json().then(function (datos) { return { ok: r.ok, datos: datos }; }); })
+        .then(function (res) {
+            if (!res.ok) { throw new Error(res.datos.error || 'No se pudo generar la sugerencia.'); }
+            inputNorma.value = res.datos.cita;
+            if (res.datos.nota) { inputNorma.title = res.datos.nota; }
+        })
+        .catch(function (err) { alert('No se pudo sugerir una referencia: ' + err.message); })
+        .finally(function () {
+            boton.disabled = false;
+            boton.innerHTML = iconoOriginal;
+        });
 }
 
 document.addEventListener('DOMContentLoaded', function () {

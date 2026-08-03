@@ -22,7 +22,10 @@
                     {% for campo in formulario.tipo_formulario.campos() %}
                     {% set valor = formulario.datos().get(campo.campo) %}
                     <tr>
-                        <th style="width: 30%">{{ campo.label }}</th>
+                        <th style="width: 30%">
+                            {{ campo.label }}
+                            {% if campo.norma %}<br><span class="badge bg-light text-dark border" style="font-weight:500;">{{ campo.norma }}</span>{% endif %}
+                        </th>
                         <td>
                             {% if valor is iterable and valor is not string %}
                                 {{ valor|join(', ') if valor else '-' }}

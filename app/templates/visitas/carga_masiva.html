@@ -23,7 +23,10 @@
                             <tr>
                                 <th style="min-width: 160px;">Equipo</th>
                                 {% for campo in tipo.campos() %}
-                                <th style="min-width: 150px;">{{ campo.label }}</th>
+                                <th style="min-width: 150px;">
+                                    {{ campo.label }}
+                                    {% if campo.norma %}<br><span class="badge bg-light text-dark border" style="font-weight:500;">{{ campo.norma }}</span>{% endif %}
+                                </th>
                                 {% endfor %}
                             </tr>
                         </thead>
