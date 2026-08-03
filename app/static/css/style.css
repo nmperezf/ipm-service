@@ -1481,10 +1481,17 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .panel-lista { width: 380px; flex-shrink: 0; display: flex; flex-direction: column; gap: 1rem; }
 .panel-detalle { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: .6rem; box-shadow: var(--shadow-doc); }
 @media (min-width: 1101px) {
-    /* Clavada arriba mientras se recorre una lista larga — no se pierde de
-       vista al scrollear, y si su propio contenido es más alto que la
-       pantalla, scrollea internamente en vez de arrastrar todo. */
-    .panel-detalle { position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto; }
+    /* Clavada arriba mientras se recorre una lista más corta que ella —
+       no se pierde de vista al scrollear. Antes tenía max-height +
+       overflow-y:auto para scrollear internamente, pero esa altura se
+       calculaba asumiendo que el panel ya estaba pegado a top:1rem; en
+       su posición natural (más abajo, debajo del título) el cálculo
+       quedaba corto y el final del contenido terminaba tapado detrás
+       del footer fijo sin forma de llegar a verlo. Sin el tope, el
+       panel mide lo que su contenido necesita y el scroll de la propia
+       página (que ya le hace lugar al footer, ver .zona-contenido) es
+       el que lo resuelve — sigue clavado arriba mientras se pueda. */
+    .panel-detalle { position: sticky; top: 1rem; }
 }
 @media (max-width: 1100px) {
     .split-panel { flex-direction: column; }
