@@ -79,6 +79,7 @@
             {% set tiene_criticas = d['Deficiencia crítica'] > 0 %}
             {% set tiene_alerta = d['Deficiencia no crítica'] > 0 or d['Desactivación'] > 0 or d['Comentario'] > 0 %}
             {% set cumplimiento = cliente.cumplido_anual_pct() %}
+            {% set indicadores = cliente.indicadores() %}
             <div class="vista-previa-cliente{{ ' activa' if loop.first }}" id="preview-cliente-{{ cliente.id }}">
 
                 <div class="detalle-cab">
@@ -88,8 +89,9 @@
                     </div>
                     <div class="d-flex gap-2 flex-wrap">
                         <a href="{{ url_for('clientes.editar', cliente_id=cliente.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Editar</a>
-                        <a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}" class="btn btn-sm btn-outline-dark">Ver ficha completa →</a>
+                        <a href="{{ url_for('instalaciones.nueva', cliente_id=cliente.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-plus-lg me-1"></i>Nueva instalación</a>
                         {% if current_user.rol in ('Administrador', 'Jefe') %}
+                        <a href="{{ url_for('clientes.reporte_periodo', cliente_id=cliente.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-file-earmark-bar-graph me-1"></i>Reporte</a>
                         <form method="POST" action="{{ url_for('clientes.eliminar', cliente_id=cliente.id) }}" class="d-inline form-confirmar-password" data-sin-bloqueo
                               data-mensaje="¿Eliminar '{{ cliente.nombre }}'? Se borran también todas sus instalaciones, contratos, visitas y equipos. Esta acción no se puede deshacer.">
                             <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>Eliminar</button>
@@ -117,19 +119,73 @@
                         {% if not tiene_criticas and not tiene_alerta %}<span class="mini-chip sin-novedad">Sin novedades</span>{% endif %}
                     </div>
 
-                    <div class="seccion-titulo-doc" style="margin-top:0;">Instalaciones</div>
+                    <div class="seccion-titulo-doc" style="margin-top:0;">Instalaciones ({{ cliente.instalaciones|length }})</div>
                     {% if not cliente.instalaciones %}
-                    <p class="text-muted small">Todavía no tiene instalaciones cargadas.</p>
+                    <div class="estado-vacio-doc">
+                        <i class="bi bi-building"></i>
+                        <p>Todavía no tiene instalaciones cargadas.</p>
+                        <a href="{{ url_for('instalaciones.nueva', cliente_id=cliente.id) }}" class="btn btn-dark btn-sm"><i class="bi bi-plus-lg me-1"></i>Nueva instalación</a>
+                    </div>
                     {% else %}
-                    <ul class="list-unstyled small d-flex flex-column gap-2">
+                    <div class="grid-instalaciones-doc mb-4">
                         {% for inst in cliente.instalaciones %}
-                        <li>
-                            <a href="{{ url_for('instalaciones.detalle', instalacion_id=inst.id) }}">{{ inst.nombre }}</a>
-                            <span class="text-muted">— {{ inst.equipos|length }} equipo{{ 's' if inst.equipos|length != 1 }}</span>
-                        </li>
+                        {% set inst_def_count = inst.deficiencias_abiertas_count() %}
+                        {% set inst_cumplimiento = inst.cumplido_anual_pct() %}
+                        {% set inst_proxima = inst.proxima_visita() %}
+                        <a class="card-instalacion-doc {{ 'critica' if inst_def_count else 'ok' }}" href="{{ url_for('instalaciones.detalle', instalacion_id=inst.id) }}">
+                            <span class="filete-lateral-doc"></span>
+                            <div>
+                                <div class="nombre">{{ inst.nombre }}</div>
+                                <div class="direccion">{{ inst.direccion or '' }}</div>
+                            </div>
+                            <div class="stats">
+                                <div class="stat"><span class="valor">{{ inst.equipos|length }}</span><span class="etiqueta">Equipos</span></div>
+                                <div class="stat {{ 'def' if inst_def_count else 'ok' }}"><span class="valor">{{ inst_def_count }}</span><span class="etiqueta">Deficiencias</span></div>
+                                <div class="stat"><span class="valor">{{ inst_cumplimiento }}%</span><span class="etiqueta">Cumplimiento</span></div>
+                            </div>
+                            <div class="proxima">Próxima visita: <strong>{{ inst_proxima.strftime('%d/%m/%Y') if inst_proxima else 'sin programar' }}</strong></div>
+                        </a>
                         {% endfor %}
-                    </ul>
+                    </div>
                     {% endif %}
+
+                    <div class="seccion-titulo-doc">Resumen del cliente</div>
+                    <div class="grid-atencion mb-3">
+                        <a href="{{ url_for('clientes.deficiencias', cliente_id=cliente.id, clasificacion='Deficiencia crítica') }}" class="card-atencion critico">
+                            <span class="num">{{ d['Deficiencia crítica'] }}</span>
+                            <span class="etiqueta">Deficiencias críticas</span>
+                        </a>
+                        <a href="{{ url_for('clientes.deficiencias', cliente_id=cliente.id, clasificacion='Deficiencia no crítica') }}" class="card-atencion alerta">
+                            <span class="num">{{ d['Deficiencia no crítica'] }}</span>
+                            <span class="etiqueta">Deficiencias no críticas</span>
+                        </a>
+                        <a href="{{ url_for('clientes.deficiencias', cliente_id=cliente.id, clasificacion='Desactivación') }}" class="card-atencion info">
+                            <span class="num">{{ d['Desactivación'] }}</span>
+                            <span class="etiqueta">Desactivaciones</span>
+                        </a>
+                        <a href="{{ url_for('clientes.deficiencias', cliente_id=cliente.id, clasificacion='Comentario') }}" class="card-atencion">
+                            <span class="num">{{ d['Comentario'] }}</span>
+                            <span class="etiqueta">Comentarios</span>
+                        </a>
+                        <div class="card-atencion info">
+                            <span class="num">{{ indicadores.servicios_pendientes }}</span>
+                            <span class="etiqueta">Servicios pendientes</span>
+                        </div>
+                        <div class="card-atencion ok">
+                            <span class="num">{{ cumplimiento }}%</span>
+                            <span class="etiqueta">Cumplido (año de contrato)</span>
+                        </div>
+                        <div class="card-atencion ok">
+                            <span class="num">{{ indicadores.cumplimiento_pct }}%</span>
+                            <span class="etiqueta">Cumplimiento histórico</span>
+                        </div>
+                    </div>
+
+                    <p class="text-muted small mb-0">
+                        <strong>Última visita:</strong> {{ indicadores.ultima_visita.strftime('%d/%m/%Y') if indicadores.ultima_visita else 'Sin visitas registradas' }}
+                        &nbsp;|&nbsp;
+                        <strong>Próxima visita:</strong> {{ indicadores.proxima_visita.strftime('%d/%m/%Y') if indicadores.proxima_visita else '-' }}
+                    </p>
                 </div>
             </div>
             {% endfor %}
