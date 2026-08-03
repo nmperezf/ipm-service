@@ -23,34 +23,34 @@
 
 {% macro nav_items(clase, con_grupos=False) %}
 {% if con_grupos %}<li class="grupo-label">Operación</li>{% endif %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('dashboard.inicio') }}"><i class="bi bi-house"></i> Inicio</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('dashboard.inicio') }}" title="Inicio"><i class="bi bi-house"></i><span class="rotulo-sidebar">Inicio</span></a></li>
 {% if current_user.is_authenticated and current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('clientes.listar') }}"><i class="bi bi-people"></i> Clientes</a></li>
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('planificacion.calendario') }}"><i class="bi bi-calendar3"></i> Calendario</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('clientes.listar') }}" title="Clientes"><i class="bi bi-people"></i><span class="rotulo-sidebar">Clientes</span></a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('planificacion.calendario') }}" title="Calendario"><i class="bi bi-calendar3"></i><span class="rotulo-sidebar">Calendario</span></a></li>
 {% if current_user.rol in ('Administrador', 'Jefe') %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('coordinacion.index') }}"><i class="bi bi-telephone"></i> Coordinación</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('coordinacion.index') }}" title="Coordinación"><i class="bi bi-telephone"></i><span class="rotulo-sidebar">Coordinación</span></a></li>
 {% endif %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('ordenes.listar') }}"><i class="bi bi-clipboard-check"></i> Órdenes de trabajo</a></li>
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('inventario.dashboard') }}"><i class="bi bi-box-seam"></i> Inventario</a></li>
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('formularios.hub') }}"><i class="bi bi-clipboard-check"></i> Formularios</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('ordenes.listar') }}" title="Órdenes de trabajo"><i class="bi bi-clipboard-check"></i><span class="rotulo-sidebar">Órdenes de trabajo</span></a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('inventario.dashboard') }}" title="Inventario"><i class="bi bi-box-seam"></i><span class="rotulo-sidebar">Inventario</span></a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('formularios.hub') }}" title="Formularios"><i class="bi bi-clipboard-check"></i><span class="rotulo-sidebar">Formularios</span></a></li>
 <li class="nav-item">
-    <a class="{{ clase }} position-relative" href="{{ url_for('notificaciones.listar') }}">
-        <i class="bi bi-bell"></i> Notificaciones
+    <a class="{{ clase }} position-relative" href="{{ url_for('notificaciones.listar') }}" title="Notificaciones">
+        <i class="bi bi-bell"></i><span class="rotulo-sidebar">Notificaciones</span>
         {% if notificaciones_no_leidas %}<span class="punto-no-leido" title="{{ notificaciones_no_leidas }} sin leer"></span>{% endif %}
     </a>
 </li>
 {% endif %}
 {% if current_user.is_authenticated and current_user.rol in ('Administrador', 'Jefe', 'Super Admin') %}
 {% if con_grupos %}<li class="grupo-label">Administración</li>{% endif %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('usuarios.listar') }}"><i class="bi bi-person-badge"></i> Usuarios</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('usuarios.listar') }}" title="Usuarios"><i class="bi bi-person-badge"></i><span class="rotulo-sidebar">Usuarios</span></a></li>
 {% endif %}
 {% if current_user.is_authenticated and current_user.rol == 'Super Admin' %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('empresas.listar') }}"><i class="bi bi-building"></i> Empresas</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('empresas.listar') }}" title="Empresas"><i class="bi bi-building"></i><span class="rotulo-sidebar">Empresas</span></a></li>
 {% endif %}
 {% if current_user.is_authenticated and current_user.rol == 'Cliente' %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.equipos') }}"><i class="bi bi-hdd-stack"></i> Mis equipos</a></li>
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.contratos') }}"><i class="bi bi-file-earmark-text"></i> Mi contrato</a></li>
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.historico') }}"><i class="bi bi-clock-history"></i> Histórico técnico</a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.equipos') }}" title="Mis equipos"><i class="bi bi-hdd-stack"></i><span class="rotulo-sidebar">Mis equipos</span></a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.contratos') }}" title="Mi contrato"><i class="bi bi-file-earmark-text"></i><span class="rotulo-sidebar">Mi contrato</span></a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.historico') }}" title="Histórico técnico"><i class="bi bi-clock-history"></i><span class="rotulo-sidebar">Histórico técnico</span></a></li>
 {% endif %}
 {% endmacro %}
 
@@ -91,14 +91,14 @@
 <div class="app-shell">
 <aside class="sidebar-derecho d-none d-lg-flex" id="sidebar-derecho">
     <div class="sidebar-header">
-        <div style="flex:1; min-width:0;">
-            <a class="sidebar-marca" href="{{ url_for('dashboard.inicio') }}">
-                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="brand-mark"> IPM Manager
+        <div class="sidebar-header-info">
+            <a class="sidebar-marca" href="{{ url_for('dashboard.inicio') }}" title="IPM Manager">
+                <img src="{{ url_for('static', filename='img/logo.png') }}" alt="" class="brand-mark"> <span class="rotulo-sidebar">IPM Manager</span>
             </a>
             <div class="sidebar-usuario">{{ current_user.nombre_completo or current_user.username }}</div>
             <div class="sidebar-rol">{{ current_user.rol }}</div>
         </div>
-        <button type="button" id="sidebar-close" class="sidebar-close-btn" title="Ocultar menú" aria-label="Ocultar menú">
+        <button type="button" id="sidebar-close" class="sidebar-close-btn" title="Mostrar/ocultar texto del menú" aria-label="Mostrar/ocultar texto del menú">
             <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="12 4 6 10 12 16"/></svg>
         </button>
     </div>
@@ -106,15 +106,12 @@
         {{ nav_items('sidebar-link', con_grupos=True) }}
     </ul>
     <div class="sidebar-footer">
-        <a class="sidebar-link" href="{{ url_for('auth.logout') }}"><i class="bi bi-box-arrow-right"></i> Cerrar sesión</a>
+        <a class="sidebar-link" href="{{ url_for('auth.logout') }}" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i><span class="rotulo-sidebar">Cerrar sesión</span></a>
     </div>
 </aside>
 
 <div class="zona-contenido">
     <div class="barra-utilitaria">
-        <button type="button" id="sidebar-mostrar" class="btn-utilitario" title="Mostrar menú" aria-label="Mostrar menú">
-            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="8 4 14 10 8 16"/></svg>
-        </button>
         <div class="flex-grow-1"></div>
         <button type="button" class="btn-utilitario theme-toggle-trigger" title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
             <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
@@ -221,21 +218,17 @@
     })();
 
     (function () {
-        // Barra lateral fija en desktop (≥992px) — el estado oculta/visible
+        // Barra lateral fija en desktop (≥992px) — el estado angosta/ancha
         // se guarda en localStorage y se aplica antes del primer paint (ver
         // script en <head>) para que no parpadee al cargar la página.
+        // Angosta no es "oculta": queda un riel con los íconos, sin texto.
         var root = document.documentElement;
-        var closeBtn = document.getElementById('sidebar-close');
-        var showBtn = document.getElementById('sidebar-mostrar');
-        if (!closeBtn || !showBtn) { return; }
+        var toggleBtn = document.getElementById('sidebar-close');
+        if (!toggleBtn) { return; }
 
-        closeBtn.addEventListener('click', function () {
-            root.classList.add('sidebar-oculta');
-            localStorage.setItem('ipm-sidebar', 'oculta');
-        });
-        showBtn.addEventListener('click', function () {
-            root.classList.remove('sidebar-oculta');
-            localStorage.setItem('ipm-sidebar', 'visible');
+        toggleBtn.addEventListener('click', function () {
+            var angosta = root.classList.toggle('sidebar-oculta');
+            localStorage.setItem('ipm-sidebar', angosta ? 'oculta' : 'visible');
         });
     })();
 

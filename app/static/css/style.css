@@ -344,13 +344,13 @@ small, .small, .text-muted {
         top: 0;
         height: 100vh;
         border-right: 1px solid rgba(255,255,255,.08);
-        transition: width .18s ease, opacity .18s ease;
+        transition: width .18s ease;
         overflow: hidden;
     }
+    /* Angosta: no desaparece, queda un riel de solo íconos (ver
+       .rotulo-sidebar más abajo, oculto en este estado). */
     html.sidebar-oculta .sidebar-derecho {
-        width: 0;
-        opacity: 0;
-        border-right: none;
+        width: 68px;
     }
 }
 .sidebar-header {
@@ -361,6 +361,17 @@ small, .small, .text-muted {
     border-bottom: 1px solid rgba(255,255,255,.1);
     white-space: nowrap;
 }
+.sidebar-header-info {
+    flex: 1;
+    min-width: 0;
+}
+html.sidebar-oculta .sidebar-header {
+    flex-direction: column;
+    align-items: center;
+    padding: 1.1rem .5rem;
+    gap: .7rem;
+}
+html.sidebar-oculta .sidebar-header-info { flex: 0 0 auto; }
 .sidebar-marca {
     display: flex;
     align-items: center;
@@ -371,6 +382,7 @@ small, .small, .text-muted {
     color: #fff;
     margin-bottom: .9rem;
 }
+html.sidebar-oculta .sidebar-marca { margin-bottom: 0; justify-content: center; }
 .sidebar-marca .brand-mark { height: 24px; width: auto; }
 .sidebar-usuario {
     font-family: var(--font-display);
@@ -392,6 +404,10 @@ small, .small, .text-muted {
     border-radius: 2rem;
     padding: .2rem .55rem;
 }
+html.sidebar-oculta .sidebar-usuario,
+html.sidebar-oculta .sidebar-rol {
+    display: none;
+}
 .sidebar-close-btn {
     background: none;
     border: none;
@@ -409,6 +425,9 @@ small, .small, .text-muted {
 .sidebar-close-btn:hover {
     color: #fff;
     background: rgba(255,255,255,.08);
+}
+html.sidebar-oculta .sidebar-close-btn svg {
+    transform: rotate(180deg);
 }
 .sidebar-nav {
     list-style: none;
@@ -434,6 +453,9 @@ small, .small, .text-muted {
 .sidebar-nav > .grupo-label:first-child {
     margin-top: 0;
 }
+html.sidebar-oculta .grupo-label {
+    display: none;
+}
 .sidebar-link {
     display: flex;
     align-items: center;
@@ -458,6 +480,19 @@ small, .small, .text-muted {
     text-align: center;
     opacity: .85;
 }
+html.sidebar-oculta .sidebar-link {
+    justify-content: center;
+    padding: .7rem 0;
+}
+html.sidebar-oculta .sidebar-link i {
+    font-size: 1.05rem;
+}
+/* .rotulo-sidebar también se usa en los mismos <a> del menú colapsable
+   mobile (misma macro nav_items) — acotado a .sidebar-derecho para no
+   vaciar de texto ese menú cuando se abre en celular. */
+html.sidebar-oculta .sidebar-derecho .rotulo-sidebar {
+    display: none;
+}
 .sidebar-footer {
     padding: 1.1rem 1.4rem calc(1.1rem + env(safe-area-inset-bottom));
     border-top: 1px solid rgba(255,255,255,.1);
@@ -472,18 +507,20 @@ small, .small, .text-muted {
     background: none;
     border-left-color: transparent;
 }
+html.sidebar-oculta .sidebar-footer .sidebar-link {
+    padding: .4rem 0;
+    justify-content: center;
+}
 
 /* Franja utilitaria (tema + notificaciones) arriba del contenido en desktop
    — con la navbar de arriba oculta a partir de 992px, esto es lo que la
-   reemplaza. El botón para volver a mostrar la barra lateral vive acá
-   también, oculto salvo cuando la barra está escondida. */
+   reemplaza. Angostar/expandir el menú se maneja desde el propio botón
+   en .sidebar-header, no hace falta un botón acá. */
 .barra-utilitaria { display: none; }
 @media (min-width: 992px) {
     .barra-utilitaria {
         display: flex; align-items: center; gap: .2rem; padding: .7rem 1.4rem 0;
     }
-    #sidebar-mostrar { display: none; }
-    html.sidebar-oculta #sidebar-mostrar { display: flex; }
 }
 .btn-utilitario {
     background: none; border: none; color: var(--ink-muted); width: 2.15rem; height: 2.15rem;
@@ -852,7 +889,7 @@ small, .small, .text-muted {
         position: fixed; left: 264px; right: 0; bottom: 0; z-index: 500;
         transition: left .18s ease;
     }
-    html.sidebar-oculta .ipm-footer { left: 0; }
+    html.sidebar-oculta .ipm-footer { left: 68px; }
 }
 
 /* ---- Login (pantalla completa, sin el chrome de la app) ------------------ */
