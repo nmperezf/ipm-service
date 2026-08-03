@@ -60,10 +60,10 @@
             <button type="button" class="fila-coord {{ s.estado_derivado }}{{ ' seleccionada' if loop.first }}" data-item="{{ s.id }}" data-estado="{{ s.estado_derivado }}">
                 <span class="cuerpo">
                     <span class="top-fila">
-                        <span class="nombre">{{ inst.nombre }}</span>
+                        <span class="nombre">{{ inst.cliente.nombre }}</span>
                         <span class="badge badge-{{ s.estado_derivado }}">{{ s.estado_derivado.replace('_', ' ')|capitalize }}</span>
                     </span>
-                    <span class="cliente">{{ inst.cliente.nombre }}</span>
+                    <span class="cliente">{{ inst.nombre }}</span>
                     <span class="meta">
                         {% if s.coordinada %}
                         {{ s.fecha_coordinada.strftime('%d/%m/%Y') }}
@@ -85,8 +85,8 @@
 
                 <div class="detalle-cab">
                     <div>
-                        <h2>{{ inst.nombre }}</h2>
-                        <div class="cliente-sub text-muted">{{ inst.cliente.nombre }}</div>
+                        <h2>{{ inst.cliente.nombre }}</h2>
+                        <div class="cliente-sub text-muted">{{ inst.nombre }}</div>
                     </div>
                     <span class="badge badge-{{ s.estado_derivado }} fs-6">{{ s.estado_derivado.replace('_', ' ')|capitalize }}</span>
                 </div>

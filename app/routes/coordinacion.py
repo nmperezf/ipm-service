@@ -46,7 +46,7 @@ def index():
     )
     # Más recientes / con más para hacer primero: sin coordinar arriba de todo.
     orden_estado = {"sin_coordinar": 0, "coordinada": 1, "asignada": 2, "en_ejecucion": 3, "ejecutada": 4}
-    solicitudes.sort(key=lambda s: (orden_estado.get(s.estado_derivado, 9), s.contrato.instalacion.nombre))
+    solicitudes.sort(key=lambda s: (orden_estado.get(s.estado_derivado, 9), s.contrato.instalacion.cliente.nombre))
 
     conteos = {"sin_coordinar": 0, "coordinada": 0, "asignada": 0, "en_ejecucion": 0, "ejecutada": 0}
     servicios_por_solicitud = {}
