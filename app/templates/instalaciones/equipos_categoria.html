@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ categoria }} - {{ instalacion.nombre }}{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>{{ categoria }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>{{ categoria }}</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}">&larr; {{ instalacion.nombre }}</a></p>
             <p class="text-muted">{{ instalacion.nombre }} &middot; {{ equipos|length }} equipo(s)</p>
@@ -39,7 +36,6 @@
             </a>
             {% endfor %}
 
-        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,13 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ formulario.tipo_formulario.nombre }}{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>{{ formulario.tipo_formulario.nombre }}</h1>
-        </div>
-        <div class="cuerpo-doc">
-
+<div class="pagina-ancha">
+    <h1>{{ formulario.tipo_formulario.nombre }}</h1>
+    <div class="tarjeta-doc angosta">
             <p class="mb-1"><a href="{{ url_for('visitas.detalle', visita_id=formulario.item_visita.visita_id) }}">&larr; Volver a la visita</a></p>
 
             <div class="d-flex justify-content-end mb-2">
@@ -45,7 +41,6 @@
                 <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar checklist</button>
             </form>
 
-        </div>
     </div>
 </div>
 {% endblock %}

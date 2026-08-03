@@ -1,13 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Nueva observación{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Cargar observación</h1>
-        </div>
-        <div class="cuerpo-doc">
-
+<div class="pagina-ancha">
+    <h1>Cargar observación</h1>
+    <div class="tarjeta-doc angosta">
             <p class="text-muted mb-1">{{ instalacion.nombre }}</p>
             {% if equipo %}
             <p class="text-muted">Ligada al equipo: <strong>{{ equipo.nombre }}</strong></p>
@@ -62,7 +58,6 @@
                 <a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}" class="btn btn-link">Cancelar</a>
             </form>
 
-        </div>
     </div>
 </div>
 <script type="application/json" id="clasificaciones-con-presupuesto">{{ clasificaciones_con_presupuesto|tojson }}</script>

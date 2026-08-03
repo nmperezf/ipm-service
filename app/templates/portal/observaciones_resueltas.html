@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Observaciones resueltas{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Observaciones resueltas</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Observaciones resueltas</h1>
+    <div class="tarjeta-doc">
 
             <p class="text-muted mb-3"><a href="{{ url_for('portal.historico') }}">&larr; Histórico técnico</a> — {{ observaciones|length }} observación{{ 'es' if observaciones|length != 1 else '' }}.</p>
 
@@ -29,7 +26,6 @@
             </table>
             </div>
 
-        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ contrato.nombre }}{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>{{ contrato.nombre }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>{{ contrato.nombre }}</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=contrato.instalacion_id) }}">&larr; {{ contrato.instalacion.nombre }}</a></p>
 
@@ -137,7 +134,6 @@
                 <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar contrato</button>
             </form>
 
-        </div>
     </div>
 </div>
 {% endblock %}

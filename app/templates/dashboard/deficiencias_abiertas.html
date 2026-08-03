@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Deficiencias abiertas - IPM Manager{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Deficiencias abiertas</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Deficiencias abiertas</h1>
+    <div class="tarjeta-doc">
             <p class="text-muted mb-3"><a href="{{ url_for('dashboard.inicio') }}">&larr; Volver al Inicio</a> — {{ deficiencias|length }} observación{{ 'es' if deficiencias|length != 1 else '' }} sin resolver.</p>
 
             <ul class="lista-expandible" style="padding: 0;">
@@ -29,7 +26,6 @@
                 <li class="text-muted py-3">No hay deficiencias abiertas.</li>
                 {% endfor %}
             </ul>
-        </div>
     </div>
 </div>
 {% endblock %}

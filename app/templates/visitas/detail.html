@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Visita {{ visita.fecha.strftime('%d/%m/%Y') }}{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Visita del {{ visita.fecha.strftime('%d/%m/%Y') }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Visita del {{ visita.fecha.strftime('%d/%m/%Y') }}</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=visita.instalacion_id) }}">&larr; {{ visita.instalacion.nombre }}</a></p>
 
@@ -299,7 +296,6 @@
             </form>
             {% endif %}
 
-        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Mensajes resueltos{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Mensajes resueltos</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Mensajes resueltos</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-3"><a href="{{ url_for('dashboard.inicio') }}">&larr; Inicio</a></p>
 
@@ -36,7 +33,6 @@
                 {% endfor %}
             </div>
 
-        </div>
     </div>
 </div>
 {% endblock %}

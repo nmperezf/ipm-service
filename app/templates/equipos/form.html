@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Editar' if equipo else 'Nuevo' }} equipo{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>{{ 'Editar equipo' if equipo else 'Nuevo equipo' }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>{{ 'Editar equipo' if equipo else 'Nuevo equipo' }}</h1>
+    <div class="tarjeta-doc">
 
             <p class="text-muted">{{ instalacion.nombre }}</p>
 
@@ -161,7 +158,6 @@
             </form>
             {% endif %}
 
-        </div>
     </div>
 </div>
 <script>

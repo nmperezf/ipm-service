@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ instalacion.nombre }}{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>{{ instalacion.nombre }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>{{ instalacion.nombre }}</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('clientes.detalle', cliente_id=instalacion.cliente_id) }}">&larr; {{ instalacion.cliente.nombre }}</a></p>
 
@@ -157,7 +154,6 @@
                 <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar instalación</button>
             </form>
 
-        </div>
     </div>
 </div>
 {% endblock %}

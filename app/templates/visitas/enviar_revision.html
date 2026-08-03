@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Enviar a revisión{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Enviar a revisión</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Enviar a revisión</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}">&larr; Volver a la visita</a></p>
             <p class="text-muted">{{ visita.instalacion.nombre }} — {{ visita.fecha.strftime('%d/%m/%Y') }}<br>Una vez enviada, la visita queda congelada para vos — cualquier corrección la hace el Administrador/Jefe directamente al revisarla.</p>
@@ -84,7 +81,6 @@
                 <button type="submit" class="btn btn-primary"><i class="bi bi-send me-1"></i>Enviar a revisión</button>
             </form>
 
-        </div>
     </div>
 </div>
 <script src="{{ url_for('static', filename='js/firma.js') }}"></script>

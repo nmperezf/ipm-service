@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Editar' if servicio else 'Nuevo' }} servicio tipo{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>{{ 'Editar servicio tipo' if servicio else 'Nuevo servicio tipo' }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>{{ 'Editar servicio tipo' if servicio else 'Nuevo servicio tipo' }}</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('servicios_tipo.listar') }}">&larr; Servicios tipo</a></p>
             <p class="text-muted">
@@ -82,7 +79,6 @@
                 </div>
             </form>
 
-        </div>
     </div>
 </div>
 <script type="application/json" id="campos-iniciales">{{ (servicio.campos() if servicio else [])|tojson }}</script>

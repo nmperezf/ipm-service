@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Ensayos pendientes de validación - IPM Manager{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Ensayos pendientes de validación</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Ensayos pendientes de validación</h1>
+    <div class="tarjeta-doc">
             <p class="text-muted mb-3"><a href="{{ url_for('dashboard.inicio') }}">&larr; Volver al Inicio</a> — {{ ensayos|length }} ensayo{{ 's' if ensayos|length != 1 else '' }} esperando validación.</p>
 
             <ul class="lista-expandible" style="padding: 0;">
@@ -24,7 +21,6 @@
                 <li class="text-muted py-3">No hay ensayos pendientes de validación.</li>
                 {% endfor %}
             </ul>
-        </div>
     </div>
 </div>
 {% endblock %}
