@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Editar' if equipo else 'Nuevo' }} equipo{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>{{ 'Editar equipo' if equipo else 'Nuevo equipo' }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>{{ 'Editar equipo' if equipo else 'Nuevo equipo' }}</h1>
+    <div class="tarjeta-doc">
 
             <p class="text-muted">{{ instalacion.nombre }}</p>
 
@@ -62,8 +59,16 @@
                                 <input type="number" step="any" name="caudal_nominal" class="form-control" value="{{ equipo.caudal_nominal or '' }}">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label class="form-label">Presión de diseño (PSI)</label>
+                                <label class="form-label">PSIG</label>
                                 <input type="number" step="any" name="presion_diseno" class="form-control" value="{{ equipo.presion_diseno or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">PSI MAX</label>
+                                <input type="number" step="any" name="presion_maxima" class="form-control" value="{{ equipo.presion_maxima or '' }}">
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">PSI 1.5</label>
+                                <input type="number" step="any" name="presion_sobrecarga" class="form-control" value="{{ equipo.presion_sobrecarga or '' }}">
                             </div>
                             <div class="col-md-4 mb-3">
                                 <label class="form-label">RPM nominal</label>
@@ -153,7 +158,6 @@
             </form>
             {% endif %}
 
-        </div>
     </div>
 </div>
 <script>

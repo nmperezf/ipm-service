@@ -157,7 +157,7 @@ def detalle_visita(visita_id):
             datos = f.datos()
             valores = [(c["label"], datos.get(c["campo"])) for c in campos]
             formularios.append({"formulario": f, "valores": valores})
-        secciones.append({"servicio": item.servicio.nombre, "formularios": formularios})
+        secciones.append({"servicio": item.nombre_mostrado, "formularios": formularios})
 
     return render_template("portal/visita_detalle.html", cliente=cliente, visita=visita, secciones=secciones)
 

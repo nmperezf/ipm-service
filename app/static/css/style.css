@@ -163,6 +163,20 @@
     --bs-btn-active-border-color: var(--bs-warning);
 }
 
+/* Checkboxes, radios y switches traen su SVG e color de tildado fijos en
+   azul de Bootstrap (no heredan de --bs-primary como los botones). */
+.form-check-input {
+    accent-color: var(--brand);
+}
+.form-check-input:checked {
+    background-color: var(--brand);
+    border-color: var(--brand);
+}
+.form-check-input:focus {
+    border-color: var(--brand);
+    box-shadow: 0 0 0 .25rem rgba(var(--bs-primary-rgb), .25);
+}
+
 body {
     font-family: var(--font-body);
     color: var(--ink);
@@ -170,7 +184,23 @@ body {
     display: flex;
     flex-direction: column;
 }
-body > .container {
+/* Encadenado flex (body > .app-shell > .zona-contenido > .container-fluid) para
+   que el pie de página quede siempre al fondo de la pantalla, incluso con
+   poco contenido — ver .app-shell / .sidebar-derecho para el layout de
+   la barra lateral en desktop (≥992px), que usa flex-direction:row acá
+   sin romper esta cadena. */
+.app-shell {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto;
+}
+.zona-contenido {
+    display: flex;
+    flex-direction: column;
+    flex: 1 0 auto;
+    min-width: 0;
+}
+.zona-contenido > .container-fluid {
     flex: 1 0 auto;
 }
 
@@ -285,52 +315,67 @@ small, .small, .text-muted {
 }
 
 /* ---- Panel lateral (PC, ≥992px) -------------------------------------------
-   Reemplaza los links horizontales por un cajón que se desliza desde la
-   derecha — evita que la navbar siga rompiéndose a medida que se suman
-   secciones. Por debajo de 992px sigue el patrón de siempre (navbar-toggler
-   + colapsable arriba, barra de accesos abajo), sin cambios. */
+   Barra lateral fija (no un cajón modal): siempre visible en pantallas
+   grandes, con opción de ocultarla para aprovechar todo el ancho (estado
+   guardado en localStorage, ver base.html). Por debajo de 992px no se
+   renderiza (d-none d-lg-flex) — ahí sigue el patrón de siempre: navbar +
+   colapsable arriba, barra de accesos abajo, sin cambios. */
 
-.sidebar-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,.45);
-    z-index: 1040;
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity .2s ease;
+@media (min-width: 992px) {
+    .app-shell { flex-direction: row; align-items: flex-start; }
+    /* .zona-contenido hereda flex:1 0 auto de la regla base (para la
+       cadena de pie de página fijo en modo columna) — acá el eje
+       principal pasa a ser horizontal, y ese mismo flex-shrink:0 le
+       impedía angostarse por debajo del contenido (una tabla ancha,
+       p.ej.), forzando scroll horizontal de toda la página en vez de
+       quedar contenido con su propio .table-responsive. */
+    .zona-contenido { flex-shrink: 1; }
 }
-.sidebar-overlay.visible {
-    opacity: 1;
-    visibility: visible;
-}
+
 .sidebar-derecho {
-    position: fixed;
-    top: 56px;
-    right: 0;
-    height: calc(100vh - 56px);
-    width: 328px;
-    max-width: 88vw;
-    background: #000000;
-    z-index: 1045;
     flex-direction: column;
-    transform: translateX(100%);
-    transition: transform .25s ease;
-    box-shadow: -4px 0 24px rgba(0,0,0,.3);
+    background: #000000;
+    width: 264px;
+    flex-shrink: 0;
 }
-.sidebar-derecho.abierto {
-    transform: translateX(0);
+@media (min-width: 992px) {
+    .sidebar-derecho {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        border-right: 1px solid rgba(255,255,255,.08);
+        transition: width .18s ease, opacity .18s ease;
+        overflow: hidden;
+    }
+    html.sidebar-oculta .sidebar-derecho {
+        width: 0;
+        opacity: 0;
+        border-right: none;
+    }
 }
 .sidebar-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 1.5rem 1.4rem 1.2rem;
+    padding: 1.3rem 1.4rem 1.1rem;
     border-bottom: 1px solid rgba(255,255,255,.1);
+    white-space: nowrap;
 }
+.sidebar-marca {
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: .98rem;
+    color: #fff;
+    margin-bottom: .9rem;
+}
+.sidebar-marca .brand-mark { height: 24px; width: auto; }
 .sidebar-usuario {
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: 1.15rem;
+    font-size: 1rem;
     letter-spacing: -.01em;
     color: #fff;
 }
@@ -371,6 +416,7 @@ small, .small, .text-muted {
     padding: .6rem 0;
     overflow-y: auto;
     flex: 1;
+    white-space: nowrap;
 }
 .sidebar-nav .nav-item {
     margin: 0;
@@ -415,6 +461,7 @@ small, .small, .text-muted {
 .sidebar-footer {
     padding: 1.1rem 1.4rem calc(1.1rem + env(safe-area-inset-bottom));
     border-top: 1px solid rgba(255,255,255,.1);
+    white-space: nowrap;
 }
 .sidebar-footer .sidebar-link {
     padding: .4rem 0;
@@ -425,6 +472,26 @@ small, .small, .text-muted {
     background: none;
     border-left-color: transparent;
 }
+
+/* Franja utilitaria (tema + notificaciones) arriba del contenido en desktop
+   — con la navbar de arriba oculta a partir de 992px, esto es lo que la
+   reemplaza. El botón para volver a mostrar la barra lateral vive acá
+   también, oculto salvo cuando la barra está escondida. */
+.barra-utilitaria { display: none; }
+@media (min-width: 992px) {
+    .barra-utilitaria {
+        display: flex; align-items: center; gap: .2rem; padding: .7rem 1.4rem 0;
+    }
+    #sidebar-mostrar { display: none; }
+    html.sidebar-oculta #sidebar-mostrar { display: flex; }
+}
+.btn-utilitario {
+    background: none; border: none; color: var(--ink-muted); width: 2.15rem; height: 2.15rem;
+    border-radius: .4rem; display: flex; align-items: center; justify-content: center;
+    font-size: 1.05rem; position: relative; cursor: pointer; flex-shrink: 0;
+}
+.btn-utilitario:hover { background: var(--surface-muted); color: var(--ink); }
+.btn-utilitario .punto-no-leido-navbar { border-color: var(--surface); }
 
 /* ---- Cards --------------------------------------------------------------- */
 
@@ -610,6 +677,12 @@ small, .small, .text-muted {
 .badge-Media { background: #EAF1FA; color: #1A2233; }
 .badge-Baja { background: #F1F2F4; color: #7A828C; }
 
+.badge-sin_coordinar { background: var(--accent-soft); color: var(--accent); }
+.badge-coordinada { background: var(--info-soft); color: var(--bs-info); }
+.badge-asignada { background: var(--warn-soft); color: var(--bs-warning); }
+.badge-en_ejecucion { background: var(--warn-soft); color: var(--bs-warning); }
+.badge-ejecutada { background: var(--ok-soft); color: var(--bs-success); }
+
 /* ---- Calendario mensual --------------------------------------------------- */
 
 .calendario-grilla {
@@ -770,6 +843,60 @@ small, .small, .text-muted {
     letter-spacing: .03em;
     color: rgba(255,255,255,.65);
 }
+@media (min-width: 992px) {
+    /* Clavado abajo como la barra lateral — antes solo llegaba al fondo
+       en páginas cortas; en una página larga quedaba perdido al final del
+       scroll en vez de ser parte fija del chrome de la app. */
+    .zona-contenido { padding-bottom: 2.6rem; }
+    .ipm-footer {
+        position: fixed; left: 264px; right: 0; bottom: 0; z-index: 500;
+        transition: left .18s ease;
+    }
+    html.sidebar-oculta .ipm-footer { left: 0; }
+}
+
+/* ---- Login (pantalla completa, sin el chrome de la app) ------------------ */
+
+.login-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+@media (min-width: 860px) {
+    .login-shell { flex-direction: row; }
+}
+.login-marca {
+    background: #000000;
+    color: #fff;
+    flex-shrink: 0;
+    padding: 2.2rem 2rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+@media (min-width: 860px) {
+    .login-marca { width: 40%; max-width: 480px; padding: 3rem 3.2rem; }
+}
+.login-marca-top { display: flex; align-items: center; gap: .6rem; font-family: var(--font-display); font-weight: 700; font-size: 1.1rem; }
+.login-marca-top .brand-mark { height: 30px; width: auto; }
+.login-marca-mid { margin: auto 0; padding: 2.5rem 0; }
+.login-marca-mid h1 {
+    font-family: var(--font-display); font-weight: 700; font-size: 2rem; line-height: 1.15;
+    letter-spacing: -.01em; color: #fff; max-width: 20ch;
+    display: block; border: none; padding: 0; margin: 0 0 1rem;
+}
+.login-marca-mid p { color: rgba(255,255,255,.62); font-size: .92rem; max-width: 34ch; margin: 0; }
+.login-marca-foot { font-family: var(--font-mono); font-size: .68rem; letter-spacing: .04em; color: rgba(255,255,255,.4); }
+
+.login-panel {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    padding: 2.5rem 1.5rem; background: var(--surface); position: relative;
+}
+.login-theme-toggle { position: absolute; top: 1.2rem; right: 1.2rem; }
+.login-form-wrap { width: 100%; max-width: 360px; }
+.login-form-wrap h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 700; margin: 0 0 .3rem; }
+.login-form-wrap .sub { color: var(--ink-muted); font-size: .88rem; margin-bottom: 1.8rem; }
+.login-form-wrap label { font-size: .82rem; font-weight: 600; margin-bottom: .3rem; }
 
 /* ---- Barra de navegación inferior en celular (mobile-first) --------------
    Los accesos más usados, al alcance del pulgar — patrón estándar en apps
@@ -1019,6 +1146,34 @@ html[data-bs-theme="dark"] .chip-secondary { background: #232734; color: #8A93A0
 .saludo-inicio { font-family: var(--font-display); font-weight: 700; font-size: 1.3rem; letter-spacing: -.01em; margin-bottom: 1.4rem; }
 .saludo-inicio .fecha { font-family: var(--font-mono); font-weight: 500; font-size: .85rem; color: var(--ink-muted); margin-left: .6rem; }
 
+/* ==========================================================================
+   Página ancha — alternativa a "hoja de documento" para pantallas que se
+   benefician de usar todo el ancho (Inicio, Órdenes de trabajo): sin el
+   recuadro centrado de 1100px, con más aire a los costados en vez de una
+   tarjeta flotando en medio de la pantalla.
+   ========================================================================== */
+
+.pagina-ancha { padding: 1.6rem 2rem 3rem; max-width: 1800px; margin: 0 auto; }
+
+/* Tarjeta de contenido suelta, para usar dentro de .pagina-ancha (formularios,
+   fichas) en lugar del recuadro centrado de 1100px de .hoja-doc. */
+.tarjeta-doc {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: .6rem;
+    box-shadow: var(--shadow-doc);
+    padding: 1.6rem 1.8rem 2rem;
+}
+.tarjeta-doc.angosta { max-width: 640px; }
+
+.grid-inicio { display: grid; grid-template-columns: 1fr; gap: 1.6rem; align-items: start; }
+@media (min-width: 1100px) {
+    .grid-inicio { grid-template-columns: minmax(0, 1fr) 340px; }
+}
+.columna-principal { min-width: 0; }
+.columna-lateral { min-width: 0; display: flex; flex-direction: column; gap: 1.6rem; }
+
+
 /* ---- Tarjetas de atención (usadas fuera de Inicio: cliente, instalación,
    inventario, OT, presupuesto, portal) --------------------------------------- */
 
@@ -1060,6 +1215,9 @@ a.fila-log:hover { box-shadow: var(--shadow-doc); color: inherit; }
 .fila-log.alerta, details.card-expandible.alerta { border-left-color: var(--bs-warning); }
 .fila-log.alerta .num, details.card-expandible.alerta summary .num,
 .fila-log.alerta .etiqueta, details.card-expandible.alerta summary .etiqueta { color: var(--bs-warning); }
+.fila-log.info, details.card-expandible.info { border-left-color: var(--bs-info); }
+.fila-log.info .num, details.card-expandible.info summary .num,
+.fila-log.info .etiqueta, details.card-expandible.info summary .etiqueta { color: var(--bs-info); }
 
 .fila-log .num { font-family: var(--font-mono); font-weight: 700; font-size: 1.5rem; min-width: 2.2ch; text-align: right; flex-shrink: 0; }
 .fila-log .textos { flex: 1; min-width: 0; }
@@ -1076,6 +1234,7 @@ details.card-expandible summary .num { font-family: var(--font-mono); font-weigh
 details.card-expandible summary .textos { flex: 1; display: flex; flex-direction: column; gap: .15rem; min-width: 0; }
 details.card-expandible summary .etiqueta { font-size: .95rem; font-weight: 600; }
 details.card-expandible summary .sub { font-size: .8rem; color: var(--ink-muted); }
+details.card-expandible summary .hora { font-family: var(--font-mono); font-size: .74rem; color: var(--ink-faint); white-space: nowrap; flex-shrink: 0; }
 details.card-expandible summary .flecha { color: var(--ink-faint); transition: transform .15s; flex-shrink: 0; }
 details.card-expandible[open] summary .flecha { transform: rotate(90deg); }
 
@@ -1088,15 +1247,26 @@ html[data-bs-theme="dark"] .desglose-clasif .mini-chip { background: rgba(255,25
 .lista-expandible {
     list-style: none; margin: 0; padding: 0 1.1rem 1rem; display: flex; flex-direction: column; gap: .5rem;
 }
+.lista-expandible li { display: flex; align-items: stretch; gap: .4rem; }
 .fila-expandible {
     display: flex; align-items: center; gap: .7rem; padding: .6rem .7rem; border-radius: .5rem;
     border: 1px solid var(--border); font-size: .82rem; text-decoration: none; color: inherit; background: var(--surface-muted);
+    flex: 1; min-width: 0;
 }
 .fila-expandible:hover { border-color: var(--accent); }
 .fila-expandible .cuerpo { flex: 1; min-width: 0; }
 .fila-expandible .desc { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .fila-expandible .meta { font-size: .74rem; color: var(--ink-muted); }
 .fila-expandible .ir { font-size: .74rem; font-weight: 700; color: var(--accent); flex-shrink: 0; }
+
+.fila-log-wrap { display: flex; align-items: stretch; gap: .4rem; }
+.fila-log-wrap .fila-log { flex: 1; min-width: 0; }
+.btn-eliminar-fila {
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+    width: 2.2rem; border-radius: .5rem; border: 1px solid var(--border);
+    background: var(--surface); color: var(--ink-faint); cursor: pointer; font-size: .95rem; padding: 0;
+}
+.btn-eliminar-fila:hover { color: var(--accent); border-color: var(--accent); }
 .ver-todas-doc {
     display: block; text-align: center; font-size: .78rem; font-weight: 700; color: var(--accent);
     text-decoration: none; padding: .6rem .5rem 1rem;
@@ -1124,6 +1294,9 @@ html[data-bs-theme="dark"] .desglose-clasif .mini-chip { background: rgba(255,25
     .rail-stats > .stat { border-left: none !important; border-top: 1px solid var(--border); }
     .rail-stats > .stat:first-child { border-top: none; }
 }
+.rail-stats.rail-stats-vertical { grid-template-columns: 1fr; }
+.rail-stats.rail-stats-vertical > .stat { border-left: none; border-top: 1px solid var(--border); }
+.rail-stats.rail-stats-vertical > .stat:first-child { border-top: none; }
 
 /* ---- Inicio: cumplimiento de mantenimiento --------------------------------- */
 
@@ -1227,6 +1400,7 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 }
 .estado-pill-doc.activo { background: var(--ok-soft); color: var(--bs-success); }
 .estado-pill-doc.inactivo { background: var(--surface-muted); color: var(--ink-muted); }
+.estado-pill-doc.critico { background: var(--accent-soft); color: var(--accent); }
 
 .card-cliente-doc-stats { display: flex; gap: 1.4rem; }
 .card-cliente-doc-stats .stat .valor { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 700; line-height: 1; }
@@ -1236,6 +1410,23 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .card-cliente-doc-stats .stat.cumplimiento-bajo .valor { color: var(--accent); }
 .card-cliente-doc-stats .stat.cumplimiento-nulo .valor { color: var(--ink-muted); }
 
+.grid-repuestos-doc { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+.card-repuesto-doc {
+    display: flex; flex-direction: column; gap: .8rem; padding: 1.1rem 1.2rem 1.1rem 1.4rem; border-radius: .65rem;
+    border: 1px solid var(--border); background: var(--surface); position: relative; overflow: hidden;
+}
+.card-repuesto-doc .filete-lateral-doc { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--border); }
+.card-repuesto-doc.critico .filete-lateral-doc { background: var(--accent); }
+.card-repuesto-doc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; }
+.card-repuesto-doc .nombre { font-family: var(--font-display); font-size: 1rem; font-weight: 700; line-height: 1.25; }
+.card-repuesto-doc .codigo { font-size: .78rem; color: var(--ink-muted); margin-top: .15rem; font-family: var(--font-mono); }
+.card-repuesto-doc-stats { display: flex; gap: 1.4rem; }
+.card-repuesto-doc-stats .stat .valor { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 700; line-height: 1; }
+.card-repuesto-doc-stats .stat.critico .valor { color: var(--accent); }
+.card-repuesto-doc-stats .stat .etiqueta { font-size: .68rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .03em; margin-top: .3rem; display: block; }
+.card-repuesto-doc-acciones { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; padding-top: .3rem; border-top: 1px solid var(--border); }
+.card-repuesto-doc-acciones input[type="number"] { width: 5.5rem; }
+
 .chips-deficiencias-doc { display: flex; gap: .35rem; flex-wrap: wrap; margin-top: -.2rem; }
 .chips-deficiencias-doc .mini-chip { font-size: .68rem; font-weight: 700; padding: .15rem .5rem; border-radius: 100px; }
 .chips-deficiencias-doc .mini-chip.critica { background: var(--accent-soft); color: var(--accent); }
@@ -1243,26 +1434,130 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .chips-deficiencias-doc .mini-chip.desactivacion { background: var(--info-soft); color: var(--bs-info); }
 .chips-deficiencias-doc .mini-chip.sin-novedad { background: var(--ok-soft); color: var(--bs-success); }
 
-/* ---- Órdenes de trabajo: lista (buscador, resumen, prioridad) ------------ */
+/* ---- Lista + detalle lado a lado (genérico) -------------------------------
+   Vista tipo "bandeja": lista angosta a la izquierda, detalle completo a la
+   derecha. Usado por Órdenes de trabajo (elegir una fila navega, server-
+   rendered) y Clientes (elegir una fila solo togglea qué panel ya
+   renderizado se muestra, ver clientes/list.html — sin recargar). */
 
-/* Separación entre filas más suave que el borde estándar de .table */
-.ot-tabla-lista tbody td { border-bottom-color: rgba(26,34,51,.07); }
-html[data-bs-theme="dark"] .ot-tabla-lista tbody td { border-bottom-color: rgba(255,255,255,.065); }
+.split-panel { display: flex; gap: 1.4rem; align-items: flex-start; }
+.panel-lista { width: 380px; flex-shrink: 0; display: flex; flex-direction: column; gap: 1rem; }
+.panel-detalle { flex: 1; min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: .6rem; box-shadow: var(--shadow-doc); }
+@media (min-width: 1101px) {
+    /* Clavada arriba mientras se recorre una lista larga — no se pierde de
+       vista al scrollear, y si su propio contenido es más alto que la
+       pantalla, scrollea internamente en vez de arrastrar todo. */
+    .panel-detalle { position: sticky; top: 1rem; max-height: calc(100vh - 2rem); overflow-y: auto; }
+}
+@media (max-width: 1100px) {
+    .split-panel { flex-direction: column; }
+    .panel-lista { width: 100%; }
+}
 
-.ot-fila-urgente { box-shadow: inset 3px 0 0 var(--accent); }
-.ot-fila-urgente.alta { box-shadow: inset 3px 0 0 var(--bs-warning); }
+.lista-ot { display: flex; flex-direction: column; gap: .5rem; }
+.fila-ot {
+    display: block; background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--border-strong); border-radius: .5rem; padding: .7rem .85rem;
+    text-decoration: none; color: inherit;
+}
+.fila-ot:hover { border-color: var(--ink-faint); color: inherit; }
+.fila-ot.urgente { border-left-color: var(--accent); }
+.fila-ot.alta { border-left-color: var(--bs-warning); }
+.fila-ot.media { border-left-color: var(--bs-info); }
+.fila-ot.seleccionada { background: var(--surface-muted); box-shadow: inset 0 0 0 1px var(--border-strong); }
+.fila-ot .top-fila { display: flex; justify-content: space-between; align-items: baseline; gap: .5rem; }
+.fila-ot .numero { font-family: var(--font-mono); font-size: .74rem; color: var(--ink-faint); font-weight: 700; }
+.fila-ot .desc { font-weight: 600; font-size: .88rem; margin-top: .3rem; }
+.fila-ot .meta { font-size: .76rem; color: var(--ink-muted); margin-top: .15rem; }
+.fila-ot .meta .sin-asignar { color: var(--bs-warning); font-weight: 600; }
 
-.ot-tecnico-sin-asignar { color: var(--bs-warning); font-weight: 600; font-size: .84rem; }
+.detalle-cab {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; flex-wrap: wrap;
+    padding: 1.5rem 1.7rem 1.1rem; border-bottom: 1px solid var(--border);
+}
+.detalle-cab h2 { font-family: var(--font-display); font-size: 1.4rem; font-weight: 700; margin: 0 0 .4rem; }
+.detalle-cuerpo { padding: 1.5rem 1.7rem 2rem; }
 
-.ot-fecha-apertura { display: flex; flex-direction: column; gap: .1rem; }
-.ot-dias { font-size: .72rem; color: var(--ink-muted); }
-.ot-dias.flag { color: var(--bs-warning); font-weight: 600; }
+.grid-info {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1px;
+    background: var(--border); border: 1px solid var(--border); border-radius: .6rem; overflow: hidden; margin-bottom: 1.6rem;
+}
+.grid-info .campo-info { background: var(--surface); padding: .8rem 1rem; }
+.grid-info .campo-info .l { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-muted); margin-bottom: .3rem; }
+.grid-info .campo-info .v { font-size: .92rem; font-weight: 600; }
+.grid-info .campo-info .v.muted { color: var(--ink-faint); font-weight: 500; }
 
-.enlace-cliente-ot { color: var(--ink-muted); text-decoration: none; transition: color .15s ease; }
-.enlace-cliente-ot:hover { color: var(--ink); }
+.panel-detalle .empty-detalle {
+    display: flex; align-items: center; justify-content: center; min-height: 320px;
+    color: var(--ink-faint); font-size: .9rem; padding: 2rem;
+}
 
-.ot-link-numero { color: var(--ink); font-weight: 700; text-decoration: none; transition: color .15s ease; }
-.ot-link-numero:hover { color: var(--accent); }
+/* ---- Clientes: fila compacta de la lista + panel de vista previa ---------
+   Elegir un cliente no navega ni recarga — todas las vistas previas ya
+   están en el DOM (ver clientes/list.html) y un toggle de JS (data-cliente)
+   muestra la que corresponde. "Ver ficha completa" sigue siendo un link
+   normal a clientes.detalle para editar/gestionar contratos. */
+
+.fila-cliente {
+    display: flex; align-items: center; gap: .6rem; background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--border-strong); border-radius: .5rem; padding: .5rem .7rem;
+    cursor: pointer; width: 100%; text-align: left;
+}
+.fila-cliente:hover { border-color: var(--ink-faint); }
+.fila-cliente.critica { border-left-color: var(--accent); }
+.fila-cliente.alerta { border-left-color: var(--bs-warning); }
+.fila-cliente.seleccionada { background: var(--surface-muted); box-shadow: inset 0 0 0 1px var(--border-strong); }
+.fila-cliente.inactivo { opacity: .6; }
+.fila-cliente .cuerpo { flex: 1; min-width: 0; }
+.fila-cliente .nombre { font-weight: 600; font-size: .88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fila-cliente .meta { font-size: .72rem; color: var(--ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fila-cliente .punto-estado { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--border-strong); }
+.fila-cliente.critica .punto-estado { background: var(--accent); }
+.fila-cliente.alerta .punto-estado { background: var(--bs-warning); }
+.fila-cliente:not(.critica):not(.alerta) .punto-estado { background: var(--bs-success); }
+.fila-cliente.inactivo .punto-estado { background: var(--ink-faint); }
+
+.vista-previa-cliente { display: none; }
+.vista-previa-cliente.activa { display: block; }
+
+/* ---- Coordinación de visitas ---------------------------------------------
+   Mismo patrón de lista+detalle que Clientes/OT — ver app/coordinacion.py
+   para la lógica de negocio. */
+
+.selector-mes { display: flex; align-items: center; gap: .5rem; background: var(--surface); border: 1px solid var(--border); border-radius: .5rem; padding: .3rem .4rem; box-shadow: var(--shadow-doc); }
+.selector-mes a.paso-mes { color: var(--ink-muted); text-decoration: none; width: 1.8rem; height: 1.8rem; border-radius: .35rem; display: flex; align-items: center; justify-content: center; font-size: .9rem; }
+.selector-mes a.paso-mes:hover { background: var(--surface-muted); color: var(--ink); }
+.selector-mes select { border: none; background: none; font-family: var(--font-display); font-weight: 700; font-size: .95rem; color: var(--ink); padding: 0 .3rem; }
+
+.fila-coord {
+    display: flex; align-items: center; gap: .6rem; background: var(--surface); border: 1px solid var(--border);
+    border-left: 3px solid var(--border-strong); border-radius: .5rem; padding: .6rem .8rem;
+    cursor: pointer; width: 100%; text-align: left;
+}
+.fila-coord:hover { border-color: var(--ink-faint); }
+.fila-coord.sin_coordinar { border-left-color: var(--accent); }
+.fila-coord.coordinada { border-left-color: var(--bs-info); }
+.fila-coord.asignada, .fila-coord.en_ejecucion { border-left-color: var(--bs-warning); }
+.fila-coord.ejecutada { border-left-color: var(--bs-success); }
+.fila-coord.seleccionada { background: var(--surface-muted); box-shadow: inset 0 0 0 1px var(--border-strong); }
+.fila-coord .cuerpo { flex: 1; min-width: 0; }
+.fila-coord .top-fila { display: flex; justify-content: space-between; gap: .5rem; align-items: baseline; }
+.fila-coord .nombre { font-weight: 700; font-size: .88rem; }
+.fila-coord .cliente { font-size: .74rem; color: var(--ink-muted); }
+.fila-coord .meta { font-size: .74rem; color: var(--ink-muted); margin-top: .2rem; }
+
+.form-coordinar { background: var(--surface-alt); border: 1px dashed var(--border-strong); border-radius: .6rem; padding: 1.2rem; }
+.form-coordinar .fila-campos { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: .9rem; }
+.form-coordinar .campo label { display: block; font-size: .78rem; font-weight: 600; margin-bottom: .35rem; }
+.form-coordinar .campo.fecha { max-width: 220px; }
+
+.timeline { display: flex; flex-direction: column; }
+.evento-tl { display: flex; gap: .8rem; padding: .6rem 0; border-bottom: 1px solid var(--border); font-size: .84rem; }
+.evento-tl:last-child { border-bottom: none; }
+.evento-tl .punto { width: 8px; height: 8px; border-radius: 50%; background: var(--bs-info); margin-top: .45rem; flex-shrink: 0; }
+.evento-tl .cuando { font-family: var(--font-mono); font-size: .72rem; color: var(--ink-faint); min-width: 9rem; margin-top: .1rem; }
+.evento-tl .que { font-weight: 500; }
+.evento-tl .quien { color: var(--ink-muted); font-size: .78rem; }
 
 /* ---- Tarjetas de instalación (ficha del cliente) --------------------- */
 
@@ -1325,5 +1620,5 @@ a.foto-lightbox:hover img { opacity: .85; }
    Utilidad genérica para ocultar algo al imprimir (ej. barra de acciones de
    un ensayo de curva de caudal antes de exportar a PDF vía window.print()). */
 @media print {
-    .no-imprimir, .ipm-navbar, .ipm-footer, .nav-inferior { display: none !important; }
+    .no-imprimir, .ipm-navbar, .ipm-footer, .nav-inferior, .sidebar-derecho, .barra-utilitaria { display: none !important; }
 }

@@ -1,10 +1,11 @@
 import json
 
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask_login import current_user
 
 from app import db
 from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_escritura_cliente
-from app.models import Cliente, Formulario, TipoFormulario, nombres_tipos_equipo
+from app.models import Cliente, Formulario, ServicioTipo, TipoFormulario, categoria_de_tipo_equipo, nombres_tipos_equipo
 from app.utils import TIPOS_CAMPO, armar_campos_desde_formulario
 
 tipos_formulario_bp = Blueprint("tipos_formulario", __name__, url_prefix="/tipos-formulario")
@@ -19,6 +20,29 @@ def nuevo(cliente_id):
     cliente = Cliente.query.get_or_404(cliente_id)
     verificar_escritura_cliente(cliente)
     volver_a = request.values.get("volver_a") or url_for("clientes.detalle", cliente_id=cliente.id)
+    # Al venir de un ítem de visita ligado a un equipo (ver visitas.detalle),
+    # se sugiere ese tipo de equipo para no tener que adivinarlo — evita
+    # crear un tipo de formulario mal etiquetado (ej. tipo_equipo_aplicable
+    # que no corresponde al nombre del formulario).
+    tipo_equipo_sugerido = request.values.get("tipo_equipo_aplicable") or None
+
+    # Catálogo de la empresa (ver ServicioTipo) para poder traer un
+    # checklist ya armado en vez de tener que cargar los campos a mano cada
+    # vez que un cliente nuevo necesita el mismo formulario que ya existe
+    # en otros — los que aplican al equipo sugerido van primero.
+    catalogo = (
+        ServicioTipo.query.filter_by(empresa_id=cliente.empresa_id, es_curva_caudal=False)
+        .order_by(ServicioTipo.nombre)
+        .all()
+    )
+    categoria_sugerida = categoria_de_tipo_equipo(tipo_equipo_sugerido)
+
+    def _no_coincide(servicio_tipo):
+        if not servicio_tipo.tipo_equipo_aplicable or not categoria_sugerida:
+            return False
+        return categoria_de_tipo_equipo(servicio_tipo.tipo_equipo_aplicable) != categoria_sugerida
+
+    catalogo = sorted(catalogo, key=_no_coincide)
 
     if request.method == "POST":
         campos = armar_campos_desde_formulario(request.form)
@@ -26,14 +50,16 @@ def nuevo(cliente_id):
             flash("Agregá al menos un campo antes de guardar.", "danger")
             return render_template(
                 "tipos_formulario/form.html", tipo=None, cliente=cliente, tipos_equipo=nombres_tipos_equipo(),
-                tipos_campo=TIPOS_CAMPO, volver_a=volver_a,
+                tipos_campo=TIPOS_CAMPO, volver_a=volver_a, tipo_equipo_sugerido=tipo_equipo_sugerido,
+                catalogo=catalogo,
             )
 
         if TipoFormulario.query.filter_by(cliente_id=cliente.id, nombre=request.form["nombre"]).first():
             flash(f"Este cliente ya tiene un tipo de formulario llamado '{request.form['nombre']}'.", "danger")
             return render_template(
                 "tipos_formulario/form.html", tipo=None, cliente=cliente, tipos_equipo=nombres_tipos_equipo(),
-                tipos_campo=TIPOS_CAMPO, volver_a=volver_a,
+                tipos_campo=TIPOS_CAMPO, volver_a=volver_a, tipo_equipo_sugerido=tipo_equipo_sugerido,
+                catalogo=catalogo,
             )
 
         tipo_formulario = TipoFormulario(
@@ -51,8 +77,30 @@ def nuevo(cliente_id):
 
     return render_template(
         "tipos_formulario/form.html", tipo=None, cliente=cliente, tipos_equipo=nombres_tipos_equipo(),
-        tipos_campo=TIPOS_CAMPO, volver_a=volver_a,
+        tipos_campo=TIPOS_CAMPO, volver_a=volver_a, tipo_equipo_sugerido=tipo_equipo_sugerido,
+        catalogo=catalogo,
     )
+
+
+@tipos_formulario_bp.route("/<int:cliente_id>/importar", methods=["POST"])
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def importar(cliente_id):
+    """Trae un tipo de formulario ya armado desde el catálogo de servicios
+    de la empresa (ver ServicioTipo.desde_catalogo) en vez de cargar los
+    campos a mano — para cuando el checklist que hace falta ya existe en
+    el catálogo pero todavía no se importó a este cliente puntual."""
+    cliente = Cliente.query.get_or_404(cliente_id)
+    verificar_escritura_cliente(cliente)
+    volver_a = request.form.get("volver_a") or url_for("clientes.detalle", cliente_id=cliente.id)
+
+    servicio_tipo = ServicioTipo.query.get_or_404(request.form.get("servicio_tipo_id", type=int))
+    if current_user.rol != "Super Admin" and servicio_tipo.empresa_id != cliente.empresa_id:
+        abort(403)
+
+    tipo_formulario = TipoFormulario.desde_catalogo(servicio_tipo, cliente.id)
+    db.session.commit()
+    flash(f"Tipo de formulario '{tipo_formulario.nombre}' importado del catálogo.", "success")
+    return redirect(volver_a)
 
 
 @tipos_formulario_bp.route("/tipo/<int:tipo_id>/editar", methods=["GET", "POST"])

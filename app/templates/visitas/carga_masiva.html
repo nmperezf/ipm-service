@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Carga masiva - {{ tipo.nombre }}{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Carga masiva: {{ tipo.nombre }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Carga masiva: {{ tipo.nombre }}</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('formularios.elegir_equipo', item_id=item.id, tipo_formulario_id=tipo.id) }}">&larr; Volver</a></p>
 
@@ -85,7 +82,6 @@
                 {% endif %}
             </form>
 
-        </div>
     </div>
 </div>
 {% endblock %}

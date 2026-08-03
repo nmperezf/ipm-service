@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Editar' if servicio else 'Nuevo' }} servicio tipo{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>{{ 'Editar servicio tipo' if servicio else 'Nuevo servicio tipo' }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>{{ 'Editar servicio tipo' if servicio else 'Nuevo servicio tipo' }}</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('servicios_tipo.listar') }}">&larr; Servicios tipo</a></p>
             <p class="text-muted">
@@ -29,6 +26,17 @@
                 <div class="card mb-3">
                     <div class="card-body">
                         <div class="form-check mb-2">
+                            <input type="checkbox" name="es_curva_caudal" class="form-check-input" id="es_curva_caudal"
+                                   {% if servicio and servicio.es_curva_caudal %}checked{% endif %} onchange="toggleCurvaCaudal()">
+                            <label class="form-check-label" for="es_curva_caudal">
+                                Es un ensayo de curva de caudal (bomba contra incendio)
+                            </label>
+                        </div>
+                        <p class="text-muted small mb-2" id="nota-curva-caudal" style="display:none;">
+                            No usa el constructor de campos de abajo — en la visita, el técnico carga el ensayo
+                            directamente en la pantalla de curva de caudal de la bomba (RPM, presiones, NFPA25).
+                        </p>
+                        <div class="form-check mb-2">
                             <input type="checkbox" name="por_equipo" class="form-check-input" id="por_equipo"
                                    {% if servicio and servicio.por_equipo %}checked{% endif %} onchange="toggleTipoEquipo()">
                             <label class="form-check-label" for="por_equipo">
@@ -37,7 +45,7 @@
                         </div>
                         <div id="tipo-equipo-wrapper" style="display:none;">
                             <label class="form-label">Tipo de equipo al que aplica</label>
-                            <select name="tipo_equipo_aplicable" class="form-select" style="max-width: 300px;">
+                            <select name="tipo_equipo_aplicable" id="tipo_equipo_aplicable" class="form-select" style="max-width: 300px;">
                                 {% for t in tipos_equipo %}
                                 <option value="{{ t }}" {% if servicio and servicio.tipo_equipo_aplicable == t %}selected{% endif %}>{{ t }}</option>
                                 {% endfor %}
@@ -46,6 +54,7 @@
                     </div>
                 </div>
 
+                <div id="campos-formulario-wrapper">
                 <div class="seccion-titulo-doc">Campos del formulario base</div>
                 <div class="table-responsive">
     <table class="table table-sm align-middle" id="tabla-campos">
@@ -61,6 +70,7 @@
                 </table>
     </div>
                 <button type="button" class="btn btn-sm btn-outline-primary mb-4" onclick="agregarFila()">+ Agregar campo</button>
+                </div>
 
                 <div class="barra-accion-fija-relleno d-sm-none"></div>
                 <div class="barra-accion-fija">
@@ -69,16 +79,44 @@
                 </div>
             </form>
 
-        </div>
     </div>
 </div>
 <script type="application/json" id="campos-iniciales">{{ (servicio.campos() if servicio else [])|tojson }}</script>
 <script type="application/json" id="tipos-campo-disponibles">{{ tipos_campo|tojson }}</script>
 
+<script type="application/json" id="tipos-equipo-todos">{{ tipos_equipo|tojson }}</script>
 <script>
+var TIPOS_BOMBA = ['Bomba', 'Electrobomba', 'Motobomba'];
+
 function toggleTipoEquipo() {
     const checked = document.getElementById('por_equipo').checked;
     document.getElementById('tipo-equipo-wrapper').style.display = checked ? 'block' : 'none';
+}
+
+function toggleCurvaCaudal() {
+    const esCurva = document.getElementById('es_curva_caudal').checked;
+    document.getElementById('nota-curva-caudal').style.display = esCurva ? 'block' : 'none';
+    document.getElementById('campos-formulario-wrapper').style.display = esCurva ? 'none' : 'block';
+    document.querySelectorAll('#cuerpo-campos input[name="campo_label"]').forEach(function (input) {
+        input.required = !esCurva;
+    });
+
+    const porEquipo = document.getElementById('por_equipo');
+    if (esCurva) {
+        porEquipo.checked = true;
+        porEquipo.disabled = true;
+    } else {
+        porEquipo.disabled = false;
+    }
+    toggleTipoEquipo();
+
+    const select = document.getElementById('tipo_equipo_aplicable');
+    const actual = select.value;
+    const todos = JSON.parse(document.getElementById('tipos-equipo-todos').textContent);
+    const opciones = esCurva ? TIPOS_BOMBA : todos;
+    select.innerHTML = opciones.map(function (t) {
+        return '<option value="' + t + '"' + (t === actual ? ' selected' : '') + '>' + t + '</option>';
+    }).join('');
 }
 
 function opcionesTiposCampo() {
@@ -111,7 +149,7 @@ function toggleOpciones(select) {
 }
 
 document.addEventListener('DOMContentLoaded', function () {
-    toggleTipoEquipo();
+    toggleCurvaCaudal();
     const iniciales = JSON.parse(document.getElementById('campos-iniciales').textContent);
     if (iniciales.length) {
         iniciales.forEach(agregarFila);

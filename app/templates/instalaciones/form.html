@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Editar' if instalacion else 'Nueva' }} instalación{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>{{ 'Editar instalación' if instalacion else 'Nueva instalación' }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>{{ 'Editar instalación' if instalacion else 'Nueva instalación' }}</h1>
+    <div class="tarjeta-doc angosta">
 
             <p class="text-muted">{{ cliente.nombre }}</p>
 
@@ -27,7 +24,6 @@
                 <a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}" class="btn btn-link">Cancelar</a>
             </form>
 
-        </div>
     </div>
 </div>
 {% endblock %}

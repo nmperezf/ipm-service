@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Cumplimiento mensual{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Cumplimiento de {{ titulo_mes }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Cumplimiento de {{ titulo_mes }}</h1>
+    <div class="tarjeta-doc">
 
             <p class="text-muted mb-3"><a href="{{ url_for('dashboard.inicio') }}">&larr; Volver al Inicio</a> — {{ items|length }} servicio{{ 's' if items|length != 1 else '' }}. Todos los servicios planificados este mes, cumplidos y pendientes. Si un cliente canceló o quedó sin marcar, aparece acá.</p>
 
@@ -19,7 +16,7 @@
                         <td>{{ item.visita.fecha.strftime('%d/%m/%Y') }}</td>
                         <td><a href="{{ url_for('clientes.detalle', cliente_id=item.visita.instalacion.cliente_id) }}">{{ item.visita.instalacion.cliente.nombre }}</a></td>
                         <td>
-                            {{ item.servicio.nombre }}
+                            {{ item.nombre_mostrado }}
                             {% if item.observaciones %}<br><small class="text-muted">{{ item.observaciones }}</small>
                             {% elif item.visita.observaciones %}<br><small class="text-muted">{{ item.visita.observaciones }}</small>{% endif %}
                         </td>
@@ -36,7 +33,6 @@
             </table>
             </div>
 
-        </div>
     </div>
 </div>
 {% endblock %}

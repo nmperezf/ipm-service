@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Ensayos de {{ equipo.nombre }}{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Ensayos de curva de caudal</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Ensayos de curva de caudal</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('portal.equipo_detalle', equipo_id=equipo.id) if current_user.rol == 'Cliente' else url_for('equipos.detalle', equipo_id=equipo.id) }}">&larr; {{ equipo.nombre }}</a></p>
 
@@ -68,7 +65,6 @@
             </table>
             </div>
 
-        </div>
     </div>
 </div>
 {% endblock %}

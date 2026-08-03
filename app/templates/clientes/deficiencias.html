@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ clasificacion }} - {{ cliente.nombre }}{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>{{ clasificacion }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>{{ clasificacion }}</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}">&larr; {{ cliente.nombre }}</a></p>
             <p class="text-muted">{{ observaciones|length }} abiertas</p>
@@ -39,7 +36,6 @@
             </table>
             </div>
 
-        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,34 +1,33 @@
 {% extends "base.html" %}
 {% block title %}Inicio - IPM Manager{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Inicio</h1>
+<div class="pagina-ancha">
+
+    <h1>Inicio</h1>
+    <div class="saludo-inicio">Hola, {{ current_user.nombre_completo or current_user.username }}<span class="fecha">— {{ hoy.strftime('%d/%m/%Y') }}</span></div>
+
+    <form method="GET" action="{{ url_for('dashboard.inicio') }}" class="mb-4" style="max-width: 480px;">
+        <div class="input-group">
+            <input type="text" name="q" class="form-control" placeholder="Buscar cliente por nombre..." value="{{ q }}">
+            <button type="submit" class="btn btn-dark">Buscar</button>
         </div>
-        <div class="cuerpo-doc">
+    </form>
 
-            <div class="saludo-inicio">Hola, {{ current_user.nombre_completo or current_user.username }}<span class="fecha">— {{ hoy.strftime('%d/%m/%Y') }}</span></div>
+    {% if q %}
+    <div class="mb-4">
+        <div class="fw-semibold mb-2">Resultados para "{{ q }}"</div>
+        <div class="list-group" style="max-width: 480px;">
+            {% for c in resultados_busqueda %}
+            <a href="{{ url_for('clientes.detalle', cliente_id=c.id) }}" class="list-group-item list-group-item-action">{{ c.nombre }}</a>
+            {% else %}
+            <p class="text-muted mb-0">No se encontraron clientes.</p>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
 
-            <form method="GET" action="{{ url_for('dashboard.inicio') }}" class="mb-4">
-                <div class="input-group">
-                    <input type="text" name="q" class="form-control" placeholder="Buscar cliente por nombre..." value="{{ q }}">
-                    <button type="submit" class="btn btn-dark">Buscar</button>
-                </div>
-            </form>
-
-            {% if q %}
-            <div class="mb-4">
-                <div class="fw-semibold mb-2">Resultados para "{{ q }}"</div>
-                <div class="list-group">
-                    {% for c in resultados_busqueda %}
-                    <a href="{{ url_for('clientes.detalle', cliente_id=c.id) }}" class="list-group-item list-group-item-action">{{ c.nombre }}</a>
-                    {% else %}
-                    <p class="text-muted mb-0">No se encontraron clientes.</p>
-                    {% endfor %}
-                </div>
-            </div>
-            {% endif %}
+    <div class="grid-inicio">
+        <div class="columna-principal">
 
             {% if es_gestion %}
             {# ============ VISTA JEFE / ADMINISTRADOR ============ #}
@@ -77,29 +76,6 @@
                         <span class="meta">{% if visitas_en_revision %}esperando tu aprobación{% else %}sin visitas esperando tu aprobación{% endif %}</span>
                     </span>
                     <span class="flecha">▶</span>
-                </a>
-            </div>
-
-            <div class="rail-stats">
-                <a class="stat{{ ' calmo' if repuestos_criticos == 0 }}" href="{{ url_for('inventario.criticos_lista') }}">
-                    <span class="num">{{ '%02d'|format(repuestos_criticos) }}</span>
-                    <span class="etiqueta">Repuestos en stock crítico</span>
-                    <span class="sub">por debajo del mínimo</span>
-                </a>
-                <a class="stat{{ ' calmo' if ensayos_pendientes_total == 0 }}" href="{{ url_for('dashboard.ensayos_pendientes_lista') }}">
-                    <span class="num">{{ '%02d'|format(ensayos_pendientes_total) }}</span>
-                    <span class="etiqueta">Ensayos por validar</span>
-                    <span class="sub">{% if ensayos_pendientes_total %}cargados por un técnico, esperan tu firma{% else %}sin ensayos esperando firma{% endif %}</span>
-                </a>
-                <a class="stat{{ ' calmo' if presupuestos_activos == 0 }}" href="{{ url_for('presupuestos.listar') }}">
-                    <span class="num">{{ '%02d'|format(presupuestos_activos) }}</span>
-                    <span class="etiqueta">Presupuestos activos</span>
-                    <span class="sub">pendientes, cotizados o aprobados</span>
-                </a>
-                <a class="stat" href="{{ url_for('ordenes.listar') }}">
-                    <span class="num">{{ ot_pendientes }}</span>
-                    <span class="etiqueta">OT abiertas</span>
-                    <span class="sub">en toda la empresa</span>
                 </a>
             </div>
 
@@ -187,66 +163,95 @@
             </div>
             {% endif %}
 
-            <details class="card-expandible mt-4">
+        </div>
+
+        <div class="columna-lateral">
+
+            {% if es_gestion %}
+            <div>
+                <div class="seccion-titulo-doc" style="margin-top: 0;">En números</div>
+                <div class="rail-stats rail-stats-vertical">
+                    <a class="stat{{ ' calmo' if repuestos_criticos == 0 }}" href="{{ url_for('inventario.criticos_lista') }}">
+                        <span class="num">{{ '%02d'|format(repuestos_criticos) }}</span>
+                        <span class="etiqueta">Repuestos en stock crítico</span>
+                        <span class="sub">por debajo del mínimo</span>
+                    </a>
+                    <a class="stat{{ ' calmo' if ensayos_pendientes_total == 0 }}" href="{{ url_for('dashboard.ensayos_pendientes_lista') }}">
+                        <span class="num">{{ '%02d'|format(ensayos_pendientes_total) }}</span>
+                        <span class="etiqueta">Ensayos por validar</span>
+                        <span class="sub">{% if ensayos_pendientes_total %}cargados por un técnico, esperan tu firma{% else %}sin ensayos esperando firma{% endif %}</span>
+                    </a>
+                    <a class="stat{{ ' calmo' if presupuestos_activos == 0 }}" href="{{ url_for('presupuestos.listar') }}">
+                        <span class="num">{{ '%02d'|format(presupuestos_activos) }}</span>
+                        <span class="etiqueta">Presupuestos activos</span>
+                        <span class="sub">pendientes, cotizados o aprobados</span>
+                    </a>
+                    <a class="stat" href="{{ url_for('ordenes.listar') }}">
+                        <span class="num">{{ ot_pendientes }}</span>
+                        <span class="etiqueta">OT abiertas</span>
+                        <span class="sub">en toda la empresa</span>
+                    </a>
+                </div>
+            </div>
+            {% endif %}
+
+            <details class="card-expandible" {{ 'open' if mensajes_abiertos }}>
                 <summary>
                     <span class="textos">
                         <span class="etiqueta">Mensajes internos</span>
-                        <span class="sub">chat interno con el resto del equipo</span>
+                        <span class="sub">chat con el equipo — y recordatorios para vos mismo</span>
                     </span>
                     {% if mensajes_abiertos %}<span class="badge badge-Urgente">{{ mensajes_abiertos|length }} sin resolver</span>{% endif %}
                     <span class="flecha">▶</span>
                 </summary>
                 <div style="padding: 0 1.1rem 1.1rem;">
-                    <form method="POST" action="{{ url_for('mensajes.nuevo') }}" class="row g-2 align-items-end mb-3">
-                        <div class="col-md-3">
-                            <select name="destinatario_id" class="form-select" required>
-                                <option value="">-- Para quién --</option>
-                                {% for u in destinatarios_mensaje %}
-                                <option value="{{ u.id }}">{{ u.nombre_completo or u.username }} ({{ u.rol }})</option>
-                                {% endfor %}
-                            </select>
-                        </div>
-                        <div class="col-md-4">
-                            <input type="text" name="titulo" class="form-control" placeholder="Ej: Llamar a fulano por renovación de contrato" required>
-                        </div>
-                        <div class="col-md-2">
-                            <select name="cliente_id" class="form-select">
+                    <form method="POST" action="{{ url_for('mensajes.nuevo') }}" class="d-flex flex-column gap-2 mb-3">
+                        <select name="destinatario_id" class="form-select form-select-sm" required>
+                            <option value="">-- Para quién --</option>
+                            <option value="{{ current_user.id }}">📌 A mí mismo (recordatorio)</option>
+                            {% for u in destinatarios_mensaje %}
+                            <option value="{{ u.id }}">{{ u.nombre_completo or u.username }} ({{ u.rol }})</option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" name="titulo" class="form-control form-control-sm" placeholder="Ej: Llamar a fulano por renovación de contrato" required>
+                        <div class="d-flex gap-2">
+                            <select name="cliente_id" class="form-select form-select-sm">
                                 <option value="">-- Sin cliente --</option>
                                 {% for c in clientes_para_mensaje %}
                                 <option value="{{ c.id }}">{{ c.nombre }}</option>
                                 {% endfor %}
                             </select>
-                        </div>
-                        <div class="col-md-2">
-                            <select name="prioridad" class="form-select">
+                            <select name="prioridad" class="form-select form-select-sm">
                                 {% for p in prioridades %}
                                 <option value="{{ p }}" {% if p == 'Media' %}selected{% endif %}>{{ p }}</option>
                                 {% endfor %}
                             </select>
                         </div>
-                        <div class="col-md-1">
-                            <button type="submit" class="btn btn-outline-dark w-100">Enviar</button>
-                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-dark">Enviar</button>
                     </form>
 
                     <div class="d-flex justify-content-end mb-2">
                         <a href="{{ url_for('mensajes.resueltos') }}" class="btn btn-sm btn-outline-secondary">Ver resueltos</a>
                     </div>
-                    <div class="list-group">
+                    <div class="log-prioridad">
                         {% for m in mensajes_abiertos %}
-                        <div class="list-group-item d-flex justify-content-between align-items-center">
-                            <span>
+                        <details class="card-expandible {{ m.severidad }}" id="mensaje-{{ m.id }}">
+                            <summary>
+                                <span class="textos">
+                                    <span class="etiqueta">{{ m.titulo }}</span>
+                                    <span class="sub">
+                                        {% if m.es_para_mi %}📌 Recordatorio personal
+                                        {% elif m.remitente_id == current_user.id %}Para {{ m.destinatario.nombre_completo or m.destinatario.username }}
+                                        {% else %}De {{ m.remitente.nombre_completo or m.remitente.username }}{% endif %}
+                                        {% if m.cliente %} · {{ m.cliente.nombre }}{% endif %}
+                                        · {{ m.fecha_carga.strftime('%d/%m/%Y') }}
+                                    </span>
+                                </span>
                                 <span class="badge badge-{{ m.prioridad }}">{{ m.prioridad }}</span>
-                                {% if m.remitente_id == current_user.id %}
-                                <span class="text-muted small">Para {{ m.destinatario.nombre_completo or m.destinatario.username }}:</span>
-                                {% else %}
-                                <span class="text-muted small">De {{ m.remitente.nombre_completo or m.remitente.username }}:</span>
-                                {% endif %}
-                                {{ m.titulo }}
-                                {% if m.cliente %} — <a href="{{ url_for('clientes.detalle', cliente_id=m.cliente_id) }}">{{ m.cliente.nombre }}</a>{% endif %}
-                                <small class="text-muted">({{ m.fecha_carga.strftime('%d/%m/%Y') }})</small>
-                            </span>
-                            <span>
+                                <span class="flecha">▶</span>
+                            </summary>
+                            <div style="padding: 0 1.1rem 1rem; display: flex; gap: .5rem; flex-wrap: wrap;">
+                                {% if m.cliente %}<a href="{{ url_for('clientes.detalle', cliente_id=m.cliente_id) }}" class="btn btn-sm btn-outline-secondary">Ver {{ m.cliente.nombre }}</a>{% endif %}
                                 <form method="POST" action="{{ url_for('mensajes.resolver', mensaje_id=m.id) }}" class="d-inline">
                                     <button type="submit" class="btn btn-sm btn-outline-success">Resuelto</button>
                                 </form>
@@ -254,8 +259,8 @@
                                       onsubmit="return confirm('¿Eliminar este mensaje?');">
                                     <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                                 </form>
-                            </span>
-                        </div>
+                            </div>
+                        </details>
                         {% else %}
                         <p class="text-muted mb-0">No hay mensajes abiertos.</p>
                         {% endfor %}
@@ -263,8 +268,9 @@
                 </div>
             </details>
 
-            <div class="pie-nota-doc">IPM Manager — Gestión de mantenimiento de sistemas contra incendio en Uruguay.</div>
         </div>
     </div>
+
+    <div class="pie-nota-doc">IPM Manager — Gestión de mantenimiento de sistemas contra incendio en Uruguay.</div>
 </div>
 {% endblock %}

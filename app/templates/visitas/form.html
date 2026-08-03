@@ -1,13 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Nueva visita{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Registrar visita manual</h1>
-        </div>
-        <div class="cuerpo-doc">
-
+<div class="pagina-ancha">
+    <h1>Registrar visita manual</h1>
+    <div class="tarjeta-doc">
             <p class="text-muted">{{ instalacion.nombre }} &middot; Para visitas planificadas automáticamente, cargalas desde el contrato agregando sus servicios. Esta opción es para visitas sueltas fuera de contrato.</p>
 
             <form method="POST" class="mt-3">
@@ -42,7 +38,6 @@
                 <a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}" class="btn btn-link">Cancelar</a>
             </form>
 
-        </div>
     </div>
 </div>
 {% endblock %}

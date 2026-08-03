@@ -1,14 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Nuevo contrato{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Nuevo contrato</h1>
-        </div>
-        <div class="cuerpo-doc">
-
-            <p class="text-muted">{{ instalacion.nombre }} &middot; Los contratos duran 1 año. Una vez creado, agregá los servicios (con su frecuencia) y el sistema genera automáticamente todas las visitas del año, agrupando en la misma fecha los servicios que coincidan.</p>
+<div class="pagina-ancha">
+    <h1>Nuevo contrato</h1>
+    <div class="tarjeta-doc angosta">
+            <p class="text-muted">{{ instalacion.nombre }} &middot; Los contratos duran 1 año. Una vez creado, agregá los servicios (con su frecuencia); cada mes vas a poder <a href="{{ url_for('coordinacion.index') }}">coordinar con el cliente</a> la fecha real de la visita, agrupando en la misma visita los servicios que coincidan.</p>
 
             <form method="POST" class="mt-3">
                 <div class="mb-3">
@@ -24,7 +20,6 @@
                 <a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}" class="btn btn-link">Cancelar</a>
             </form>
 
-        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,13 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Nueva empresa{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Nueva empresa</h1>
-        </div>
-        <div class="cuerpo-doc">
-
+<div class="pagina-ancha">
+    <h1>Nueva empresa</h1>
+    <div class="tarjeta-doc angosta">
             <p class="text-muted">Se crea la empresa junto con su primer usuario Administrador. De ahí en más, ese Administrador gestiona el resto de sus usuarios (técnicos y clientes).</p>
 
             <form method="POST" class="mt-3">
@@ -36,7 +32,6 @@
                 <a href="{{ url_for('empresas.listar') }}" class="btn btn-link">Cancelar</a>
             </form>
 
-        </div>
     </div>
 </div>
 {% endblock %}

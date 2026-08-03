@@ -53,8 +53,8 @@ def nuevo(instalacion_id):
         db.session.commit()
         flash(
             f"Contrato '{contrato.nombre}' creado (vigente hasta {contrato.fecha_fin.strftime('%m/%Y')}). "
-            "Ahora agregá los servicios contratados para generar las visitas automáticamente. "
-            "El día exacto de cada visita se termina de definir más adelante, cuando el cliente lo confirme.",
+            "Ahora agregá los servicios contratados. Cada mes vas a poder coordinar con el cliente "
+            "la fecha real de la visita desde la pantalla de Coordinación.",
             "success",
         )
         return redirect(url_for("contratos.detalle", contrato_id=contrato.id))
@@ -66,7 +66,7 @@ def nuevo(instalacion_id):
 def detalle(contrato_id):
     contrato = Contrato.query.get_or_404(contrato_id)
     verificar_acceso_cliente(contrato.instalacion.cliente)
-    visitas = sorted(contrato.visitas, key=lambda v: v.fecha)
+    visitas = sorted(contrato.visitas, key=lambda v: v.fecha, reverse=True)
     cliente = contrato.instalacion.cliente
     servicios_tipo = ServicioTipo.query.filter_by(empresa_id=cliente.empresa_id).order_by(ServicioTipo.nombre).all()
     # El formulario de cada servicio contratado es la copia que se importó
@@ -127,20 +127,12 @@ def nuevo_servicio(contrato_id):
 
     cliente = contrato.instalacion.cliente
 
-    # Importa el formulario base al cliente — si ya tenía uno con ese
-    # nombre (lo importó antes, o lo cargó a mano), se reutiliza tal cual
-    # en vez de duplicar; de ahí en más queda como una copia independiente.
-    tipo_formulario = TipoFormulario.query.filter_by(cliente_id=cliente.id, nombre=servicio_tipo.nombre).first()
-    if not tipo_formulario:
-        tipo_formulario = TipoFormulario(
-            cliente_id=cliente.id,
-            nombre=servicio_tipo.nombre,
-            descripcion=servicio_tipo.descripcion,
-            por_equipo=servicio_tipo.por_equipo,
-            tipo_equipo_aplicable=servicio_tipo.tipo_equipo_aplicable,
-            schema_json=servicio_tipo.schema_json,
-        )
-        db.session.add(tipo_formulario)
+    # La curva de caudal no usa el sistema de formularios genérico — el
+    # ítem de la visita ofrece directamente la pantalla de ensayo de la
+    # bomba (ver visitas.detalle), así que no hace falta importar un
+    # TipoFormulario para esto.
+    if not servicio_tipo.es_curva_caudal:
+        TipoFormulario.desde_catalogo(servicio_tipo, cliente.id)
 
     fecha_inicio_servicio = _parse_mes(request.form.get("mes_inicio"))  # None = usa el del contrato
     servicio = ServicioContrato(
@@ -150,20 +142,20 @@ def nuevo_servicio(contrato_id):
         fecha_inicio=fecha_inicio_servicio,
         activo=True,
         tipo_equipo_aplicable=servicio_tipo.tipo_equipo_aplicable,
+        es_curva_caudal=servicio_tipo.es_curva_caudal,
     )
     db.session.add(servicio)
     db.session.commit()
-    # Regenera automáticamente todas las visitas del contrato agrupando por fecha
-    contrato.generar_visitas()
     if servicio.fechas_ocurrencia():
         flash(
-            f"Servicio '{servicio.nombre}' agregado. Visitas del contrato regeneradas y agrupadas por fecha.",
+            f"Servicio '{servicio.nombre}' agregado. Se va a incluir la próxima vez que se generen las "
+            "solicitudes de coordinación del mes que le toque.",
             "success",
         )
     else:
         flash(
-            f"Servicio '{servicio.nombre}' agregado, pero no generó ninguna visita dentro de lo que queda "
-            "del año de contrato (el mes de inicio elegido + la frecuencia excede la fecha de fin del contrato).",
+            f"Servicio '{servicio.nombre}' agregado, pero no cae ningún mes dentro de lo que queda del año "
+            "de contrato (el mes de inicio elegido + la frecuencia excede la fecha de fin del contrato).",
             "warning",
         )
     return redirect(url_for("contratos.detalle", contrato_id=contrato.id))
@@ -177,6 +169,5 @@ def eliminar_servicio(servicio_id):
     verificar_escritura_cliente(contrato.instalacion.cliente)
     db.session.delete(servicio)
     db.session.commit()
-    contrato.generar_visitas()
-    flash(f"Servicio '{servicio.nombre}' eliminado y visitas regeneradas.", "info")
+    flash(f"Servicio '{servicio.nombre}' eliminado.", "info")
     return redirect(url_for("contratos.detalle", contrato_id=contrato.id))

@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Visita {{ visita.fecha.strftime('%d/%m/%Y') }}{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Visita del {{ visita.fecha.strftime('%d/%m/%Y') }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Visita del {{ visita.fecha.strftime('%d/%m/%Y') }}</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=visita.instalacion_id) }}">&larr; {{ visita.instalacion.nombre }}</a></p>
 
@@ -89,7 +86,7 @@
 
             <div class="seccion-titulo-doc">Servicios de esta visita</div>
             {% if not visita.items %}
-            <p class="text-muted">Esta visita no tiene servicios asociados de un contrato (es una visita manual).</p>
+            <p class="text-muted">Esta visita todavía no tiene ítems cargados. Agregá uno abajo para poder subir formularios y fotos.</p>
             {% endif %}
 
             {% if not puede_editar %}
@@ -104,13 +101,21 @@
             {% endif %}
 
             {% for item in visita.items %}
+            {% set es_curva_caudal_item = item.id in equipos_bomba_por_item %}
+            {% if not es_curva_caudal_item %}
             {% set grupos_formulario = formularios_por_item[item.id].grupos %}
             {% set formularios_generales = formularios_por_item[item.id].generales %}
             {% set hay_tipos_formulario = formularios_generales|length + (grupos_formulario.values()|map('length')|sum) > 0 %}
+            {% endif %}
             <div class="card mb-3">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center">
-                        <h5 class="card-title mb-0">{{ item.servicio.nombre }} <small class="text-muted text-capitalize">({{ item.servicio.frecuencia }})</small></h5>
+                        <h5 class="card-title mb-0">
+                            {{ item.nombre_mostrado }}
+                            {% if item.servicio %}<small class="text-muted text-capitalize">({{ item.servicio.frecuencia }})</small>
+                            {% elif item.equipo %}<small class="text-muted">({{ item.equipo.tipo }}{% if item.nombre_libre %} · {{ item.nombre_libre }}{% endif %})</small>
+                            {% else %}<small class="text-muted">(ítem suelto)</small>{% endif %}
+                        </h5>
                         <div>
                             <span class="badge badge-{{ item.estado.replace(' ', '.') }}">{{ item.estado }}</span>
                             {% if puede_editar %}
@@ -124,10 +129,39 @@
                             </form>
                             {% endif %}
                             <a href="{{ url_for('observaciones.nueva', instalacion_id=visita.instalacion_id, item_id=item.id) }}" class="btn btn-sm btn-outline-warning">+ Observación</a>
+                            {% if not item.servicio_contrato_id and not item.formularios and not item.fotos %}
+                            <form method="POST" action="{{ url_for('visitas.eliminar_item', item_id=item.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar este ítem?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                            </form>
+                            {% endif %}
                             {% endif %}
                         </div>
                     </div>
 
+                    {% if es_curva_caudal_item %}
+                    <h6 class="mt-3">Ensayos de curva de caudal</h6>
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        {% for e in item.ensayos_caudal %}
+                        <a href="{{ url_for('curvas.ensayo_detalle', equipo_id=e.equipo_id, ensayo_id=e.id) }}" class="btn btn-outline-dark btn-sm">
+                            <i class="bi bi-graph-up"></i> {{ e.equipo.nombre }} — {{ e.fecha_ensayo.strftime('%d/%m/%Y') }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% if puede_editar %}
+                    {% set equipos_bomba = equipos_bomba_por_item[item.id] %}
+                    {% if equipos_bomba %}
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        {% for equipo in equipos_bomba %}
+                        <a href="{{ url_for('curvas.ensayo_nuevo', equipo_id=equipo.id, item_id=item.id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-graph-up"></i> Cargar ensayo — {{ equipo.nombre }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted small mb-3">Esta instalación no tiene ninguna bomba cargada como equipo todavía.</p>
+                    {% endif %}
+                    {% endif %}
+                    {% else %}
                     <h6 class="mt-3">Formularios</h6>
                     <div class="d-flex flex-wrap gap-2 mb-2">
                         {% for f in item.formularios %}
@@ -146,7 +180,11 @@
                             {% if tipos %}
                             <optgroup label="{{ nombre_categoria }}">
                                 {% for tipo in tipos %}
+                                {% if item.equipo %}
+                                <option value="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id, equipo_id=item.equipo_id) }}">{{ tipo.nombre }}</option>
+                                {% else %}
                                 <option value="{{ url_for('formularios.carga_masiva', item_id=item.id, tipo_formulario_id=tipo.id) }}">{{ tipo.nombre }}</option>
+                                {% endif %}
                                 {% endfor %}
                             </optgroup>
                             {% endif %}
@@ -154,14 +192,26 @@
                             {% if formularios_generales %}
                             <optgroup label="Otros formularios">
                                 {% for tipo in formularios_generales %}
+                                {% if item.equipo %}
+                                <option value="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id, equipo_id=item.equipo_id) }}">{{ tipo.nombre }}</option>
+                                {% else %}
                                 <option value="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id) }}">{{ tipo.nombre }}</option>
+                                {% endif %}
                                 {% endfor %}
                             </optgroup>
                             {% endif %}
                         </select>
                     </div>
                     {% else %}
-                    <p class="text-muted small mb-3">Este cliente todavía no tiene tipos de formulario configurados.</p>
+                    <p class="text-muted small mb-3">
+                        {% if item.equipo %}
+                        Todavía no hay un tipo de formulario para equipos "{{ item.equipo.tipo }}" en este cliente.
+                        {% else %}
+                        Este cliente todavía no tiene tipos de formulario configurados.
+                        {% endif %}
+                        <a href="{{ url_for('tipos_formulario.nuevo', cliente_id=visita.instalacion.cliente_id, tipo_equipo_aplicable=item.equipo.tipo if item.equipo else None, volver_a=url_for('visitas.detalle', visita_id=visita.id)) }}">Crear uno</a>.
+                    </p>
+                    {% endif %}
                     {% endif %}
                     {% endif %}
 
@@ -220,7 +270,32 @@
             </div>
             {% endfor %}
 
-        </div>
+            {% if puede_editar %}
+            <form method="POST" action="{{ url_for('visitas.agregar_item', visita_id=visita.id) }}" class="row g-2 align-items-end mb-4">
+                <div class="col-auto" style="min-width: 240px;">
+                    <label class="form-label mb-1">+ Agregar ítem a la visita — Equipo</label>
+                    <select name="equipo_id" class="form-select form-select-sm">
+                        <option value="">-- Sin equipo específico --</option>
+                        {% for categoria, equipos_cat in equipos_agrupados %}
+                        <optgroup label="{{ categoria }}">
+                            {% for eq in equipos_cat %}
+                            <option value="{{ eq.id }}">{{ eq.nombre }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">Si elegís un equipo, el formulario que corresponde va a estar pronto para cargar.</div>
+                </div>
+                <div class="col-auto" style="min-width: 240px;">
+                    <label class="form-label mb-1">Descripción (opcional si elegiste un equipo)</label>
+                    <input type="text" name="nombre_libre" class="form-control form-control-sm" placeholder="Ej: Revisión general, matafuegos, etc.">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-sm btn-outline-dark">Agregar</button>
+                </div>
+            </form>
+            {% endif %}
+
     </div>
 </div>
 {% endblock %}

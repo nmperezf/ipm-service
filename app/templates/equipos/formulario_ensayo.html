@@ -1,17 +1,16 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Editar' if ensayo else 'Nuevo' }} ensayo - {{ equipo.nombre }}{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Ensayo de curva de caudal — NFPA 25</h1>
-        </div>
+<div class="pagina-ancha">
+    <h1>Ensayo de curva de caudal — NFPA 25</h1>
 
-        <form method="POST" id="form-ensayo">
-        <div class="cuerpo-doc">
+    <form method="POST" id="form-ensayo">
+    {% if item %}<input type="hidden" name="item_id" value="{{ item.id }}">{% endif %}
+    <div class="tarjeta-doc">
 
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
                 <div class="d-flex align-items-center gap-2 flex-wrap">
+                    {% if item %}<p class="text-muted small mb-0">Este ensayo va a quedar linkeado a la visita del {{ item.visita.fecha.strftime('%d/%m/%Y') }} — al guardar, marca el ítem como cumplido.</p>{% endif %}
                     {% if ensayo %}<p class="text-muted small mb-0">Corregir los puntos del ensayo lo vuelve a dejar pendiente de revisión.</p>{% endif %}
                     <span id="dirty-badge" class="badge bg-warning text-dark d-none">Cambios sin guardar</span>
                 </div>
@@ -60,7 +59,7 @@
                 </div>
             </div>
 
-            <div class="seccion-titulo-doc">Curva de fábrica <span class="fw-normal text-white-50" style="text-transform:none; letter-spacing:0;">(referencia) — RPM nominal: <strong class="text-white">{{ curva.rpm_nominal }}</strong></span></div>
+            <div class="seccion-titulo-doc">Curva de fábrica <span class="fw-normal text-muted" style="text-transform:none; letter-spacing:0;">(referencia) — RPM nominal: <strong class="text-body">{{ curva.rpm_nominal }}</strong></span></div>
             <div class="table-responsive mb-3">
             <table class="table table-sm" id="tabla-fabrica">
                 <thead>
@@ -86,7 +85,7 @@
             </table>
             </div>
 
-            <div class="seccion-titulo-doc">Ensayo <span class="fw-normal text-white-50" style="text-transform:none; letter-spacing:0;">— completá los valores medidos, el resto se calcula solo</span></div>
+            <div class="seccion-titulo-doc">Ensayo <span class="fw-normal text-muted" style="text-transform:none; letter-spacing:0;">— completá los valores medidos, el resto se calcula solo</span></div>
             <div class="table-responsive mb-2">
             <table class="table table-sm" id="tabla-ensayo">
                 <thead>
@@ -194,12 +193,15 @@
 
             <div class="mt-4 no-imprimir">
                 <button type="submit" class="btn btn-primary">{{ 'Actualizar' if ensayo else 'Guardar' }} ensayo</button>
+                {% if item %}
+                <a href="{{ url_for('visitas.detalle', visita_id=item.visita_id) }}" class="btn btn-link">Cancelar</a>
+                {% else %}
                 <a href="{{ url_for('curvas.ensayos', equipo_id=equipo.id) }}" class="btn btn-link">Cancelar</a>
+                {% endif %}
             </div>
 
-        </div>
-        </form>
     </div>
+    </form>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>

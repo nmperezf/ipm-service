@@ -41,14 +41,13 @@ def _verificar_acceso_ot(ot):
         abort(403)
 
 
-@ordenes_bp.route("/")
-@rol_requerido("Administrador", "Jefe", "Técnico")
-def listar():
-    """Cola de trabajo. El Administrador/Jefe ve todas las OT de su
-    empresa, con buscador y filtro por estado en el cliente (JS, sin
-    recargar). El Técnico ve solo las que tiene asignadas, y solo lo que
-    le queda por hacer (sin Finalizada ni Cancelada, sin buscador ni
-    resumen — va directo a lo suyo)."""
+def _datos_lista():
+    """Cola de trabajo + resumen, compartido por listar() y detalle() — las
+    dos rutas renderizan el mismo template de lista+detalle lado a lado, así
+    que las dos necesitan la lista completa (ver ordenes_trabajo/list.html).
+    El Administrador/Jefe ve todas las OT de su empresa. El Técnico ve solo
+    las que tiene asignadas, y solo lo que le queda por hacer (sin
+    Finalizada ni Cancelada — va directo a lo suyo)."""
     ids_clientes = [c.id for c in clientes_visibles().all()]
     query = OrdenTrabajo.query.join(Instalacion).filter(Instalacion.cliente_id.in_(ids_clientes))
 
@@ -68,8 +67,7 @@ def listar():
         if o.estado == "Finalizada" and o.fecha_cierre and o.fecha_cierre.year == hoy.year and o.fecha_cierre.month == hoy.month
     ]
 
-    return render_template(
-        "ordenes_trabajo/list.html",
+    return dict(
         ordenes=ordenes,
         estados=ESTADOS_OT,
         hoy=hoy,
@@ -78,6 +76,24 @@ def listar():
         sin_asignar=sin_asignar,
         finalizadas_mes=finalizadas_mes,
     )
+
+
+@ordenes_bp.route("/")
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def listar():
+    """Sin una OT puntual en la URL, se abre con la primera de la lista
+    seleccionada (la más reciente) — así la pantalla nunca arranca con el
+    panel de detalle vacío si hay algo para mostrar."""
+    datos = _datos_lista()
+    ot_actual = datos["ordenes"][0] if datos["ordenes"] else None
+    repuestos_disponibles = _repuestos_disponibles() if ot_actual else []
+    return render_template(
+        "ordenes_trabajo/list.html", ot_actual=ot_actual, repuestos_disponibles=repuestos_disponibles, **datos
+    )
+
+
+def _repuestos_disponibles():
+    return Repuesto.query.filter_by(activo=True, empresa_id=current_user.empresa_id).order_by(Repuesto.nombre).all()
 
 
 @ordenes_bp.route("/nueva", methods=["GET", "POST"])
@@ -137,10 +153,11 @@ def nueva():
 def detalle(ot_id):
     ot = OrdenTrabajo.query.get_or_404(ot_id)
     _verificar_acceso_ot(ot)
-    repuestos_disponibles = Repuesto.query.filter_by(
-        activo=True, empresa_id=current_user.empresa_id
-    ).order_by(Repuesto.nombre).all()
-    return render_template("ordenes_trabajo/detail.html", ot=ot, repuestos_disponibles=repuestos_disponibles)
+    datos = _datos_lista()
+    repuestos_disponibles = _repuestos_disponibles()
+    return render_template(
+        "ordenes_trabajo/list.html", ot_actual=ot, repuestos_disponibles=repuestos_disponibles, **datos
+    )
 
 
 @ordenes_bp.route("/<int:ot_id>/editar", methods=["GET", "POST"])

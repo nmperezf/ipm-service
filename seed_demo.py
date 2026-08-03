@@ -7,9 +7,11 @@ import json
 from datetime import date
 
 from app import create_app, db
+from app.coordinacion import coordinar_solicitud, servicios_del_mes
 from app.models import (
     Cliente,
     Contrato,
+    CurvaFabrica,
     Empresa,
     Equipo,
     Instalacion,
@@ -20,6 +22,7 @@ from app.models import (
     RepuestoUsado,
     ServicioContrato,
     ServicioTipo,
+    SolicitudCoordinacion,
     TipoFormulario,
     Usuario,
     Visita,
@@ -75,9 +78,18 @@ with app.app_context():
                 {"campo": "conforme", "tipo": "booleano", "label": "¿Conforme?"},
             ]),
         )
-        db.session.add_all([servicio_tipo_bie, servicio_tipo_inspeccion])
+        servicio_tipo_curva_caudal = ServicioTipo(
+            empresa_id=empresa_demo.id,
+            nombre="Curva de caudal (bombas)",
+            descripcion="Ensayo NFPA25 de curva de caudal de bombas contra incendio",
+            por_equipo=True,
+            tipo_equipo_aplicable="Bomba",
+            es_curva_caudal=True,
+            schema_json="[]",
+        )
+        db.session.add_all([servicio_tipo_bie, servicio_tipo_inspeccion, servicio_tipo_curva_caudal])
         db.session.commit()
-        print("Catálogo de servicios tipo de ejemplo cargado (Checklist de BIE, Inspección visual).")
+        print("Catálogo de servicios tipo de ejemplo cargado (Checklist de BIE, Inspección visual, Curva de caudal).")
 
         cliente = Cliente(
             empresa_id=empresa_demo.id,
@@ -120,15 +132,35 @@ with app.app_context():
         servicios = [
             ServicioContrato(contrato_id=contrato.id, nombre="Inspección visual de sprinklers", frecuencia="mensual"),
             ServicioContrato(contrato_id=contrato.id, nombre="Prueba de señales ECAS", frecuencia="trimestral"),
-            ServicioContrato(contrato_id=contrato.id, nombre="Curva de bombas", frecuencia="semestral"),
+            ServicioContrato(
+                contrato_id=contrato.id, nombre="Curva de caudal (bombas)", frecuencia="semestral",
+                tipo_equipo_aplicable="Bomba", es_curva_caudal=True,
+            ),
         ]
         db.session.add_all(servicios)
         db.session.commit()
 
-        # Genera automáticamente todas las visitas del año, agrupando por fecha
-        contrato.generar_visitas()
+        # Simula un contrato que ya viene andando: los meses hasta hoy quedan
+        # con su visita ya coordinada (como si el coordinador ya hubiera
+        # llamado), y los meses futuros quedan como solicitud pendiente —
+        # así la pantalla de Coordinación tiene algo real para mostrar.
+        admin_usuario = Usuario.query.filter_by(username="admin1").first()
+        hoy = date.today()
+        meses_vistos = set()
+        for servicio in servicios:
+            for fecha in servicio.fechas_ocurrencia():
+                if (fecha.year, fecha.month) in meses_vistos:
+                    continue
+                meses_vistos.add((fecha.year, fecha.month))
+                solicitud = SolicitudCoordinacion(contrato_id=contrato.id, anio=fecha.year, mes=fecha.month)
+                db.session.add(solicitud)
+                db.session.flush()
+                if fecha <= hoy:
+                    coordinar_solicitud(solicitud, fecha, None, admin_usuario)
+        db.session.commit()
 
-        print(f"Datos de ejemplo cargados. Se generaron {len(contrato.visitas)} visitas para el contrato.")
+        print(f"Datos de ejemplo cargados. Se generaron {len(contrato.visitas)} visitas coordinadas y "
+              f"{SolicitudCoordinacion.query.filter_by(contrato_id=contrato.id, coordinada=False).count()} solicitudes pendientes.")
 
         # Observación de ejemplo, para ver el dashboard funcionando
         observacion = Observacion(
@@ -149,9 +181,21 @@ with app.app_context():
         eca1 = Equipo(instalacion_id=instalacion.id, tipo="ECA", nombre="ECA Torre A", ubicacion="Torre A, subsuelo", manifold_id=manifold.id)
         eca2 = Equipo(instalacion_id=instalacion.id, tipo="ECA", nombre="ECA Torre B", ubicacion="Torre B, subsuelo", manifold_id=manifold.id)
         eca_suelto = Equipo(instalacion_id=instalacion.id, tipo="ECA", nombre="ECA depósito", ubicacion="Depósito ala este")
-        db.session.add_all([eca1, eca2, eca_suelto])
+
+        bomba = Equipo(
+            instalacion_id=instalacion.id, tipo="Bomba", nombre="Bomba principal contra incendio",
+            ubicacion="Planta baja, sala de bombas", modelo="Peerless AE10 100-315", serie="SN-2024-0451",
+            caudal_nominal=500, presion_diseno=100, rpm_nominal=1770, anio_fabricacion=2019,
+        )
+        db.session.add_all([eca1, eca2, eca_suelto, bomba])
         db.session.commit()
-        print("Equipos de ejemplo cargados (1 manifold con 2 ECA, 1 ECA suelto).")
+
+        db.session.add(CurvaFabrica(
+            equipo_id=bomba.id, rpm_nominal=1770,
+            punto_0_presion=135, punto_50_presion=118, punto_100_presion=100, punto_150_presion=68,
+        ))
+        db.session.commit()
+        print("Equipos de ejemplo cargados (1 manifold con 2 ECA, 1 ECA suelto, 1 bomba con curva de fábrica).")
 
         # Repuestos de ejemplo (uno en nivel crítico a propósito, para ver el aviso)
         repuesto1 = Repuesto(empresa_id=empresa_demo.id, nombre="Rociador estándar 68°C", codigo="ROC-68", unidad="unidad", stock_actual=25, stock_minimo=10)
@@ -205,17 +249,6 @@ with app.app_context():
                     {"campo": "equipos_verificados", "tipo": "texto", "label": "Equipos verificados"},
                     {"campo": "anomalias", "tipo": "texto_largo", "label": "Anomalías detectadas"},
                     {"campo": "conforme", "tipo": "booleano", "label": "¿Conforme?"},
-                ]),
-            ),
-            TipoFormulario(
-                cliente_id=cliente.id,
-                nombre="Curva hidráulica",
-                descripcion="Prueba de curva de bombas contra incendio",
-                schema_json=json.dumps([
-                    {"campo": "presion_succion", "tipo": "numero", "label": "Presión de succión (PSI)"},
-                    {"campo": "presion_descarga", "tipo": "numero", "label": "Presión de descarga (PSI)"},
-                    {"campo": "caudal", "tipo": "numero", "label": "Caudal (GPM)"},
-                    {"campo": "observaciones", "tipo": "texto_largo", "label": "Observaciones"},
                 ]),
             ),
             TipoFormulario(

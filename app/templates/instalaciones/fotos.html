@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Fotos - {{ instalacion.nombre }}{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Fotos de la instalación</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Fotos de la instalación</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}">&larr; {{ instalacion.nombre }}</a></p>
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
@@ -40,7 +37,17 @@
                             <a href="{{ url_for('equipos.detalle', equipo_id=foto.equipo_id) }}">{{ foto.equipo.nombre }}</a>
                             {% else %}<span class="text-muted">General</span>{% endif %}
                         </td>
-                        <td>{{ foto.origen }}</td>
+                        <td>
+                            {{ foto.origen }}
+                            {% if foto.item_visita %}
+                            <br><a href="{{ url_for('visitas.detalle', visita_id=foto.item_visita.visita_id) }}" class="small">Ver visita &rarr;</a>
+                            {% elif foto.observacion %}
+                            <br><a href="{{ url_for('observaciones.editar', observacion_id=foto.observacion_id) }}" class="small">Ver observación &rarr;</a>
+                            {% if foto.observacion.presupuesto %}
+                            <br><a href="{{ url_for('presupuestos.detalle', presupuesto_id=foto.observacion.presupuesto.id) }}" class="small">Ver presupuesto &rarr;</a>
+                            {% endif %}
+                            {% endif %}
+                        </td>
                         <td>{{ foto.descripcion or '-' }}</td>
                         <td>
                             <form method="POST" action="{{ url_for('fotos.eliminar', foto_id=foto.id) }}" onsubmit="return confirm('¿Eliminar foto?');">
@@ -54,7 +61,6 @@
             </div>
             {% endif %}
 
-        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Coordinación de visitas{% endblock %}
+{% block content %}
+<div class="pagina-ancha">
+
+    <div class="d-flex justify-content-between align-items-end flex-wrap gap-3 mb-1">
+        <h1>Coordinación de visitas</h1>
+        <div class="d-flex gap-2 align-items-center">
+            <div class="selector-mes">
+                <a class="paso-mes" href="{{ url_for('coordinacion.index', anio=mes_anterior.year, mes=mes_anterior.month) }}">‹</a>
+                <form method="GET" action="{{ url_for('coordinacion.index') }}" id="form-mes" class="d-inline">
+                    <select name="mes" onchange="document.getElementById('form-mes').submit()">
+                        {% for nombre in meses_es %}
+                        <option value="{{ loop.index }}" {{ 'selected' if loop.index == mes }}>{{ nombre }} {{ anio }}</option>
+                        {% endfor %}
+                    </select>
+                    <input type="hidden" name="anio" value="{{ anio }}">
+                </form>
+                <a class="paso-mes" href="{{ url_for('coordinacion.index', anio=mes_siguiente.year, mes=mes_siguiente.month) }}">›</a>
+            </div>
+            <form method="POST" action="{{ url_for('coordinacion.generar') }}">
+                <input type="hidden" name="anio" value="{{ anio }}">
+                <input type="hidden" name="mes" value="{{ mes }}">
+                <button type="submit" class="btn btn-dark btn-sm">+ Generar solicitudes del mes</button>
+            </form>
+        </div>
+    </div>
+    <p class="text-muted mb-4">Instalaciones con servicio contratado este mes. Coordiná la fecha real con cada cliente antes de que el técnico la vea en su cola.</p>
+
+    <div class="grid-atencion">
+        <div class="card-atencion"><span class="num">{{ total }}</span><span class="etiqueta">Total del mes</span></div>
+        <div class="card-atencion critico"><span class="num">{{ conteos.sin_coordinar }}</span><span class="etiqueta">Sin coordinar</span></div>
+        <div class="card-atencion"><span class="num">{{ conteos.coordinada }}</span><span class="etiqueta">Coordinadas</span></div>
+        <div class="card-atencion ok"><span class="num">{{ asignadas_o_mas }}</span><span class="etiqueta">Asignadas / ejecutadas</span></div>
+    </div>
+
+    <div class="chips-filtro-doc mb-3" id="chips-filtro-coord">
+        <span class="chip-filtro-doc activo" data-filtro="">Todas ({{ total }})</span>
+        <span class="chip-filtro-doc" data-filtro="sin_coordinar">Sin coordinar ({{ conteos.sin_coordinar }})</span>
+        <span class="chip-filtro-doc" data-filtro="coordinada">Coordinadas ({{ conteos.coordinada }})</span>
+        <span class="chip-filtro-doc" data-filtro="asignada">Asignadas ({{ conteos.asignada }})</span>
+        <span class="chip-filtro-doc" data-filtro="ejecutada">Ejecutadas ({{ conteos.ejecutada }})</span>
+    </div>
+
+    {% if not solicitudes %}
+    <div class="estado-vacio-doc">
+        <i class="bi bi-telephone"></i>
+        <p>No hay nada para coordinar en {{ titulo_mes|lower }} todavía.</p>
+        <form method="POST" action="{{ url_for('coordinacion.generar') }}">
+            <input type="hidden" name="anio" value="{{ anio }}">
+            <input type="hidden" name="mes" value="{{ mes }}">
+            <button type="submit" class="btn btn-dark btn-sm">+ Generar solicitudes del mes</button>
+        </form>
+    </div>
+    {% else %}
+    <div class="split-panel">
+        <div class="panel-lista" id="lista-coord">
+            {% for s in solicitudes %}
+            {% set inst = s.contrato.instalacion %}
+            <button type="button" class="fila-coord {{ s.estado_derivado }}{{ ' seleccionada' if loop.first }}" data-item="{{ s.id }}" data-estado="{{ s.estado_derivado }}">
+                <span class="cuerpo">
+                    <span class="top-fila">
+                        <span class="nombre">{{ inst.cliente.nombre }}</span>
+                        <span class="badge badge-{{ s.estado_derivado }}">{{ s.estado_derivado.replace('_', ' ')|capitalize }}</span>
+                    </span>
+                    <span class="cliente">{{ inst.nombre }}</span>
+                    <span class="meta">
+                        {% if s.coordinada %}
+                        {{ s.fecha_coordinada.strftime('%d/%m/%Y') }}
+                        {% if s.visita and s.visita.orden_trabajo and s.visita.orden_trabajo.tecnico_id %}· {{ s.visita.orden_trabajo.nombre_tecnico }}{% else %}· sin técnico asignado{% endif %}
+                        {% else %}
+                        {{ inst.cliente.telefono or 'sin teléfono cargado' }}
+                        {% endif %}
+                    </span>
+                </span>
+            </button>
+            {% endfor %}
+        </div>
+
+        <div class="panel-detalle">
+            {% for s in solicitudes %}
+            {% set inst = s.contrato.instalacion %}
+            {% set ot = s.visita.orden_trabajo if s.visita else none %}
+            <div class="vista-detalle" data-detalle="{{ s.id }}" style="{{ '' if loop.first else 'display:none;' }}">
+
+                <div class="detalle-cab">
+                    <div>
+                        <h2>{{ inst.cliente.nombre }}</h2>
+                        <div class="cliente-sub text-muted">{{ inst.nombre }}</div>
+                    </div>
+                    <span class="badge badge-{{ s.estado_derivado }} fs-6">{{ s.estado_derivado.replace('_', ' ')|capitalize }}</span>
+                </div>
+
+                <div class="detalle-cuerpo">
+
+                    {% if not s.coordinada %}
+                    <div class="grid-info">
+                        <div class="campo-info"><div class="l">Contacto</div><div class="v {{ 'muted' if not inst.cliente.contacto }}">{{ inst.cliente.contacto or '-' }}</div></div>
+                        <div class="campo-info"><div class="l">Teléfono</div><div class="v {{ 'muted' if not inst.cliente.telefono }}">{{ inst.cliente.telefono or '-' }}</div></div>
+                        <div class="campo-info"><div class="l">Servicios este mes</div><div class="v">{{ servicios_por_solicitud[s.id]|map(attribute='nombre')|join(', ') }}</div></div>
+                    </div>
+
+                    <div class="seccion-titulo-doc" style="margin-top:0;">Coordinar visita</div>
+                    <form method="POST" action="{{ url_for('coordinacion.coordinar', solicitud_id=s.id) }}" class="form-coordinar">
+                        <div class="fila-campos">
+                            <div class="campo fecha">
+                                <label>Fecha confirmada</label>
+                                <input type="date" name="fecha" class="form-control form-control-sm" required min="{{ hoy.isoformat() }}">
+                            </div>
+                            <div class="campo" style="flex:1; min-width:220px;">
+                                <label>Notas (opcional)</label>
+                                <input type="text" name="notas" class="form-control form-control-sm" placeholder="Ej: acceso por portería, pedir llave a seguridad">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">Confirmar coordinación</button>
+                    </form>
+
+                    {% else %}
+                    <div class="grid-info">
+                        <div class="campo-info"><div class="l">Fecha confirmada</div><div class="v">{{ s.fecha_coordinada.strftime('%d/%m/%Y') }}</div></div>
+                        <div class="campo-info"><div class="l">Técnico</div><div class="v {{ 'muted' if not (ot and ot.tecnico_id) }}">{{ ot.nombre_tecnico if ot and ot.tecnico_id else 'Sin asignar aún' }}</div></div>
+                        <div class="campo-info"><div class="l">Coordinada por</div><div class="v">{{ s.coordinado_por.nombre_completo or s.coordinado_por.username if s.coordinado_por else '-' }}</div></div>
+                        <div class="campo-info"><div class="l">Notas</div><div class="v {{ 'muted' if not s.notas }}">{{ s.notas or '-' }}</div></div>
+                    </div>
+
+                    <div class="d-flex gap-2 flex-wrap mb-4">
+                        {% if ot %}<a href="{{ url_for('ordenes.detalle', ot_id=ot.id) }}" class="btn btn-outline-dark btn-sm">Ir a la OT →</a>{% endif %}
+                    </div>
+
+                    <div class="seccion-titulo-doc">Recoordinar fecha</div>
+                    <form method="POST" action="{{ url_for('coordinacion.coordinar', solicitud_id=s.id) }}" class="form-coordinar mb-4">
+                        <div class="fila-campos">
+                            <div class="campo fecha">
+                                <label>Nueva fecha</label>
+                                <input type="date" name="fecha" class="form-control form-control-sm" value="{{ s.fecha_coordinada.isoformat() }}" required>
+                            </div>
+                            <div class="campo" style="flex:1; min-width:220px;">
+                                <label>Motivo del cambio</label>
+                                <input type="text" name="notas" class="form-control form-control-sm" placeholder="Ej: el cliente pidió otro día">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-outline-secondary btn-sm">Guardar nueva fecha</button>
+                    </form>
+
+                    {% if s.auditoria %}
+                    <div class="seccion-titulo-doc">Historial</div>
+                    <div class="timeline">
+                        {% for a in s.auditoria %}
+                        <div class="evento-tl">
+                            <span class="punto"></span>
+                            <span class="cuando">{{ a.fecha_cambio.strftime('%d/%m/%Y %H:%M') }}</span>
+                            <span class="que">
+                                {% if a.fecha_anterior %}Recoordinada: {{ a.fecha_anterior.strftime('%d/%m/%Y') }} → {{ a.fecha_nueva.strftime('%d/%m/%Y') }}
+                                {% else %}Coordinada para el {{ a.fecha_nueva.strftime('%d/%m/%Y') }}{% endif %}
+                                {% if a.nota %}<span class="text-muted">— {{ a.nota }}</span>{% endif %}
+                            </span>
+                            <span class="quien">— {{ a.usuario.nombre_completo or a.usuario.username }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<script>
+(function () {
+    var filas = document.querySelectorAll('.fila-coord');
+    filas.forEach(function (fila) {
+        fila.addEventListener('click', function () {
+            filas.forEach(function (f) { f.classList.remove('seleccionada'); });
+            fila.classList.add('seleccionada');
+            document.querySelectorAll('.vista-detalle').forEach(function (v) { v.style.display = 'none'; });
+            var detalle = document.querySelector('.vista-detalle[data-detalle="' + fila.dataset.item + '"]');
+            if (detalle) detalle.style.display = 'block';
+        });
+    });
+
+    var chips = document.querySelectorAll('#chips-filtro-coord .chip-filtro-doc');
+    chips.forEach(function (chip) {
+        chip.addEventListener('click', function () {
+            chips.forEach(function (c) { c.classList.remove('activo'); });
+            chip.classList.add('activo');
+            var f = chip.dataset.filtro;
+            filas.forEach(function (fila) {
+                fila.style.display = (!f || fila.dataset.estado === f) ? 'flex' : 'none';
+            });
+        });
+    });
+})();
+</script>
+{% endblock %}

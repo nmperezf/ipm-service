@@ -1,13 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ 'Editar tipo de equipo' if tipo else 'Nuevo tipo de equipo' }}{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>{{ 'Editar tipo de equipo' if tipo else 'Nuevo tipo de equipo' }}</h1>
-        </div>
-        <div class="cuerpo-doc">
-
+<div class="pagina-ancha">
+    <h1>{{ 'Editar tipo de equipo' if tipo else 'Nuevo tipo de equipo' }}</h1>
+    <div class="tarjeta-doc angosta">
             <p class="mb-1"><a href="{{ url_for('tipos_equipo.listar') }}">&larr; Tipos de equipo</a></p>
             <p class="text-muted">
                 Se suma al desplegable de "Tipo" al cargar un equipo, y al de "Tipo de equipo al que aplica" en
@@ -44,7 +40,6 @@
                 <a href="{{ url_for('tipos_equipo.listar') }}" class="btn btn-link">Cancelar</a>
             </form>
 
-        </div>
     </div>
 </div>
 {% endblock %}

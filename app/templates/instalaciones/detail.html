@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ instalacion.nombre }}{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>{{ instalacion.nombre }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>{{ instalacion.nombre }}</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('clientes.detalle', cliente_id=instalacion.cliente_id) }}">&larr; {{ instalacion.cliente.nombre }}</a></p>
 
@@ -18,6 +15,7 @@
                     <a href="{{ url_for('observaciones.nueva', instalacion_id=instalacion.id) }}" class="btn btn-outline-warning btn-sm"><i class="bi bi-exclamation-triangle me-1"></i>Observación</a>
                     <a href="{{ url_for('equipos.nuevo', instalacion_id=instalacion.id) }}" class="btn btn-outline-info btn-sm"><i class="bi bi-plus-lg me-1"></i>Equipo</a>
                     <a href="{{ url_for('fotos.subir_manual', instalacion_id=instalacion.id) }}" class="btn btn-outline-info btn-sm"><i class="bi bi-camera me-1"></i>Foto</a>
+                    <a href="{{ url_for('instalaciones.fotos', instalacion_id=instalacion.id) }}" class="btn btn-outline-info btn-sm"><i class="bi bi-images me-1"></i>Banco de fotos</a>
                     <a href="{{ url_for('contratos.nuevo', instalacion_id=instalacion.id) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Contrato</a>
                     <a href="{{ url_for('visitas.nueva', instalacion_id=instalacion.id) }}" class="btn btn-dark btn-sm"><i class="bi bi-calendar-plus me-1"></i>Visita manual</a>
                 </div>
@@ -63,7 +61,7 @@
             </div>
             {% endif %}
 
-            {% set abiertas = instalacion.deficiencias|selectattr('resuelto', 'equalto', false)|list %}
+            {% set abiertas = instalacion.deficiencias|selectattr('resuelto', 'equalto', false)|sort(attribute='fecha_carga', reverse=True)|list %}
             {% if abiertas %}
             <div class="seccion-titulo-doc">Observaciones abiertas</div>
             <div class="table-responsive">
@@ -156,7 +154,6 @@
                 <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar instalación</button>
             </form>
 
-        </div>
     </div>
 </div>
 {% endblock %}

@@ -1,12 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Órdenes de trabajo{% endblock %}
+{% block title %}{{ ot_actual.numero if ot_actual else ('Mis órdenes de trabajo' if current_user.rol == 'Técnico' else 'Órdenes de trabajo') }}{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>{{ 'Mis órdenes de trabajo' if current_user.rol == 'Técnico' else 'Órdenes de trabajo' }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>{{ 'Mis órdenes de trabajo' if current_user.rol == 'Técnico' else 'Órdenes de trabajo' }}</h1>
+
+    <div class="split-panel">
+        <div class="panel-lista">
 
             {% if current_user.rol != 'Técnico' %}
             <div class="grid-atencion">
@@ -31,60 +30,137 @@
                 </div>
             </div>
 
-            <div class="barra-herramientas-doc">
-                <div class="buscador-doc">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                    <input type="text" id="buscador-ot" placeholder="Buscar por N°, cliente o técnico...">
-                </div>
-                <div class="chips-filtro-doc" id="chips-filtro-ot">
-                    <span class="chip-filtro-doc activo" data-filtro="">Todas ({{ ordenes|length }})</span>
-                    {% for e in estados %}
-                    <span class="chip-filtro-doc" data-filtro="{{ e }}">{{ e }}</span>
-                    {% endfor %}
-                </div>
-                <a href="{{ url_for('ordenes.nueva') }}" class="btn btn-dark btn-sm"><i class="bi bi-plus-lg me-1"></i>Nueva OT correctiva</a>
+            <div class="buscador-doc">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input type="text" id="buscador-ot" placeholder="Buscar por N°, cliente o técnico...">
             </div>
+            <div class="chips-filtro-doc" id="chips-filtro-ot">
+                <span class="chip-filtro-doc activo" data-filtro="">Todas ({{ ordenes|length }})</span>
+                {% for e in estados %}
+                <span class="chip-filtro-doc" data-filtro="{{ e }}">{{ e }}</span>
+                {% endfor %}
+            </div>
+            <a href="{{ url_for('ordenes.nueva') }}" class="btn btn-dark btn-sm"><i class="bi bi-plus-lg me-1"></i>Nueva OT correctiva</a>
             {% endif %}
 
-            <div class="table-responsive">
-            <table class="table table-hover data-table tabla-col-fija tabla-tarjetas ot-tabla-lista" id="tabla-ot" data-buscador-propio>
-                <thead><tr><th>N°</th><th>Tipo</th><th>Cliente</th><th>Instalación</th><th>Técnico</th><th>Prioridad</th><th>Apertura</th><th>Estado</th></tr></thead>
-                <tbody>
-                    {% for ot in ordenes %}
-                    {% set dias = (hoy - ot.fecha_apertura).days %}
-                    {% set abierta = ot.estado not in ('Finalizada', 'Cancelada') %}
-                    {% set urgente_fila = abierta and ot.prioridad in ('Urgente', 'Alta') %}
-                    <tr class="ot-fila{{ ' ot-fila-urgente' if urgente_fila }}{{ ' alta' if urgente_fila and ot.prioridad == 'Alta' }}"
-                        data-estado="{{ ot.estado }}"
-                        data-buscar="{{ (ot.numero ~ ' ' ~ ot.instalacion.cliente.nombre ~ ' ' ~ ot.instalacion.nombre ~ ' ' ~ ot.nombre_tecnico)|lower }}">
-                        <td data-label="N°"><a class="ot-link-numero" href="{{ url_for('ordenes.detalle', ot_id=ot.id) }}">{{ ot.numero }}</a></td>
-                        <td data-label="Tipo">{{ ot.tipo }}</td>
-                        <td data-label="Cliente"><a class="enlace-cliente-ot" href="{{ url_for('clientes.detalle', cliente_id=ot.instalacion.cliente_id) }}">{{ ot.instalacion.cliente.nombre }}</a></td>
-                        <td data-label="Instalación">{{ ot.instalacion.nombre }}</td>
-                        <td data-label="Técnico">
-                            {% if ot.nombre_tecnico == '-' %}
-                            <span class="ot-tecnico-sin-asignar">— Sin asignar</span>
-                            {% else %}
-                            {{ ot.nombre_tecnico }}
-                            {% endif %}
-                        </td>
-                        <td data-label="Prioridad"><span class="badge badge-{{ ot.prioridad }}">{{ ot.prioridad }}</span></td>
-                        <td data-label="Apertura">
-                            <div class="ot-fecha-apertura">
-                                <span>{{ ot.fecha_apertura.strftime('%d/%m/%Y') }}</span>
-                                {% if abierta and dias >= 7 %}<span class="ot-dias flag">hace {{ dias }} día{{ 's' if dias != 1 }}</span>{% endif %}
-                            </div>
-                        </td>
-                        <td data-label="Estado"><span class="badge badge-{{ ot.estado.replace(' ', '.') }}">{{ ot.estado }}</span></td>
-                    </tr>
-                    {% else %}
-                    <tr><td colspan="8"><div class="estado-vacio-doc"><i class="bi bi-clipboard-check"></i><p class="mb-0">No hay órdenes de trabajo cargadas.</p></div></td></tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="lista-ot" id="lista-ot">
+                {% for ot in ordenes %}
+                {% set dias = (hoy - ot.fecha_apertura).days %}
+                {% set abierta = ot.estado not in ('Finalizada', 'Cancelada') %}
+                {% set clase_prioridad = {'Urgente': 'urgente', 'Alta': 'alta', 'Media': 'media'}.get(ot.prioridad, '') if abierta else '' %}
+                <a class="fila-ot{{ ' ' + clase_prioridad if clase_prioridad }}{{ ' seleccionada' if ot_actual and ot.id == ot_actual.id }}"
+                   href="{{ url_for('ordenes.detalle', ot_id=ot.id) }}"
+                   data-estado="{{ ot.estado }}"
+                   data-buscar="{{ (ot.numero ~ ' ' ~ ot.instalacion.cliente.nombre ~ ' ' ~ ot.instalacion.nombre ~ ' ' ~ ot.nombre_tecnico)|lower }}">
+                    <div class="top-fila">
+                        <span class="numero">{{ ot.numero }}</span>
+                        <span class="badge badge-{{ ot.prioridad }}">{{ ot.prioridad }}</span>
+                    </div>
+                    <div class="desc">{{ ot.descripcion or ot.tipo }}</div>
+                    <div class="meta">
+                        {{ ot.instalacion.cliente.nombre }} — {{ ot.instalacion.nombre }}<br>
+                        {% if ot.nombre_tecnico == '-' %}<span class="sin-asignar">— Sin asignar</span>{% else %}{{ ot.nombre_tecnico }}{% endif %}
+                        · {{ ot.fecha_apertura.strftime('%d/%m/%Y') }}{% if abierta and dias >= 7 %} (hace {{ dias }} días){% endif %}
+                        · <span class="badge badge-{{ ot.estado.replace(' ', '.') }}">{{ ot.estado }}</span>
+                    </div>
+                </a>
+                {% else %}
+                <div class="estado-vacio-doc"><i class="bi bi-clipboard-check"></i><p class="mb-0">No hay órdenes de trabajo cargadas.</p></div>
+                {% endfor %}
             </div>
             <p class="text-muted text-center py-3 d-none" id="ot-sin-resultados">Ninguna OT coincide con la búsqueda.</p>
 
+        </div>
+
+        <div class="panel-detalle">
+            {% if not ot_actual %}
+            <div class="empty-detalle">Elegí una OT de la lista para ver el detalle.</div>
+            {% else %}
+            {% set ot = ot_actual %}
+
+            <div class="detalle-cab">
+                <div>
+                    <h2>{{ ot.numero }} — {{ ot.descripcion or ot.tipo }}</h2>
+                    <span class="badge badge-{{ ot.estado.replace(' ', '.') }} fs-6">{{ ot.estado }}</span>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{{ url_for('ordenes.pdf', ot_id=ot.id) }}" class="btn btn-sm btn-outline-dark" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
+                    {% if current_user.rol in ('Administrador', 'Jefe') %}
+                    <a href="{{ url_for('ordenes.editar', ot_id=ot.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Editar</a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="detalle-cuerpo">
+
+                <div class="grid-info">
+                    <div class="campo-info"><div class="l">Tipo</div><div class="v">{{ ot.tipo }}</div></div>
+                    <div class="campo-info"><div class="l">Prioridad</div><div class="v"><span class="badge badge-{{ ot.prioridad }}">{{ ot.prioridad }}</span></div></div>
+                    <div class="campo-info"><div class="l">Cliente</div><div class="v"><a href="{{ url_for('clientes.detalle', cliente_id=ot.instalacion.cliente_id) }}">{{ ot.instalacion.cliente.nombre }}</a></div></div>
+                    <div class="campo-info"><div class="l">Instalación</div><div class="v"><a href="{{ url_for('instalaciones.detalle', instalacion_id=ot.instalacion_id) }}">{{ ot.instalacion.nombre }}</a></div></div>
+                    <div class="campo-info"><div class="l">Técnico</div><div class="v {{ 'muted' if ot.nombre_tecnico == '-' }}">{{ ot.nombre_tecnico }}</div></div>
+                    <div class="campo-info"><div class="l">Apertura</div><div class="v">{{ ot.fecha_apertura.strftime('%d/%m/%Y') }}</div></div>
+                    <div class="campo-info"><div class="l">Cierre</div><div class="v {{ 'muted' if not ot.fecha_cierre }}">{{ ot.fecha_cierre.strftime('%d/%m/%Y') if ot.fecha_cierre else '-' }}</div></div>
+                    {% if ot.visita %}
+                    <div class="campo-info"><div class="l">Visita planificada</div><div class="v"><a href="{{ url_for('visitas.detalle', visita_id=ot.visita_id) }}">Ver visita del {{ ot.visita.fecha.strftime('%d/%m/%Y') }}</a></div></div>
+                    {% endif %}
+                </div>
+
+                <p><strong>Descripción:</strong><br>{{ ot.descripcion or '-' }}</p>
+                {% if ot.observaciones %}<p><strong>Observaciones:</strong><br>{{ ot.observaciones }}</p>{% endif %}
+
+                {% if current_user.rol in ('Administrador', 'Jefe') and not ot.visita_id %}
+                <form method="POST" action="{{ url_for('ordenes.eliminar', ot_id=ot.id) }}" class="mb-4"
+                      onsubmit="return confirm('¿Eliminar la OT {{ ot.numero }}? Si tenía repuestos consumidos, se repone el stock. Esta acción no se puede deshacer.');">
+                    <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar OT</button>
+                </form>
+                {% endif %}
+
+                <div class="seccion-titulo-doc">Repuestos utilizados</div>
+                <div class="table-responsive">
+                <table class="table table-sm data-table">
+                    <thead><tr><th>Repuesto</th><th>Cantidad</th><th>Fecha</th><th></th></tr></thead>
+                    <tbody>
+                        {% for uso in ot.repuestos_usados %}
+                        <tr>
+                            <td>{{ uso.repuesto.nombre }}</td>
+                            <td>{{ uso.cantidad }} {{ uso.repuesto.unidad }}</td>
+                            <td>{{ uso.fecha.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                <form method="POST" action="{{ url_for('ordenes.eliminar_repuesto_usado', uso_id=uso.id) }}"
+                                      onsubmit="return confirm('¿Quitar este repuesto de la OT? Se repone al stock.');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Quitar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="4"><div class="estado-vacio-doc"><i class="bi bi-box-seam"></i><p class="mb-0">Sin repuestos cargados en esta OT.</p></div></td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+
+                <div class="seccion-titulo-doc">Agregar repuesto</div>
+                <form method="POST" action="{{ url_for('ordenes.agregar_repuesto', ot_id=ot.id) }}" class="row g-2 align-items-end">
+                    <div class="col-md-6">
+                        <select name="repuesto_id" class="form-select" required>
+                            {% for r in repuestos_disponibles %}
+                            <option value="{{ r.id }}">{{ r.nombre }} (stock: {{ r.stock_actual }} {{ r.unidad }})</option>
+                            {% else %}
+                            <option value="" disabled>No hay repuestos cargados en inventario</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="number" name="cantidad" class="form-control" min="1" placeholder="Cantidad" required>
+                    </div>
+                    <div class="col-md-3">
+                        <button type="submit" class="btn btn-outline-primary w-100">Descontar del stock</button>
+                    </div>
+                </form>
+
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -92,7 +168,7 @@
 {% if current_user.rol != 'Técnico' %}
 <script>
 (function () {
-    var filas = Array.prototype.slice.call(document.querySelectorAll('#tabla-ot tbody tr.ot-fila'));
+    var filas = Array.prototype.slice.call(document.querySelectorAll('#lista-ot .fila-ot'));
     var buscador = document.getElementById('buscador-ot');
     var chips = document.querySelectorAll('#chips-filtro-ot .chip-filtro-doc');
     var sinResultados = document.getElementById('ot-sin-resultados');

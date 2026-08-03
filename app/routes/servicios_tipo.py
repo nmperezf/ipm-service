@@ -39,8 +39,9 @@ def listar():
 @rol_requerido("Administrador", "Jefe")
 def nuevo():
     if request.method == "POST":
-        campos = armar_campos_desde_formulario(request.form)
-        if not campos:
+        es_curva_caudal = bool(request.form.get("es_curva_caudal"))
+        campos = [] if es_curva_caudal else armar_campos_desde_formulario(request.form)
+        if not es_curva_caudal and not campos:
             flash("Agregá al menos un campo antes de guardar.", "danger")
             return render_template("servicios_tipo/form.html", servicio=None, tipos_equipo=nombres_tipos_equipo(), tipos_campo=TIPOS_CAMPO)
 
@@ -52,13 +53,14 @@ def nuevo():
             empresa_id=current_user.empresa_id,
             nombre=request.form["nombre"],
             descripcion=request.form.get("descripcion"),
-            por_equipo=bool(request.form.get("por_equipo")),
+            por_equipo=True if es_curva_caudal else bool(request.form.get("por_equipo")),
             tipo_equipo_aplicable=request.form.get("tipo_equipo_aplicable") or None,
+            es_curva_caudal=es_curva_caudal,
             schema_json=json.dumps(campos),
         )
         db.session.add(servicio)
         db.session.commit()
-        flash(f"Servicio tipo '{servicio.nombre}' creado con {len(campos)} campo(s).", "success")
+        flash(f"Servicio tipo '{servicio.nombre}' creado" + (" (ensayo de curva de caudal)." if es_curva_caudal else f" con {len(campos)} campo(s)."), "success")
         return redirect(url_for("servicios_tipo.listar"))
 
     return render_template("servicios_tipo/form.html", servicio=None, tipos_equipo=nombres_tipos_equipo(), tipos_campo=TIPOS_CAMPO)
@@ -71,15 +73,17 @@ def editar(servicio_id):
     _verificar_pertenencia(servicio)
 
     if request.method == "POST":
-        campos = armar_campos_desde_formulario(request.form)
-        if not campos:
+        es_curva_caudal = bool(request.form.get("es_curva_caudal"))
+        campos = [] if es_curva_caudal else armar_campos_desde_formulario(request.form)
+        if not es_curva_caudal and not campos:
             flash("Agregá al menos un campo antes de guardar.", "danger")
             return redirect(url_for("servicios_tipo.editar", servicio_id=servicio_id))
 
         servicio.nombre = request.form["nombre"]
         servicio.descripcion = request.form.get("descripcion")
-        servicio.por_equipo = bool(request.form.get("por_equipo"))
+        servicio.por_equipo = True if es_curva_caudal else bool(request.form.get("por_equipo"))
         servicio.tipo_equipo_aplicable = request.form.get("tipo_equipo_aplicable") or None
+        servicio.es_curva_caudal = es_curva_caudal
         servicio.schema_json = json.dumps(campos)
         db.session.commit()
         flash(

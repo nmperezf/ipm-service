@@ -1,13 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Nota para el cliente{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Nota para el cliente</h1>
-        </div>
-        <div class="cuerpo-doc">
-
+<div class="pagina-ancha">
+    <h1>Nota para el cliente</h1>
+    <div class="tarjeta-doc angosta">
             <p class="mb-1"><a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}">&larr; Volver a la visita</a></p>
             <p class="text-muted">{{ visita.instalacion.nombre }} — {{ visita.fecha.strftime('%d/%m/%Y') }}<br>El cliente va a ver este texto en su portal, junto a la fecha en que lo escribiste.</p>
 
@@ -23,7 +19,6 @@
                 <a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}" class="btn btn-link">Cancelar</a>
             </form>
 
-        </div>
     </div>
 </div>
 {% endblock %}

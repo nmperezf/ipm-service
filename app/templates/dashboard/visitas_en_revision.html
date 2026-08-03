@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Visitas en revisión{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Visitas en revisión</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Visitas en revisión</h1>
+    <div class="tarjeta-doc">
 
             <p class="text-muted mb-3"><a href="{{ url_for('dashboard.inicio') }}">&larr; Volver al Inicio</a> — {{ visitas|length }} visita{{ 's' if visitas|length != 1 else '' }}.</p>
 
@@ -30,7 +27,6 @@
             </table>
             </div>
 
-        </div>
     </div>
 </div>
 {% endblock %}

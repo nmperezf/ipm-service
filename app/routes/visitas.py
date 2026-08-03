@@ -13,6 +13,8 @@ from app.auth_utils import (
 from app import db
 from app.models import (
     ESTADOS_VISITA,
+    TIPOS_BOMBA_PRINCIPAL,
+    Equipo,
     Formulario,
     Instalacion,
     ItemVisita,
@@ -25,6 +27,7 @@ from app.models import (
 )
 from app.notificaciones import notificar_gestion, notificar_usuario
 from app.pdf_devolucion import generar_pdf_devolucion
+from app.utils import equipos_por_categoria
 
 visitas_bp = Blueprint("visitas", __name__, url_prefix="/visitas")
 
@@ -165,9 +168,25 @@ def detalle(visita_id):
     # Cada servicio de la visita ofrece solo los tipos de formulario que
     # aplican a él (ver TipoFormulario.aplica_a_servicio) — uno sin
     # servicios configurados aparece para todos, sin romper lo de siempre.
+    # Un ítem suelto ligado a un equipo (ver visitas.agregar_item) filtra
+    # igual, pero por el tipo de ESE equipo en vez del servicio; uno sin
+    # equipo ni servicio no tiene de dónde filtrar, así que ofrece todos.
+    # Un ítem de curva de caudal no usa el selector de formularios — ofrece
+    # directamente las bombas de la instalación (filtradas por
+    # tipo_equipo_aplicable si el servicio lo definió) para cargar el
+    # ensayo de cada una (ver curvas.ensayo_nuevo).
     formularios_por_item = {}
+    equipos_bomba_por_item = {}
     for item in visita.items:
-        tipos_item = [t for t in tipos if t.aplica_a_servicio(item.servicio)]
+        if item.servicio and item.servicio.es_curva_caudal:
+            tipo_filtro = item.servicio.tipo_equipo_aplicable
+            tipos_bomba = (tipo_filtro,) if tipo_filtro else TIPOS_BOMBA_PRINCIPAL
+            equipos_bomba_por_item[item.id] = [
+                e for e in visita.instalacion.equipos if e.activo and e.tipo in tipos_bomba
+            ]
+            continue
+        tipo_equipo_ref = item.servicio.tipo_equipo_aplicable if item.servicio else (item.equipo.tipo if item.equipo else None)
+        tipos_item = [t for t in tipos if t.aplica_a_tipo_equipo(tipo_equipo_ref)]
         grupos, generales = _agrupar_tipos_formulario(tipos_item)
         formularios_por_item[item.id] = {"grupos": grupos, "generales": generales}
 
@@ -183,6 +202,8 @@ def detalle(visita_id):
         "visitas/detail.html",
         visita=visita,
         formularios_por_item=formularios_por_item,
+        equipos_bomba_por_item=equipos_bomba_por_item,
+        equipos_agrupados=equipos_por_categoria(visita.instalacion),
         deficiencias_abiertas=deficiencias_abiertas,
     )
 
@@ -227,7 +248,7 @@ def marcar_item_cumplido(item_id):
     verificar_visita_editable(visita)
     visita.marcar_item_cumplido(item_id)
     db.session.commit()
-    flash(f"'{item.servicio.nombre}' marcado como cumplido.", "success")
+    flash(f"'{item.nombre_mostrado}' marcado como cumplido.", "success")
     return redirect(url_for("visitas.detalle", visita_id=visita.id))
 
 
@@ -240,7 +261,62 @@ def marcar_item_pendiente(item_id):
     verificar_visita_editable(visita)
     visita.marcar_item_pendiente(item_id)
     db.session.commit()
-    flash(f"'{item.servicio.nombre}' marcado como pendiente.", "info")
+    flash(f"'{item.nombre_mostrado}' marcado como pendiente.", "info")
+    return redirect(url_for("visitas.detalle", visita_id=visita.id))
+
+
+@visitas_bp.route("/<int:visita_id>/items/agregar", methods=["POST"])
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def agregar_item(visita_id):
+    """Agrega un ítem suelto (sin servicio de contrato) a la visita, para
+    cargar algo puntual: una revisión no contemplada en el contrato, o
+    directamente el único ítem de una visita de cliente esporádico sin
+    contrato armado (ver visitas.nueva). Elegir un equipo de la propia
+    instalación (en vez de texto libre) es lo que después deja ofrecer
+    el formulario correcto ya filtrado y listo para cargar, sin pasar
+    por el paso de "elegir equipo" — ver visitas.detalle."""
+    visita = Visita.query.get_or_404(visita_id)
+    verificar_escritura_cliente(visita.instalacion.cliente)
+    verificar_visita_editable(visita)
+
+    equipo_id = request.form.get("equipo_id", type=int)
+    equipo = None
+    if equipo_id:
+        equipo = Equipo.query.get_or_404(equipo_id)
+        if equipo.instalacion_id != visita.instalacion_id:
+            abort(400)
+
+    nombre = (request.form.get("nombre_libre") or "").strip()
+    if not equipo and not nombre:
+        flash("Elegí un equipo o escribí una descripción antes de agregarlo.", "danger")
+        return redirect(url_for("visitas.detalle", visita_id=visita.id))
+
+    item = ItemVisita(
+        visita_id=visita.id, equipo_id=equipo.id if equipo else None,
+        nombre_libre=nombre or None, estado="Pendiente",
+    )
+    db.session.add(item)
+    db.session.commit()
+    flash(f"'{item.nombre_mostrado}' agregado a la visita.", "success")
+    return redirect(url_for("visitas.detalle", visita_id=visita.id))
+
+
+@visitas_bp.route("/items/<int:item_id>/eliminar", methods=["POST"])
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def eliminar_item(item_id):
+    """Solo para ítems sueltos que todavía no tienen nada cargado — evita
+    perder formularios o fotos ya subidos por error de un click."""
+    item = ItemVisita.query.get_or_404(item_id)
+    visita = item.visita
+    verificar_escritura_cliente(visita.instalacion.cliente)
+    verificar_visita_editable(visita)
+    if item.servicio_contrato_id or item.formularios or item.fotos or item.ensayos_caudal:
+        flash("Ese ítem ya tiene datos cargados o viene del contrato — no se puede eliminar.", "danger")
+        return redirect(url_for("visitas.detalle", visita_id=visita.id))
+    nombre = item.nombre_mostrado
+    db.session.delete(item)
+    db.session.commit()
+    flash(f"'{nombre}' eliminado de la visita.", "info")
     return redirect(url_for("visitas.detalle", visita_id=visita.id))
 
 

@@ -209,7 +209,7 @@ def nuevo(item_id, tipo_formulario_id):
         db.session.commit()
         destino = f"'{tipo.nombre}'" + (f" para {equipo.nombre}" if equipo else "")
         verbo = "agregado a" if es_nuevo else "actualizado en"
-        flash(f"Formulario {destino} {verbo} '{item.servicio.nombre}'.", "success")
+        flash(f"Formulario {destino} {verbo} '{item.nombre_mostrado}'.", "success")
         if tipo.por_equipo:
             return redirect(url_for("formularios.elegir_equipo", item_id=item.id, tipo_formulario_id=tipo.id))
         return redirect(url_for("visitas.detalle", visita_id=item.visita_id))

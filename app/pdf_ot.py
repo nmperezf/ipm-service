@@ -52,7 +52,7 @@ def generar_pdf_ot(ot):
         elementos.append(Paragraph("Servicios de esta visita", h2))
         filas = [["Servicio", "Completado"]]
         for item in ot.visita.items:
-            filas.append([item.servicio.nombre, "[ ] Sí   [ ] No"])
+            filas.append([item.nombre_mostrado, "[ ] Sí   [ ] No"])
         tabla_servicios = Table(filas, colWidths=[11 * cm, 5 * cm])
         tabla_servicios.setStyle(estilo_tabla_encabezado())
         elementos.append(tabla_servicios)

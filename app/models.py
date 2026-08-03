@@ -150,7 +150,7 @@ class Cliente(db.Model):
     instalaciones = db.relationship(
         "Instalacion", backref="cliente", lazy=True, cascade="all, delete-orphan"
     )
-    empresa = db.relationship("Empresa", backref="clientes")
+    empresa = db.relationship("Empresa", backref=db.backref("clientes", cascade="all, delete-orphan"))
 
     def indicadores(self):
         """Indicadores agregados de todas las instalaciones del cliente."""
@@ -297,8 +297,9 @@ class Instalacion(db.Model):
 
 class Contrato(db.Model):
     """Un contrato dura 1 año. Agrupa uno o más servicios, cada uno con su
-    propia frecuencia. Al crearse, genera automáticamente todas las visitas
-    del año, agrupando en una misma fecha los servicios que coincidan."""
+    propia frecuencia. No genera las visitas del año de una — cada mes hay
+    que coordinar con el cliente la fecha real antes de que exista la
+    Visita/OT (ver SolicitudCoordinacion y app/coordinacion.py)."""
 
     __tablename__ = "contratos"
 
@@ -320,56 +321,6 @@ class Contrato(db.Model):
     @staticmethod
     def calcular_fecha_fin(fecha_inicio):
         return fecha_inicio + relativedelta(years=1)
-
-    def generar_visitas(self):
-        """Genera (o regenera) automáticamente todas las visitas del año de
-        contrato, agrupando por fecha los servicios que coincidan. Se llama
-        al crear el contrato o al agregar/quitar un servicio."""
-        # Borra visitas futuras aún no realizadas para regenerar limpio;
-        # conserva las ya realizadas o canceladas manualmente como historial.
-        visitas_a_conservar = [v for v in self.visitas if v.estado in ("Realizado", "Cancelado")]
-        fechas_conservadas = {v.fecha for v in visitas_a_conservar}
-
-        for v in list(self.visitas):
-            if v.estado not in ("Realizado", "Cancelado"):
-                db.session.delete(v)
-        db.session.flush()
-
-        fechas_por_servicio = {
-            s.id: s.fechas_ocurrencia() for s in self.servicios if s.activo
-        }
-        todas_fechas = sorted(set().union(*fechas_por_servicio.values())) if fechas_por_servicio else []
-
-        for fecha in todas_fechas:
-            if fecha in fechas_conservadas:
-                continue  # ya hay una visita real/cancelada en esa fecha
-            visita = Visita(
-                instalacion_id=self.instalacion_id,
-                contrato_id=self.id,
-                fecha=fecha,
-                estado="Pendiente",
-            )
-            db.session.add(visita)
-            db.session.flush()
-            for servicio_id, fechas in fechas_por_servicio.items():
-                if fecha in fechas:
-                    db.session.add(
-                        ItemVisita(visita_id=visita.id, servicio_contrato_id=servicio_id, estado="Pendiente")
-                    )
-
-            # Cada visita planificada recibe su propia OT preventiva
-            ot = OrdenTrabajo(
-                instalacion_id=self.instalacion_id,
-                visita_id=visita.id,
-                tipo="Preventivo",
-                prioridad="Media",
-                estado="Pendiente",
-                fecha_apertura=fecha,
-            )
-            db.session.add(ot)
-            db.session.flush()
-            ot.asignar_numero()
-        db.session.commit()
 
     def actualizar_estado_por_vencimiento(self, hoy=None):
         hoy = hoy or date.today()
@@ -400,6 +351,9 @@ class ServicioContrato(db.Model):
     # formulario" de la visita para que solo ofrezca los tipos de formulario
     # del mismo tipo de equipo (por categoría, ver categoria_de_tipo_equipo).
     tipo_equipo_aplicable = db.Column(db.String(40), nullable=True)
+    # Copiado de ServicioTipo.es_curva_caudal al agregar el servicio (ver
+    # contratos.nuevo_servicio) — mismo criterio que tipo_equipo_aplicable.
+    es_curva_caudal = db.Column(db.Boolean, default=False, nullable=False)
 
     items = db.relationship("ItemVisita", backref="servicio", lazy=True, cascade="all, delete-orphan")
 
@@ -431,6 +385,92 @@ class ServicioContrato(db.Model):
 
     def __repr__(self):
         return f"<ServicioContrato {self.nombre} ({self.frecuencia})>"
+
+
+# ---------------------------------------------------------------------------
+# Coordinación mensual — reemplaza la generación automática de todo el año
+# de visitas de una: cada mes, un Administrador/Jefe llama a cada cliente
+# con servicio contratado y confirma la fecha real antes de que exista la
+# Visita/OT (ver app/coordinacion.py). Así el técnico nunca ve una OT cuya
+# fecha nadie confirmó.
+# ---------------------------------------------------------------------------
+
+
+class SolicitudCoordinacion(db.Model):
+    """Una instalación con servicio(s) contratado(s) que tocan en un mes
+    dado, pendiente de coordinar. generar_solicitudes_mes() la crea; al
+    coordinar (ver coordinar_solicitud()) se crean recién ahí la Visita,
+    los ItemVisita y la OrdenTrabajo — con la fecha real, no la que
+    calcula el contrato. Un solo renglón por (contrato, año, mes): si el
+    contrato tiene varios servicios que caen ese mes, se agrupan en una
+    sola coordinación (y en una sola Visita), igual que ya se agrupaban
+    por fecha antes."""
+
+    __tablename__ = "solicitudes_coordinacion"
+    __table_args__ = (
+        db.UniqueConstraint("contrato_id", "anio", "mes", name="uq_solicitud_contrato_anio_mes"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    contrato_id = db.Column(db.Integer, db.ForeignKey("contratos.id"), nullable=False)
+    anio = db.Column(db.Integer, nullable=False)
+    mes = db.Column(db.Integer, nullable=False)  # 1-12
+    coordinada = db.Column(db.Boolean, default=False, nullable=False)
+    fecha_coordinada = db.Column(db.Date, nullable=True)
+    notas = db.Column(db.Text, nullable=True)
+    coordinado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    fecha_coordinacion = db.Column(db.DateTime, nullable=True)
+    visita_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=True)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    contrato = db.relationship("Contrato", backref=db.backref("solicitudes_coordinacion", cascade="all, delete-orphan"))
+    coordinado_por = db.relationship("Usuario")
+    visita = db.relationship("Visita")
+
+    @property
+    def estado_derivado(self):
+        """sin_coordinar / coordinada / asignada / en_ejecucion / ejecutada
+        — no se guarda aparte, sale de combinar coordinada + la OT que
+        haya nacido de la Visita coordinada (si ya tiene técnico y en qué
+        estado está)."""
+        if not self.coordinada:
+            return "sin_coordinar"
+        ot = self.visita.orden_trabajo if self.visita else None
+        if not ot or not ot.tecnico_id:
+            return "coordinada"
+        if ot.estado == "Finalizada":
+            return "ejecutada"
+        if ot.estado == "En proceso":
+            return "en_ejecucion"
+        return "asignada"
+
+    def __repr__(self):
+        return f"<SolicitudCoordinacion contrato={self.contrato_id} {self.anio}-{self.mes:02d}>"
+
+
+class CoordinacionAudit(db.Model):
+    """Un renglón por cada vez que se coordina o recoordina una solicitud —
+    de solo consulta, nunca se edita ni se borra un renglón ya cargado
+    (mismo patrón que PresupuestoAudit)."""
+
+    __tablename__ = "coordinacion_audit"
+
+    id = db.Column(db.Integer, primary_key=True)
+    solicitud_id = db.Column(db.Integer, db.ForeignKey("solicitudes_coordinacion.id"), nullable=False)
+    fecha_anterior = db.Column(db.Date, nullable=True)
+    fecha_nueva = db.Column(db.Date, nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
+    nota = db.Column(db.Text, nullable=True)
+    fecha_cambio = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    solicitud = db.relationship(
+        "SolicitudCoordinacion",
+        backref=db.backref("auditoria", cascade="all, delete-orphan", order_by="CoordinacionAudit.fecha_cambio.desc()"),
+    )
+    usuario = db.relationship("Usuario")
+
+    def __repr__(self):
+        return f"<CoordinacionAudit solicitud={self.solicitud_id} -> {self.fecha_nueva}>"
 
 
 # ---------------------------------------------------------------------------
@@ -472,7 +512,7 @@ class Visita(db.Model):
 
     items = db.relationship("ItemVisita", backref="visita", lazy=True, cascade="all, delete-orphan")
 
-    instalacion = db.relationship("Instalacion", backref=db.backref("visitas", lazy=True))
+    instalacion = db.relationship("Instalacion", backref=db.backref("visitas", lazy=True, cascade="all, delete-orphan"))
     cerrada_por = db.relationship("Usuario", backref="visitas_cerradas", foreign_keys=[cerrada_por_id])
     enviada_por = db.relationship("Usuario", backref="visitas_enviadas_revision", foreign_keys=[enviada_por_id])
 
@@ -554,21 +594,44 @@ class Visita(db.Model):
 
 class ItemVisita(db.Model):
     """Cada servicio contratado dentro de una visita agrupada; se marca
-    cumplido/pendiente de forma independiente del resto."""
+    cumplido/pendiente de forma independiente del resto.
+
+    servicio_contrato_id es opcional: un ítem "suelto" (sin contrato, ver
+    visitas.agregar_item) no tiene ServicioContrato y en cambio usa
+    equipo_id (eligiendo de los equipos ya cargados a la instalación) y/o
+    nombre_libre (texto a mano, para algo que no es de un equipo puntual)
+    — para visitas puntuales de clientes esporádicos que no tienen
+    contrato armado, o para agregar algo no contemplado en el contrato
+    durante una visita ya planificada. Con equipo_id, el selector de
+    formularios se filtra por el tipo de ese equipo (igual que un
+    servicio de contrato con tipo_equipo_aplicable) y linkea directo al
+    formulario sin pasar por el paso de "elegir equipo" — ya se sabe
+    cuál es."""
 
     __tablename__ = "items_visita"
 
     id = db.Column(db.Integer, primary_key=True)
     visita_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=False)
-    servicio_contrato_id = db.Column(db.Integer, db.ForeignKey("servicios_contrato.id"), nullable=False)
+    servicio_contrato_id = db.Column(db.Integer, db.ForeignKey("servicios_contrato.id"), nullable=True)
+    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True)
+    nombre_libre = db.Column(db.String(200), nullable=True)
     estado = db.Column(db.String(30), default="Pendiente", nullable=False)
     observaciones = db.Column(db.Text)
 
+    equipo = db.relationship("Equipo", backref="items_visita")
     formularios = db.relationship("Formulario", backref="item_visita", lazy=True, cascade="all, delete-orphan")
     fotos = db.relationship("Foto", backref="item_visita", lazy=True, cascade="all, delete-orphan")
 
+    @property
+    def nombre_mostrado(self):
+        if self.servicio:
+            return self.servicio.nombre
+        if self.equipo:
+            return self.equipo.nombre
+        return self.nombre_libre or "Ítem de visita"
+
     def __repr__(self):
-        return f"<ItemVisita {self.servicio.nombre if self.servicio else ''}>"
+        return f"<ItemVisita {self.servicio.nombre if self.servicio else self.nombre_libre or ''}>"
 
 
 # ---------------------------------------------------------------------------
@@ -604,21 +667,47 @@ class TipoFormulario(db.Model):
 
         return json.loads(self.schema_json) if self.schema_json else []
 
-    def aplica_a_servicio(self, servicio_contrato):
-        """True si este tipo de formulario debería ofrecerse para ese
-        servicio de un contrato. Sin tipo de equipo propio (formulario
-        general, ej. checklist mensual) aplica a cualquier servicio. Con
-        tipo de equipo, solo aplica si cae en la misma categoría que el
-        tipo de equipo del servicio (ver categoria_de_tipo_equipo) — si el
-        servicio no tiene tipo de equipo asignado, no se filtra nada
+    def aplica_a_tipo_equipo(self, tipo_equipo_aplicable):
+        """True si este tipo de formulario debería ofrecerse para un tipo
+        de equipo dado (el nombre tal cual, ej. "ECA" — ver TipoEquipo).
+        Sin tipo de equipo propio (formulario general, ej. checklist
+        mensual) aplica siempre. Con tipo de equipo, solo aplica si cae en
+        la misma categoría (ver categoria_de_tipo_equipo) — si no hay
+        ningún tipo de equipo de referencia, no se filtra nada
         (comportamiento de siempre)."""
         if not self.tipo_equipo_aplicable:
             return True
-        if not servicio_contrato.tipo_equipo_aplicable:
+        if not tipo_equipo_aplicable:
             return True
         return categoria_de_tipo_equipo(self.tipo_equipo_aplicable) == categoria_de_tipo_equipo(
-            servicio_contrato.tipo_equipo_aplicable
+            tipo_equipo_aplicable
         )
+
+    def aplica_a_servicio(self, servicio_contrato):
+        """Igual que aplica_a_tipo_equipo, para un servicio de un
+        contrato (ver ese método para el criterio)."""
+        return self.aplica_a_tipo_equipo(servicio_contrato.tipo_equipo_aplicable if servicio_contrato else None)
+
+    @classmethod
+    def desde_catalogo(cls, servicio_tipo, cliente_id):
+        """Importa (copia) un ServicioTipo del catálogo de la empresa como
+        un TipoFormulario propio del cliente, para no tener que armar los
+        campos a mano cada vez — si el cliente ya tenía uno con ese nombre
+        (lo importó antes, o lo cargó a mano), se reutiliza tal cual en vez
+        de duplicar; de ahí en más queda como una copia independiente."""
+        existente = cls.query.filter_by(cliente_id=cliente_id, nombre=servicio_tipo.nombre).first()
+        if existente:
+            return existente
+        tipo_formulario = cls(
+            cliente_id=cliente_id,
+            nombre=servicio_tipo.nombre,
+            descripcion=servicio_tipo.descripcion,
+            por_equipo=servicio_tipo.por_equipo,
+            tipo_equipo_aplicable=servicio_tipo.tipo_equipo_aplicable,
+            schema_json=servicio_tipo.schema_json,
+        )
+        db.session.add(tipo_formulario)
+        return tipo_formulario
 
     def __repr__(self):
         return f"<TipoFormulario {self.nombre}>"
@@ -643,8 +732,13 @@ class ServicioTipo(db.Model):
     schema_json = db.Column(db.Text, nullable=False)
     por_equipo = db.Column(db.Boolean, default=False, nullable=False)
     tipo_equipo_aplicable = db.Column(db.String(40), nullable=True)  # nombre de un TipoEquipo
+    # Si está marcado, agregar este servicio a un contrato no genera un
+    # TipoFormulario genérico — en la visita, el ítem correspondiente ofrece
+    # directamente "Cargar ensayo de curva de caudal" (ver visitas.detalle /
+    # curvas.ensayo_nuevo) en vez del selector de formularios de siempre.
+    es_curva_caudal = db.Column(db.Boolean, default=False, nullable=False)
 
-    empresa = db.relationship("Empresa", backref="servicios_tipo")
+    empresa = db.relationship("Empresa", backref=db.backref("servicios_tipo", cascade="all, delete-orphan"))
 
     def campos(self):
         import json
@@ -665,7 +759,7 @@ class Formulario(db.Model):
     datos_json = db.Column(db.Text)  # respuestas, según el schema del tipo
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
-    tipo_formulario = db.relationship("TipoFormulario")
+    tipo_formulario = db.relationship("TipoFormulario", backref=db.backref("formularios", cascade="all, delete-orphan"))
     equipo = db.relationship("Equipo", backref="formularios")
 
     def datos(self):
@@ -716,7 +810,7 @@ class Foto(db.Model):
     instalacion = db.relationship("Instalacion", backref="fotos")
     equipo = db.relationship("Equipo", backref="fotos")
     observacion = db.relationship("Observacion", backref="fotos")
-    subido_por = db.relationship("Usuario", foreign_keys=[subido_por_id])
+    subido_por = db.relationship("Usuario", backref="fotos_subidas", foreign_keys=[subido_por_id])
 
     def __repr__(self):
         return f"<Foto {self.nombre_archivo}>"
@@ -782,12 +876,12 @@ class Observacion(db.Model):
 
     item_visita = db.relationship("ItemVisita", backref="observaciones_registradas")
     equipo = db.relationship("Equipo", backref="deficiencias")
-    creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
-    aprobado_por = db.relationship("Usuario", foreign_keys=[aprobado_por_id])
-    resuelto_por = db.relationship("Usuario", foreign_keys=[resuelto_por_id])
-    reabierto_por = db.relationship("Usuario", foreign_keys=[reabierto_por_id])
-    ultima_visita_confirmada = db.relationship("Visita", foreign_keys=[ultima_visita_confirmada_id])
-    confirmada_por = db.relationship("Usuario", foreign_keys=[confirmada_por_id])
+    creado_por = db.relationship("Usuario", backref="observaciones_creadas", foreign_keys=[creado_por_id])
+    aprobado_por = db.relationship("Usuario", backref="observaciones_aprobadas", foreign_keys=[aprobado_por_id])
+    resuelto_por = db.relationship("Usuario", backref="observaciones_resueltas", foreign_keys=[resuelto_por_id])
+    reabierto_por = db.relationship("Usuario", backref="observaciones_reabiertas", foreign_keys=[reabierto_por_id])
+    ultima_visita_confirmada = db.relationship("Visita", backref="observaciones_confirmadas_aqui", foreign_keys=[ultima_visita_confirmada_id])
+    confirmada_por = db.relationship("Usuario", backref="observaciones_confirmadas", foreign_keys=[confirmada_por_id])
 
     @property
     def editable(self):
@@ -848,8 +942,8 @@ class Presupuesto(db.Model):
     mail de solicitud formal.
 
     Al aprobarse, genera automáticamente la OT correctiva que ejecuta el
-    trabajo (mismo criterio que ya usa Contrato.generar_visitas() para no
-    depender de que alguien se acuerde de crearla a mano). Al finalizar esa
+    trabajo, para no depender de que alguien se acuerde de crearla a mano.
+    Al finalizar esa
     OT (ver ordenes_trabajo.editar), el presupuesto pasa solo a Cerrado y
     la deficiencia queda resuelta — ver auto-cierre en ese mismo lugar."""
 
@@ -864,10 +958,10 @@ class Presupuesto(db.Model):
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
 
-    empresa = db.relationship("Empresa", backref="presupuestos")
-    observacion = db.relationship("Observacion", backref=db.backref("presupuesto", uselist=False))
+    empresa = db.relationship("Empresa", backref=db.backref("presupuestos", cascade="all, delete-orphan"))
+    observacion = db.relationship("Observacion", backref=db.backref("presupuesto", uselist=False, cascade="all, delete-orphan"))
     ot_correctiva = db.relationship("OrdenTrabajo", backref=db.backref("presupuesto_origen", uselist=False))
-    creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
+    creado_por = db.relationship("Usuario", backref="presupuestos_creados", foreign_keys=[creado_por_id])
     auditoria = db.relationship(
         "PresupuestoAudit",
         backref="presupuesto",
@@ -928,7 +1022,7 @@ class PresupuestoAudit(db.Model):
     nota = db.Column(db.Text, nullable=True)
     fecha_cambio = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
-    usuario = db.relationship("Usuario")
+    usuario = db.relationship("Usuario", backref=db.backref("presupuestos_audit", cascade="all, delete-orphan"))
 
     def __repr__(self):
         return f"<PresupuestoAudit {self.presupuesto_id} -> {self.estado_nuevo}>"
@@ -1017,7 +1111,9 @@ class Equipo(db.Model):
     modelo = db.Column(db.String(150), nullable=True)
     serie = db.Column(db.String(150), nullable=True)
     caudal_nominal = db.Column(db.Float, nullable=True)  # GPM
-    presion_diseno = db.Column(db.Float, nullable=True)  # PSI
+    presion_diseno = db.Column(db.Float, nullable=True)  # PSIG, a caudal nominal (100%)
+    presion_maxima = db.Column(db.Float, nullable=True)  # PSI MAX, a caudal 0% (churn)
+    presion_sobrecarga = db.Column(db.Float, nullable=True)  # PSI a 150% del caudal nominal
     rpm_nominal = db.Column(db.Integer, nullable=True)
     anio_fabricacion = db.Column(db.Integer, nullable=True)
     otros_datos_placa = db.Column(db.Text, nullable=True)
@@ -1146,6 +1242,14 @@ class EnsayoCaudal(db.Model):
     creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
+    # Si el ensayo se cargó desde el ítem de una visita programada (servicio
+    # de contrato con es_curva_caudal=True), queda linkeado acá — nullable
+    # porque el alta suelta desde la ficha del equipo (fuera de una visita)
+    # sigue funcionando igual que siempre. No cascadea: si se borra el
+    # ítem/visita, el ensayo (dato real medido en la bomba) se conserva,
+    # solo pierde la referencia a qué visita lo generó.
+    item_visita_id = db.Column(db.Integer, db.ForeignKey("items_visita.id"), nullable=True)
+
     # Firma del Jefe/Administrador, independiente del cálculo NFPA25 (ver
     # resultado_nfpa25): el técnico carga el ensayo como Pendiente, y solo
     # Administrador/Jefe puede validarlo o rechazarlo — mismo patrón que
@@ -1169,8 +1273,9 @@ class EnsayoCaudal(db.Model):
             "ensayos_caudal", lazy=True, cascade="all, delete-orphan", order_by="EnsayoCaudal.fecha_ensayo"
         ),
     )
-    creado_por = db.relationship("Usuario", foreign_keys=[creado_por_id])
-    validado_por = db.relationship("Usuario", foreign_keys=[validado_por_id])
+    creado_por = db.relationship("Usuario", backref="ensayos_caudal_creados", foreign_keys=[creado_por_id])
+    validado_por = db.relationship("Usuario", backref="ensayos_caudal_validados", foreign_keys=[validado_por_id])
+    item_visita = db.relationship("ItemVisita", backref="ensayos_caudal")
 
     def validar(self, usuario_id):
         self.estado_revision = "Validado"
@@ -1270,10 +1375,10 @@ class OrdenTrabajo(db.Model):
       observaciones, y puede tener repuestos consumidos (RepuestoUsado),
       que descuentan stock del inventario automáticamente.
 
-    Cada Visita generada automáticamente por un contrato recibe su propia
-    OT preventiva (ver Contrato.generar_visitas). El trabajo correctivo se
-    carga directamente como una OT nueva, sin pasar por contrato ni
-    servicio."""
+    Cada Visita nacida de coordinar una solicitud del mes recibe su propia
+    OT preventiva (ver app/coordinacion.py: coordinar_solicitud). El
+    trabajo correctivo se carga directamente como una OT nueva, sin pasar
+    por contrato ni servicio."""
 
     __tablename__ = "ordenes_trabajo"
 
@@ -1291,13 +1396,14 @@ class OrdenTrabajo(db.Model):
     fecha_apertura = db.Column(db.Date, default=date.today, nullable=False)
     fecha_cierre = db.Column(db.Date, nullable=True)
 
-    instalacion = db.relationship("Instalacion", backref="ordenes_trabajo")
+    instalacion = db.relationship("Instalacion", backref=db.backref("ordenes_trabajo", cascade="all, delete-orphan"))
     tecnico_usuario = db.relationship("Usuario", backref="ordenes_trabajo_asignadas")
     visita = db.relationship(
         "Visita", backref=db.backref("orden_trabajo", uselist=False, cascade="all, delete-orphan", single_parent=True)
     )
     repuestos_usados = db.relationship(
-        "RepuestoUsado", backref="orden_trabajo", lazy=True, cascade="all, delete-orphan"
+        "RepuestoUsado", backref="orden_trabajo", lazy=True, cascade="all, delete-orphan",
+        order_by="RepuestoUsado.fecha.desc()",
     )
 
     def asignar_numero(self):
@@ -1331,8 +1437,8 @@ class Repuesto(db.Model):
     stock_minimo = db.Column(db.Integer, default=0, nullable=False)
     activo = db.Column(db.Boolean, default=True, nullable=False)
 
-    usos = db.relationship("RepuestoUsado", backref="repuesto", lazy=True)
-    empresa = db.relationship("Empresa", backref="repuestos")
+    usos = db.relationship("RepuestoUsado", backref="repuesto", lazy=True, cascade="all, delete-orphan")
+    empresa = db.relationship("Empresa", backref=db.backref("repuestos", cascade="all, delete-orphan"))
 
     @property
     def en_nivel_critico(self):
@@ -1366,9 +1472,11 @@ class RepuestoUsado(db.Model):
 class Mensaje(db.Model):
     """Nota dirigida de un usuario a otro (ej. Jefe -> Técnico o
     Técnico -> Jefe), con destinatario explícito — no es un tablón
-    compartido. Puede asociarse a un cliente opcionalmente, con una
-    prioridad (misma escala que las OT). Antes 'Recordatorio': ese nombre
-    ya no describe bien que ahora tiene remitente y destinatario."""
+    compartido. También puede ser un recordatorio personal (remitente_id
+    == destinatario_id, ver mensajes.nuevo) para cualquier rol — no es
+    solo chat de equipo. Puede asociarse a un cliente opcionalmente, con
+    una prioridad (misma escala que las OT). Antes 'Recordatorio': ese
+    nombre ya no describe bien que ahora tiene remitente y destinatario."""
 
     __tablename__ = "mensajes"
 
@@ -1384,9 +1492,21 @@ class Mensaje(db.Model):
     fecha_carga = db.Column(db.Date, default=date.today, nullable=False)
 
     cliente = db.relationship("Cliente", backref="mensajes")
-    empresa = db.relationship("Empresa", backref="mensajes")
-    remitente = db.relationship("Usuario", backref="mensajes_enviados", foreign_keys=[remitente_id])
-    destinatario = db.relationship("Usuario", backref="mensajes_recibidos", foreign_keys=[destinatario_id])
+    empresa = db.relationship("Empresa", backref=db.backref("mensajes", cascade="all, delete-orphan"))
+    remitente = db.relationship("Usuario", backref=db.backref("mensajes_enviados", cascade="all, delete-orphan"), foreign_keys=[remitente_id])
+    destinatario = db.relationship("Usuario", backref=db.backref("mensajes_recibidos", cascade="all, delete-orphan"), foreign_keys=[destinatario_id])
+
+    @property
+    def es_para_mi(self):
+        """True si es un recordatorio personal (mismo usuario como
+        remitente y destinatario) en vez de un mensaje a otra persona."""
+        return self.remitente_id == self.destinatario_id
+
+    @property
+    def severidad(self):
+        """Clase de color del ribete de la tarjeta (ver .card-expandible en
+        style.css), según la prioridad — misma escala que las OT."""
+        return {"Urgente": "critico", "Alta": "alerta", "Media": "info"}.get(self.prioridad, "")
 
     def __repr__(self):
         return f"<Mensaje {self.titulo}>"
@@ -1410,6 +1530,44 @@ TIPOS_NOTIFICACION = {
     "cliente_nuevo": "Cliente nuevo registrado en campo",
 }
 
+# Para el título de una tarjeta agrupada ("3 formularios cargados"): la
+# forma en plural de cada tipo — lo que no está acá no suele agruparse
+# (ver notificaciones._agrupar), así que cae en descripcion_tipo tal cual.
+TIPOS_NOTIFICACION_PLURAL = {
+    "ensayo_nuevo": "nuevos ensayos de curva de caudal",
+    "observacion_nueva": "observaciones nuevas",
+    "equipo_nuevo": "equipos nuevos",
+    "formulario_cargado": "formularios cargados",
+    "ot_asignada": "órdenes de trabajo asignadas",
+    "ensayo_validado": "ensayos validados",
+    "ensayo_rechazado": "ensayos rechazados",
+    "observacion_aprobada": "observaciones aprobadas",
+}
+
+# Clase de color del ribete de la tarjeta (ver .card-expandible en
+# style.css) — lo que no está acá cae en "info" (azul, informativo/FYI).
+SEVERIDAD_NOTIFICACION = {
+    "observacion_nueva": "critico",
+    "ensayo_rechazado": "critico",
+    "ensayo_nuevo": "alerta",
+    "visita_revision": "alerta",
+}
+
+# Texto del link de cada tarjeta/fila en notificaciones/list.html — el
+# verbo concreto de la acción que corresponde a ese tipo de evento.
+VERBOS_NOTIFICACION = {
+    "ensayo_nuevo": "Validar ahora →",
+    "visita_revision": "Ver visita →",
+    "observacion_nueva": "Ver observación →",
+    "equipo_nuevo": "Ver equipo →",
+    "formulario_cargado": "Ver visita →",
+    "mensaje_nuevo": "Ir al mensaje →",
+    "ot_asignada": "Ver OT →",
+    "ensayo_validado": "Ver ensayo →",
+    "ensayo_rechazado": "Ver ensayo →",
+    "observacion_aprobada": "Ver observación →",
+}
+
 
 class Notificacion(db.Model):
     """Aviso dirigido a un usuario puntual, generado por el sistema (un
@@ -1429,13 +1587,26 @@ class Notificacion(db.Model):
     leido = db.Column(db.Boolean, default=False, nullable=False)
     fecha_carga = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
-    destinatario = db.relationship("Usuario", backref="notificaciones", foreign_keys=[destinatario_id])
-    remitente = db.relationship("Usuario", foreign_keys=[remitente_id])
-    cliente = db.relationship("Cliente")
+    empresa = db.relationship("Empresa", backref=db.backref("notificaciones", cascade="all, delete-orphan"))
+    destinatario = db.relationship("Usuario", backref=db.backref("notificaciones", cascade="all, delete-orphan"), foreign_keys=[destinatario_id])
+    remitente = db.relationship("Usuario", backref="notificaciones_enviadas", foreign_keys=[remitente_id])
+    cliente = db.relationship("Cliente", backref="notificaciones")
 
     @property
     def descripcion_tipo(self):
         return TIPOS_NOTIFICACION.get(self.tipo, self.tipo)
+
+    @property
+    def descripcion_tipo_plural(self):
+        return TIPOS_NOTIFICACION_PLURAL.get(self.tipo, self.descripcion_tipo)
+
+    @property
+    def severidad(self):
+        return SEVERIDAD_NOTIFICACION.get(self.tipo, "info")
+
+    @property
+    def verbo_accion(self):
+        return VERBOS_NOTIFICACION.get(self.tipo, "Ver →")
 
     def __repr__(self):
         return f"<Notificacion {self.tipo} -> {self.destinatario_id}>"

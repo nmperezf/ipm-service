@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}{{ presupuesto.codigo }}{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>{{ presupuesto.codigo }}</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>{{ presupuesto.codigo }}</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('presupuestos.listar') }}">&larr; Presupuestos</a></p>
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
@@ -95,7 +92,6 @@
             </table>
             </div>
 
-        </div>
     </div>
 </div>
 {% endblock %}

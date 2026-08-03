@@ -1,12 +1,9 @@
 {% extends "base.html" %}
 {% block title %}Cerrar visita{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Cerrar visita</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Cerrar visita</h1>
+    <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}">&larr; Volver a la visita</a></p>
 
@@ -109,7 +106,6 @@
             </form>
             {% endif %}
 
-        </div>
     </div>
 </div>
 {% endblock %}

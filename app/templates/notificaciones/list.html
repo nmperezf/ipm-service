@@ -1,12 +1,10 @@
 {% extends "base.html" %}
 {% block title %}Notificaciones{% endblock %}
 {% block content %}
-<div class="fondo-doc-wrap">
-    <div class="hoja-doc">
-        <div class="encabezado-doc">
-            <h1>Notificaciones</h1>
-        </div>
-        <div class="cuerpo-doc">
+<div class="pagina-ancha">
+    <h1>Notificaciones</h1>
+
+    <div style="max-width: 900px;">
 
             {% if grupos_no_leidas %}
             <div class="d-flex justify-content-end mb-3">
@@ -14,52 +12,71 @@
                     <button type="submit" class="btn btn-sm btn-outline-secondary">Marcar todas como leídas</button>
                 </form>
             </div>
-            {% endif %}
-
-            {% if not grupos_no_leidas %}
+            {% else %}
             <p class="text-muted">No tenés notificaciones sin leer.</p>
             {% endif %}
 
-            {% for grupo in grupos_no_leidas %}
-            {% set primera = grupo[0] %}
-            <div class="card mb-2">
-                <div class="card-body py-2">
-                    <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-                        <div>
-                            {% if grupo|length > 1 and primera.cliente %}
-                            <strong>{{ primera.cliente.nombre }}</strong>: {{ grupo|length }} {{ primera.descripcion_tipo|lower }}
-                            {% else %}
-                            <a href="{{ url_for('notificaciones.ir', notificacion_id=primera.id) }}">{{ primera.titulo }}</a>
-                            {% if primera.cliente %}<span class="text-muted small"> — {{ primera.cliente.nombre }}</span>{% endif %}
-                            {% endif %}
-                            <div class="text-muted small">{{ primera.fecha_carga.strftime('%d/%m/%Y %H:%M') }}{% if grupo|length > 1 %} — última de {{ grupo[-1].fecha_carga.strftime('%d/%m') }}{% endif %}</div>
-                        </div>
-                        <form method="POST" action="{{ url_for('notificaciones.marcar_leidas') }}">
-                            {% for n in grupo %}<input type="hidden" name="id" value="{{ n.id }}">{% endfor %}
-                            <button type="submit" class="btn btn-sm btn-outline-secondary">Marcar leída{{ 's' if grupo|length > 1 }}</button>
-                        </form>
-                    </div>
-                    {% if grupo|length > 1 %}
-                    <ul class="list-unstyled small mt-2 mb-0">
+            <div class="log-prioridad">
+                {% for grupo in grupos_no_leidas %}
+                {% set primera = grupo[0] %}
+                <details class="card-expandible {{ primera.severidad }}">
+                    <summary>
+                        <span class="punto-no-leido"></span>
+                        <span class="textos">
+                            <span class="etiqueta">
+                                {% if grupo|length > 1 and primera.cliente %}{{ grupo|length }} {{ primera.descripcion_tipo_plural|lower }}{% else %}{{ primera.titulo }}{% endif %}
+                            </span>
+                            {% if primera.cliente %}<span class="sub">{{ primera.cliente.nombre }}</span>{% endif %}
+                        </span>
+                        <span class="hora">{{ primera.fecha_carga.strftime('%d/%m %H:%M') }}</span>
+                        <span class="flecha">▶</span>
+                    </summary>
+                    <ul class="lista-expandible">
                         {% for n in grupo %}
-                        <li><a href="{{ url_for('notificaciones.ir', notificacion_id=n.id) }}">{{ n.titulo }}</a> <span class="text-muted">({{ n.fecha_carga.strftime('%d/%m %H:%M') }})</span></li>
+                        <li>
+                            <a class="fila-expandible" href="{{ url_for('notificaciones.ir', notificacion_id=n.id) }}">
+                                <span class="cuerpo">
+                                    <div class="desc">{{ n.titulo }}</div>
+                                    <div class="meta">{{ n.fecha_carga.strftime('%d/%m/%Y %H:%M') }}</div>
+                                </span>
+                                <span class="ir">{{ n.verbo_accion }}</span>
+                            </a>
+                            <form method="POST" action="{{ url_for('notificaciones.eliminar', notificacion_id=n.id) }}" onsubmit="return confirm('¿Eliminar esta notificación?');">
+                                <button type="submit" class="btn-eliminar-fila" title="Eliminar">✕</button>
+                            </form>
+                        </li>
                         {% endfor %}
                     </ul>
+                    {% if grupo|length > 1 %}
+                    <form method="POST" action="{{ url_for('notificaciones.marcar_leidas') }}" style="padding: 0 1.1rem 1rem;">
+                        {% for n in grupo %}<input type="hidden" name="id" value="{{ n.id }}">{% endfor %}
+                        <button type="submit" class="btn btn-sm btn-outline-secondary">Marcar leídas sin abrir</button>
+                    </form>
                     {% endif %}
-                </div>
+                </details>
+                {% endfor %}
             </div>
-            {% endfor %}
 
             {% if leidas %}
             <div class="seccion-titulo-doc">Leídas recientemente</div>
-            <ul class="list-unstyled small text-muted">
+            <div class="log-prioridad">
                 {% for n in leidas %}
-                <li class="py-1">{{ n.titulo }}{% if n.cliente %} — {{ n.cliente.nombre }}{% endif %} <span>({{ n.fecha_carga.strftime('%d/%m/%Y %H:%M') }})</span></li>
+                <div class="fila-log-wrap">
+                    <a class="fila-log" href="{{ url_for('notificaciones.ir', notificacion_id=n.id) }}">
+                        <span class="textos">
+                            <span class="etiqueta">{{ n.titulo }}</span>
+                            <span class="meta">{% if n.cliente %}{{ n.cliente.nombre }} · {% endif %}{{ n.fecha_carga.strftime('%d/%m/%Y %H:%M') }}</span>
+                        </span>
+                        <span class="flecha">▶</span>
+                    </a>
+                    <form method="POST" action="{{ url_for('notificaciones.eliminar', notificacion_id=n.id) }}" onsubmit="return confirm('¿Eliminar esta notificación?');">
+                        <button type="submit" class="btn-eliminar-fila" title="Eliminar">✕</button>
+                    </form>
+                </div>
                 {% endfor %}
-            </ul>
+            </div>
             {% endif %}
 
-        </div>
     </div>
 </div>
 {% endblock %}
