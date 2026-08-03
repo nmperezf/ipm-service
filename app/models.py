@@ -1407,6 +1407,7 @@ TIPOS_NOTIFICACION = {
     "ensayo_validado": "Ensayo validado",
     "ensayo_rechazado": "Ensayo rechazado",
     "observacion_aprobada": "Observación aprobada",
+    "cliente_nuevo": "Cliente nuevo registrado en campo",
 }
 
 

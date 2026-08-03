@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Visita a cliente nuevo{% endblock %}
+{% block content %}
+<div class="fondo-doc-wrap">
+    <div class="hoja-doc">
+        <div class="encabezado-doc">
+            <h1>Visita a cliente nuevo</h1>
+        </div>
+        <div class="cuerpo-doc">
+
+            <p class="text-muted">Para un cliente que todavía no está cargado en el sistema (sin contrato): con este formulario se da de alta el cliente, su instalación y se deja registrada la visita/servicio manual, todo junto.</p>
+
+            <form method="POST" class="mt-3">
+                <div class="seccion-titulo-doc">Cliente</div>
+                <div class="mb-3">
+                    <label class="form-label">Nombre del cliente</label>
+                    <input type="text" name="nombre" class="form-control" required autofocus>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Dirección</label>
+                    <input type="text" name="direccion" class="form-control">
+                </div>
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Contacto</label>
+                        <input type="text" name="contacto" class="form-control">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Teléfono</label>
+                        <input type="text" name="telefono" class="form-control">
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="email" class="form-control">
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Nombre de la instalación <small class="text-muted">(opcional — si se deja vacío, se usa el nombre del cliente)</small></label>
+                    <input type="text" name="instalacion_nombre" class="form-control" placeholder="Ej: Depósito central">
+                </div>
+
+                <div class="seccion-titulo-doc">Visita / servicio manual</div>
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Fecha</label>
+                        <input type="date" name="fecha" class="form-control" value="{{ hoy }}" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Tipo de trabajo</label>
+                        <select name="tipo" class="form-select">
+                            {% for t in tipos %}
+                            <option value="{{ t }}">{{ t }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Prioridad</label>
+                        <select name="prioridad" class="form-select">
+                            {% for p in prioridades %}
+                            <option value="{{ p }}" {% if p == 'Media' %}selected{% endif %}>{{ p }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Técnico asignado</label>
+                        <select name="tecnico_id" class="form-select">
+                            <option value="">-- Sin asignar --</option>
+                            {% for t in tecnicos %}
+                            <option value="{{ t.id }}" {% if current_user.rol == 'Técnico' and t.id == current_user.id %}selected{% endif %}>{{ t.nombre_completo or t.username }}{% if t.rol == 'Jefe' %} (Jefe){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Descripción del trabajo realizado</label>
+                    <textarea name="descripcion" class="form-control" rows="4" required placeholder="Qué se fue a hacer / qué se encontró y resolvió..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Registrar cliente y visita</button>
+                <a href="{{ url_for('clientes.listar') }}" class="btn btn-link">Cancelar</a>
+            </form>
+
+        </div>
+    </div>
+</div>
+{% endblock %}

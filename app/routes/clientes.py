@@ -5,8 +5,23 @@ from flask import Blueprint, Response, flash, redirect, render_template, request
 from flask_login import current_user
 
 from app import db
-from app.auth_utils import clientes_visibles, rol_requerido, verificar_acceso_cliente, verificar_password_confirmacion
-from app.models import Cliente, ItemVisita, Visita
+from app.auth_utils import (
+    clientes_visibles,
+    rol_requerido,
+    tecnicos_de_la_empresa,
+    verificar_acceso_cliente,
+    verificar_password_confirmacion,
+)
+from app.models import (
+    Cliente,
+    Instalacion,
+    ItemVisita,
+    OrdenTrabajo,
+    PRIORIDADES_OT,
+    TIPOS_OT_MANUAL,
+    Visita,
+)
+from app.notificaciones import notificar_gestion
 from app.pdf_reporte_periodo import generar_pdf_reporte_periodo
 
 clientes_bp = Blueprint("clientes", __name__, url_prefix="/clientes")
@@ -45,6 +60,104 @@ def nuevo():
         flash(f"Cliente '{cliente.nombre}' creado correctamente.", "success")
         return redirect(url_for("clientes.listar"))
     return render_template("clientes/form.html", cliente=None)
+
+
+def _parse_fecha_visita_rapida(valor):
+    if not valor:
+        return date.today()
+    try:
+        return datetime.strptime(valor, "%Y-%m-%d").date()
+    except ValueError:
+        return date.today()
+
+
+@clientes_bp.route("/visita-rapida", methods=["GET", "POST"])
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def visita_rapida():
+    """Alta en una sola pantalla para un cliente que todavía no existe en
+    el sistema (ej. visita a un prospecto sin contrato, para un servicio
+    suelto/manual): crea Cliente + Instalación + Visita + OT en el mismo
+    guardado, sin pasar por contrato. Queda todo cargado como registros
+    reales (no un 'prospecto' aparte), para que si más adelante se le arma
+    un contrato, ese historial de visita quede enganchado a la misma
+    instalación.
+
+    Abierta también a Técnico: verificar_escritura_cliente (que exige
+    tener ya una OT asignada en ese cliente) no aplicaría acá porque el
+    cliente todavía no existe para tener nada asignado."""
+    tecnicos = tecnicos_de_la_empresa()
+    if request.method == "POST":
+        cliente = Cliente(
+            empresa_id=current_user.empresa_id,
+            nombre=request.form["nombre"],
+            direccion=request.form.get("direccion"),
+            contacto=request.form.get("contacto"),
+            telefono=request.form.get("telefono"),
+            email=request.form.get("email"),
+            activo=True,
+        )
+        db.session.add(cliente)
+        db.session.flush()
+
+        instalacion = Instalacion(
+            cliente_id=cliente.id,
+            nombre=request.form.get("instalacion_nombre") or cliente.nombre,
+            direccion=request.form.get("direccion"),
+        )
+        db.session.add(instalacion)
+        db.session.flush()
+
+        fecha = _parse_fecha_visita_rapida(request.form.get("fecha"))
+        descripcion = request.form.get("descripcion")
+
+        visita = Visita(
+            instalacion_id=instalacion.id,
+            fecha=fecha,
+            observaciones=descripcion,
+            estado="Pendiente",
+        )
+        db.session.add(visita)
+        db.session.flush()
+
+        tecnico_id = request.form.get("tecnico_id")
+        if not tecnico_id and current_user.rol == "Técnico":
+            tecnico_id = current_user.id
+
+        ot = OrdenTrabajo(
+            instalacion_id=instalacion.id,
+            visita_id=visita.id,
+            tipo=request.form.get("tipo") or "Visita técnica",
+            prioridad=request.form.get("prioridad", "Media"),
+            estado="Pendiente",
+            tecnico_id=int(tecnico_id) if tecnico_id else None,
+            descripcion=descripcion,
+            fecha_apertura=fecha,
+        )
+        db.session.add(ot)
+        db.session.flush()
+        ot.asignar_numero()
+
+        if current_user.rol == "Técnico":
+            notificar_gestion(
+                empresa_id=current_user.empresa_id,
+                tipo="cliente_nuevo",
+                titulo=f"Cliente nuevo registrado en campo — {cliente.nombre} ({ot.numero})",
+                cliente_id=cliente.id,
+                enlace=url_for("visitas.detalle", visita_id=visita.id),
+                remitente=current_user,
+            )
+
+        db.session.commit()
+        flash(f"Cliente '{cliente.nombre}' y visita {ot.numero} registrados.", "success")
+        return redirect(url_for("visitas.detalle", visita_id=visita.id))
+
+    return render_template(
+        "clientes/visita_rapida.html",
+        tipos=TIPOS_OT_MANUAL,
+        prioridades=PRIORIDADES_OT,
+        tecnicos=tecnicos,
+        hoy=date.today().isoformat(),
+    )
 
 
 @clientes_bp.route("/<int:cliente_id>")

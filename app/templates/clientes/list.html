@@ -23,14 +23,20 @@
                     <option value="urgencia">Ordenar: Más urgente primero</option>
                     <option value="cumplimiento">Ordenar: Cumplimiento (menor a mayor)</option>
                 </select>
+                <a href="{{ url_for('clientes.visita_rapida') }}" class="btn btn-outline-dark"><i class="bi bi-geo-alt me-1"></i>Visita a cliente nuevo</a>
+                {% if current_user.rol in ('Administrador', 'Jefe') %}
                 <a href="{{ url_for('clientes.nuevo') }}" class="btn btn-dark"><i class="bi bi-plus-lg me-1"></i>Nuevo cliente</a>
+                {% endif %}
             </div>
 
             {% if not clientes %}
             <div class="estado-vacio-doc">
                 <i class="bi bi-people"></i>
                 <p>Todavía no hay clientes cargados.</p>
+                <a href="{{ url_for('clientes.visita_rapida') }}" class="btn btn-outline-dark btn-sm"><i class="bi bi-geo-alt me-1"></i>Visita a cliente nuevo</a>
+                {% if current_user.rol in ('Administrador', 'Jefe') %}
                 <a href="{{ url_for('clientes.nuevo') }}" class="btn btn-dark btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo cliente</a>
+                {% endif %}
             </div>
             {% endif %}
             <div class="grid-clientes-doc" id="grid-clientes">
