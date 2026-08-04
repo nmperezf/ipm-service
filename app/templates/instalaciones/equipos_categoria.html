@@ -11,7 +11,9 @@
             {% for equipo in equipos %}
             {% set ultimo = (equipo.ensayos_caudal|sort(attribute='fecha_ensayo'))[-1] if equipo.tipo in ('Bomba', 'Electrobomba', 'Motobomba') and equipo.ensayos_caudal else none %}
             {% set resultado = ultimo.resultado_final() if ultimo else none %}
-            <a href="{{ url_for('equipos.detalle', equipo_id=equipo.id) }}" class="dashboard-card d-block mb-2">
+            {% set def_abiertas = equipo.deficiencias|rejectattr('resuelto')|list %}
+            {% set ultimo_form = (equipo.formularios|sort(attribute='fecha_creacion'))[-1] if equipo.formularios else none %}
+            <a href="{{ url_for('equipos.detalle', equipo_id=equipo.id) }}" class="dashboard-card d-block mb-2 fila-equipo-doc" data-equipo-modal="mc-equipo-{{ equipo.id }}">
             <div class="card">
                 <div class="card-body d-flex justify-content-between align-items-center py-3">
                     <div>
@@ -33,9 +35,97 @@
                     {% endif %}
                 </div>
             </div>
+            <div class="tooltip-preview-doc">
+                <div class="fila-tt"><span class="l">Última revisión</span><span class="v">{{ ultimo_form.item_visita.visita.fecha.strftime('%d/%m/%Y') if ultimo_form else 'Sin registro' }}</span></div>
+                <div class="fila-tt"><span class="l">Deficiencias abiertas</span><span class="v" {% if def_abiertas %}style="color:#ff8080;"{% endif %}>{{ def_abiertas|length }}</span></div>
+            </div>
             </a>
+
+            <div class="modal-contenido-doc" id="mc-equipo-{{ equipo.id }}" style="display:none;" data-titulo="{{ equipo.nombre }}" data-href="{{ url_for('equipos.detalle', equipo_id=equipo.id) }}">
+                <p class="subtitulo-modal-doc">Deficiencias abiertas</p>
+                {% if not def_abiertas %}
+                <div class="sin-novedad-modal-doc">✓ Sin deficiencias abiertas</div>
+                {% else %}
+                {% for o in def_abiertas %}
+                <div class="def-item-modal-doc">
+                    <span class="def-badge-modal-doc {{ 'critica' if o.clasificacion == 'Deficiencia crítica' else 'no-critica' }}">{{ o.clasificacion }}</span>
+                    <div><div class="def-texto-modal-doc">{{ o.descripcion }}</div><div class="def-fecha-modal-doc">{{ o.fecha_carga.strftime('%d/%m/%Y') }}</div></div>
+                </div>
+                {% endfor %}
+                {% endif %}
+
+                <p class="subtitulo-modal-doc" style="margin-top:.9rem;">Última actividad</p>
+                {% if ultimo_form %}
+                <div class="actividad-modal-doc">Revisado el <strong>{{ ultimo_form.item_visita.visita.fecha.strftime('%d/%m/%Y') }}</strong> por {{ ultimo_form.item_visita.visita.nombre_tecnico }} — {{ ultimo_form.tipo_formulario.nombre }}.</div>
+                {% else %}
+                <div class="actividad-modal-doc text-muted">Todavía no se cargó ningún checklist para este equipo.</div>
+                {% endif %}
+
+                {% set fotos_equipo = (equipo.fotos|sort(attribute='fecha_subida', reverse=true))[:3] %}
+                {% if fotos_equipo %}
+                <div class="fotos-row-modal-doc">
+                    {% for foto in fotos_equipo %}
+                    <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" target="_blank"><img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" alt=""></a>
+                    {% endfor %}
+                    {% if equipo.fotos|length > 3 %}<span class="mas-fotos-modal-doc">+{{ equipo.fotos|length - 3 }}</span>{% endif %}
+                </div>
+                {% endif %}
+
+                {% if equipo.tipo in ('Bomba', 'Electrobomba', 'Motobomba') and ultimo %}
+                <div class="chip-secundario-modal-doc {{ 'ok' if resultado }}">
+                    {% if resultado is none %}Sin curva de fábrica cargada
+                    {% elif resultado %}Cumple NFPA 25 (ensayo {{ ultimo.fecha_ensayo.strftime('%d/%m/%Y') }})
+                    {% else %}No cumple NFPA 25 (ensayo {{ ultimo.fecha_ensayo.strftime('%d/%m/%Y') }}){% endif %}
+                </div>
+                {% endif %}
+
+                <div class="acciones-modal-doc">
+                    <a href="{{ url_for('equipos.detalle', equipo_id=equipo.id) }}" class="btn btn-dark btn-sm">Ver ficha completa →</a>
+                    <a href="{{ url_for('fotos.subir_manual', instalacion_id=instalacion.id, equipo_id=equipo.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-camera me-1"></i>Foto</a>
+                    <a href="{{ url_for('observaciones.nueva', instalacion_id=instalacion.id, equipo_id=equipo.id) }}" class="btn btn-outline-warning btn-sm"><i class="bi bi-exclamation-triangle me-1"></i>Observación</a>
+                </div>
+            </div>
             {% endfor %}
 
     </div>
 </div>
+
+<div class="modal-backdrop-doc" id="modal-equipo-backdrop">
+    <div class="modal-flotante-doc">
+        <div class="modal-cab-doc">
+            <h3 id="modal-equipo-titulo">—</h3>
+            <button type="button" class="modal-cerrar-doc" onclick="cerrarModalEquipo()">✕</button>
+        </div>
+        <div class="modal-cuerpo-doc" id="modal-equipo-cuerpo"></div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var backdrop = document.getElementById('modal-equipo-backdrop');
+    var titulo = document.getElementById('modal-equipo-titulo');
+    var cuerpo = document.getElementById('modal-equipo-cuerpo');
+
+    document.querySelectorAll('.fila-equipo-doc').forEach(function (fila) {
+        fila.addEventListener('click', function (e) {
+            if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return; // dejar que abra en pestaña nueva, etc.
+            e.preventDefault();
+            var origen = document.getElementById(fila.dataset.equipoModal);
+            titulo.textContent = origen.dataset.titulo;
+            cuerpo.innerHTML = origen.innerHTML;
+            backdrop.classList.add('abierta');
+        });
+    });
+
+    window.cerrarModalEquipo = function () {
+        backdrop.classList.remove('abierta');
+    };
+    backdrop.addEventListener('click', function (e) {
+        if (e.target === backdrop) cerrarModalEquipo();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') cerrarModalEquipo();
+    });
+})();
+</script>
 {% endblock %}

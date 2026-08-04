@@ -163,6 +163,55 @@
     --bs-btn-active-border-color: var(--bs-warning);
 }
 
+/* ---- Botones: microinteracciones -------------------------------------------
+   Los de tamaño normal (toolbar, formularios) se levantan al hover y los
+   sólidos tienen un brillo diagonal — da sensación de "clickeable". Los
+   .btn-sm quedan afuera a propósito: van pegados en filas de tabla, y ahí
+   un translateY se siente tembloroso; solo les sumamos sombra/color. */
+.btn:not(.btn-sm):not(.btn-link) {
+    position: relative;
+    overflow: hidden;
+    transition: transform .15s cubic-bezier(.2,.8,.2,1), box-shadow .15s ease,
+        background-color .15s ease, border-color .15s ease, color .15s ease;
+}
+.btn:not(.btn-sm):not(.btn-link):hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-doc);
+}
+.btn:not(.btn-sm):not(.btn-link):active {
+    transform: translateY(0) scale(.98);
+}
+.btn-dark:not(.btn-sm)::after,
+.btn-primary:not(.btn-sm)::after,
+.btn-danger:not(.btn-sm)::after,
+.btn-success:not(.btn-sm)::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(115deg, transparent 30%, rgba(255,255,255,.18) 50%, transparent 70%);
+    transform: translateX(-120%);
+    pointer-events: none;
+}
+.btn-dark:not(.btn-sm):hover::after,
+.btn-primary:not(.btn-sm):hover::after,
+.btn-danger:not(.btn-sm):hover::after,
+.btn-success:not(.btn-sm):hover::after {
+    transform: translateX(120%);
+    transition: transform .6s ease;
+}
+.btn-sm {
+    transition: box-shadow .12s ease, border-color .12s ease, background-color .12s ease, color .12s ease;
+}
+.btn-sm:hover {
+    box-shadow: 0 2px 6px rgba(20,30,45,.12);
+}
+html[data-bs-theme="dark"] .btn-sm:hover {
+    box-shadow: 0 2px 6px rgba(0,0,0,.4);
+}
+@media (prefers-reduced-motion: reduce) {
+    .btn, .btn::after { transition: none !important; }
+}
+
 /* Checkboxes, radios y switches traen su SVG e color de tildado fijos en
    azul de Bootstrap (no heredan de --bs-primary como los botones). */
 .form-check-input {
@@ -568,6 +617,7 @@ html.sidebar-oculta .sidebar-footer .sidebar-link {
     display: block;
     transition: transform .12s ease, box-shadow .12s ease;
 }
+.fila-equipo-doc { position: relative; }
 .dashboard-card:hover {
     transform: translateY(-2px);
 }
@@ -1610,10 +1660,13 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .card-instalacion-doc {
     display: flex; flex-direction: column; gap: .8rem; padding: 1.1rem 1.2rem 1.1rem 1.4rem; border-radius: .65rem;
     border: 1px solid var(--border); background: var(--surface); text-decoration: none; color: inherit;
-    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; position: relative; overflow: hidden;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; position: relative;
 }
 .card-instalacion-doc:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(20,30,45,.10); border-color: var(--accent); color: inherit; }
-.card-instalacion-doc .filete-lateral-doc { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; }
+/* Antes tenía overflow:hidden (solo para redondear la puntita del filete
+   lateral); el preview flotante al hover necesita desbordar la tarjeta, así
+   que ese redondeo ahora lo hace el propio filete con su border-radius. */
+.card-instalacion-doc .filete-lateral-doc { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; border-radius: .65rem 0 0 .65rem; }
 .card-instalacion-doc.critica .filete-lateral-doc { background: var(--accent); }
 .card-instalacion-doc.ok .filete-lateral-doc { background: var(--bs-success); }
 
@@ -1660,9 +1713,93 @@ a.foto-lightbox:hover img { opacity: .85; }
 .estado-vacio-doc p { margin: 0 0 1rem; font-size: .92rem; color: var(--ink-muted); }
 .estado-vacio-doc .btn { font-size: .82rem; }
 
+/* ---- Preview flotante al hover (genérico) ---------------------------------
+   Se cuelga de cualquier tarjeta/fila con position:relative (ej. equipo en
+   .dashboard-card, instalación en .card-instalacion-doc). Solo texto corto
+   — para el detalle completo está el modal, ver más abajo. */
+.tooltip-preview-doc {
+    position: absolute; left: 0; top: calc(100% - 2px); z-index: 20; width: 240px;
+    background: var(--ink); color: var(--surface); border-radius: .5rem; padding: .7rem .85rem;
+    font-size: .78rem; box-shadow: var(--shadow-doc);
+    opacity: 0; visibility: hidden; transform: translateY(-6px) scale(.97);
+    transition: opacity .15s ease, transform .15s cubic-bezier(.2,.8,.2,1), visibility .15s;
+    pointer-events: none;
+}
+.fila-equipo-doc:hover .tooltip-preview-doc,
+.card-instalacion-doc:hover .tooltip-preview-doc {
+    opacity: 1; visibility: visible; transform: translateY(0) scale(1); transition-delay: .1s;
+}
+.tooltip-preview-doc .fila-tt { display: flex; justify-content: space-between; gap: .6rem; padding: .14rem 0; }
+.tooltip-preview-doc .l { color: rgba(255,255,255,.55); }
+.tooltip-preview-doc .v { font-weight: 600; font-family: var(--font-mono); white-space: nowrap; }
+@media (max-width: 991.98px) {
+    /* En celular no hay hover real — el preview no aporta y puede quedar
+       pegado en pantalla tras un tap. Ahí el modal (con el mismo click) ya
+       resuelve solo el "ver más sin navegar". */
+    .tooltip-preview-doc { display: none; }
+}
+
+/* ---- Ventana flotante (modal liviano) --------------------------------------
+   Alternativa a navegar a otra página para un vistazo rápido: el trigger de
+   cada pantalla arma su propio contenido (server-rendered, ver plantillas de
+   Equipos/Instalaciones/Notificaciones/Dashboard) y usa este mismo shell.
+   No reemplaza ninguna ficha completa — siempre incluye un link para llegar
+   a la página real cuando hace falta editar o hacer algo más que mirar. */
+.modal-backdrop-doc {
+    position: fixed; inset: 0; background: rgba(15,17,21,.5); backdrop-filter: blur(2px);
+    display: flex; align-items: center; justify-content: center; padding: 1.5rem; z-index: 1050;
+    opacity: 0; visibility: hidden; transition: opacity .2s ease, visibility .2s;
+}
+.modal-backdrop-doc.abierta { opacity: 1; visibility: visible; }
+.modal-flotante-doc {
+    background: var(--surface); border-radius: .8rem; max-width: 440px; width: 100%;
+    max-height: 85vh; display: flex; flex-direction: column;
+    box-shadow: 0 30px 70px rgba(0,0,0,.35);
+    transform: scale(.94) translateY(10px); opacity: 0;
+    transition: transform .22s cubic-bezier(.2,.8,.2,1), opacity .2s ease;
+}
+.modal-backdrop-doc.abierta .modal-flotante-doc { transform: scale(1) translateY(0); opacity: 1; }
+.modal-cab-doc {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem;
+    padding: 1.1rem 1.3rem .9rem; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.modal-cab-doc h3 { font-family: var(--font-display); font-size: 1.1rem; font-weight: 700; margin: 0; }
+.modal-cerrar-doc {
+    background: none; border: none; cursor: pointer; color: var(--ink-faint); font-size: 1.1rem;
+    padding: .2rem; border-radius: .3rem; transition: background .12s ease, color .12s ease; flex-shrink: 0;
+}
+.modal-cerrar-doc:hover { background: var(--surface-muted); color: var(--ink); }
+.modal-cuerpo-doc { padding: 1.1rem 1.3rem; overflow-y: auto; }
+
+.subtitulo-modal-doc {
+    font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-faint);
+    font-weight: 700; margin: 0 0 .5rem;
+}
+.def-item-modal-doc { display: flex; gap: .55rem; align-items: flex-start; padding: .5rem 0; border-bottom: 1px solid var(--border); }
+.def-item-modal-doc:last-child { border-bottom: none; }
+.def-badge-modal-doc { flex-shrink: 0; font-size: .64rem; font-weight: 700; padding: .2rem .45rem; border-radius: .3rem; white-space: nowrap; margin-top: .1rem; }
+.def-badge-modal-doc.critica { background: var(--accent-soft); color: var(--accent); }
+.def-badge-modal-doc.no-critica { background: var(--warn-soft); color: var(--bs-warning); }
+.def-texto-modal-doc { font-size: .84rem; }
+.def-fecha-modal-doc { font-size: .7rem; color: var(--ink-faint); margin-top: .1rem; }
+.sin-novedad-modal-doc { font-size: .84rem; color: var(--bs-success); padding: .3rem 0; }
+.actividad-modal-doc { font-size: .84rem; color: var(--ink); background: var(--surface-muted); border-radius: .4rem; padding: .6rem .7rem; }
+.fotos-row-modal-doc { display: flex; gap: .4rem; margin-top: .8rem; align-items: center; }
+.fotos-row-modal-doc img { width: 52px; height: 52px; border-radius: .35rem; object-fit: cover; border: 1px solid var(--border); }
+.mas-fotos-modal-doc { font-size: .74rem; color: var(--ink-muted); }
+.chip-secundario-modal-doc {
+    display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; color: var(--ink-muted);
+    background: var(--surface-muted); border-radius: 1rem; padding: .25rem .6rem; margin-top: .8rem;
+}
+.chip-secundario-modal-doc.ok { color: var(--bs-success); }
+.acciones-modal-doc { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: 1.1rem; padding-top: 1rem; border-top: 1px solid var(--border); }
+.categorias-mini-modal-doc { display: flex; flex-wrap: wrap; gap: .5rem; margin-bottom: .9rem; }
+.categorias-mini-modal-doc .cat-chip { font-size: .78rem; background: var(--surface-muted); border-radius: .4rem; padding: .35rem .6rem; }
+.categorias-mini-modal-doc .cat-chip b { font-family: var(--font-mono); }
+
 /* ---- Impresión ------------------------------------------------------------
    Utilidad genérica para ocultar algo al imprimir (ej. barra de acciones de
    un ensayo de curva de caudal antes de exportar a PDF vía window.print()). */
 @media print {
-    .no-imprimir, .ipm-navbar, .ipm-footer, .nav-inferior, .sidebar-derecho, .barra-utilitaria { display: none !important; }
+    .no-imprimir, .ipm-navbar, .ipm-footer, .nav-inferior, .sidebar-derecho, .barra-utilitaria, .modal-backdrop-doc { display: none !important; }
 }

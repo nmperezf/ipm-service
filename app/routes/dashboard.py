@@ -102,13 +102,16 @@ def inicio():
         mis_ot = sorted(
             ot_query.all(), key=lambda o: (ORDEN_PRIORIDAD.get(o.prioridad, 2), o.fecha_apertura)
         )[:8]
-    ot_pendientes = ot_query.count()
+    ot_pendientes_todas = ot_query.order_by(OrdenTrabajo.fecha_apertura.desc()).all()
+    ot_pendientes = len(ot_pendientes_todas)
+    ot_pendientes_lista = ot_pendientes_todas[:6]
 
     visitas_en_revision = _visitas_visibles().filter(
         Visita.en_revision == True, Visita.cerrada == False  # noqa: E712
     ).count()
 
     repuestos_criticos = 0
+    repuestos_criticos_lista = []
     deficiencias_abiertas = []
     deficiencias_total = 0
     deficiencias_por_clasif = {}
@@ -116,14 +119,20 @@ def inicio():
     ensayos_pendientes_total = 0
     carga_tecnicos = []
     presupuestos_activos = 0
+    presupuestos_activos_lista = []
     if es_gestion:
-        repuestos_query = Repuesto.query.filter_by(empresa_id=current_user.empresa_id, activo=True)
-        repuestos_criticos = sum(1 for r in repuestos_query.all() if r.en_nivel_critico)
+        repuestos_query = Repuesto.query.filter_by(empresa_id=current_user.empresa_id, activo=True).order_by(Repuesto.nombre)
+        repuestos_criticos_todos = [r for r in repuestos_query.all() if r.en_nivel_critico]
+        repuestos_criticos = len(repuestos_criticos_todos)
+        repuestos_criticos_lista = repuestos_criticos_todos[:6]
 
-        presupuestos_activos = Presupuesto.query.filter(
+        presupuestos_activos_query = Presupuesto.query.filter(
             Presupuesto.empresa_id == current_user.empresa_id,
             Presupuesto.estado.in_(["Pendiente", "Cotizado", "Aprobado"]),
-        ).count()
+        ).order_by(Presupuesto.fecha_creacion.desc())
+        presupuestos_activos_todos = presupuestos_activos_query.all()
+        presupuestos_activos = len(presupuestos_activos_todos)
+        presupuestos_activos_lista = presupuestos_activos_todos[:6]
 
         deficiencias_query = (
             Observacion.query.join(Instalacion, Observacion.instalacion_id == Instalacion.id)
@@ -194,9 +203,12 @@ def inicio():
         agenda_semana=agenda_semana,
         mis_ot=mis_ot,
         ot_pendientes=ot_pendientes,
+        ot_pendientes_lista=ot_pendientes_lista,
         visitas_en_revision=visitas_en_revision,
         repuestos_criticos=repuestos_criticos,
+        repuestos_criticos_lista=repuestos_criticos_lista,
         presupuestos_activos=presupuestos_activos,
+        presupuestos_activos_lista=presupuestos_activos_lista,
         deficiencias_abiertas=deficiencias_abiertas,
         deficiencias_total=deficiencias_total,
         deficiencias_por_clasif=deficiencias_por_clasif,

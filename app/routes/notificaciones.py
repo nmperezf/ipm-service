@@ -42,6 +42,20 @@ def listar():
     )
 
 
+@notificaciones_bp.route("/resumen")
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def resumen():
+    """Fragmento HTML para la ventana flotante de notificaciones (campanita),
+    sin salir de la pantalla actual."""
+    no_leidas = (
+        Notificacion.query.filter_by(destinatario_id=current_user.id, leido=False)
+        .order_by(Notificacion.fecha_carga.desc())
+        .limit(20)
+        .all()
+    )
+    return render_template("notificaciones/_resumen_modal.html", grupos_no_leidas=_agrupar(no_leidas))
+
+
 @notificaciones_bp.route("/<int:notificacion_id>/ir")
 @rol_requerido("Administrador", "Jefe", "Técnico")
 def ir(notificacion_id):

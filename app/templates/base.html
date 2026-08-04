@@ -66,7 +66,7 @@
                 <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
             </button>
             {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
-            <a href="{{ url_for('notificaciones.listar') }}" class="theme-toggle-btn position-relative" title="Notificaciones" aria-label="Notificaciones">
+            <a href="{{ url_for('notificaciones.listar') }}" class="theme-toggle-btn position-relative campanita-notif" title="Notificaciones" aria-label="Notificaciones">
                 <i class="bi bi-bell"></i>
                 {% if notificaciones_no_leidas %}<span class="punto-no-leido-navbar" title="{{ notificaciones_no_leidas }} sin leer"></span>{% endif %}
             </a>
@@ -117,7 +117,7 @@
             <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
         </button>
         {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
-        <a href="{{ url_for('notificaciones.listar') }}" class="btn-utilitario position-relative" title="Notificaciones" aria-label="Notificaciones">
+        <a href="{{ url_for('notificaciones.listar') }}" class="btn-utilitario position-relative campanita-notif" title="Notificaciones" aria-label="Notificaciones">
             <i class="bi bi-bell"></i>
             {% if notificaciones_no_leidas %}<span class="punto-no-leido-navbar" title="{{ notificaciones_no_leidas }} sin leer"></span>{% endif %}
         </a>
@@ -187,6 +187,24 @@
     </div>
 </div>
 
+{% if current_user.is_authenticated and current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+<div class="modal-backdrop-doc" id="modal-notif-backdrop">
+    <div class="modal-flotante-doc">
+        <div class="modal-cab-doc">
+            <h3>Notificaciones</h3>
+            <button type="button" class="modal-cerrar-doc" onclick="cerrarModalNotificaciones()">✕</button>
+        </div>
+        <div class="modal-cuerpo-doc" id="modal-notif-cuerpo">
+            <p class="text-muted mb-0">Cargando…</p>
+        </div>
+        <div class="acciones-modal-doc">
+            <button type="button" class="btn btn-sm btn-outline-secondary" id="modal-notif-marcar-todas">Marcar todas como leídas</button>
+            <a href="{{ url_for('notificaciones.listar') }}" class="btn btn-sm btn-link">Ver todas →</a>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="{{ url_for('static', filename='js/tablas.js') }}"></script>
 <script src="{{ url_for('static', filename='js/lightbox.js') }}"></script>
@@ -249,6 +267,58 @@
             el = el.parentElement ? el.parentElement.closest('details') : null;
         }
         target.scrollIntoView({ block: 'center' });
+    })();
+
+    (function () {
+        // Campanita de notificaciones: en vez de navegar a /notificaciones/,
+        // abre una ventana flotante con el resumen (mismo patrón que los
+        // modales de Equipos/Instalaciones), cargado por AJAX porque la
+        // campanita vive en base.html y se repite en cada página.
+        var backdrop = document.getElementById('modal-notif-backdrop');
+        if (!backdrop) { return; }
+        var cuerpo = document.getElementById('modal-notif-cuerpo');
+        var marcarTodasBtn = document.getElementById('modal-notif-marcar-todas');
+
+        function cargarNotificaciones() {
+            cuerpo.innerHTML = '<p class="text-muted mb-0">Cargando…</p>';
+            fetch('{{ url_for("notificaciones.resumen") }}', { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(function (r) { return r.text(); })
+                .then(function (html) { cuerpo.innerHTML = html; })
+                .catch(function () {
+                    cuerpo.innerHTML = '<p class="text-danger mb-0">No se pudo cargar. <a href="{{ url_for("notificaciones.listar") }}">Ver notificaciones</a>.</p>';
+                });
+        }
+
+        window.cerrarModalNotificaciones = function () {
+            backdrop.classList.remove('abierta');
+        };
+        backdrop.addEventListener('click', function (e) {
+            if (e.target === backdrop) window.cerrarModalNotificaciones();
+        });
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') window.cerrarModalNotificaciones();
+        });
+
+        document.querySelectorAll('.campanita-notif').forEach(function (campanita) {
+            campanita.addEventListener('click', function (e) {
+                if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return;
+                e.preventDefault();
+                backdrop.classList.add('abierta');
+                cargarNotificaciones();
+            });
+        });
+
+        if (marcarTodasBtn) {
+            marcarTodasBtn.addEventListener('click', function () {
+                fetch('{{ url_for("notificaciones.marcar_todas_leidas") }}', {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                }).then(function () {
+                    document.querySelectorAll('.punto-no-leido-navbar, .sidebar-nav .punto-no-leido').forEach(function (p) { p.remove(); });
+                    cargarNotificaciones();
+                });
+            });
+        }
     })();
 </script>
 </body>

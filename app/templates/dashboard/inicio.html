@@ -171,26 +171,129 @@
             <div>
                 <div class="seccion-titulo-doc" style="margin-top: 0;">En números</div>
                 <div class="rail-stats rail-stats-vertical">
-                    <a class="stat{{ ' calmo' if repuestos_criticos == 0 }}" href="{{ url_for('inventario.criticos_lista') }}">
+                    <a class="stat{{ ' calmo' if repuestos_criticos == 0 }}" href="{{ url_for('inventario.criticos_lista') }}" data-stat-modal="mc-stat-repuestos">
                         <span class="num">{{ '%02d'|format(repuestos_criticos) }}</span>
                         <span class="etiqueta">Repuestos en stock crítico</span>
                         <span class="sub">por debajo del mínimo</span>
                     </a>
-                    <a class="stat{{ ' calmo' if ensayos_pendientes_total == 0 }}" href="{{ url_for('dashboard.ensayos_pendientes_lista') }}">
+                    <a class="stat{{ ' calmo' if ensayos_pendientes_total == 0 }}" href="{{ url_for('dashboard.ensayos_pendientes_lista') }}" data-stat-modal="mc-stat-ensayos">
                         <span class="num">{{ '%02d'|format(ensayos_pendientes_total) }}</span>
                         <span class="etiqueta">Ensayos por validar</span>
                         <span class="sub">{% if ensayos_pendientes_total %}cargados por un técnico, esperan tu firma{% else %}sin ensayos esperando firma{% endif %}</span>
                     </a>
-                    <a class="stat{{ ' calmo' if presupuestos_activos == 0 }}" href="{{ url_for('presupuestos.listar') }}">
+                    <a class="stat{{ ' calmo' if presupuestos_activos == 0 }}" href="{{ url_for('presupuestos.listar') }}" data-stat-modal="mc-stat-presupuestos">
                         <span class="num">{{ '%02d'|format(presupuestos_activos) }}</span>
                         <span class="etiqueta">Presupuestos activos</span>
                         <span class="sub">pendientes, cotizados o aprobados</span>
                     </a>
-                    <a class="stat" href="{{ url_for('ordenes.listar') }}">
+                    <a class="stat{{ ' calmo' if ot_pendientes == 0 }}" href="{{ url_for('ordenes.listar') }}" data-stat-modal="mc-stat-ot">
                         <span class="num">{{ ot_pendientes }}</span>
                         <span class="etiqueta">OT abiertas</span>
                         <span class="sub">en toda la empresa</span>
                     </a>
+                </div>
+            </div>
+
+            <div class="modal-contenido-doc" id="mc-stat-repuestos" style="display:none;" data-titulo="Repuestos en stock crítico">
+                {% if repuestos_criticos_lista %}
+                <ul class="lista-expandible">
+                    {% for r in repuestos_criticos_lista %}
+                    <li>
+                        <div class="fila-expandible">
+                            <span class="cuerpo">
+                                <div class="desc">{{ r.nombre }}</div>
+                                <div class="meta">{{ r.stock_actual }} {{ r.unidad }} en stock — mínimo {{ r.stock_minimo }}</div>
+                            </span>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% if repuestos_criticos > repuestos_criticos_lista|length %}
+                <p class="text-muted mb-0 mt-2">+ {{ repuestos_criticos - repuestos_criticos_lista|length }} más.</p>
+                {% endif %}
+                {% else %}
+                <p class="sin-novedad-modal-doc">Ningún repuesto por debajo del stock mínimo.</p>
+                {% endif %}
+                <div class="acciones-modal-doc">
+                    <a href="{{ url_for('inventario.criticos_lista') }}" class="btn btn-sm btn-outline-dark">Ver inventario completo →</a>
+                </div>
+            </div>
+
+            <div class="modal-contenido-doc" id="mc-stat-ensayos" style="display:none;" data-titulo="Ensayos por validar">
+                {% if ensayos_pendientes %}
+                <ul class="lista-expandible">
+                    {% for e in ensayos_pendientes %}
+                    <li>
+                        <a class="fila-expandible" href="{{ url_for('equipos.detalle', equipo_id=e.equipo_id) }}">
+                            <span class="cuerpo">
+                                <div class="desc">{{ e.equipo.nombre }}</div>
+                                <div class="meta">{{ e.equipo.instalacion.cliente.nombre }} · ensayo del {{ e.fecha_ensayo.strftime('%d/%m/%Y') }}</div>
+                            </span>
+                            <span class="ir">Validar ahora →</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% if ensayos_pendientes_total > ensayos_pendientes|length %}
+                <p class="text-muted mb-0 mt-2">+ {{ ensayos_pendientes_total - ensayos_pendientes|length }} más.</p>
+                {% endif %}
+                {% else %}
+                <p class="sin-novedad-modal-doc">Sin ensayos esperando firma.</p>
+                {% endif %}
+                <div class="acciones-modal-doc">
+                    <a href="{{ url_for('dashboard.ensayos_pendientes_lista') }}" class="btn btn-sm btn-outline-dark">Ver todos →</a>
+                </div>
+            </div>
+
+            <div class="modal-contenido-doc" id="mc-stat-presupuestos" style="display:none;" data-titulo="Presupuestos activos">
+                {% if presupuestos_activos_lista %}
+                <ul class="lista-expandible">
+                    {% for p in presupuestos_activos_lista %}
+                    <li>
+                        <a class="fila-expandible" href="{{ url_for('presupuestos.detalle', presupuesto_id=p.id) }}">
+                            <span class="cuerpo">
+                                <div class="desc">{{ p.codigo }} — {{ p.observacion.instalacion.cliente.nombre }}</div>
+                                <div class="meta">{{ p.estado }} · {{ p.dias_abierto }} días abierto</div>
+                            </span>
+                            <span class="ir">Ver →</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% if presupuestos_activos > presupuestos_activos_lista|length %}
+                <p class="text-muted mb-0 mt-2">+ {{ presupuestos_activos - presupuestos_activos_lista|length }} más.</p>
+                {% endif %}
+                {% else %}
+                <p class="sin-novedad-modal-doc">Sin presupuestos activos.</p>
+                {% endif %}
+                <div class="acciones-modal-doc">
+                    <a href="{{ url_for('presupuestos.listar') }}" class="btn btn-sm btn-outline-dark">Ver todos →</a>
+                </div>
+            </div>
+
+            <div class="modal-contenido-doc" id="mc-stat-ot" style="display:none;" data-titulo="OT abiertas">
+                {% if ot_pendientes_lista %}
+                <ul class="lista-expandible">
+                    {% for ot in ot_pendientes_lista %}
+                    <li>
+                        <a class="fila-expandible" href="{{ url_for('ordenes.detalle', ot_id=ot.id) }}">
+                            <span class="cuerpo">
+                                <div class="desc">{{ ot.numero }} — {{ ot.instalacion.cliente.nombre }}</div>
+                                <div class="meta">{{ ot.prioridad }} · {{ ot.estado }} · {{ ot.nombre_tecnico }}</div>
+                            </span>
+                            <span class="ir">Ver →</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% if ot_pendientes > ot_pendientes_lista|length %}
+                <p class="text-muted mb-0 mt-2">+ {{ ot_pendientes - ot_pendientes_lista|length }} más.</p>
+                {% endif %}
+                {% else %}
+                <p class="sin-novedad-modal-doc">Sin OT abiertas.</p>
+                {% endif %}
+                <div class="acciones-modal-doc">
+                    <a href="{{ url_for('ordenes.listar') }}" class="btn btn-sm btn-outline-dark">Ver todas →</a>
                 </div>
             </div>
             {% endif %}
@@ -273,4 +376,45 @@
 
     <div class="pie-nota-doc">IPM Manager — Gestión de mantenimiento de sistemas contra incendio en Uruguay.</div>
 </div>
+
+{% if es_gestion %}
+<div class="modal-backdrop-doc" id="modal-stat-backdrop">
+    <div class="modal-flotante-doc">
+        <div class="modal-cab-doc">
+            <h3 id="modal-stat-titulo">—</h3>
+            <button type="button" class="modal-cerrar-doc" onclick="cerrarModalStat()">✕</button>
+        </div>
+        <div class="modal-cuerpo-doc" id="modal-stat-cuerpo"></div>
+    </div>
+</div>
+
+<script>
+(function () {
+    var backdrop = document.getElementById('modal-stat-backdrop');
+    var titulo = document.getElementById('modal-stat-titulo');
+    var cuerpo = document.getElementById('modal-stat-cuerpo');
+
+    document.querySelectorAll('[data-stat-modal]').forEach(function (fila) {
+        fila.addEventListener('click', function (e) {
+            if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return;
+            e.preventDefault();
+            var origen = document.getElementById(fila.dataset.statModal);
+            titulo.textContent = origen.dataset.titulo;
+            cuerpo.innerHTML = origen.innerHTML;
+            backdrop.classList.add('abierta');
+        });
+    });
+
+    window.cerrarModalStat = function () {
+        backdrop.classList.remove('abierta');
+    };
+    backdrop.addEventListener('click', function (e) {
+        if (e.target === backdrop) cerrarModalStat();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') cerrarModalStat();
+    });
+})();
+</script>
+{% endif %}
 {% endblock %}

@@ -130,9 +130,15 @@
                     <div class="grid-instalaciones-doc mb-4">
                         {% for inst in cliente.instalaciones %}
                         {% set inst_def_count = inst.deficiencias_abiertas_count() %}
+                        {% set inst_def_abiertas = inst.deficiencias|rejectattr('resuelto')|list %}
                         {% set inst_cumplimiento = inst.cumplido_anual_pct() %}
                         {% set inst_proxima = inst.proxima_visita() %}
-                        <a class="card-instalacion-doc {{ 'critica' if inst_def_count else 'ok' }}" href="{{ url_for('instalaciones.detalle', instalacion_id=inst.id) }}">
+                        {% set inst_contrato = inst.contratos|selectattr('activo')|first %}
+                        {% set inst_visitas_hechas = inst.visitas|selectattr('estado', 'equalto', 'Realizado')|sort(attribute='fecha', reverse=true)|list %}
+                        {% set inst_ultima_visita = inst_visitas_hechas[0] if inst_visitas_hechas else none %}
+                        <a class="card-instalacion-doc fila-instalacion-doc {{ 'critica' if inst_def_count else 'ok' }}"
+                           href="{{ url_for('instalaciones.detalle', instalacion_id=inst.id) }}"
+                           data-instalacion-modal="mc-inst-{{ inst.id }}">
                             <span class="filete-lateral-doc"></span>
                             <div>
                                 <div class="nombre">{{ inst.nombre }}</div>
@@ -144,7 +150,47 @@
                                 <div class="stat"><span class="valor">{{ inst_cumplimiento }}%</span><span class="etiqueta">Cumplimiento</span></div>
                             </div>
                             <div class="proxima">Próxima visita: <strong>{{ inst_proxima.strftime('%d/%m/%Y') if inst_proxima else 'sin programar' }}</strong></div>
+                            <div class="tooltip-preview-doc">
+                                <div class="fila-tt"><span class="l">Contrato</span><span class="v">{{ inst_contrato.nombre if inst_contrato else 'Sin contrato activo' }}</span></div>
+                                <div class="fila-tt"><span class="l">Última visita</span><span class="v">{{ inst_ultima_visita.fecha.strftime('%d/%m/%Y') if inst_ultima_visita else 'Sin visitas' }}</span></div>
+                                {% if inst_ultima_visita %}<div class="fila-tt"><span class="l">Técnico</span><span class="v">{{ inst_ultima_visita.nombre_tecnico }}</span></div>{% endif %}
+                            </div>
                         </a>
+
+                        <div class="modal-contenido-doc" id="mc-inst-{{ inst.id }}" style="display:none;" data-titulo="{{ inst.nombre }}">
+                            {% if inst.equipos %}
+                            <p class="subtitulo-modal-doc">Equipos por tipo</p>
+                            <div class="categorias-mini-modal-doc">
+                                {% for tipo, equipos_grupo in inst.equipos|groupby('tipo') %}
+                                <span class="cat-chip"><b>{{ equipos_grupo|length }}</b> {{ tipo }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+
+                            <p class="subtitulo-modal-doc">Deficiencias abiertas</p>
+                            {% if not inst_def_abiertas %}
+                            <div class="sin-novedad-modal-doc">✓ Sin deficiencias abiertas</div>
+                            {% else %}
+                            {% for o in inst_def_abiertas %}
+                            <div class="def-item-modal-doc">
+                                <span class="def-badge-modal-doc {{ 'critica' if o.clasificacion == 'Deficiencia crítica' else 'no-critica' }}">{{ o.clasificacion }}</span>
+                                <div><div class="def-texto-modal-doc">{{ o.descripcion }}</div><div class="def-fecha-modal-doc">{{ o.fecha_carga.strftime('%d/%m/%Y') }}{% if o.equipo %} · {{ o.equipo.nombre }}{% endif %}</div></div>
+                            </div>
+                            {% endfor %}
+                            {% endif %}
+
+                            <p class="subtitulo-modal-doc" style="margin-top:.9rem;">Última actividad</p>
+                            {% if inst_ultima_visita %}
+                            <div class="actividad-modal-doc">Visita el <strong>{{ inst_ultima_visita.fecha.strftime('%d/%m/%Y') }}</strong> — {{ inst_ultima_visita.nombre_tecnico }}.</div>
+                            {% else %}
+                            <div class="actividad-modal-doc text-muted">Todavía no hay visitas realizadas en esta instalación.</div>
+                            {% endif %}
+
+                            <div class="acciones-modal-doc">
+                                <a href="{{ url_for('instalaciones.detalle', instalacion_id=inst.id) }}" class="btn btn-dark btn-sm">Ver ficha completa →</a>
+                                <a href="{{ url_for('visitas.nueva', instalacion_id=inst.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-calendar-plus me-1"></i>Nueva visita</a>
+                            </div>
+                        </div>
                         {% endfor %}
                     </div>
                     {% endif %}
@@ -193,7 +239,45 @@
     </div>
 </div>
 
+<div class="modal-backdrop-doc" id="modal-inst-backdrop">
+    <div class="modal-flotante-doc">
+        <div class="modal-cab-doc">
+            <h3 id="modal-inst-titulo">—</h3>
+            <button type="button" class="modal-cerrar-doc" onclick="cerrarModalInstalacion()">✕</button>
+        </div>
+        <div class="modal-cuerpo-doc" id="modal-inst-cuerpo"></div>
+    </div>
+</div>
+
 <script>
+(function () {
+    var backdrop = document.getElementById('modal-inst-backdrop');
+    var titulo = document.getElementById('modal-inst-titulo');
+    var cuerpo = document.getElementById('modal-inst-cuerpo');
+
+    document.querySelectorAll('.fila-instalacion-doc').forEach(function (fila) {
+        fila.addEventListener('click', function (e) {
+            if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return;
+            e.preventDefault();
+            e.stopPropagation();
+            var origen = document.getElementById(fila.dataset.instalacionModal);
+            titulo.textContent = origen.dataset.titulo;
+            cuerpo.innerHTML = origen.innerHTML;
+            backdrop.classList.add('abierta');
+        });
+    });
+
+    window.cerrarModalInstalacion = function () {
+        backdrop.classList.remove('abierta');
+    };
+    backdrop.addEventListener('click', function (e) {
+        if (e.target === backdrop) cerrarModalInstalacion();
+    });
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') cerrarModalInstalacion();
+    });
+})();
+
 (function () {
     var lista = document.getElementById('lista-clientes');
     if (!lista) return;
