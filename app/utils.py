@@ -1,9 +1,18 @@
 from datetime import date
 
+from flask import request
 from sqlalchemy.exc import IntegrityError
 
 from app import db
 from app.models import Contrato, Presupuesto, Visita
+
+
+def es_ajax():
+    """True cuando el pedido viene del JS de ventana flotante (ver
+    static/js/modal-form.js), no de una navegación de página completa —
+    para que la misma ruta pueda devolver el formulario/resultado como
+    fragmento (sin el layout de base.html) o como página entera."""
+    return request.headers.get("X-Requested-With") == "XMLHttpRequest"
 
 
 def actualizar_vencimientos(hoy=None):

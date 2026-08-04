@@ -187,6 +187,19 @@
     </div>
 </div>
 
+{% if current_user.is_authenticated %}
+<div class="modal-backdrop-doc" id="modal-form-backdrop">
+    <div class="modal-flotante-doc ancho">
+        <div class="modal-cab-doc">
+            <h3 id="modal-form-titulo">—</h3>
+            <button type="button" class="modal-cerrar-doc" onclick="cerrarModalFormulario()">✕</button>
+        </div>
+        <div class="modal-cuerpo-doc" id="modal-form-cuerpo"></div>
+    </div>
+</div>
+<div id="toast-contenedor-doc" aria-live="polite"></div>
+{% endif %}
+
 {% if current_user.is_authenticated and current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
 <div class="modal-backdrop-doc" id="modal-notif-backdrop">
     <div class="modal-flotante-doc">
@@ -211,6 +224,7 @@
 <script src="{{ url_for('static', filename='js/fotos-input.js') }}"></script>
 <script src="{{ url_for('static', filename='js/evitar-doble-envio.js') }}"></script>
 <script src="{{ url_for('static', filename='js/confirmar-password.js') }}"></script>
+<script src="{{ url_for('static', filename='js/modal-form.js') }}"></script>
 <script>
     (function () {
         var root = document.documentElement;

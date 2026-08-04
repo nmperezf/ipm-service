@@ -1268,20 +1268,21 @@ html[data-bs-theme="dark"] .chip-secondary { background: #232734; color: #8A93A0
 
 .card-atencion {
     border-radius: .6rem; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: .3rem;
-    text-decoration: none; color: inherit; background: var(--surface-muted);
-    transition: transform .14s ease, box-shadow .14s ease;
+    text-decoration: none; color: inherit; background: var(--surface);
+    border: 1px solid var(--border); border-left: 3px solid var(--border-strong);
+    transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
 }
 a.card-atencion:hover { transform: translateY(-2px); box-shadow: var(--shadow-doc); color: inherit; }
 .card-atencion .num { font-family: var(--font-mono); font-size: 1.9rem; font-weight: 700; line-height: 1; }
 .card-atencion .etiqueta { font-size: .8rem; font-weight: 600; }
 .card-atencion .sub { font-size: .74rem; color: var(--ink-muted); }
-.card-atencion.critico { background: var(--accent-soft); }
+.card-atencion.critico { border-left-color: var(--accent); }
 .card-atencion.critico .num, .card-atencion.critico .etiqueta { color: var(--accent); }
-.card-atencion.alerta { background: var(--warn-soft); }
+.card-atencion.alerta { border-left-color: var(--bs-warning); }
 .card-atencion.alerta .num, .card-atencion.alerta .etiqueta { color: var(--bs-warning); }
-.card-atencion.info { background: var(--info-soft); }
+.card-atencion.info { border-left-color: var(--bs-info); }
 .card-atencion.info .num, .card-atencion.info .etiqueta { color: var(--bs-info); }
-.card-atencion.ok { background: var(--ok-soft); }
+.card-atencion.ok { border-left-color: var(--bs-success); }
 .card-atencion.ok .num, .card-atencion.ok .etiqueta { color: var(--bs-success); }
 
 /* ---- Inicio: bitácora de prioridad + riel de estadísticas ----------------- */
@@ -1797,9 +1798,35 @@ a.foto-lightbox:hover img { opacity: .85; }
 .categorias-mini-modal-doc .cat-chip { font-size: .78rem; background: var(--surface-muted); border-radius: .4rem; padding: .35rem .6rem; }
 .categorias-mini-modal-doc .cat-chip b { font-family: var(--font-mono); }
 
+/* ---- Modal de formulario (alta/edición rápida sin navegar) ---------------- */
+
+.modal-flotante-doc.ancho { max-width: 680px; }
+#modal-form-cuerpo .tarjeta-doc,
+#modal-form-cuerpo .tarjeta-doc.angosta { border: none; padding: 0; box-shadow: none; }
+#modal-form-cuerpo form > .btn,
+#modal-form-cuerpo form > a.btn-link { margin-top: .3rem; }
+
+/* ---- Toasts (confirmación breve tras guardar en un modal de formulario) --- */
+
+#toast-contenedor-doc {
+    position: fixed; bottom: 1.2rem; right: 1.2rem; z-index: 2000;
+    display: flex; flex-direction: column; gap: .5rem; align-items: flex-end;
+    pointer-events: none;
+}
+.toast-doc {
+    background: var(--ink); color: var(--surface); padding: .7rem 1.1rem; border-radius: .5rem;
+    font-size: .85rem; font-weight: 600; box-shadow: 0 12px 30px rgba(0,0,0,.25); max-width: 320px;
+    opacity: 0; transform: translateY(8px) scale(.97); transition: opacity .22s ease, transform .22s ease;
+}
+.toast-doc.mostrado { opacity: 1; transform: translateY(0) scale(1); }
+@media (max-width: 480px) {
+    #toast-contenedor-doc { left: 1rem; right: 1rem; align-items: stretch; }
+    .toast-doc { max-width: none; text-align: center; }
+}
+
 /* ---- Impresión ------------------------------------------------------------
    Utilidad genérica para ocultar algo al imprimir (ej. barra de acciones de
    un ensayo de curva de caudal antes de exportar a PDF vía window.print()). */
 @media print {
-    .no-imprimir, .ipm-navbar, .ipm-footer, .nav-inferior, .sidebar-derecho, .barra-utilitaria, .modal-backdrop-doc { display: none !important; }
+    .no-imprimir, .ipm-navbar, .ipm-footer, .nav-inferior, .sidebar-derecho, .barra-utilitaria, .modal-backdrop-doc, #toast-contenedor-doc { display: none !important; }
 }

@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
 
 from app import db
@@ -13,7 +13,7 @@ from app.auth_utils import (
 from app.models import CLASIFICACIONES_OBSERVACION, Equipo, Foto, Instalacion, ItemVisita, Observacion
 from app.notificaciones import notificar_gestion, notificar_usuario
 from app.routes.fotos import _extension_permitida, _guardar_archivo
-from app.utils import crear_presupuesto
+from app.utils import crear_presupuesto, es_ajax
 
 observaciones_bp = Blueprint("observaciones", __name__, url_prefix="/observaciones")
 
@@ -92,17 +92,21 @@ def nueva(instalacion_id):
         )
         db.session.commit()
         if presupuesto:
-            flash(f"Observación cargada. Se generó el presupuesto {presupuesto.codigo}.", "success")
+            mensaje = f"Observación cargada. Se generó el presupuesto {presupuesto.codigo}."
         else:
-            flash("Observación cargada, pendiente de revisión del Administrador.", "success")
+            mensaje = "Observación cargada, pendiente de revisión del Administrador."
+        if es_ajax():
+            return jsonify(ok=True, mensaje=mensaje)
+        flash(mensaje, "success")
         if equipo:
             return redirect(url_for("equipos.detalle", equipo_id=equipo.id))
         if item:
             return redirect(url_for("visitas.detalle", visita_id=item.visita_id))
         return redirect(url_for("instalaciones.detalle", instalacion_id=instalacion.id))
 
+    template = "observaciones/_form_fragment.html" if es_ajax() else "observaciones/form.html"
     return render_template(
-        "observaciones/form.html",
+        template,
         instalacion=instalacion,
         item=item,
         equipo=equipo,

@@ -1,7 +1,7 @@
 from datetime import date, datetime
 
 from dateutil.relativedelta import relativedelta
-from flask import Blueprint, Response, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
 
 from app import db
@@ -23,6 +23,7 @@ from app.models import (
 )
 from app.notificaciones import notificar_gestion
 from app.pdf_reporte_periodo import generar_pdf_reporte_periodo
+from app.utils import es_ajax
 
 clientes_bp = Blueprint("clientes", __name__, url_prefix="/clientes")
 
@@ -36,9 +37,9 @@ def listar():
         query = query.filter(Cliente.nombre.ilike(f"%{q}%"))
     clientes = query.order_by(Cliente.nombre).all()
     clientes_con_criticas = sum(1 for c in clientes if c.deficiencias_abiertas()["Deficiencia crítica"])
-    return render_template(
-        "clientes/list.html", clientes=clientes, q=q, clientes_con_criticas=clientes_con_criticas
-    )
+    contexto = dict(clientes=clientes, q=q, clientes_con_criticas=clientes_con_criticas)
+    template = "clientes/_contenido.html" if es_ajax() else "clientes/list.html"
+    return render_template(template, **contexto)
 
 
 @clientes_bp.route("/nuevo", methods=["GET", "POST"])
@@ -57,9 +58,13 @@ def nuevo():
         )
         db.session.add(cliente)
         db.session.commit()
-        flash(f"Cliente '{cliente.nombre}' creado correctamente.", "success")
+        mensaje = f"Cliente '{cliente.nombre}' creado correctamente."
+        if es_ajax():
+            return jsonify(ok=True, mensaje=mensaje)
+        flash(mensaje, "success")
         return redirect(url_for("clientes.listar"))
-    return render_template("clientes/form.html", cliente=None)
+    template = "clientes/_form_fragment.html" if es_ajax() else "clientes/form.html"
+    return render_template(template, cliente=None)
 
 
 def _parse_fecha_visita_rapida(valor):
@@ -148,11 +153,15 @@ def visita_rapida():
             )
 
         db.session.commit()
-        flash(f"Cliente '{cliente.nombre}' y visita {ot.numero} registrados.", "success")
+        mensaje = f"Cliente '{cliente.nombre}' y visita {ot.numero} registrados."
+        if es_ajax():
+            return jsonify(ok=True, mensaje=mensaje)
+        flash(mensaje, "success")
         return redirect(url_for("visitas.detalle", visita_id=visita.id))
 
+    template = "clientes/_visita_rapida_fragment.html" if es_ajax() else "clientes/visita_rapida.html"
     return render_template(
-        "clientes/visita_rapida.html",
+        template,
         tipos=TIPOS_OT_MANUAL,
         prioridades=PRIORIDADES_OT,
         tecnicos=tecnicos,
@@ -301,9 +310,13 @@ def editar(cliente_id):
         cliente.observaciones = request.form.get("observaciones")
         cliente.activo = bool(request.form.get("activo"))
         db.session.commit()
-        flash(f"Cliente '{cliente.nombre}' actualizado.", "success")
+        mensaje = f"Cliente '{cliente.nombre}' actualizado."
+        if es_ajax():
+            return jsonify(ok=True, mensaje=mensaje)
+        flash(mensaje, "success")
         return redirect(url_for("clientes.detalle", cliente_id=cliente.id))
-    return render_template("clientes/form.html", cliente=cliente)
+    template = "clientes/_form_fragment.html" if es_ajax() else "clientes/form.html"
+    return render_template(template, cliente=cliente)
 
 
 @clientes_bp.route("/<int:cliente_id>/eliminar", methods=["POST"])

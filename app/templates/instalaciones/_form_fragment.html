@@ -1,0 +1,19 @@
+<div data-modal-titulo="{{ 'Editar instalación' if instalacion else 'Nueva instalación' }}"></div>
+<p class="text-muted">{{ cliente.nombre }}</p>
+
+<form method="POST" class="mt-3">
+    <div class="mb-3">
+        <label class="form-label">Nombre de la instalación</label>
+        <input type="text" name="nombre" class="form-control" required value="{{ instalacion.nombre or '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Dirección</label>
+        <input type="text" name="direccion" class="form-control" value="{{ instalacion.direccion or '' }}">
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Observaciones</label>
+        <textarea name="observaciones" class="form-control" rows="3">{{ instalacion.observaciones or '' }}</textarea>
+    </div>
+    <button type="submit" class="btn btn-dark">Guardar</button>
+    <a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}" class="btn btn-link">Cancelar</a>
+</form>

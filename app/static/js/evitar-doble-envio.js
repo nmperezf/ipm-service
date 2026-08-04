@@ -4,9 +4,16 @@
  * se deshabilita y muestra un spinner hasta que la página siguiente cargue.
  * No se aplica a formularios marcados con data-sin-bloqueo (por si algún
  * caso puntual necesita reenviarse rápido, como filtros).
+ *
+ * inicializarEvitarDobleEnvio(root) queda expuesta globalmente para que los
+ * formularios cargados dentro de una ventana flotante (ver modal-form.js)
+ * puedan sumarse sin esperar un segundo DOMContentLoaded, que no vuelve a
+ * dispararse para contenido inyectado después de la carga inicial.
  */
-document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('form').forEach(function (formulario) {
+function inicializarEvitarDobleEnvio(root) {
+    (root || document).querySelectorAll('form').forEach(function (formulario) {
+        if (formulario.dataset.dobleEnvioListo === '1') return;
+        formulario.dataset.dobleEnvioListo = '1';
         if (formulario.hasAttribute('data-sin-bloqueo')) return;
 
         formulario.addEventListener('submit', function (evento) {
@@ -32,4 +39,6 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     });
-});
+}
+window.inicializarEvitarDobleEnvio = inicializarEvitarDobleEnvio;
+document.addEventListener('DOMContentLoaded', function () { inicializarEvitarDobleEnvio(document); });

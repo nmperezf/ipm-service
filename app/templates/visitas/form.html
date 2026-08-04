@@ -4,40 +4,7 @@
 <div class="pagina-ancha">
     <h1>Registrar visita manual</h1>
     <div class="tarjeta-doc">
-            <p class="text-muted">{{ instalacion.nombre }} &middot; Para visitas planificadas automáticamente, cargalas desde el contrato agregando sus servicios. Esta opción es para visitas sueltas fuera de contrato.</p>
-
-            <form method="POST" class="mt-3">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Fecha</label>
-                        <input type="date" name="fecha" class="form-control" required>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Técnico asignado</label>
-                        <select name="tecnico_id" class="form-select">
-                            <option value="">-- Sin asignar --</option>
-                            {% for t in tecnicos %}
-                            <option value="{{ t.id }}">{{ t.nombre_completo or t.username }}{% if t.rol == 'Jefe' %} (Jefe){% endif %}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label">Estado</label>
-                        <select name="estado" class="form-select">
-                            {% for e in estados %}
-                            <option value="{{ e }}">{{ e }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Observaciones</label>
-                    <textarea name="observaciones" class="form-control" rows="3"></textarea>
-                </div>
-                <button type="submit" class="btn btn-primary">Guardar visita</button>
-                <a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}" class="btn btn-link">Cancelar</a>
-            </form>
-
+        {% include "visitas/_form_fragment.html" %}
     </div>
 </div>
 {% endblock %}

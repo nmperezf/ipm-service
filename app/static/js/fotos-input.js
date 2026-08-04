@@ -15,8 +15,11 @@
  * visita desde señal de campo débil. Si algo falla en el camino (formato
  * raro, canvas no disponible), se sube la foto original tal cual: nunca
  * bloquea la carga por un error de compresión.
+ *
+ * inicializarSelectorFotos(root) queda expuesta globalmente para los
+ * formularios cargados dentro de una ventana flotante (ver modal-form.js).
  */
-document.addEventListener('DOMContentLoaded', function () {
+function inicializarSelectorFotos(root) {
     var MAX_DIMENSION = 1920;
     var JPEG_QUALITY = 0.8;
     var UMBRAL_OMITIR_BYTES = 500 * 1024; // ya viene chica, no vale la pena reprocesarla
@@ -72,7 +75,10 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    document.querySelectorAll('.selector-foto-doc').forEach(function (selector) {
+    (root || document).querySelectorAll('.selector-foto-doc').forEach(function (selector) {
+        if (selector.dataset.selectorFotoListo === '1') return;
+        selector.dataset.selectorFotoListo = '1';
+
         var inputs = Array.from(selector.querySelectorAll('input[type="file"]'));
         var texto = selector.querySelector('.texto-seleccion-doc');
         var multiple = selector.hasAttribute('data-multiple');
@@ -153,9 +159,16 @@ document.addEventListener('DOMContentLoaded', function () {
                             if (!input.files.length) input.disabled = true;
                         });
                     }
-                    form.submit();
+                    // requestSubmit() (a diferencia de submit()) sí dispara un
+                    // evento 'submit' real — necesario para que el envío por
+                    // AJAX de un formulario dentro de una ventana flotante
+                    // (ver modal-form.js) también capture este segundo intento.
+                    if (form.requestSubmit) form.requestSubmit();
+                    else form.submit();
                 });
             });
         }
     });
-});
+}
+window.inicializarSelectorFotos = inicializarSelectorFotos;
+document.addEventListener('DOMContentLoaded', function () { inicializarSelectorFotos(document); });

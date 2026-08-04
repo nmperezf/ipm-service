@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
 
 from app import db
@@ -10,7 +10,7 @@ from app.auth_utils import (
 )
 from app.models import Equipo, Formulario, Instalacion, TIPOS_BOMBA_PRINCIPAL, TIPOS_CON_DATOS_PLACA, nombres_tipos_equipo
 from app.notificaciones import notificar_gestion
-from app.utils import construir_secciones_historico
+from app.utils import construir_secciones_historico, es_ajax
 
 equipos_bp = Blueprint("equipos", __name__, url_prefix="/equipos")
 
@@ -117,11 +117,15 @@ def nuevo(instalacion_id):
             remitente=current_user,
         )
         db.session.commit()
-        flash(f"Equipo '{equipo.nombre}' ({equipo.tipo}) creado.", "success")
+        mensaje = f"Equipo '{equipo.nombre}' ({equipo.tipo}) creado."
+        if es_ajax():
+            return jsonify(ok=True, mensaje=mensaje)
+        flash(mensaje, "success")
         return redirect(url_for("instalaciones.detalle", instalacion_id=instalacion.id))
 
+    template = "equipos/_form_fragment.html" if es_ajax() else "equipos/form.html"
     return render_template(
-        "equipos/form.html",
+        template,
         instalacion=instalacion,
         equipo=None,
         tipos=nombres_tipos_equipo(),

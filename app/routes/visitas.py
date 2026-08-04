@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
 
 from app.auth_utils import (
@@ -27,7 +27,7 @@ from app.models import (
 )
 from app.notificaciones import notificar_gestion, notificar_usuario
 from app.pdf_devolucion import generar_pdf_devolucion
-from app.utils import equipos_por_categoria
+from app.utils import equipos_por_categoria, es_ajax
 
 visitas_bp = Blueprint("visitas", __name__, url_prefix="/visitas")
 
@@ -147,11 +147,14 @@ def nueva(instalacion_id):
             )
 
         db.session.commit()
+        if es_ajax():
+            return jsonify(ok=True, mensaje="Visita registrada.")
         flash("Visita registrada.", "success")
         return redirect(url_for("visitas.detalle", visita_id=visita.id))
 
+    template = "visitas/_form_fragment.html" if es_ajax() else "visitas/form.html"
     return render_template(
-        "visitas/form.html", instalacion=instalacion, estados=ESTADOS_VISITA, tecnicos=tecnicos
+        template, instalacion=instalacion, estados=ESTADOS_VISITA, tecnicos=tecnicos
     )
 
 

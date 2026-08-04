@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 
 from app import db
 from app.auth_utils import (
@@ -10,7 +10,7 @@ from app.auth_utils import (
     verificar_password_confirmacion,
 )
 from app.models import Cliente, Instalacion
-from app.utils import equipos_por_categoria
+from app.utils import equipos_por_categoria, es_ajax
 
 instalaciones_bp = Blueprint("instalaciones", __name__, url_prefix="/instalaciones")
 
@@ -34,9 +34,13 @@ def nueva(cliente_id):
         )
         db.session.add(instalacion)
         db.session.commit()
-        flash(f"Instalación '{instalacion.nombre}' creada.", "success")
+        mensaje = f"Instalación '{instalacion.nombre}' creada."
+        if es_ajax():
+            return jsonify(ok=True, mensaje=mensaje)
+        flash(mensaje, "success")
         return redirect(url_for("clientes.detalle", cliente_id=cliente.id))
-    return render_template("instalaciones/form.html", cliente=cliente, instalacion=None)
+    template = "instalaciones/_form_fragment.html" if es_ajax() else "instalaciones/form.html"
+    return render_template(template, cliente=cliente, instalacion=None)
 
 
 @instalaciones_bp.route("/<int:instalacion_id>")
@@ -63,13 +67,14 @@ def detalle(instalacion_id):
         for (anio, mes) in meses_ordenados
     ]
 
-    return render_template(
-        "instalaciones/detail.html",
+    contexto = dict(
         instalacion=instalacion,
         contratos=contratos,
         categorias=equipos_por_categoria(instalacion),
         bloques_hoja_ruta=bloques_hoja_ruta,
     )
+    template = "instalaciones/_contenido.html" if es_ajax() else "instalaciones/detail.html"
+    return render_template(template, **contexto)
 
 
 @instalaciones_bp.route("/<int:instalacion_id>/fotos")
@@ -118,11 +123,13 @@ def editar(instalacion_id):
         instalacion.direccion = request.form.get("direccion")
         instalacion.observaciones = request.form.get("observaciones")
         db.session.commit()
-        flash(f"Instalación '{instalacion.nombre}' actualizada.", "success")
+        mensaje = f"Instalación '{instalacion.nombre}' actualizada."
+        if es_ajax():
+            return jsonify(ok=True, mensaje=mensaje)
+        flash(mensaje, "success")
         return redirect(url_for("instalaciones.detalle", instalacion_id=instalacion.id))
-    return render_template(
-        "instalaciones/form.html", cliente=instalacion.cliente, instalacion=instalacion
-    )
+    template = "instalaciones/_form_fragment.html" if es_ajax() else "instalaciones/form.html"
+    return render_template(template, cliente=instalacion.cliente, instalacion=instalacion)
 
 
 @instalaciones_bp.route("/<int:instalacion_id>/eliminar", methods=["POST"])
