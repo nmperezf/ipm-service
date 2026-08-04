@@ -1418,6 +1418,40 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .barra-carga-doc .relleno { height: 100%; background: var(--accent); border-radius: 4px; }
 .barra-carga-doc .n { font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-weight: 700; font-size: .78rem; min-width: 1.3rem; text-align: right; }
 
+/* ---- Inicio: formato compacto ---------------------------------------------
+   Más denso que el resto de la app a propósito: es la pantalla que más se
+   visita por día, así que vale la pena ganar aire acá aunque en otras
+   pantallas (ej. Notificaciones, que reusa .card-expandible/.fila-log) se
+   mantenga el espaciado normal — de ahí que todo quede bajo .pagina-inicio
+   en vez de tocar esas clases compartidas directamente. Los números grandes
+   (deficiencias, cumplimiento) NO se achican tanto como el resto: siguen
+   siendo lo primero que hay que poder leer de un vistazo. */
+
+.pagina-inicio .saludo-inicio { margin-bottom: .8rem; }
+.pagina-inicio .grid-inicio,
+.pagina-inicio .columna-lateral { gap: 1rem; }
+.pagina-inicio .seccion-titulo-doc { margin: 1.3rem 0 .65rem; padding-bottom: .4rem; font-size: .98rem; }
+.pagina-inicio .seccion-titulo-doc:first-child { margin-top: 0; }
+.pagina-inicio .log-prioridad { gap: .45rem; margin-bottom: .9rem; }
+.pagina-inicio .fila-log,
+.pagina-inicio details.card-expandible summary { padding: .6rem .85rem; gap: .8rem; }
+.pagina-inicio .lista-expandible { padding: .6rem .85rem .65rem; gap: .35rem; }
+.pagina-inicio .fila-expandible { padding: .45rem .6rem; }
+.pagina-inicio .panel-cumplimiento { padding: 1rem 1.2rem; }
+.pagina-inicio .valor-cumplimiento { font-size: 2rem; }
+.pagina-inicio .tabla-carga-doc th,
+.pagina-inicio .tabla-carga-doc td { padding: .38rem .55rem; }
+
+.pagina-inicio .rail-stats.rail-stats-vertical { grid-template-columns: 1fr 1fr; }
+.pagina-inicio .rail-stats.rail-stats-vertical > .stat {
+    border-left: 1px solid var(--border); border-top: 1px solid var(--border); padding: .8rem .9rem;
+}
+.pagina-inicio .rail-stats.rail-stats-vertical > .stat:nth-child(odd) { border-left: none; }
+.pagina-inicio .rail-stats.rail-stats-vertical > .stat:nth-child(1),
+.pagina-inicio .rail-stats.rail-stats-vertical > .stat:nth-child(2) { border-top: none; }
+.pagina-inicio .rail-stats.rail-stats-vertical > .stat .num { font-size: 1.28rem; margin-bottom: .1rem; }
+.pagina-inicio .rail-stats.rail-stats-vertical > .stat .sub { display: none; }
+
 /* ---- Agenda e ítems de OT -------------------------------------------------- */
 
 .lista-agenda-doc { list-style: none; margin: .2rem 0 0; padding: 0; display: flex; flex-direction: column; gap: .5rem; }
