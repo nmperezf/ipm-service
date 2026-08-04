@@ -1269,7 +1269,7 @@ html[data-bs-theme="dark"] .chip-secondary { background: #232734; color: #8A93A0
    antes. Es grid (no flex) para poder ubicar num/etiqueta/sub sin necesitar
    un <span> contenedor extra en cada plantilla que usa esta tarjeta. */
 
-.grid-atencion { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .6rem; }
+.grid-atencion { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .6rem; margin-bottom: 1rem; }
 
 .card-atencion {
     border-radius: .5rem; padding: .6rem .85rem; display: grid;
@@ -1517,20 +1517,30 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .card-cliente-doc-stats .stat.cumplimiento-nulo .valor { color: var(--ink-muted); }
 
 .grid-repuestos-doc { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
+/* min-height (no una altura fija): el grid ya iguala el alto entre tarjetas
+   de la MISMA fila solo, así que sin esto una tarjeta con poco texto queda
+   visiblemente más baja que sus vecinas apenas hay más de una fila. El
+   contenido que exceda este mínimo (ej. un nombre largo que envuelve a dos
+   líneas) sigue estirando la tarjeta con normalidad. */
 .card-repuesto-doc {
     display: flex; flex-direction: column; gap: .8rem; padding: 1.1rem 1.2rem 1.1rem 1.4rem; border-radius: .65rem;
     border: 1px solid var(--border); background: var(--surface); position: relative; overflow: hidden;
+    min-height: 178px;
 }
 .card-repuesto-doc .filete-lateral-doc { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--border); }
 .card-repuesto-doc.critico .filete-lateral-doc { background: var(--accent); }
 .card-repuesto-doc-top { display: flex; justify-content: space-between; align-items: flex-start; gap: .6rem; }
-.card-repuesto-doc .nombre { font-family: var(--font-display); font-size: 1rem; font-weight: 700; line-height: 1.25; }
+.card-repuesto-doc-top > div:first-child { min-width: 0; }
+.card-repuesto-doc .nombre {
+    font-family: var(--font-display); font-size: 1rem; font-weight: 700; line-height: 1.25;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .card-repuesto-doc .codigo { font-size: .78rem; color: var(--ink-muted); margin-top: .15rem; font-family: var(--font-mono); }
 .card-repuesto-doc-stats { display: flex; gap: 1.4rem; }
 .card-repuesto-doc-stats .stat .valor { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 700; line-height: 1; }
 .card-repuesto-doc-stats .stat.critico .valor { color: var(--accent); }
 .card-repuesto-doc-stats .stat .etiqueta { font-size: .68rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .03em; margin-top: .3rem; display: block; }
-.card-repuesto-doc-acciones { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; padding-top: .3rem; border-top: 1px solid var(--border); }
+.card-repuesto-doc-acciones { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; padding-top: .3rem; border-top: 1px solid var(--border); margin-top: auto; }
 .card-repuesto-doc-acciones input[type="number"] { width: 5.5rem; }
 
 .chips-deficiencias-doc { display: flex; gap: .35rem; flex-wrap: wrap; margin-top: -.2rem; }
@@ -1676,10 +1686,14 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 
 .grid-instalaciones-doc { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
 
+/* min-height por el mismo motivo que .card-repuesto-doc (ver comentario ahí
+   arriba): sin esto, una instalación con nombre corto queda más baja que
+   sus vecinas apenas hay más de una fila en la grilla. */
 .card-instalacion-doc {
     display: flex; flex-direction: column; gap: .8rem; padding: 1.1rem 1.2rem 1.1rem 1.4rem; border-radius: .65rem;
     border: 1px solid var(--border); background: var(--surface); text-decoration: none; color: inherit;
     transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; position: relative;
+    min-height: 178px;
 }
 .card-instalacion-doc:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(20,30,45,.10); border-color: var(--accent); color: inherit; }
 /* Antes tenía overflow:hidden (solo para redondear la puntita del filete
@@ -1689,8 +1703,18 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .card-instalacion-doc.critica .filete-lateral-doc { background: var(--accent); }
 .card-instalacion-doc.ok .filete-lateral-doc { background: var(--bs-success); }
 
-.card-instalacion-doc .nombre { font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; line-height: 1.25; }
-.card-instalacion-doc .direccion { font-size: .8rem; color: var(--ink-muted); margin-top: .15rem; }
+/* Una sola línea con "…" en vez de envolver: un nombre largo no debe hacer
+   que esta tarjeta en particular quede más alta que sus vecinas (ver
+   min-height más arriba) — el nombre completo queda disponible al pasar
+   el mouse (title) y por supuesto en la ficha completa de la instalación. */
+.card-instalacion-doc .nombre {
+    font-family: var(--font-display); font-size: 1.05rem; font-weight: 700; line-height: 1.25;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.card-instalacion-doc .direccion {
+    font-size: .8rem; color: var(--ink-muted); margin-top: .15rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 
 .card-instalacion-doc .stats { display: flex; gap: 1.4rem; }
 .card-instalacion-doc .stats .stat .valor { font-family: var(--font-mono); font-size: 1.2rem; font-weight: 700; line-height: 1; }
@@ -1698,7 +1722,7 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .card-instalacion-doc .stats .stat.def .valor { color: var(--accent); }
 .card-instalacion-doc .stats .stat.ok .valor { color: var(--bs-success); }
 
-.card-instalacion-doc .proxima { font-size: .78rem; color: var(--ink-muted); border-top: 1px solid var(--border); padding-top: .65rem; }
+.card-instalacion-doc .proxima { font-size: .78rem; color: var(--ink-muted); border-top: 1px solid var(--border); padding-top: .65rem; margin-top: auto; }
 .card-instalacion-doc .proxima strong { color: var(--ink); font-weight: 600; }
 
 /* ---- Visor de fotos (lightbox) --------------------------------------- */

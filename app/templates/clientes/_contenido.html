@@ -135,8 +135,8 @@
                            data-instalacion-modal="mc-inst-{{ inst.id }}">
                             <span class="filete-lateral-doc"></span>
                             <div>
-                                <div class="nombre">{{ inst.nombre }}</div>
-                                <div class="direccion">{{ inst.direccion or '' }}</div>
+                                <div class="nombre" title="{{ inst.nombre }}">{{ inst.nombre }}</div>
+                                <div class="direccion" title="{{ inst.direccion or '' }}">{{ inst.direccion or '' }}</div>
                             </div>
                             <div class="stats">
                                 <div class="stat"><span class="valor">{{ inst.equipos|length }}</span><span class="etiqueta">Equipos</span></div>
@@ -190,7 +190,7 @@
                     {% endif %}
 
                     <div class="seccion-titulo-doc">Resumen del cliente</div>
-                    <div class="grid-atencion mb-3">
+                    <div class="grid-atencion">
                         <a href="{{ url_for('clientes.deficiencias', cliente_id=cliente.id, clasificacion='Deficiencia crítica') }}" class="card-atencion critico">
                             <span class="num">{{ d['Deficiencia crítica'] }}</span>
                             <span class="etiqueta">Deficiencias críticas</span>
