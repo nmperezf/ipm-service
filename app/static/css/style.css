@@ -1262,20 +1262,26 @@ html[data-bs-theme="dark"] .chip-secondary { background: #232734; color: #8A93A0
 
 
 /* ---- Tarjetas de atención (usadas fuera de Inicio: cliente, instalación,
-   inventario, OT, presupuesto, portal) --------------------------------------- */
+   inventario, OT, presupuesto, portal) ---------------------------------------
+   Misma altura que la fila de "Deficiencias abiertas" de Inicio a propósito
+   (ver .fila-log/details.card-expandible más abajo): número a la izquierda,
+   etiqueta + sub apilados a la derecha, en vez del bloque vertical alto de
+   antes. Es grid (no flex) para poder ubicar num/etiqueta/sub sin necesitar
+   un <span> contenedor extra en cada plantilla que usa esta tarjeta. */
 
-.grid-atencion { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .7rem; }
+.grid-atencion { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .6rem; }
 
 .card-atencion {
-    border-radius: .6rem; padding: .75rem .95rem; display: flex; flex-direction: column; gap: .25rem;
+    border-radius: .5rem; padding: .6rem .85rem; display: grid;
+    grid-template-columns: auto 1fr; align-items: center; column-gap: .7rem;
     text-decoration: none; color: inherit; background: var(--surface);
     border: 1px solid var(--border); border-left: 3px solid var(--border-strong);
     transition: transform .14s ease, box-shadow .14s ease, border-color .14s ease;
 }
 a.card-atencion:hover { transform: translateY(-2px); box-shadow: var(--shadow-doc); color: inherit; }
-.card-atencion .num { font-family: var(--font-mono); font-size: 1.9rem; font-weight: 700; line-height: 1; }
-.card-atencion .etiqueta { font-size: .8rem; font-weight: 600; }
-.card-atencion .sub { font-size: .74rem; color: var(--ink-muted); }
+.card-atencion .num { grid-column: 1; grid-row: 1 / 3; font-family: var(--font-mono); font-size: 1.5rem; font-weight: 700; line-height: 1; }
+.card-atencion .etiqueta { grid-column: 2; grid-row: 1; font-size: .82rem; font-weight: 600; line-height: 1.25; }
+.card-atencion .sub { grid-column: 2; grid-row: 2; font-size: .7rem; color: var(--ink-muted); line-height: 1.25; }
 .card-atencion.critico { border-left-color: var(--accent); }
 .card-atencion.critico .num, .card-atencion.critico .etiqueta { color: var(--accent); }
 .card-atencion.alerta { border-left-color: var(--bs-warning); }
