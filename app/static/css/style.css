@@ -1264,13 +1264,9 @@ html[data-bs-theme="dark"] .chip-secondary { background: #232734; color: #8A93A0
 /* ---- Tarjetas de atención (usadas fuera de Inicio: cliente, instalación,
    inventario, OT, presupuesto, portal) --------------------------------------- */
 
-/* Ancho fijo (no 1fr/auto-fit) a propósito: así una .card-atencion mide
-   siempre lo mismo la vea uno en Inicio, en la ficha de un cliente o en
-   Inventario, en vez de estirarse según cuántas entren por fila. */
-.grid-atencion { display: grid; grid-template-columns: repeat(auto-fill, 210px); gap: .7rem; }
+.grid-atencion { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .7rem; }
 
 .card-atencion {
-    width: 210px; min-height: 100px;
     border-radius: .6rem; padding: .75rem .95rem; display: flex; flex-direction: column; gap: .25rem;
     text-decoration: none; color: inherit; background: var(--surface);
     border: 1px solid var(--border); border-left: 3px solid var(--border-strong);
@@ -1515,14 +1511,9 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .card-cliente-doc-stats .stat.cumplimiento-nulo .valor { color: var(--ink-muted); }
 
 .grid-repuestos-doc { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1rem; }
-/* Misma min-height que .card-instalacion-doc (comparten grid de 280px+ y el
-   mismo patrón de filete lateral) para que ambos tipos de tarjeta midan lo
-   mismo aunque muestren datos distintos — el último bloque de cada una
-   (acciones / próxima visita) se empuja al fondo con margin-top:auto. */
 .card-repuesto-doc {
     display: flex; flex-direction: column; gap: .8rem; padding: 1.1rem 1.2rem 1.1rem 1.4rem; border-radius: .65rem;
     border: 1px solid var(--border); background: var(--surface); position: relative; overflow: hidden;
-    min-height: 180px;
 }
 .card-repuesto-doc .filete-lateral-doc { position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--border); }
 .card-repuesto-doc.critico .filete-lateral-doc { background: var(--accent); }
@@ -1533,7 +1524,7 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .card-repuesto-doc-stats .stat .valor { font-family: var(--font-mono); font-size: 1.35rem; font-weight: 700; line-height: 1; }
 .card-repuesto-doc-stats .stat.critico .valor { color: var(--accent); }
 .card-repuesto-doc-stats .stat .etiqueta { font-size: .68rem; color: var(--ink-muted); text-transform: uppercase; letter-spacing: .03em; margin-top: .3rem; display: block; }
-.card-repuesto-doc-acciones { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; padding-top: .3rem; border-top: 1px solid var(--border); margin-top: auto; }
+.card-repuesto-doc-acciones { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; padding-top: .3rem; border-top: 1px solid var(--border); }
 .card-repuesto-doc-acciones input[type="number"] { width: 5.5rem; }
 
 .chips-deficiencias-doc { display: flex; gap: .35rem; flex-wrap: wrap; margin-top: -.2rem; }
@@ -1683,7 +1674,6 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
     display: flex; flex-direction: column; gap: .8rem; padding: 1.1rem 1.2rem 1.1rem 1.4rem; border-radius: .65rem;
     border: 1px solid var(--border); background: var(--surface); text-decoration: none; color: inherit;
     transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease; position: relative;
-    min-height: 180px;
 }
 .card-instalacion-doc:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(20,30,45,.10); border-color: var(--accent); color: inherit; }
 /* Antes tenía overflow:hidden (solo para redondear la puntita del filete
@@ -1702,7 +1692,7 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .card-instalacion-doc .stats .stat.def .valor { color: var(--accent); }
 .card-instalacion-doc .stats .stat.ok .valor { color: var(--bs-success); }
 
-.card-instalacion-doc .proxima { font-size: .78rem; color: var(--ink-muted); border-top: 1px solid var(--border); padding-top: .65rem; margin-top: auto; }
+.card-instalacion-doc .proxima { font-size: .78rem; color: var(--ink-muted); border-top: 1px solid var(--border); padding-top: .65rem; }
 .card-instalacion-doc .proxima strong { color: var(--ink); font-weight: 600; }
 
 /* ---- Visor de fotos (lightbox) --------------------------------------- */
