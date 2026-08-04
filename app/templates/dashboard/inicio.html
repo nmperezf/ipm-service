@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Inicio - IPM Manager{% endblock %}
 {% block content %}
-<div class="pagina-ancha pagina-inicio">
+<div class="pagina-ancha">
 
     <h1>Inicio</h1>
     <div class="saludo-inicio">Hola, {{ current_user.nombre_completo or current_user.username }}<span class="fecha">— {{ hoy.strftime('%d/%m/%Y') }}</span></div>
