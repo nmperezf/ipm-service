@@ -1271,7 +1271,12 @@ html[data-bs-theme="dark"] .chip-secondary { background: #232734; color: #8A93A0
 
 .grid-atencion { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: .6rem; margin-bottom: 1rem; }
 
+/* min-height: sin esto, una tarjeta sin .sub (una sola línea) queda más baja
+   que sus vecinas con .sub apenas está sola en su fila/columna — pasa en
+   OT, Presupuestos y el portal de cliente. Mismo criterio que .card-
+   instalacion-doc/.card-repuesto-doc más abajo. */
 .card-atencion {
+    min-height: 52px;
     border-radius: .5rem; padding: .6rem .85rem; display: grid;
     grid-template-columns: auto 1fr; align-items: center; column-gap: .7rem;
     text-decoration: none; color: inherit; background: var(--surface);
