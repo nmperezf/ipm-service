@@ -61,12 +61,13 @@
             {% else %}
             <div class="table-responsive">
             <table class="table table-sm data-table">
-                <thead><tr><th>Fecha</th><th>Instalación</th><th>Clasificación</th><th>Estado</th><th>Descripción</th></tr></thead>
+                <thead><tr><th>Fecha</th><th>Instalación</th><th>Equipo</th><th>Clasificación</th><th>Estado</th><th>Descripción</th></tr></thead>
                 <tbody>
                     {% for o in deficiencias_periodo %}
                     <tr class="{{ 'table-danger' if o.clasificacion == 'Deficiencia crítica' }}">
                         <td>{{ o.fecha_carga.strftime('%d/%m/%Y') }}</td>
                         <td>{{ o.instalacion.nombre }}</td>
+                        <td>{{ o.equipo.nombre if o.equipo else '-' }}</td>
                         <td><span class="badge badge-{{ o.clasificacion.replace(' ', '.') }}">{{ o.clasificacion }}</span></td>
                         <td>{{ 'Resuelta' if o.resuelto else ('Aprobada' if o.estado_revision == 'Aprobada' else 'Pendiente de revisión') }}</td>
                         <td>{{ o.descripcion }}</td>
@@ -87,11 +88,12 @@
             {% else %}
             <div class="table-responsive">
             <table class="table table-sm data-table">
-                <thead><tr><th>Instalación</th><th>Clasificación</th><th>Antigüedad</th><th>Fecha de carga</th><th>Descripción</th></tr></thead>
+                <thead><tr><th>Instalación</th><th>Equipo</th><th>Clasificación</th><th>Antigüedad</th><th>Fecha de carga</th><th>Descripción</th></tr></thead>
                 <tbody>
                     {% for o in deficiencias_abiertas %}
                     <tr class="{{ 'table-danger' if o.clasificacion == 'Deficiencia crítica' }}">
                         <td>{{ o.instalacion.nombre }}</td>
+                        <td>{{ o.equipo.nombre if o.equipo else '-' }}</td>
                         <td><span class="badge badge-{{ o.clasificacion.replace(' ', '.') }}">{{ o.clasificacion }}</span></td>
                         <td>{{ o.dias_abierta }} día(s)</td>
                         <td>{{ o.fecha_carga.strftime('%d/%m/%Y') }}</td>

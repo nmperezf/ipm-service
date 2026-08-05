@@ -9,18 +9,19 @@
 
             <div class="table-responsive">
             <table class="table table-hover data-table">
-                <thead><tr><th>Fecha carga</th><th>Instalación</th><th>Clasificación</th><th>Descripción</th><th>Resuelta el</th></tr></thead>
+                <thead><tr><th>Fecha carga</th><th>Instalación</th><th>Equipo</th><th>Clasificación</th><th>Descripción</th><th>Resuelta el</th></tr></thead>
                 <tbody>
                     {% for obs in observaciones %}
                     <tr>
                         <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
                         <td>{{ obs.instalacion.nombre }}</td>
+                        <td>{{ obs.equipo.nombre if obs.equipo else '-' }}</td>
                         <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
                         <td>{{ obs.descripcion }}</td>
                         <td>{{ obs.fecha_resolucion.strftime('%d/%m/%Y') if obs.fecha_resolucion else '-' }}</td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="5"><div class="estado-vacio-doc"><i class="bi bi-check-circle" style="color: var(--bs-success);"></i><p class="mb-0">Todavía no hay observaciones resueltas.</p></div></td></tr>
+                    <tr><td colspan="6"><div class="estado-vacio-doc"><i class="bi bi-check-circle" style="color: var(--bs-success);"></i><p class="mb-0">Todavía no hay observaciones resueltas.</p></div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

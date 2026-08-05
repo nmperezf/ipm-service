@@ -39,7 +39,9 @@
                         <td><strong>{{ p.codigo }}</strong></td>
                         <td>{{ p.observacion.instalacion.cliente.nombre }}</td>
                         <td>{{ p.observacion.instalacion.nombre }}</td>
-                        <td>{{ p.observacion.descripcion[:60] }}{{ '…' if p.observacion.descripcion|length > 60 }}</td>
+                        <td>
+                            {% if p.observacion.equipo %}<span class="text-muted small">{{ p.observacion.equipo.nombre }} — </span>{% endif %}{{ p.observacion.descripcion[:60] }}{{ '…' if p.observacion.descripcion|length > 60 }}
+                        </td>
                         <td>
                             <span class="badge {{ 'bg-warning' if p.dias_abierto > 7 else 'bg-secondary' }}">{{ p.dias_abierto }} día{{ 's' if p.dias_abierto != 1 }}</span>
                         </td>

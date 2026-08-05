@@ -17,7 +17,7 @@
                     {% endif %}
                         <span class="cuerpo">
                             <div class="desc"><span class="badge badge-{{ o.clasificacion.replace(' ', '.') }}">{{ o.clasificacion }}</span> {{ o.descripcion }}</div>
-                            <div class="meta">{{ o.instalacion.cliente.nombre }} — {{ o.instalacion.nombre }} · detectada {{ o.fecha_carga.strftime('%d/%m/%Y') }}</div>
+                            <div class="meta">{{ o.instalacion.cliente.nombre }} — {{ o.instalacion.nombre }}{% if o.equipo %} · {{ o.equipo.nombre }}{% endif %} · detectada {{ o.fecha_carga.strftime('%d/%m/%Y') }}</div>
                         </span>
                         <span class="ir">{{ 'Ver visita →' if visita_id else 'Ver cliente →' }}</span>
                     </a>

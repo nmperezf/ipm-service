@@ -15,11 +15,12 @@
             <div class="seccion-titulo-doc">Observaciones (deficiencias / desactivaciones)</div>
             <div class="table-responsive">
             <table class="table table-sm table-hover data-table">
-                <thead><tr><th>Clasificación</th><th>Descripción</th><th>Fecha carga</th><th>Fecha resolución</th><th>Estado</th><th>Visita</th><th></th></tr></thead>
+                <thead><tr><th>Clasificación</th><th>Equipo</th><th>Descripción</th><th>Fecha carga</th><th>Fecha resolución</th><th>Estado</th><th>Visita</th><th></th></tr></thead>
                 <tbody>
                     {% for obs in observaciones %}
                     <tr>
                         <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+                        <td>{{ obs.equipo.nombre if obs.equipo else '-' }}</td>
                         <td>{{ obs.descripcion }}</td>
                         <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
                         <td>{{ obs.fecha_resolucion.strftime('%d/%m/%Y') if obs.fecha_resolucion else '-' }}</td>

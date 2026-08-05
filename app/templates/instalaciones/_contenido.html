@@ -59,12 +59,13 @@
             <div class="seccion-titulo-doc">Observaciones abiertas</div>
             <div class="table-responsive">
             <table class="table table-sm data-table">
-                <thead><tr><th>Fecha</th><th>Clasificación</th><th>Descripción</th><th>Revisión</th><th></th></tr></thead>
+                <thead><tr><th>Fecha</th><th>Clasificación</th><th>Equipo</th><th>Descripción</th><th>Revisión</th><th></th></tr></thead>
                 <tbody>
                     {% for obs in abiertas %}
                     <tr data-href="{{ url_for('historial.ver', instalacion_id=instalacion.id) }}">
                         <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
                         <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+                        <td>{{ obs.equipo.nombre if obs.equipo else '-' }}</td>
                         <td>{{ obs.descripcion }}</td>
                         <td>
                             {% if obs.estado_revision == 'Aprobada' %}<span class="badge badge-Cumplido">Aprobada</span>

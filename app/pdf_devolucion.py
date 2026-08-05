@@ -37,10 +37,10 @@ def generar_pdf_devolucion(visita, resumen_categorias, deficiencias):
 
     elementos.append(Paragraph("Resumen del servicio", h2))
     if resumen_categorias:
-        filas = [["Área", "Equipos / formularios revisados"]]
+        filas = [["Área", "Equipos revisados"]]
         for r in resumen_categorias:
             filas.append([r["categoria"], str(r["equipos_revisados"])])
-        tabla_resumen = Table(filas, colWidths=[10 * cm, 6.5 * cm])
+        tabla_resumen = Table(filas, colWidths=[11.5 * cm, 5 * cm])
         tabla_resumen.setStyle(estilo_tabla_encabezado())
         elementos.append(tabla_resumen)
     else:
@@ -48,10 +48,14 @@ def generar_pdf_devolucion(visita, resumen_categorias, deficiencias):
 
     elementos.append(Paragraph("Deficiencias encontradas en esta visita", h2))
     if deficiencias:
-        filas = [["Clasificación", "Descripción"]]
+        filas = [["Clasificación", "Equipo", "Descripción"]]
         for d in deficiencias:
-            filas.append([Paragraph(d.clasificacion, celda), Paragraph(d.descripcion, celda)])
-        tabla_def = Table(filas, colWidths=[4 * cm, 12.5 * cm])
+            filas.append([
+                Paragraph(d.clasificacion, celda),
+                Paragraph(d.equipo.nombre if d.equipo else "-", celda),
+                Paragraph(d.descripcion, celda),
+            ])
+        tabla_def = Table(filas, colWidths=[3.5 * cm, 3.5 * cm, 9.5 * cm])
         tabla_def.setStyle(estilo_tabla_encabezado())
         elementos.append(tabla_def)
     else:
