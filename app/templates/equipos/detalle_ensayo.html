@@ -20,6 +20,10 @@
                     <a href="{{ url_for('curvas.ensayo_pdf', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn btn-sm btn-outline-dark" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>Descargar PDF</a>
                     {% if current_user.rol in ('Administrador', 'Jefe') %}
                     <a href="{{ url_for('curvas.ensayo_editar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Editar</a>
+                    <form method="POST" action="{{ url_for('curvas.ensayo_eliminar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline form-confirmar-password no-imprimir" data-sin-bloqueo
+                          data-mensaje="¿Eliminar el ensayo del {{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}? Esta acción no se puede deshacer.">
+                        <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>Eliminar</button>
+                    </form>
                     {% endif %}
                 </div>
             </div>
@@ -221,13 +225,6 @@
                 los valores fuera de límite se marcan en rojo automáticamente, pero el criterio final de aprobación
                 queda en Comentarios y Validación, no en un veredicto calculado.
             </p>
-
-            {% if current_user.rol in ('Administrador', 'Jefe') %}
-            <form method="POST" action="{{ url_for('curvas.ensayo_eliminar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="form-confirmar-password no-imprimir mt-3" data-sin-bloqueo
-                  data-mensaje="¿Eliminar el ensayo del {{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}? Esta acción no se puede deshacer.">
-                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar ensayo</button>
-            </form>
-            {% endif %}
 
     </div>
 </div>

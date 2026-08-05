@@ -32,6 +32,12 @@
             oculto.value = inputEl.value;
             formPendiente.appendChild(oculto);
             modal.hide();
+            // requestSubmit() dispara un 'submit' real — pero ESE mismo evento
+            // pasaría de nuevo por el listener de más abajo, que lo volvería a
+            // interceptar y reabriría el modal en bucle. Esta bandera le avisa
+            // a ese listener que ya se confirmó la contraseña y que esta vez
+            // deje pasar el envío real.
+            formPendiente.dataset.passwordConfirmado = '1';
             if (formPendiente.requestSubmit) formPendiente.requestSubmit();
             else formPendiente.submit();
         });
@@ -44,6 +50,10 @@
             if (form.dataset.confirmarPasswordListo === '1') return;
             form.dataset.confirmarPasswordListo = '1';
             form.addEventListener('submit', function (e) {
+                if (form.dataset.passwordConfirmado === '1') {
+                    delete form.dataset.passwordConfirmado;
+                    return; // ya se confirmó la contraseña — dejar pasar el envío real
+                }
                 e.preventDefault();
                 formPendiente = form;
                 mensajeEl.textContent = form.dataset.mensaje || '¿Confirmás esta acción? No se puede deshacer.';

@@ -56,6 +56,12 @@
                         <td>
                             <a href="{{ url_for('curvas.ensayo_detalle', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a>
                             <a href="{{ url_for('curvas.ensayo_pdf', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="btn btn-sm btn-outline-dark" target="_blank">PDF</a>
+                            {% if current_user.rol in ('Administrador', 'Jefe') %}
+                            <form method="POST" action="{{ url_for('curvas.ensayo_eliminar', equipo_id=equipo.id, ensayo_id=ensayo.id) }}" class="d-inline form-confirmar-password" data-sin-bloqueo
+                                  data-mensaje="¿Eliminar el ensayo del {{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}? Esta acción no se puede deshacer.">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                            </form>
+                            {% endif %}
                         </td>
                     </tr>
                     {% else %}
