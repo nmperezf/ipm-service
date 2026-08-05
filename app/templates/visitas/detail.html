@@ -183,7 +183,7 @@
                                 {% if item.equipo %}
                                 <option value="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id, equipo_id=item.equipo_id) }}">{{ tipo.nombre }}</option>
                                 {% else %}
-                                <option value="{{ url_for('formularios.carga_masiva', item_id=item.id, tipo_formulario_id=tipo.id) }}">{{ tipo.nombre }}</option>
+                                <option value="{{ url_for('formularios.elegir_equipo', item_id=item.id, tipo_formulario_id=tipo.id) }}">{{ tipo.nombre }}</option>
                                 {% endif %}
                                 {% endfor %}
                             </optgroup>
