@@ -59,7 +59,7 @@
             <p class="text-muted small mt-n2 mb-2">Cargadas en visitas anteriores (o en esta), todavía sin resolver — revisalas antes de dar la visita por terminada.</p>
             <div class="table-responsive">
             <table class="table table-sm data-table">
-                <thead><tr><th>Fecha</th><th>Clasificación</th><th>Equipo</th><th>Descripción</th><th></th></tr></thead>
+                <thead><tr><th>Fecha</th><th>Clasificación</th><th>Equipo</th><th>Descripción</th><th>Revisión</th><th></th></tr></thead>
                 <tbody>
                     {% for obs in deficiencias_abiertas %}
                     <tr>
@@ -71,10 +71,19 @@
                             {% if obs.fecha_ultima_confirmacion %}<br><small class="text-muted">Vista por última vez el {{ obs.fecha_ultima_confirmacion.strftime('%d/%m/%Y') }}</small>{% endif %}
                         </td>
                         <td>
+                            {% if obs.estado_revision == 'Aprobada' %}<span class="badge badge-Cumplido">Aprobada</span>
+                            {% else %}<span class="badge badge-Pendiente">Pendiente de revisión</span>{% endif %}
+                        </td>
+                        <td>
                             {% if puede_editar %}
                             <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}" class="d-inline">
                                 <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>
                             </form>
+                            {% if obs.estado_revision != 'Aprobada' and current_user.rol in ('Administrador', 'Jefe') %}
+                            <form method="POST" action="{{ url_for('observaciones.aprobar', observacion_id=obs.id) }}" class="d-inline">
+                                <button type="submit" class="btn btn-sm btn-outline-primary">Aprobar</button>
+                            </form>
+                            {% endif %}
                             {% endif %}
                         </td>
                     </tr>
