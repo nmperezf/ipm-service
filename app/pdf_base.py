@@ -42,6 +42,12 @@ MARGEN_LAT = 1.8 * cm
 MARGEN_SUP = 3.0 * cm  # deja lugar a la franja negra + filete rojo
 MARGEN_INF = 1.7 * cm  # deja lugar al pie
 ALTO_FRANJA = 1.15 * cm
+# La franja negra y el filete rojo se dibujan "a sangre" (hasta el borde de
+# la hoja) para que se vean como el header real de la app. Casi ninguna
+# impresora doméstica/de oficina imprime hasta el borde físico sin modo
+# "sin bordes" — recortan lo que cae en esta franja de seguridad, así que
+# la franja se inset a este margen en vez de ir a x=0/borde superior real.
+MARGEN_IMPRESION = 0.4 * cm
 
 
 def estilos():
@@ -108,9 +114,14 @@ def _crear_canvas_numerado(tipo_doc):
             ancho, alto = self._pagesize  # respeta vertical u horizontal
             self.saveState()
 
-            # Franja negra
+            # Franja negra — inset MARGEN_IMPRESION del borde real (ver
+            # comentario junto a la constante) en vez de ir de canto a canto.
+            ancho_franja = ancho - 2 * MARGEN_IMPRESION
+            borde_sup_franja = alto - MARGEN_IMPRESION
+            borde_inf_franja = borde_sup_franja - ALTO_FRANJA
+
             self.setFillColor(colors.black)
-            self.rect(0, alto - ALTO_FRANJA, ancho, ALTO_FRANJA, stroke=0, fill=1)
+            self.rect(MARGEN_IMPRESION, borde_inf_franja, ancho_franja, ALTO_FRANJA, stroke=0, fill=1)
 
             x = MARGEN_LAT
             if os.path.exists(_LOGO_PATH):
@@ -119,7 +130,7 @@ def _crear_canvas_numerado(tipo_doc):
                 self.drawImage(
                     _LOGO_PATH,
                     x,
-                    alto - ALTO_FRANJA + (ALTO_FRANJA - alto_logo) / 2,
+                    borde_inf_franja + (ALTO_FRANJA - alto_logo) / 2,
                     width=ancho_logo,
                     height=alto_logo,
                     mask="auto",
@@ -129,15 +140,15 @@ def _crear_canvas_numerado(tipo_doc):
 
             self.setFillColor(colors.white)
             self.setFont("Helvetica-Bold", 11)
-            self.drawString(x, alto - ALTO_FRANJA / 2 - 4, "IPM MANAGER")
+            self.drawString(x, borde_inf_franja + ALTO_FRANJA / 2 - 4, "IPM MANAGER")
 
             self.setFillColor(colors.HexColor("#B8BEC9"))
             self.setFont("Helvetica", 8)
-            self.drawRightString(ancho - MARGEN_LAT, alto - ALTO_FRANJA / 2 - 3, tipo_doc.upper())
+            self.drawRightString(ancho - MARGEN_LAT, borde_inf_franja + ALTO_FRANJA / 2 - 3, tipo_doc.upper())
 
             # Filete rojo
             self.setFillColor(ACCENT)
-            self.rect(0, alto - ALTO_FRANJA - 0.09 * cm, ancho, 0.09 * cm, stroke=0, fill=1)
+            self.rect(MARGEN_IMPRESION, borde_inf_franja - 0.09 * cm, ancho_franja, 0.09 * cm, stroke=0, fill=1)
 
             # Pie de página
             self.setStrokeColor(BORDE)
