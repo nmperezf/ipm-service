@@ -18,7 +18,6 @@ from app.models import (
     PRIORIDADES_OT,
     Presupuesto,
     ROLES_GESTION,
-    Repuesto,
     Usuario,
     Visita,
 )
@@ -56,34 +55,6 @@ def inicio():
     clientes = clientes_visibles().all()
     ids_clientes = [c.id for c in clientes]
 
-    inicio_mes = hoy.replace(day=1)
-    fin_mes = inicio_mes + relativedelta(months=1) - timedelta(days=1)
-    ids_visitas_visibles = [v.id for v in _visitas_visibles().all()]
-    items_mes = (
-        ItemVisita.query.join(Visita)
-        .filter(Visita.id.in_(ids_visitas_visibles))
-        .filter(Visita.fecha >= inicio_mes, Visita.fecha <= fin_mes)
-        .all()
-    )
-    total_mes = len(items_mes)
-    cumplidos_mes = sum(1 for it in items_mes if it.estado == "Cumplido")
-    cumplimiento_pct = round((cumplidos_mes / total_mes) * 100, 1) if total_mes else 0.0
-
-    cumplimiento_tendencia = None
-    if es_gestion:
-        fin_mes_anterior = inicio_mes - timedelta(days=1)
-        inicio_mes_anterior = fin_mes_anterior.replace(day=1)
-        items_mes_anterior = (
-            ItemVisita.query.join(Visita)
-            .filter(Visita.id.in_(ids_visitas_visibles))
-            .filter(Visita.fecha >= inicio_mes_anterior, Visita.fecha <= fin_mes_anterior)
-            .all()
-        )
-        if items_mes_anterior:
-            cumplidos_mes_anterior = sum(1 for it in items_mes_anterior if it.estado == "Cumplido")
-            pct_anterior = round((cumplidos_mes_anterior / len(items_mes_anterior)) * 100, 1)
-            cumplimiento_tendencia = round(cumplimiento_pct - pct_anterior, 1)
-
     agenda_semana = (
         _visitas_visibles()
         .filter(Visita.fecha >= hoy, Visita.fecha <= hoy + timedelta(days=7))
@@ -105,13 +76,17 @@ def inicio():
     ot_pendientes_todas = ot_query.order_by(OrdenTrabajo.fecha_apertura.desc()).all()
     ot_pendientes = len(ot_pendientes_todas)
     ot_pendientes_lista = ot_pendientes_todas[:6]
+    ot_por_prioridad = {
+        prioridad: sum(1 for ot in ot_pendientes_todas if ot.prioridad == prioridad)
+        for prioridad in PRIORIDADES_OT
+    }
 
-    visitas_en_revision = _visitas_visibles().filter(
+    visitas_en_revision_todas = _visitas_visibles().filter(
         Visita.en_revision == True, Visita.cerrada == False  # noqa: E712
-    ).count()
+    ).order_by(Visita.fecha_enviada_revision.desc()).all()
+    visitas_en_revision = len(visitas_en_revision_todas)
+    visitas_en_revision_lista = visitas_en_revision_todas[:6]
 
-    repuestos_criticos = 0
-    repuestos_criticos_lista = []
     deficiencias_abiertas = []
     deficiencias_total = 0
     deficiencias_por_clasif = {}
@@ -121,11 +96,6 @@ def inicio():
     presupuestos_activos = 0
     presupuestos_activos_lista = []
     if es_gestion:
-        repuestos_query = Repuesto.query.filter_by(empresa_id=current_user.empresa_id, activo=True).order_by(Repuesto.nombre)
-        repuestos_criticos_todos = [r for r in repuestos_query.all() if r.en_nivel_critico]
-        repuestos_criticos = len(repuestos_criticos_todos)
-        repuestos_criticos_lista = repuestos_criticos_todos[:6]
-
         presupuestos_activos_query = Presupuesto.query.filter(
             Presupuesto.empresa_id == current_user.empresa_id,
             Presupuesto.estado.in_(["Pendiente", "Cotizado", "Aprobado"]),
@@ -195,18 +165,13 @@ def inicio():
         "dashboard/inicio.html",
         hoy=hoy,
         es_gestion=es_gestion,
-        cumplimiento_pct=cumplimiento_pct,
-        cumplimiento_tendencia=cumplimiento_tendencia,
-        cumplidos_mes=cumplidos_mes,
-        total_mes=total_mes,
-        titulo_mes=inicio_mes.strftime("%B %Y"),
         agenda_semana=agenda_semana,
         mis_ot=mis_ot,
         ot_pendientes=ot_pendientes,
         ot_pendientes_lista=ot_pendientes_lista,
+        ot_por_prioridad=ot_por_prioridad,
         visitas_en_revision=visitas_en_revision,
-        repuestos_criticos=repuestos_criticos,
-        repuestos_criticos_lista=repuestos_criticos_lista,
+        visitas_en_revision_lista=visitas_en_revision_lista,
         presupuestos_activos=presupuestos_activos,
         presupuestos_activos_lista=presupuestos_activos_lista,
         deficiencias_abiertas=deficiencias_abiertas,

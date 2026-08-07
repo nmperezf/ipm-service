@@ -24,6 +24,7 @@
     --warn: #B5730A;
     --ok: #1F8A54;
     --info: #2C6E8C;
+    --plan: #6E56CF;
     --shadow-doc: 0 1px 2px rgba(20,24,31,.05), 0 8px 24px -16px rgba(20,24,31,.18);
 
     --font-display: 'Space Grotesk', system-ui, sans-serif;
@@ -1057,6 +1058,7 @@ html[data-bs-theme="dark"] {
     --warn: #F0A93E;
     --ok: #34C77B;
     --info: #4FA8D8;
+    --plan: #A88FE8;
     --shadow-doc: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -16px rgba(0,0,0,.5);
 
     --bs-primary: #8CA3D1;
@@ -1317,6 +1319,20 @@ a.fila-log:hover { box-shadow: var(--shadow-doc); color: inherit; }
 .fila-log.info, details.card-expandible.info { border-left-color: var(--bs-info); }
 .fila-log.info .num, details.card-expandible.info summary .num,
 .fila-log.info .etiqueta, details.card-expandible.info summary .etiqueta { color: var(--bs-info); }
+.fila-log.programado, details.card-expandible.programado { border-left-color: var(--plan); }
+.fila-log.programado .num, details.card-expandible.programado summary .num,
+.fila-log.programado .etiqueta, details.card-expandible.programado summary .etiqueta { color: var(--plan); }
+/* .mudo: mismo formato que las demás filas de "Necesita tu atención" pero
+   sin color de énfasis — para bajar de prioridad visual sin sacar la
+   fila del mismo patrón (ver "En segundo plano" en Inicio). */
+.fila-log.mudo, details.card-expandible.mudo { border-left-color: var(--border-strong); }
+.fila-log.mudo .num, details.card-expandible.mudo summary .num { color: var(--ink-faint); }
+.fila-log.mudo .etiqueta, details.card-expandible.mudo summary .etiqueta { color: var(--ink-muted); }
+
+.punto-atencion {
+    display: inline-block; width: .5rem; height: .5rem; border-radius: 50%;
+    background: var(--accent); margin-left: .4rem; vertical-align: middle;
+}
 
 .fila-log .num { font-family: var(--font-mono); font-weight: 700; font-size: 1.5rem; min-width: 2.2ch; text-align: right; flex-shrink: 0; }
 .fila-log .textos { flex: 1; min-width: 0; }

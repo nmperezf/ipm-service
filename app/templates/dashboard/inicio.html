@@ -32,10 +32,176 @@
             {% if es_gestion %}
             {# ============ VISTA JEFE / ADMINISTRADOR ============ #}
 
-            <div class="seccion-titulo-doc">Necesita tu atención</div>
+            <details class="card-expandible info mb-3" {{ 'open' if mensajes_abiertos }}>
+                <summary>
+                    <span class="textos">
+                        <span class="etiqueta">Mensajes internos{% if mensajes_abiertos %}<span class="punto-atencion"></span>{% endif %}</span>
+                        <span class="sub">chat con el equipo — y recordatorios para vos mismo</span>
+                    </span>
+                    <span class="flecha">▶</span>
+                </summary>
+                <div style="padding: 0 1.1rem 1.1rem;">
+                    <form method="POST" action="{{ url_for('mensajes.nuevo') }}" class="d-flex flex-column gap-2 mb-3">
+                        <select name="destinatario_id" class="form-select form-select-sm" required>
+                            <option value="">-- Para quién --</option>
+                            <option value="{{ current_user.id }}">📌 A mí mismo (recordatorio)</option>
+                            {% for u in destinatarios_mensaje %}
+                            <option value="{{ u.id }}">{{ u.nombre_completo or u.username }} ({{ u.rol }})</option>
+                            {% endfor %}
+                        </select>
+                        <input type="text" name="titulo" class="form-control form-control-sm" placeholder="Ej: Llamar a fulano por renovación de contrato" required>
+                        <div class="d-flex gap-2">
+                            <select name="cliente_id" class="form-select form-select-sm">
+                                <option value="">-- Sin cliente --</option>
+                                {% for c in clientes_para_mensaje %}
+                                <option value="{{ c.id }}">{{ c.nombre }}</option>
+                                {% endfor %}
+                            </select>
+                            <select name="prioridad" class="form-select form-select-sm">
+                                {% for p in prioridades %}
+                                <option value="{{ p }}" {% if p == 'Media' %}selected{% endif %}>{{ p }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-sm btn-outline-dark">Enviar</button>
+                    </form>
+
+                    <div class="d-flex justify-content-end mb-2">
+                        <a href="{{ url_for('mensajes.resueltos') }}" class="btn btn-sm btn-outline-secondary">Ver resueltos</a>
+                    </div>
+                    <div class="log-prioridad">
+                        {% for m in mensajes_abiertos %}
+                        <details class="card-expandible {{ m.severidad }}" id="mensaje-{{ m.id }}">
+                            <summary>
+                                <span class="textos">
+                                    <span class="etiqueta">{{ m.titulo }}</span>
+                                    <span class="sub">
+                                        {% if m.es_para_mi %}📌 Recordatorio personal
+                                        {% elif m.remitente_id == current_user.id %}Para {{ m.destinatario.nombre_completo or m.destinatario.username }}
+                                        {% else %}De {{ m.remitente.nombre_completo or m.remitente.username }}{% endif %}
+                                        {% if m.cliente %} · {{ m.cliente.nombre }}{% endif %}
+                                        · {{ m.fecha_carga.strftime('%d/%m/%Y') }}
+                                    </span>
+                                </span>
+                                <span class="badge badge-{{ m.prioridad }}">{{ m.prioridad }}</span>
+                                <span class="flecha">▶</span>
+                            </summary>
+                            <div style="padding: 0 1.1rem 1rem; display: flex; gap: .5rem; flex-wrap: wrap;">
+                                {% if m.cliente %}<a href="{{ url_for('clientes.detalle', cliente_id=m.cliente_id) }}" class="btn btn-sm btn-outline-secondary">Ver {{ m.cliente.nombre }}</a>{% endif %}
+                                <form method="POST" action="{{ url_for('mensajes.resolver', mensaje_id=m.id) }}" class="d-inline">
+                                    <button type="submit" class="btn btn-sm btn-outline-success">Resuelto</button>
+                                </form>
+                                <form method="POST" action="{{ url_for('mensajes.eliminar', mensaje_id=m.id) }}" class="d-inline"
+                                      onsubmit="return confirm('¿Eliminar este mensaje?');">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                </form>
+                            </div>
+                        </details>
+                        {% else %}
+                        <p class="text-muted mb-0">No hay mensajes abiertos.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </details>
+
+            <div class="seccion-titulo-doc">Necesita tu aprobación</div>
             <div class="log-prioridad">
 
-                <details class="card-expandible critico">
+                <details class="card-expandible critico" {{ 'open' if visitas_en_revision }}>
+                    <summary>
+                        <span class="num">{{ '%02d'|format(visitas_en_revision) }}</span>
+                        <span class="textos">
+                            <span class="etiqueta">Visitas por aprobar{% if visitas_en_revision %}<span class="punto-atencion"></span>{% endif %}</span>
+                            <span class="sub">{% if visitas_en_revision %}enviadas por el técnico, esperan tu revisión para poder cerrarse{% else %}sin visitas esperando tu aprobación{% endif %}</span>
+                        </span>
+                        <span class="flecha">▶</span>
+                    </summary>
+                    <ul class="lista-expandible">
+                        {% for visita in visitas_en_revision_lista %}
+                        <li>
+                            <a class="fila-expandible" href="{{ url_for('visitas.detalle', visita_id=visita.id) }}">
+                                <span class="cuerpo">
+                                    <div class="desc">{{ visita.instalacion.nombre }} — {{ visita.instalacion.cliente.nombre }}</div>
+                                    <div class="meta">{{ visita.nombre_tecnico }}{% if visita.fecha_enviada_revision %} · enviada {{ visita.fecha_enviada_revision.strftime('%d/%m/%Y') }}{% endif %}</div>
+                                </span>
+                                <span class="ir">Revisar →</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="text-muted">No hay visitas esperando tu aprobación.</li>
+                        {% endfor %}
+                    </ul>
+                    {% if visitas_en_revision > visitas_en_revision_lista|length %}
+                    <a class="ver-todas-doc" href="{{ url_for('dashboard.visitas_en_revision_lista') }}">Ver las {{ visitas_en_revision }} →</a>
+                    {% endif %}
+                </details>
+
+                <details class="card-expandible alerta">
+                    <summary>
+                        <span class="num">{{ '%02d'|format(ensayos_pendientes_total) }}</span>
+                        <span class="textos">
+                            <span class="etiqueta">Ensayos por validar{% if ensayos_pendientes_total %}<span class="punto-atencion"></span>{% endif %}</span>
+                            <span class="sub">{% if ensayos_pendientes_total %}cargados por un técnico, esperan tu firma{% else %}sin ensayos esperando firma{% endif %}</span>
+                        </span>
+                        <span class="flecha">▶</span>
+                    </summary>
+                    <ul class="lista-expandible">
+                        {% for e in ensayos_pendientes %}
+                        <li>
+                            <a class="fila-expandible" href="{{ url_for('equipos.detalle', equipo_id=e.equipo_id) }}">
+                                <span class="cuerpo">
+                                    <div class="desc">{{ e.equipo.nombre }}</div>
+                                    <div class="meta">{{ e.equipo.instalacion.cliente.nombre }} · ensayo del {{ e.fecha_ensayo.strftime('%d/%m/%Y') }}</div>
+                                </span>
+                                <span class="ir">Validar ahora →</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="text-muted">Sin ensayos esperando firma.</li>
+                        {% endfor %}
+                    </ul>
+                    {% if ensayos_pendientes_total > ensayos_pendientes|length %}
+                    <a class="ver-todas-doc" href="{{ url_for('dashboard.ensayos_pendientes_lista') }}">Ver los {{ ensayos_pendientes_total }} →</a>
+                    {% endif %}
+                </details>
+
+                <details class="card-expandible programado">
+                    <summary>
+                        <span class="num">{{ ot_pendientes }}</span>
+                        <span class="textos">
+                            <span class="etiqueta">OT abiertas</span>
+                            <span class="desglose-clasif">
+                                {% for prioridad in prioridades|reverse %}
+                                {% if ot_por_prioridad[prioridad] %}<span class="badge badge-{{ prioridad }}">{{ ot_por_prioridad[prioridad] }} {{ prioridad|lower }}</span>{% endif %}
+                                {% endfor %}
+                            </span>
+                        </span>
+                        <span class="flecha">▶</span>
+                    </summary>
+                    <ul class="lista-expandible">
+                        {% for ot in ot_pendientes_lista %}
+                        <li>
+                            <a class="fila-expandible" href="{{ url_for('ordenes.detalle', ot_id=ot.id) }}">
+                                <span class="cuerpo">
+                                    <div class="desc">{{ ot.numero }} — {{ ot.instalacion.cliente.nombre }}</div>
+                                    <div class="meta">{{ ot.prioridad }} · {{ ot.estado }} · {{ ot.nombre_tecnico }}</div>
+                                </span>
+                                <span class="ir">Ver →</span>
+                            </a>
+                        </li>
+                        {% else %}
+                        <li class="text-muted">Sin OT abiertas.</li>
+                        {% endfor %}
+                    </ul>
+                    {% if ot_pendientes > ot_pendientes_lista|length %}
+                    <a class="ver-todas-doc" href="{{ url_for('ordenes.listar') }}">Ver todas ({{ ot_pendientes }}) →</a>
+                    {% endif %}
+                </details>
+            </div>
+
+            <div class="seccion-titulo-doc">En segundo plano</div>
+            <div class="log-prioridad">
+                <details class="card-expandible mudo">
                     <summary>
                         <span class="num">{{ '%02d'|format(deficiencias_total) }}</span>
                         <span class="textos">
@@ -68,32 +234,7 @@
                     <a class="ver-todas-doc" href="{{ url_for('dashboard.deficiencias_abiertas_lista') }}">Ver las {{ deficiencias_total }} →</a>
                     {% endif %}
                 </details>
-
-                <a class="fila-log alerta" href="{{ url_for('dashboard.visitas_en_revision_lista') }}">
-                    <span class="num">{{ '%02d'|format(visitas_en_revision) }}</span>
-                    <span class="textos">
-                        <span class="etiqueta">Visitas por aprobar</span>
-                        <span class="meta">{% if visitas_en_revision %}esperando tu aprobación{% else %}sin visitas esperando tu aprobación{% endif %}</span>
-                    </span>
-                    <span class="flecha">▶</span>
-                </a>
             </div>
-
-            <div class="seccion-titulo-doc">Cumplimiento de mantenimiento</div>
-            {% set tend_clase = 'subio' if cumplimiento_tendencia and cumplimiento_tendencia > 0 else ('bajo' if cumplimiento_tendencia and cumplimiento_tendencia < 0 else 'plano') %}
-            {% set tend_flecha = '▲' if cumplimiento_tendencia and cumplimiento_tendencia > 0 else ('▼' if cumplimiento_tendencia and cumplimiento_tendencia < 0 else '＝') %}
-            <a href="{{ url_for('dashboard.cumplimiento_mensual') }}" class="panel-cumplimiento">
-                <div class="fila-cumplimiento">
-                    <div class="valor-cumplimiento">{{ cumplimiento_pct }}%<small>{{ titulo_mes }}</small></div>
-                    {% if cumplimiento_tendencia is not none %}
-                    <span class="pill-tendencia {{ tend_clase }}">
-                        {{ tend_flecha }} {{ '%+.1f'|format(cumplimiento_tendencia) }} vs. mes pasado
-                    </span>
-                    {% endif %}
-                </div>
-                <div class="gauge-doc"><span class="relleno" style="width: {{ cumplimiento_pct }}%"></span></div>
-                <div class="detalle-cumplimiento">{{ cumplidos_mes }} de {{ total_mes }} ítems de visita cumplidos a tiempo</div>
-            </a>
 
             {% if carga_tecnicos %}
             <div class="seccion-titulo-doc">Carga de trabajo del equipo</div>
@@ -168,85 +309,38 @@
         <div class="columna-lateral">
 
             {% if es_gestion %}
-            <div>
-                <div class="seccion-titulo-doc" style="margin-top: 0;">En números</div>
-                <div class="rail-stats rail-stats-vertical">
-                    <a class="stat{{ ' calmo' if repuestos_criticos == 0 }}" href="{{ url_for('inventario.criticos_lista') }}" data-stat-modal="mc-stat-repuestos">
-                        <span class="num">{{ '%02d'|format(repuestos_criticos) }}</span>
-                        <span class="etiqueta">Repuestos en stock crítico</span>
-                        <span class="sub">por debajo del mínimo</span>
-                    </a>
-                    <a class="stat{{ ' calmo' if ensayos_pendientes_total == 0 }}" href="{{ url_for('dashboard.ensayos_pendientes_lista') }}" data-stat-modal="mc-stat-ensayos">
-                        <span class="num">{{ '%02d'|format(ensayos_pendientes_total) }}</span>
-                        <span class="etiqueta">Ensayos por validar</span>
-                        <span class="sub">{% if ensayos_pendientes_total %}cargados por un técnico, esperan tu firma{% else %}sin ensayos esperando firma{% endif %}</span>
-                    </a>
-                    <a class="stat{{ ' calmo' if presupuestos_activos == 0 }}" href="{{ url_for('presupuestos.listar') }}" data-stat-modal="mc-stat-presupuestos">
-                        <span class="num">{{ '%02d'|format(presupuestos_activos) }}</span>
-                        <span class="etiqueta">Presupuestos activos</span>
-                        <span class="sub">pendientes, cotizados o aprobados</span>
-                    </a>
-                    <a class="stat{{ ' calmo' if ot_pendientes == 0 }}" href="{{ url_for('ordenes.listar') }}" data-stat-modal="mc-stat-ot">
-                        <span class="num">{{ ot_pendientes }}</span>
-                        <span class="etiqueta">OT abiertas</span>
-                        <span class="sub">en toda la empresa</span>
-                    </a>
-                </div>
-            </div>
-
-            <div class="modal-contenido-doc" id="mc-stat-repuestos" style="display:none;" data-titulo="Repuestos en stock crítico">
-                {% if repuestos_criticos_lista %}
-                <ul class="lista-expandible">
-                    {% for r in repuestos_criticos_lista %}
+            <details class="card-expandible" open>
+                <summary>
+                    <span class="textos">
+                        <span class="etiqueta">Agenda de la semana</span>
+                        <span class="sub">próximos 7 días — vista rápida</span>
+                    </span>
+                    <span class="flecha">▶</span>
+                </summary>
+                <ul class="lista-agenda-doc" style="padding: 0 1.1rem 1.1rem; margin: 0;">
+                    {% for visita in agenda_semana %}
                     <li>
-                        <div class="fila-expandible">
-                            <span class="cuerpo">
-                                <div class="desc">{{ r.nombre }}</div>
-                                <div class="meta">{{ r.stock_actual }} {{ r.unidad }} en stock — mínimo {{ r.stock_minimo }}</div>
-                            </span>
-                        </div>
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% if repuestos_criticos > repuestos_criticos_lista|length %}
-                <p class="text-muted mb-0 mt-2">+ {{ repuestos_criticos - repuestos_criticos_lista|length }} más.</p>
-                {% endif %}
-                {% else %}
-                <p class="sin-novedad-modal-doc">Ningún repuesto por debajo del stock mínimo.</p>
-                {% endif %}
-                <div class="acciones-modal-doc">
-                    <a href="{{ url_for('inventario.criticos_lista') }}" class="btn btn-sm btn-outline-dark">Ver inventario completo →</a>
-                </div>
-            </div>
-
-            <div class="modal-contenido-doc" id="mc-stat-ensayos" style="display:none;" data-titulo="Ensayos por validar">
-                {% if ensayos_pendientes %}
-                <ul class="lista-expandible">
-                    {% for e in ensayos_pendientes %}
-                    <li>
-                        <a class="fila-expandible" href="{{ url_for('equipos.detalle', equipo_id=e.equipo_id) }}">
-                            <span class="cuerpo">
-                                <div class="desc">{{ e.equipo.nombre }}</div>
-                                <div class="meta">{{ e.equipo.instalacion.cliente.nombre }} · ensayo del {{ e.fecha_ensayo.strftime('%d/%m/%Y') }}</div>
-                            </span>
-                            <span class="ir">Validar ahora →</span>
+                        <a class="item-agenda-doc" href="{{ url_for('visitas.detalle', visita_id=visita.id) }}">
+                            <span class="fecha">{{ visita.fecha.strftime('%d/%m') }}</span>
+                            <span class="nombre">{{ visita.instalacion.nombre }}<span class="cliente">{{ visita.instalacion.cliente.nombre }}</span></span>
+                            <span class="badge badge-{{ visita.estado.replace(' ', '.') }}">{{ visita.estado }}</span>
                         </a>
                     </li>
+                    {% else %}
+                    <li class="text-muted">No hay visitas programadas para los próximos 7 días.</li>
                     {% endfor %}
                 </ul>
-                {% if ensayos_pendientes_total > ensayos_pendientes|length %}
-                <p class="text-muted mb-0 mt-2">+ {{ ensayos_pendientes_total - ensayos_pendientes|length }} más.</p>
-                {% endif %}
-                {% else %}
-                <p class="sin-novedad-modal-doc">Sin ensayos esperando firma.</p>
-                {% endif %}
-                <div class="acciones-modal-doc">
-                    <a href="{{ url_for('dashboard.ensayos_pendientes_lista') }}" class="btn btn-sm btn-outline-dark">Ver todos →</a>
-                </div>
-            </div>
+            </details>
 
-            <div class="modal-contenido-doc" id="mc-stat-presupuestos" style="display:none;" data-titulo="Presupuestos activos">
-                {% if presupuestos_activos_lista %}
+            <details class="card-expandible">
+                <summary>
+                    <span class="num">{{ '%02d'|format(presupuestos_activos) }}</span>
+                    <span class="textos">
+                        <span class="etiqueta">Presupuestos activos</span>
+                        <span class="sub">pendientes, cotizados o aprobados</span>
+                    </span>
+                    <span class="flecha">▶</span>
+                </summary>
                 <ul class="lista-expandible">
                     {% for p in presupuestos_activos_lista %}
                     <li>
@@ -258,45 +352,16 @@
                             <span class="ir">Ver →</span>
                         </a>
                     </li>
+                    {% else %}
+                    <li class="text-muted">Sin presupuestos activos.</li>
                     {% endfor %}
                 </ul>
                 {% if presupuestos_activos > presupuestos_activos_lista|length %}
-                <p class="text-muted mb-0 mt-2">+ {{ presupuestos_activos - presupuestos_activos_lista|length }} más.</p>
+                <a class="ver-todas-doc" href="{{ url_for('presupuestos.listar') }}">Ver todos →</a>
                 {% endif %}
-                {% else %}
-                <p class="sin-novedad-modal-doc">Sin presupuestos activos.</p>
-                {% endif %}
-                <div class="acciones-modal-doc">
-                    <a href="{{ url_for('presupuestos.listar') }}" class="btn btn-sm btn-outline-dark">Ver todos →</a>
-                </div>
-            </div>
+            </details>
 
-            <div class="modal-contenido-doc" id="mc-stat-ot" style="display:none;" data-titulo="OT abiertas">
-                {% if ot_pendientes_lista %}
-                <ul class="lista-expandible">
-                    {% for ot in ot_pendientes_lista %}
-                    <li>
-                        <a class="fila-expandible" href="{{ url_for('ordenes.detalle', ot_id=ot.id) }}">
-                            <span class="cuerpo">
-                                <div class="desc">{{ ot.numero }} — {{ ot.instalacion.cliente.nombre }}</div>
-                                <div class="meta">{{ ot.prioridad }} · {{ ot.estado }} · {{ ot.nombre_tecnico }}</div>
-                            </span>
-                            <span class="ir">Ver →</span>
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
-                {% if ot_pendientes > ot_pendientes_lista|length %}
-                <p class="text-muted mb-0 mt-2">+ {{ ot_pendientes - ot_pendientes_lista|length }} más.</p>
-                {% endif %}
-                {% else %}
-                <p class="sin-novedad-modal-doc">Sin OT abiertas.</p>
-                {% endif %}
-                <div class="acciones-modal-doc">
-                    <a href="{{ url_for('ordenes.listar') }}" class="btn btn-sm btn-outline-dark">Ver todas →</a>
-                </div>
-            </div>
-            {% endif %}
+            {% else %}
 
             <details class="card-expandible" {{ 'open' if mensajes_abiertos }}>
                 <summary>
@@ -370,51 +435,11 @@
                     </div>
                 </div>
             </details>
+            {% endif %}
 
         </div>
     </div>
 
     <div class="pie-nota-doc">IPM Manager — Gestión de mantenimiento de sistemas contra incendio en Uruguay.</div>
 </div>
-
-{% if es_gestion %}
-<div class="modal-backdrop-doc" id="modal-stat-backdrop">
-    <div class="modal-flotante-doc">
-        <div class="modal-cab-doc">
-            <h3 id="modal-stat-titulo">—</h3>
-            <button type="button" class="modal-cerrar-doc" onclick="cerrarModalStat()">✕</button>
-        </div>
-        <div class="modal-cuerpo-doc" id="modal-stat-cuerpo"></div>
-    </div>
-</div>
-
-<script>
-(function () {
-    var backdrop = document.getElementById('modal-stat-backdrop');
-    var titulo = document.getElementById('modal-stat-titulo');
-    var cuerpo = document.getElementById('modal-stat-cuerpo');
-
-    document.querySelectorAll('[data-stat-modal]').forEach(function (fila) {
-        fila.addEventListener('click', function (e) {
-            if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return;
-            e.preventDefault();
-            var origen = document.getElementById(fila.dataset.statModal);
-            titulo.textContent = origen.dataset.titulo;
-            cuerpo.innerHTML = origen.innerHTML;
-            backdrop.classList.add('abierta');
-        });
-    });
-
-    window.cerrarModalStat = function () {
-        backdrop.classList.remove('abierta');
-    };
-    backdrop.addEventListener('click', function (e) {
-        if (e.target === backdrop) cerrarModalStat();
-    });
-    document.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') cerrarModalStat();
-    });
-})();
-</script>
-{% endif %}
 {% endblock %}
