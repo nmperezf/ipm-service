@@ -40,12 +40,18 @@ def inicio():
         else []
     )
 
+    contratos_todos = [c for inst in cliente.instalaciones for c in inst.contratos]
+    contratos_por_vencer = sum(
+        1 for c in contratos_todos if c.estado == "Activo" and (c.fecha_fin - hoy).days <= 30
+    )
+
     return render_template(
         "portal/inicio.html",
         cliente=cliente,
         deficiencias=cliente.deficiencias_abiertas_aprobadas(),
         proximas_visitas=proximas_visitas,
         indicadores=cliente.indicadores(),
+        contratos_por_vencer=contratos_por_vencer,
     )
 
 

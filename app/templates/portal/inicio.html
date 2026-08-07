@@ -6,15 +6,15 @@
     <div class="tarjeta-doc">
 
             <div class="grid-atencion">
-                <a href="{{ url_for('portal.deficiencias', clasificacion='Deficiencia crítica') }}" class="card-atencion critico">
+                <a href="{{ url_for('portal.deficiencias', clasificacion='Deficiencia crítica') }}" class="card-atencion critico{{ ' calmo' if not deficiencias['Deficiencia crítica'] }}">
                     <span class="num">{{ deficiencias['Deficiencia crítica'] }}</span>
                     <span class="etiqueta">Deficiencias críticas</span>
                 </a>
-                <a href="{{ url_for('portal.deficiencias', clasificacion='Deficiencia no crítica') }}" class="card-atencion alerta">
+                <a href="{{ url_for('portal.deficiencias', clasificacion='Deficiencia no crítica') }}" class="card-atencion alerta{{ ' calmo' if not deficiencias['Deficiencia no crítica'] }}">
                     <span class="num">{{ deficiencias['Deficiencia no crítica'] }}</span>
                     <span class="etiqueta">Deficiencias no críticas</span>
                 </a>
-                <a href="{{ url_for('portal.deficiencias', clasificacion='Desactivación') }}" class="card-atencion info">
+                <a href="{{ url_for('portal.deficiencias', clasificacion='Desactivación') }}" class="card-atencion info{{ ' calmo' if not deficiencias['Desactivación'] }}">
                     <span class="num">{{ deficiencias['Desactivación'] }}</span>
                     <span class="etiqueta">Desactivaciones</span>
                 </a>
@@ -25,13 +25,39 @@
             </div>
 
             <div class="grid-atencion">
-                <div class="card-atencion" style="grid-column: span 2;">
-                    <span class="num" style="font-size:1.3rem;">{{ indicadores.ultima_visita.strftime('%d/%m/%Y') if indicadores.ultima_visita else '-' }}</span>
-                    <span class="etiqueta">Última visita</span>
+                <div class="card-atencion info">
+                    <span class="num">{{ indicadores.servicios_pendientes }}</span>
+                    <span class="etiqueta">Servicios pendientes</span>
                 </div>
-                <a href="{{ url_for('portal.historico') }}" class="card-atencion info" style="grid-column: span 2;">
+                <div class="card-atencion ok">
+                    <span class="num">{{ indicadores.cumplimiento_pct }}%</span>
+                    <span class="etiqueta">Cumplimiento histórico</span>
+                </div>
+                <a href="{{ url_for('portal.contratos') }}" class="card-atencion{{ ' alerta' if contratos_por_vencer else ' calmo' }}">
+                    <span class="num">{{ contratos_por_vencer }}</span>
+                    <span class="etiqueta">Contratos por vencer</span>
+                    <span class="sub">próximos 30 días</span>
+                </a>
+            </div>
+
+            <p class="text-muted small mb-3">
+                <strong>Última visita:</strong> {{ indicadores.ultima_visita.strftime('%d/%m/%Y') if indicadores.ultima_visita else 'Sin visitas registradas' }}
+                &nbsp;|&nbsp;
+                <strong>Próxima visita:</strong> {{ indicadores.proxima_visita.strftime('%d/%m/%Y') if indicadores.proxima_visita else '-' }}
+            </p>
+
+            <div class="grid-atencion">
+                <a href="{{ url_for('portal.historico') }}" class="card-atencion" style="grid-column: span 2;">
                     <span class="num" style="font-size:1.3rem;">Ver histórico técnico</span>
                     <span class="etiqueta">Visitas cerradas y observaciones aprobadas</span>
+                </a>
+                <a href="{{ url_for('portal.equipos') }}" class="card-atencion" style="grid-column: span 1;">
+                    <span class="num" style="font-size:1.3rem;">Mis equipos</span>
+                    <span class="etiqueta">Ver por categoría</span>
+                </a>
+                <a href="{{ url_for('portal.contratos') }}" class="card-atencion" style="grid-column: span 1;">
+                    <span class="num" style="font-size:1.3rem;">Mi contrato</span>
+                    <span class="etiqueta">Servicios y vigencia</span>
                 </a>
             </div>
 

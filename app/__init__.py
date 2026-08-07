@@ -49,6 +49,16 @@ def create_app():
             ).count()
         }
 
+    @app.context_processor
+    def inyectar_tipos_bomba_principal():
+        # Varios templates necesitan distinguir bombas principales (con
+        # curva de caudal) del resto de los equipos — antes cada uno
+        # hardcodeaba su propia tupla ('Bomba', 'Electrobomba', 'Motobomba'),
+        # con riesgo de desincronizarse de la constante real si esta cambia.
+        from app.models import TIPOS_BOMBA_PRINCIPAL
+
+        return {"TIPOS_BOMBA_PRINCIPAL": TIPOS_BOMBA_PRINCIPAL}
+
     # Registro de blueprints (cada módulo queda desacoplado del resto)
     from app.routes.auth import auth_bp
     from app.routes.clientes import clientes_bp

@@ -12,7 +12,7 @@
                 {% if equipo.manifold %} &middot; Depende de: {{ equipo.manifold.nombre }}{% endif %}
             </p>
 
-            {% if equipo.tipo in ('Bomba', 'Electrobomba', 'Motobomba') %}
+            {% if equipo.tipo in TIPOS_BOMBA_PRINCIPAL %}
             <div class="seccion-titulo-doc">Curva de caudal</div>
             <div class="card mb-3">
                 <div class="card-body">

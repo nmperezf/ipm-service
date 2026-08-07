@@ -9,7 +9,7 @@
             <p class="text-muted">{{ instalacion.nombre }} &middot; {{ equipos|length }} equipo(s)</p>
 
             {% for equipo in equipos %}
-            {% set ultimo = (equipo.ensayos_caudal|selectattr('estado_revision', 'equalto', 'Validado')|list|sort(attribute='fecha_ensayo'))[-1] if equipo.tipo in ('Bomba', 'Electrobomba', 'Motobomba') and equipo.ensayos_caudal else none %}
+            {% set ultimo = (equipo.ensayos_caudal|selectattr('estado_revision', 'equalto', 'Validado')|list|sort(attribute='fecha_ensayo'))[-1] if equipo.tipo in TIPOS_BOMBA_PRINCIPAL and equipo.ensayos_caudal else none %}
             {% set resultado = ultimo.resultado_final() if ultimo else none %}
             <a href="{{ url_for('portal.equipo_detalle', equipo_id=equipo.id) }}" class="dashboard-card d-block mb-2">
             <div class="card">
@@ -18,7 +18,7 @@
                         <div class="fw-bold text-body">{{ equipo.nombre }}</div>
                         <div class="text-muted small">{{ equipo.ubicacion or '-' }}</div>
                     </div>
-                    {% if equipo.tipo in ('Bomba', 'Electrobomba', 'Motobomba') %}
+                    {% if equipo.tipo in TIPOS_BOMBA_PRINCIPAL %}
                     <div>
                         {% if not ultimo %}
                         <span class="badge badge-Pendiente">Sin ensayos</span>
