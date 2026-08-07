@@ -490,7 +490,19 @@ def pdf_devolucion(visita_id):
         else []
     )
 
-    pdf_bytes = generar_pdf_devolucion(visita, _resumen_por_categoria(visita), deficiencias)
+    ids_deficiencias_visita = {d.id for d in deficiencias}
+    observaciones_vigentes = sorted(
+        (
+            o
+            for o in visita.instalacion.deficiencias
+            if not o.resuelto and o.id not in ids_deficiencias_visita
+        ),
+        key=lambda o: (o.clasificacion != "Deficiencia crítica", o.fecha_carga),
+    )
+
+    pdf_bytes = generar_pdf_devolucion(
+        visita, _resumen_por_categoria(visita), deficiencias, observaciones_vigentes
+    )
     nombre_archivo = f"Devolucion_{visita.instalacion.nombre.replace(' ', '_')}_{visita.fecha.isoformat()}.pdf"
     return Response(
         pdf_bytes,

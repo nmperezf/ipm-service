@@ -1,6 +1,7 @@
 """PDF de devolución al cliente: se genera cuando se cierra una visita.
 Es un resumen ejecutivo (por categoría + deficiencias aprobadas de esa
-visita puntual), no un volcado de cada equipo — ese detalle vive en los
+visita puntual + backlog de deficiencias todavía abiertas de visitas
+anteriores), no un volcado de cada equipo — ese detalle vive en los
 reportes por categoría (ver pdf_reporte.py) y, más adelante, en el
 portal del cliente."""
 
@@ -10,10 +11,10 @@ import io
 from reportlab.lib.units import cm
 from reportlab.platypus import Image, Paragraph, Spacer, Table, TableStyle
 
-from app.pdf_base import INK_MUTED, construir, crear_documento, estilo_tabla_encabezado, estilos
+from app.pdf_base import ACCENT_SOFT, INK_MUTED, construir, crear_documento, estilo_tabla_encabezado, estilos
 
 
-def generar_pdf_devolucion(visita, resumen_categorias, deficiencias):
+def generar_pdf_devolucion(visita, resumen_categorias, deficiencias, observaciones_vigentes):
     buffer = io.BytesIO()
     doc = crear_documento(buffer)
     styles = estilos()
@@ -40,7 +41,7 @@ def generar_pdf_devolucion(visita, resumen_categorias, deficiencias):
         filas = [["Área", "Equipos revisados"]]
         for r in resumen_categorias:
             filas.append([r["categoria"], str(r["equipos_revisados"])])
-        tabla_resumen = Table(filas, colWidths=[11.5 * cm, 5 * cm])
+        tabla_resumen = Table(filas, colWidths=[12.4 * cm, 5 * cm])
         tabla_resumen.setStyle(estilo_tabla_encabezado())
         elementos.append(tabla_resumen)
     else:
@@ -49,37 +50,68 @@ def generar_pdf_devolucion(visita, resumen_categorias, deficiencias):
     elementos.append(Paragraph("Deficiencias encontradas en esta visita", h2))
     if deficiencias:
         filas = [["Clasificación", "Equipo", "Descripción"]]
-        for d in deficiencias:
+        resaltado_criticas = []
+        for i, d in enumerate(deficiencias, start=1):
             filas.append([
                 Paragraph(d.clasificacion, celda),
                 Paragraph(d.equipo.nombre if d.equipo else "-", celda),
                 Paragraph(d.descripcion, celda),
             ])
-        tabla_def = Table(filas, colWidths=[3.5 * cm, 3.5 * cm, 9.5 * cm])
+            if d.clasificacion == "Deficiencia crítica":
+                resaltado_criticas.append(("BACKGROUND", (0, i), (-1, i), ACCENT_SOFT))
+        tabla_def = Table(filas, colWidths=[3.9 * cm, 3.6 * cm, 9.9 * cm])
         tabla_def.setStyle(estilo_tabla_encabezado())
+        if resaltado_criticas:
+            tabla_def.setStyle(TableStyle(resaltado_criticas))
         elementos.append(tabla_def)
     else:
         elementos.append(Paragraph("No se registraron deficiencias en esta visita.", normal))
 
-    deficiencias_con_presupuesto = [d for d in deficiencias if d.requiere_presupuesto and d.presupuesto]
+    elementos.append(Paragraph("Observaciones vigentes a la fecha", h2))
+    if observaciones_vigentes:
+        elementos.append(
+            Paragraph("Deficiencias de visitas anteriores que todavía no fueron resueltas.", normal)
+        )
+        filas = [["Fecha", "Clasificación", "Equipo", "Descripción"]]
+        resaltado_criticas = []
+        for i, d in enumerate(observaciones_vigentes, start=1):
+            filas.append([
+                d.fecha_carga.strftime("%d/%m/%Y"),
+                Paragraph(d.clasificacion, celda),
+                Paragraph(d.equipo.nombre if d.equipo else "-", celda),
+                Paragraph(d.descripcion, celda),
+            ])
+            if d.clasificacion == "Deficiencia crítica":
+                resaltado_criticas.append(("BACKGROUND", (0, i), (-1, i), ACCENT_SOFT))
+        tabla_vigentes = Table(filas, colWidths=[2.2 * cm, 3.9 * cm, 3.2 * cm, 8.1 * cm])
+        tabla_vigentes.setStyle(estilo_tabla_encabezado())
+        if resaltado_criticas:
+            tabla_vigentes.setStyle(TableStyle(resaltado_criticas))
+        elementos.append(tabla_vigentes)
+    else:
+        elementos.append(Paragraph("No hay deficiencias abiertas de visitas anteriores.", normal))
+
+    deficiencias_con_presupuesto = [
+        d for d in deficiencias + observaciones_vigentes if d.requiere_presupuesto and d.presupuesto
+    ]
     if deficiencias_con_presupuesto:
         elementos.append(Paragraph("Deficiencias que requieren acción", h2))
         filas = [["Código", "Descripción", "Estado"]]
         for d in deficiencias_con_presupuesto:
             filas.append([d.presupuesto.codigo, Paragraph(d.descripcion, celda), d.presupuesto.estado])
-        tabla_presupuestos = Table(filas, colWidths=[3.5 * cm, 10 * cm, 3 * cm])
+        tabla_presupuestos = Table(filas, colWidths=[3.5 * cm, 10.9 * cm, 3 * cm])
         tabla_presupuestos.setStyle(estilo_tabla_encabezado())
         elementos.append(tabla_presupuestos)
         elementos.append(
             Paragraph(
-                "Para solicitar el presupuesto formalmente, mencione el código correspondiente en un mail a "
-                "presupuestos@andrewittenberger.com.uy",
+                "Para solicitar el presupuesto formalmente, mencione el código correspondiente al contactarnos.",
                 normal,
             )
         )
 
-    elementos.append(Paragraph("Observaciones del técnico", h2))
-    elementos.append(Paragraph(visita.notas_cierre or "-", normal))
+    if visita.notas_cierre:
+        elementos.append(Paragraph("Observaciones del técnico", h2))
+        elementos.append(Paragraph(visita.notas_cierre, normal))
 
     elementos.append(Spacer(1, 1.2 * cm))
 
