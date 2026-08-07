@@ -9,8 +9,8 @@ from app.auth_utils import (
     verificar_escritura_cliente,
     verificar_password_confirmacion,
 )
-from app.models import Cliente, Instalacion
-from app.utils import equipos_por_categoria, es_ajax
+from app.models import Cliente, Formulario, Instalacion
+from app.utils import equipos_por_categoria, es_ajax, filas_checklist
 
 instalaciones_bp = Blueprint("instalaciones", __name__, url_prefix="/instalaciones")
 
@@ -96,20 +96,30 @@ def fotos(instalacion_id):
 @rol_requerido("Administrador", "Jefe", "Técnico")
 def equipos_categoria(instalacion_id, categoria):
     """Listado liviano de los equipos de una categoría (nombre, ubicación
-    y, para bombas, el estado NFPA 25 de su último ensayo) — el detalle
-    completo de cada equipo vive en su propia ficha (equipos.detalle)."""
+    y, para bombas, el estado NFPA 25 de su último ensayo). El preview de
+    cada equipo (mismo modal de siempre: deficiencias, última actividad,
+    fotos) ahora suma su histórico de checklists — una tabla por tipo,
+    una fila por carga — para no tener que entrar a la ficha completa
+    solo para ver qué se cargó."""
     instalacion = Instalacion.query.get_or_404(instalacion_id)
     verificar_acceso_cliente(instalacion.cliente)
 
     grupos = dict(equipos_por_categoria(instalacion))
     if categoria not in grupos:
         abort(404)
+    equipos = grupos[categoria]
+
+    grupos_checklist_por_equipo = {}
+    for equipo in equipos:
+        formularios = Formulario.query.filter_by(equipo_id=equipo.id).order_by(Formulario.fecha_creacion).all()
+        grupos_checklist_por_equipo[equipo.id] = filas_checklist(formularios)
 
     return render_template(
         "instalaciones/equipos_categoria.html",
         instalacion=instalacion,
         categoria=categoria,
-        equipos=grupos[categoria],
+        equipos=equipos,
+        grupos_checklist_por_equipo=grupos_checklist_por_equipo,
     )
 
 

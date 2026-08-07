@@ -5,7 +5,7 @@ from flask_login import current_user
 
 from app.auth_utils import rol_requerido
 from app.models import CLASIFICACIONES_OBSERVACION, TIPOS_BOMBA_PRINCIPAL, Equipo, Visita, categorias_equipo_agrupadas
-from app.utils import checklists_aprobados_de_equipo, construir_secciones_historico
+from app.utils import bloques_equipos_historico, checklists_aprobados_de_equipo, filas_checklist
 
 portal_bp = Blueprint("portal", __name__, url_prefix="/portal")
 
@@ -155,17 +155,12 @@ def detalle_visita(visita_id):
     if not _checklists_visibles(visita):
         abort(403)
 
-    secciones = []
-    for item in visita.items:
-        formularios = []
-        for f in item.formularios:
-            campos = f.tipo_formulario.campos()
-            datos = f.datos()
-            valores = [(c["label"], datos.get(c["campo"])) for c in campos]
-            formularios.append({"formulario": f, "valores": valores})
-        secciones.append({"servicio": item.nombre_mostrado, "formularios": formularios})
+    formularios = sorted(
+        (f for item in visita.items for f in item.formularios), key=lambda f: f.fecha_creacion
+    )
+    grupos = filas_checklist(formularios, incluir_equipo=True)
 
-    return render_template("portal/visita_detalle.html", cliente=cliente, visita=visita, secciones=secciones)
+    return render_template("portal/visita_detalle.html", cliente=cliente, visita=visita, grupos=grupos)
 
 
 def _grupos_categoria(instalacion):
@@ -203,20 +198,27 @@ def equipos():
 @portal_bp.route("/equipos/instalacion/<int:instalacion_id>/<categoria>")
 @rol_requerido("Cliente")
 def equipos_categoria(instalacion_id, categoria):
-    """Listado liviano (nombre + ubicación) de los equipos de una
-    categoría, dentro de una instalación puntual del cliente."""
+    """Histórico de checklists de una categoría entera, un bloque
+    colapsable por equipo, ordenados por visita — así no hace falta
+    entrar equipo por equipo para ver qué se cargó."""
     cliente = _cliente_actual()
     instalacion = next((i for i in cliente.instalaciones if i.id == instalacion_id), None)
     if not instalacion:
         abort(404)
 
-    grupos = _grupos_categoria(instalacion)
-    if categoria not in grupos:
+    grupos_categoria = _grupos_categoria(instalacion)
+    if categoria not in grupos_categoria:
         abort(404)
+
+    bloques = bloques_equipos_historico(grupos_categoria[categoria], checklists_aprobados_de_equipo)
 
     return render_template(
         "portal/equipos_categoria.html",
-        cliente=cliente, instalacion=instalacion, categoria=categoria, equipos=grupos[categoria],
+        cliente=cliente,
+        instalacion=instalacion,
+        categoria=categoria,
+        categorias=[(nombre, len(lista)) for nombre, lista in grupos_categoria.items()],
+        bloques=bloques,
     )
 
 
@@ -231,7 +233,7 @@ def equipo_detalle(equipo_id):
         abort(403)
 
     formularios = checklists_aprobados_de_equipo(equipo)
-    secciones = construir_secciones_historico(formularios)
+    grupos = filas_checklist(formularios)
 
     deficiencias_abiertas = [
         o for o in equipo.deficiencias if not o.resuelto and o.estado_revision == "Aprobada"
@@ -243,6 +245,6 @@ def equipo_detalle(equipo_id):
         ultimos_ensayos = sorted(validados, key=lambda e: e.fecha_ensayo, reverse=True)[:3]
 
     return render_template(
-        "portal/equipo_detalle.html", cliente=cliente, equipo=equipo, secciones=secciones,
+        "portal/equipo_detalle.html", cliente=cliente, equipo=equipo, grupos=grupos,
         deficiencias_abiertas=deficiencias_abiertas, ultimos_ensayos=ultimos_ensayos,
     )

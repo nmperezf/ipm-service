@@ -10,7 +10,7 @@ from app.auth_utils import (
 )
 from app.models import Equipo, Formulario, Instalacion, TIPOS_BOMBA_PRINCIPAL, TIPOS_CON_DATOS_PLACA, nombres_tipos_equipo
 from app.notificaciones import notificar_gestion
-from app.utils import construir_secciones_historico, es_ajax
+from app.utils import es_ajax, filas_checklist
 
 equipos_bp = Blueprint("equipos", __name__, url_prefix="/equipos")
 
@@ -189,7 +189,7 @@ def detalle(equipo_id):
     formularios = (
         Formulario.query.filter_by(equipo_id=equipo.id).order_by(Formulario.fecha_creacion).all()
     )
-    secciones = construir_secciones_historico(formularios)
+    grupos = filas_checklist(formularios)
 
     deficiencias_abiertas = sorted((o for o in equipo.deficiencias if not o.resuelto), key=lambda o: o.fecha_carga, reverse=True)
     deficiencias_resueltas = sorted((o for o in equipo.deficiencias if o.resuelto), key=lambda o: o.fecha_carga, reverse=True)
@@ -201,7 +201,7 @@ def detalle(equipo_id):
     return render_template(
         "equipos/detalle.html",
         equipo=equipo,
-        secciones=secciones,
+        grupos=grupos,
         deficiencias_abiertas=deficiencias_abiertas,
         deficiencias_resueltas=deficiencias_resueltas,
         ultimos_ensayos=ultimos_ensayos,

@@ -6,36 +6,48 @@
     <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('portal.equipos') }}">&larr; Mis equipos</a></p>
-            <p class="text-muted">{{ instalacion.nombre }} &middot; {{ equipos|length }} equipo(s)</p>
+            <p class="text-muted mb-3">{{ instalacion.nombre }}</p>
 
-            {% for equipo in equipos %}
-            {% set ultimo = (equipo.ensayos_caudal|selectattr('estado_revision', 'equalto', 'Validado')|list|sort(attribute='fecha_ensayo'))[-1] if equipo.tipo in TIPOS_BOMBA_PRINCIPAL and equipo.ensayos_caudal else none %}
-            {% set resultado = ultimo.resultado_final() if ultimo else none %}
-            <a href="{{ url_for('portal.equipo_detalle', equipo_id=equipo.id) }}" class="dashboard-card d-block mb-2">
-            <div class="card">
-                <div class="card-body d-flex justify-content-between align-items-center py-3">
-                    <div>
-                        <div class="fw-bold text-body">{{ equipo.nombre }}</div>
-                        <div class="text-muted small">{{ equipo.ubicacion or '-' }}</div>
-                    </div>
-                    {% if equipo.tipo in TIPOS_BOMBA_PRINCIPAL %}
-                    <div>
-                        {% if not ultimo %}
-                        <span class="badge badge-Pendiente">Sin ensayos</span>
-                        {% elif resultado is none %}
-                        <span class="badge badge-Pendiente">Sin curva de fábrica</span>
-                        {% elif resultado %}
-                        <span class="badge badge-Cumplido">Cumple NFPA 25</span>
-                        {% else %}
-                        <span class="badge badge-Vencido">No cumple NFPA 25</span>
-                        {% endif %}
-                    </div>
-                    {% endif %}
-                </div>
+            <div class="tabs-categoria">
+                {% for nombre_cat, cantidad in categorias %}
+                <a class="tab-categoria{{ ' activo' if nombre_cat == categoria }}" href="{{ url_for('portal.equipos_categoria', instalacion_id=instalacion.id, categoria=nombre_cat) }}">
+                    {{ nombre_cat }} <span class="n">{{ cantidad }}</span>
+                </a>
+                {% endfor %}
             </div>
-            </a>
-            {% endfor %}
+
+            {% if bloques|length > 6 %}
+            <input type="text" id="buscador-equipos" class="form-control form-control-sm mb-3" placeholder="Buscar equipo por nombre o ubicación...">
+            {% endif %}
+
+            {% if not bloques %}
+            <div class="estado-vacio-doc">
+                <i class="bi bi-hdd-stack"></i>
+                <p class="mb-0">Todavía no hay equipos cargados en esta categoría.</p>
+            </div>
+            {% endif %}
+
+            <div id="lista-bloques-equipo">
+                {% for bloque in bloques %}
+                {% set endpoint_ficha = 'portal.equipo_detalle' %}
+                {% include "_bloque_equipo_checklist.html" %}
+                {% endfor %}
+            </div>
 
     </div>
 </div>
+<script>
+(function () {
+    var input = document.getElementById('buscador-equipos');
+    if (!input) return;
+    var bloques = document.querySelectorAll('#lista-bloques-equipo > details.bloque-equipo');
+    input.addEventListener('input', function () {
+        var q = input.value.trim().toLowerCase();
+        bloques.forEach(function (bloque) {
+            var texto = bloque.querySelector('summary').textContent.toLowerCase();
+            bloque.style.display = texto.includes(q) ? '' : 'none';
+        });
+    });
+})();
+</script>
 {% endblock %}

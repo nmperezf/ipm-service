@@ -1,0 +1,23 @@
+{# Requiere en el contexto: bloque (uno de los que arma
+   bloques_equipos_historico en app/utils.py) y endpoint_ficha (nombre de
+   la ruta a la ficha completa del equipo — portal.equipo_detalle o
+   equipos.detalle, según quien la incluya). Colapsado por defecto: con
+   categorías de 20-30 equipos, abrir todo de una sería una sola página
+   interminable. #}
+<details class="bloque-equipo">
+    <summary>
+        <span class="nombre-equipo">{{ bloque.equipo.nombre }}</span>
+        <span class="meta-equipo">{{ bloque.equipo.tipo }}{% if bloque.equipo.ubicacion %} · {{ bloque.equipo.ubicacion }}{% endif %}</span>
+        {% if bloque.ultimo %}<span class="ultimo-equipo">último {{ bloque.ultimo.strftime('%d/%m/%Y') }}</span>{% endif %}
+        <span class="flecha-equipo">▶</span>
+    </summary>
+    <div class="equipo-cuerpo">
+        <a class="ir-ficha" href="{{ url_for(endpoint_ficha, equipo_id=bloque.equipo.id) }}">Ver ficha completa →</a>
+        {% if not bloque.grupos %}
+        <p class="text-muted small mb-0">Todavía no tiene ningún checklist completado.</p>
+        {% endif %}
+        {% for grupo in bloque.grupos %}
+        {% include "_grupo_checklist.html" %}
+        {% endfor %}
+    </div>
+</details>

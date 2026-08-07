@@ -27,7 +27,7 @@ from app.models import (
 )
 from app.notificaciones import notificar_gestion, notificar_usuario
 from app.pdf_devolucion import generar_pdf_devolucion
-from app.utils import equipos_por_categoria, es_ajax
+from app.utils import equipos_por_categoria, es_ajax, filas_checklist
 
 visitas_bp = Blueprint("visitas", __name__, url_prefix="/visitas")
 
@@ -201,6 +201,11 @@ def detalle(visita_id):
         key=lambda o: (o.clasificacion != "Deficiencia crítica", o.fecha_carga),
     )
 
+    formularios_visita = sorted(
+        (f for item in visita.items for f in item.formularios), key=lambda f: f.fecha_creacion
+    )
+    grupos_checklist = filas_checklist(formularios_visita, incluir_equipo=True)
+
     return render_template(
         "visitas/detail.html",
         visita=visita,
@@ -208,6 +213,7 @@ def detalle(visita_id):
         equipos_bomba_por_item=equipos_bomba_por_item,
         equipos_agrupados=equipos_por_categoria(visita.instalacion),
         deficiencias_abiertas=deficiencias_abiertas,
+        grupos_checklist=grupos_checklist,
     )
 
 

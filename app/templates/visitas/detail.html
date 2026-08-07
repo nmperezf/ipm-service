@@ -305,6 +305,13 @@
             </form>
             {% endif %}
 
+            {% if grupos_checklist %}
+            <div class="seccion-titulo-doc">Checklists cargados en esta visita</div>
+            {% for grupo in grupos_checklist %}
+            {% include "_grupo_checklist.html" %}
+            {% endfor %}
+            {% endif %}
+
     </div>
 </div>
 {% endblock %}

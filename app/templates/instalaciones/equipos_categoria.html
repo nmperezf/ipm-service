@@ -79,6 +79,14 @@
                 </div>
                 {% endif %}
 
+                {% set grupos = grupos_checklist_por_equipo.get(equipo.id, []) %}
+                {% if grupos %}
+                <p class="subtitulo-modal-doc" style="margin-top:.9rem;">Histórico de checklists</p>
+                {% for grupo in grupos %}
+                {% include "_grupo_checklist.html" %}
+                {% endfor %}
+                {% endif %}
+
                 <div class="acciones-modal-doc">
                     <a href="{{ url_for('equipos.detalle', equipo_id=equipo.id) }}" class="btn btn-dark btn-sm">Ver ficha completa →</a>
                     <a href="{{ url_for('fotos.subir_manual', instalacion_id=instalacion.id, equipo_id=equipo.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-camera me-1"></i>Foto</a>
@@ -91,7 +99,7 @@
 </div>
 
 <div class="modal-backdrop-doc" id="modal-equipo-backdrop">
-    <div class="modal-flotante-doc">
+    <div class="modal-flotante-doc ancho">
         <div class="modal-cab-doc">
             <h3 id="modal-equipo-titulo">—</h3>
             <button type="button" class="modal-cerrar-doc" onclick="cerrarModalEquipo()">✕</button>

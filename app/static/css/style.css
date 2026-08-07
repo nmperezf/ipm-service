@@ -1892,6 +1892,70 @@ a.foto-lightbox:hover img { opacity: .85; }
     .toast-doc { max-width: none; text-align: center; }
 }
 
+/* ---- Histórico de checklists por categoría/equipo -------------------------
+   Usado en portal/equipos_categoria.html, instalaciones/equipos_categoria.html,
+   equipos/detalle.html y portal/visita_detalle.html + visitas/detail.html:
+   un bloque colapsable por equipo (o un solo bloque para "esta visita"),
+   con una tabla compacta por tipo de checklist (una fila por carga, más
+   reciente arriba) en vez de una tarjeta grande por campo. ------------------- */
+
+.tabs-categoria { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: 1.1rem; border-bottom: 1px solid var(--border); }
+.tab-categoria {
+    font-family: var(--font-display); font-weight: 600; font-size: .84rem; padding: .55rem .9rem;
+    color: var(--ink-muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tab-categoria .n { font-family: var(--font-mono); color: var(--ink-faint); font-size: .74rem; margin-left: .25rem; }
+.tab-categoria.activo { color: var(--ink); border-bottom-color: var(--accent); }
+.tab-categoria:hover:not(.activo) { color: var(--ink); }
+
+details.bloque-equipo { border-bottom: 1px solid var(--border); }
+details.bloque-equipo:last-child { border-bottom: none; }
+details.bloque-equipo summary {
+    display: flex; align-items: baseline; gap: .6rem; padding: .85rem 0; cursor: pointer; list-style: none; flex-wrap: wrap;
+}
+details.bloque-equipo summary::-webkit-details-marker { display: none; }
+details.bloque-equipo .nombre-equipo { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
+details.bloque-equipo .meta-equipo { font-size: .78rem; color: var(--ink-muted); }
+details.bloque-equipo .ultimo-equipo { font-size: .74rem; color: var(--ink-faint); font-family: var(--font-mono); margin-left: auto; white-space: nowrap; }
+details.bloque-equipo .flecha-equipo { color: var(--ink-faint); font-size: .8rem; transition: transform .15s; flex-shrink: 0; }
+details.bloque-equipo[open] .flecha-equipo { transform: rotate(90deg); }
+details.bloque-equipo .equipo-cuerpo { padding-bottom: 1.1rem; }
+details.bloque-equipo .ir-ficha { display: inline-block; margin-bottom: .8rem; font-size: .76rem; font-weight: 700; color: var(--accent); text-decoration: none; }
+
+.grupo-checklist { margin-bottom: 1rem; }
+.grupo-checklist:last-child { margin-bottom: 0; }
+.grupo-checklist > .tipo-nombre { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); margin-bottom: .35rem; }
+
+.tabla-check-wrap { overflow-x: auto; }
+.tabla-check { width: 100%; border-collapse: collapse; font-size: .82rem; }
+.tabla-check th {
+    text-align: left; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
+    color: var(--ink-muted); padding: .4rem .7rem; border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+.tabla-check td { padding: .45rem .7rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.tabla-check tbody tr:last-child td { border-bottom: none; }
+.tabla-check tbody tr:hover { background: var(--surface-alt); }
+.tabla-check td.fecha { font-family: var(--font-mono); font-size: .76rem; color: var(--ink-muted); }
+
+/* Gráfico como <details> inline en vez de modal: esto se anida a veces
+   dentro de OTRO modal ya abierto (preview de equipo en
+   instalaciones/equipos_categoria.html), donde un modal-backdrop-doc
+   con position:fixed quedaría atrapado por el transform del modal
+   contenedor en vez de posicionarse contra la ventana. */
+details.grafico-desplegable { margin-top: .5rem; }
+details.grafico-desplegable summary {
+    display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; font-weight: 700;
+    color: var(--bs-info); cursor: pointer; list-style: none;
+}
+details.grafico-desplegable summary::-webkit-details-marker { display: none; }
+details.grafico-desplegable summary:hover { text-decoration: underline; }
+.grafico-cuerpo { padding-top: .8rem; }
+.grafico-campo { margin-bottom: 1.2rem; }
+.grafico-campo:last-child { margin-bottom: 0; }
+.grafico-campo .label { font-size: .82rem; font-weight: 600; margin-bottom: .3rem; }
+.grafico-campo svg { width: 100%; max-width: 100%; height: 92px; display: block; }
+.grafico-campo .punto-mes { font-size: 9px; fill: var(--ink-faint); font-family: var(--font-mono); }
+
 /* ---- Impresión ------------------------------------------------------------
    Utilidad genérica para ocultar algo al imprimir (ej. barra de acciones de
    un ensayo de curva de caudal antes de exportar a PDF vía window.print()). */

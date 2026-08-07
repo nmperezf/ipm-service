@@ -86,13 +86,18 @@ def serie_numerica(formularios, nombre_campo):
     return serie
 
 
+MESES_ABREV = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"]
+
+
 def polilinea_svg(serie, ancho=520, alto=90, padding=12):
     """Puntos para el gráfico de evolución de un campo: la línea, el
-    relleno de área (mismo trazado cerrado contra la base) y las
-    coordenadas del último punto para destacarlo. Solo necesita al menos
-    2 valores numéricos para dibujar algo — si no, todo queda en None."""
+    relleno de área (mismo trazado cerrado contra la base), las
+    coordenadas del último punto para destacarlo, y el detalle de cada
+    punto (x/y + mes abreviado, para poner una referencia debajo de cada
+    uno). Solo necesita al menos 2 valores numéricos para dibujar algo —
+    si no, todo queda en None."""
     if len(serie) < 2:
-        return None, None, None, None, None
+        return None, None, None, None, None, []
     valores = [v for _, v in serie]
     minimo, maximo = min(valores), max(valores)
     rango = (maximo - minimo) or 1
@@ -106,44 +111,86 @@ def polilinea_svg(serie, ancho=520, alto=90, padding=12):
     puntos = " ".join(f"{x:.1f},{y:.1f}" for x, y in coords)
     area = f"{puntos} {coords[-1][0]:.1f},{base:.1f} {coords[0][0]:.1f},{base:.1f}"
     punto_final = {"x": round(coords[-1][0], 1), "y": round(coords[-1][1], 1)}
-    return puntos, minimo, maximo, area, punto_final
+    puntos_detalle = [
+        {"x": round(x, 1), "y": round(y, 1), "mes": MESES_ABREV[fecha.month - 1]}
+        for (fecha, _), (x, y) in zip(serie, coords)
+    ]
+    return puntos, minimo, maximo, area, punto_final, puntos_detalle
 
 
-def construir_secciones_historico(formularios):
-    """A partir de una lista de Formulario (ya filtrada por quien llama —
-    todos para la ficha interna, solo los de visitas Cerradas+Finalizadas
-    para el portal), arma las secciones agrupadas por tipo de formulario
-    con su gráfico/tabla de evolución por campo."""
+def filas_checklist(formularios, incluir_equipo=False):
+    """A partir de formularios de UN equipo (o de una visita puntual, si
+    incluir_equipo=True) ya filtrados y ordenados ascendente por fecha
+    por quien llama, arma un bloque por tipo de checklist: una tabla con
+    una fila por carga (más reciente arriba) y, para cada campo
+    numérico, los datos ya listos para el gráfico de evolución — pensado
+    para mostrar el histórico entero "uno atrás de otro" sin tener que
+    entrar a cada checklist por separado.
+
+    incluir_equipo agrega el equipo de cada fila al resultado, para
+    vistas que mezclan varios equipos (ej. los checklists de una visita
+    puntual, donde un mismo tipo de formulario puede repetirse por
+    varios equipos del mismo tipo)."""
     por_tipo = {}
     for formulario in formularios:
         por_tipo.setdefault(formulario.tipo_formulario, []).append(formulario)
 
-    secciones = []
+    grupos = []
     for tipo_formulario, lista in por_tipo.items():
+        campos = tipo_formulario.campos()
+
+        filas = []
+        for f in reversed(lista):
+            datos = f.datos()
+            valores = [(campo, datos.get(campo["campo"])) for campo in campos]
+            filas.append({"formulario": f, "equipo": f.equipo, "valores": valores})
+
+        # El gráfico asume una sola serie por campo evolucionando en el
+        # tiempo — no tiene sentido si incluir_equipo mezcla varios
+        # equipos del mismo tipo en la misma visita (compararía lecturas
+        # de equipos distintos como si fueran el mismo a través del
+        # tiempo). Se omite directamente en ese caso.
         campos_numericos = []
-        campos_otros = []
-        for campo in tipo_formulario.campos():
-            if campo["tipo"] == "numero":
+        if not incluir_equipo:
+            for campo in campos:
+                if campo["tipo"] != "numero":
+                    continue
                 serie = serie_numerica(lista, campo["campo"])
-                puntos, minimo, maximo, area, punto_final = polilinea_svg(serie)
-                campos_numericos.append(
-                    {
-                        "label": campo["label"],
-                        "serie": serie,
-                        "puntos": puntos,
-                        "minimo": minimo,
-                        "maximo": maximo,
-                        "area": area,
-                        "punto_final": punto_final,
-                    }
-                )
-            else:
-                historial = [(f.fecha_creacion, f.datos().get(campo["campo"])) for f in reversed(lista)]
-                campos_otros.append({"label": campo["label"], "historial": historial})
-        secciones.append(
-            {"tipo_formulario": tipo_formulario, "campos_numericos": campos_numericos, "campos_otros": campos_otros}
+                puntos, minimo, maximo, area, punto_final, puntos_detalle = polilinea_svg(serie)
+                if not puntos:
+                    continue
+                campos_numericos.append({"label": campo["label"], "area": area, "puntos_detalle": puntos_detalle})
+
+        grupos.append(
+            {
+                "tipo_formulario": tipo_formulario,
+                "campos": campos,
+                "filas": filas,
+                "campos_numericos": campos_numericos,
+                "incluir_equipo": incluir_equipo,
+            }
         )
-    return secciones
+    return grupos
+
+
+def bloques_equipos_historico(equipos, obtener_formularios):
+    """Un bloque por equipo (con sus grupos de filas_checklist), para
+    listar el histórico de una categoría entera —Sala de bombas, ECA,
+    etc.— uno atrás de otro. obtener_formularios(equipo) define qué
+    formularios entran: todos para la ficha interna, solo los de
+    visitas Cerradas+Finalizadas para el portal (ver
+    checklists_aprobados_de_equipo)."""
+    bloques = []
+    for equipo in equipos:
+        formularios = obtener_formularios(equipo)
+        bloques.append(
+            {
+                "equipo": equipo,
+                "grupos": filas_checklist(formularios),
+                "ultimo": max((f.fecha_creacion for f in formularios), default=None),
+            }
+        )
+    return bloques
 
 
 def checklists_aprobados_de_equipo(equipo):

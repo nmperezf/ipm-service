@@ -1,0 +1,58 @@
+{# Requiere en el contexto: grupo (uno de los que arma filas_checklist en
+   app/utils.py). El gráfico va en un <details> propio, no en un modal
+   aparte: esto se usa también anidado dentro del modal de preview de
+   equipo (instalaciones/equipos_categoria.html), donde un modal-dentro-
+   de-modal choca con el transform del modal contenedor (position:fixed
+   deja de posicionarse contra la ventana). Un <details> no tiene ese
+   problema y además no necesita ids únicos por instancia. #}
+<div class="grupo-checklist">
+    <div class="tipo-nombre">{{ grupo.tipo_formulario.nombre }}</div>
+    <div class="tabla-check-wrap">
+    <table class="tabla-check">
+        <thead>
+            <tr>
+                <th>Fecha</th>
+                {% if grupo.incluir_equipo %}<th>Equipo</th>{% endif %}
+                {% for campo in grupo.campos %}<th>{{ campo.label }}</th>{% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for fila in grupo.filas %}
+            <tr>
+                <td class="fecha">{{ fila.formulario.fecha_creacion.strftime('%d/%m/%Y') }}</td>
+                {% if grupo.incluir_equipo %}<td>{{ fila.equipo.nombre if fila.equipo else '-' }}</td>{% endif %}
+                {% for campo, valor in fila.valores %}
+                <td>{{ valor|join(', ') if valor is iterable and valor is not string else (valor if valor else '-') }}</td>
+                {% endfor %}
+            </tr>
+            {% else %}
+            <tr><td colspan="{{ grupo.campos|length + (2 if grupo.incluir_equipo else 1) }}" class="text-muted text-center">Sin datos cargados.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+
+    {% if grupo.campos_numericos %}
+    <details class="grafico-desplegable">
+        <summary>📈 Ver gráfico</summary>
+        <div class="grafico-cuerpo">
+            {% for campo in grupo.campos_numericos %}
+            <div class="grafico-campo">
+                <div class="label">{{ campo.label }}</div>
+                <svg viewBox="0 0 520 105">
+                    <line x1="12" y1="20" x2="508" y2="20" style="stroke: var(--border); stroke-width: 1;" />
+                    <line x1="12" y1="45" x2="508" y2="45" style="stroke: var(--border); stroke-width: 1;" />
+                    <line x1="12" y1="70" x2="508" y2="70" style="stroke: var(--border); stroke-width: 1;" />
+                    <polygon points="{{ campo.area }}" style="fill: var(--accent); opacity: .08;" />
+                    <polyline points="{% for p in campo.puntos_detalle %}{{ p.x }},{{ p.y }} {% endfor %}" fill="none" style="stroke: var(--accent); stroke-width: 2;" />
+                    {% for p in campo.puntos_detalle %}
+                    <circle cx="{{ p.x }}" cy="{{ p.y }}" r="{{ '3.5' if loop.last else '3' }}" style="fill: var(--accent);" />
+                    <text x="{{ p.x }}" y="98" text-anchor="middle" class="punto-mes">{{ p.mes }}</text>
+                    {% endfor %}
+                </svg>
+            </div>
+            {% endfor %}
+        </div>
+    </details>
+    {% endif %}
+</div>
