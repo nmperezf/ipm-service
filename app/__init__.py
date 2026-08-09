@@ -1,3 +1,7 @@
+import json
+import random
+from datetime import date, datetime, timedelta
+
 from flask import Flask
 from flask_login import LoginManager
 from flask_sqlalchemy import SQLAlchemy
@@ -116,6 +120,7 @@ def create_app():
         db.create_all()
         _seed_super_admin()
         _seed_tipos_equipo()
+        _seed_clientes_demo()
 
     return app
 
@@ -159,4 +164,203 @@ def _seed_tipos_equipo():
     for nombre, categoria in base:
         db.session.add(TipoEquipo(nombre=nombre, categoria=categoria))
     db.session.commit()
+
+
+def _seed_clientes_demo():
+    """Carga 10 clientes de ejemplo (con instalaciones, equipos, contratos,
+    hoja de ruta e historial de checklists) para que nmperezf pueda probar
+    la app con datos realistas -- se corre en cada arranque pero cada
+    cliente se crea una sola vez (se salta si ya existe por nombre)."""
+    from app.models import (
+        Cliente, Contrato, Equipo, Formulario, Instalacion, ItemVisita,
+        Observacion, OrdenTrabajo, Presupuesto, ServicioContrato,
+        TipoFormulario, Usuario, Visita,
+    )
+
+    ref = Usuario.query.filter_by(username="nmperezf").first()
+    if not ref:
+        return
+    empresa_id = ref.empresa_id
+    hoy = date.today()
+    rng = random.Random(42)
+
+    perfiles = {
+        "chico": {"bombas": 2, "eca": 2, "bie": 3, "otros": 2},
+        "mediano": {"bombas": 3, "eca": 5, "bie": 8, "otros": 3},
+        "grande": {"bombas": 4, "eca": 12, "bie": 15, "otros": 5},
+    }
+
+    clientes_demo = [
+        {"nombre": "Frigorifico del Norte SA", "contacto": "Martin Silveira", "telefono": "099123001",
+         "instalaciones": [("Planta Salto", "Ruta 3 km 480, Salto", "grande", 28)]},
+        {"nombre": "Supermercados La Emilia", "contacto": "Cecilia Bordon", "telefono": "099123002",
+         "instalaciones": [("Sucursal Pocitos", "Av. Brasil 2450, Montevideo", "mediano", None),
+                           ("Sucursal Carrasco", "Av. Arocena 1620, Montevideo", "mediano", None)]},
+        {"nombre": "Hotel Costa Azul", "contacto": "Rodrigo Farias", "telefono": "099123003",
+         "instalaciones": [("Hotel Costa Azul", "Parada 8, Punta del Este", "mediano", None)]},
+        {"nombre": "Textil Uruguaya SA", "contacto": "Lucia Perez", "telefono": "099123004",
+         "instalaciones": [("Planta Textil", "Camino Maldonado 5200, Montevideo", "chico", None)]},
+        {"nombre": "Shopping Nuevocentro", "contacto": "Andres Bianchi", "telefono": "099123005",
+         "instalaciones": [("Shopping Nuevocentro", "Bulevar Artigas 1250, Montevideo", "grande", None)]},
+        {"nombre": "Bodega Los Cerros", "contacto": "Valentina Suarez", "telefono": "099123006",
+         "instalaciones": [("Bodega Los Cerros", "Ruta 74 km 12, Canelones", "chico", None)]},
+        {"nombre": "Laboratorios Salud SA", "contacto": "Diego Ramallo", "telefono": "099123007",
+         "instalaciones": [("Planta Laboratorios", "Camino Carrasco 4300, Montevideo", "mediano", None)]},
+        {"nombre": "Deposito Logistico Sur", "contacto": "Natalia Correa", "telefono": "099123008",
+         "instalaciones": [("Deposito Sur", "Ruta 5 km 22, Canelones", "chico", None)]},
+        {"nombre": "Colegio San Martin", "contacto": "Beatriz Nunez", "telefono": "099123009",
+         "instalaciones": [("Colegio San Martin", "Bulevar España 2100, Montevideo", "chico", None)]},
+        {"nombre": "Planta Quimica Andina", "contacto": "Federico Acosta", "telefono": "099123010",
+         "instalaciones": [("Planta Quimica", "Camino Cibils 3400, Montevideo", "mediano", None)]},
+    ]
+
+    def crear_tipos_formulario(cliente):
+        t_bomba = TipoFormulario(
+            cliente_id=cliente.id, nombre="Inspeccion mensual bomba", por_equipo=True,
+            schema_json=json.dumps([
+                {"campo": "presion_descarga", "label": "Presion descarga", "tipo": "numero"},
+                {"campo": "presion_succion", "label": "Presion succion", "tipo": "numero"},
+                {"campo": "rpm", "label": "RPM", "tipo": "numero"},
+                {"campo": "estado", "label": "Estado general", "tipo": "texto"},
+            ]),
+        )
+        t_eca = TipoFormulario(
+            cliente_id=cliente.id, nombre="Inspeccion mensual ECA", por_equipo=True,
+            tipo_equipo_aplicable="ECA",
+            schema_json=json.dumps([
+                {"campo": "voltaje", "label": "Voltaje bateria", "tipo": "numero"},
+                {"campo": "zona", "label": "Estado zona", "tipo": "texto"},
+            ]),
+        )
+        t_bie = TipoFormulario(
+            cliente_id=cliente.id, nombre="Inspeccion mensual BIE", por_equipo=True,
+            tipo_equipo_aplicable="BIE",
+            schema_json=json.dumps([
+                {"campo": "presion", "label": "Presion manometro", "tipo": "numero"},
+                {"campo": "manguera", "label": "Estado manguera", "tipo": "texto"},
+            ]),
+        )
+        db.session.add_all([t_bomba, t_eca, t_bie])
+        db.session.flush()
+        return t_bomba, t_eca, t_bie
+
+    def crear_equipos(inst, perfil, n_eca_override):
+        p = perfiles[perfil]
+        equipos = {"bomba": [], "eca": [], "bie": [], "otro": []}
+        nombres_bomba = ["Bomba principal", "Bomba jockey", "Bomba reserva", "Bomba auxiliar"]
+        for i in range(p["bombas"]):
+            tipo = "Bomba" if i == 0 else ("Bomba jockey" if i == 1 else "Electrobomba")
+            e = Equipo(instalacion_id=inst.id, nombre=nombres_bomba[i % len(nombres_bomba)] + (f" {i+1}" if i >= len(nombres_bomba) else ""),
+                      tipo=tipo, ubicacion="Sala de bombas")
+            db.session.add(e)
+            equipos["bomba"].append(e)
+        n_eca = n_eca_override or p["eca"]
+        for i in range(n_eca):
+            e = Equipo(instalacion_id=inst.id, nombre=f"ECA Sector {chr(65 + i % 26)}{i // 26 or ''}",
+                      tipo="ECA", ubicacion=f"Sector {chr(65 + i % 26)}")
+            db.session.add(e)
+            equipos["eca"].append(e)
+        for i in range(p["bie"]):
+            e = Equipo(instalacion_id=inst.id, nombre=f"BIE {i+1}", tipo="BIE", ubicacion=f"Planta, punto {i+1}")
+            db.session.add(e)
+            equipos["bie"].append(e)
+        for i in range(p["otros"]):
+            e = Equipo(instalacion_id=inst.id, nombre=f"Extintor {i+1}", tipo="Otro", ubicacion=f"Pasillo {i+1}")
+            db.session.add(e)
+            equipos["otro"].append(e)
+        db.session.flush()
+        return equipos
+
+    def datos_bomba(base):
+        return {"presion_descarga": round(base + rng.uniform(-4, 4), 0),
+                "presion_succion": round(base * 0.15 + rng.uniform(-1, 1), 0),
+                "rpm": 1770 + rng.choice([-5, 0, 0, 5]),
+                "estado": rng.choice(["OK", "OK", "OK", "Revisar"])}
+
+    def datos_eca():
+        return {"voltaje": round(13.2 + rng.uniform(-0.3, 0.4), 1), "zona": "OK"}
+
+    def datos_bie():
+        return {"presion": round(90 + rng.uniform(-10, 10), 0), "manguera": rng.choice(["OK", "OK", "Cambiar"])}
+
+    for cdata in clientes_demo:
+        if Cliente.query.filter_by(nombre=cdata["nombre"]).first():
+            continue
+        cliente = Cliente(empresa_id=empresa_id, nombre=cdata["nombre"], contacto=cdata["contacto"],
+                          telefono=cdata["telefono"], activo=True)
+        db.session.add(cliente)
+        db.session.flush()
+
+        t_bomba, t_eca, t_bie = crear_tipos_formulario(cliente)
+
+        for idx_inst, (nombre_inst, direccion, perfil, n_eca_override) in enumerate(cdata["instalaciones"]):
+            inst = Instalacion(cliente_id=cliente.id, nombre=nombre_inst, direccion=direccion)
+            db.session.add(inst)
+            db.session.flush()
+
+            equipos = crear_equipos(inst, perfil, n_eca_override)
+
+            contrato = Contrato(instalacion_id=inst.id, nombre=f"Contrato anual {hoy.year}",
+                                fecha_inicio=hoy - timedelta(days=200), fecha_fin=hoy + timedelta(days=165),
+                                estado="Activo", activo=True)
+            db.session.add(contrato)
+            db.session.flush()
+            servicio = ServicioContrato(contrato_id=contrato.id, nombre="Mantenimiento preventivo mensual", frecuencia="mensual")
+            db.session.add(servicio)
+            db.session.flush()
+
+            muestra_bomba = equipos["bomba"][:2]
+            muestra_eca = equipos["eca"][:2]
+            muestra_bie = equipos["bie"][:2]
+
+            for dias_atras in (75, 45, 15):
+                fecha_v = hoy - timedelta(days=dias_atras)
+                v = Visita(instalacion_id=inst.id, contrato_id=contrato.id, fecha=fecha_v,
+                          tecnico="Diego Fernandez", estado="Realizado", cerrada=True, fecha_cierre=fecha_v)
+                db.session.add(v)
+                db.session.flush()
+                ot = OrdenTrabajo(instalacion_id=inst.id, visita_id=v.id, tipo="Preventivo", prioridad="Media",
+                                  estado="Finalizada", fecha_apertura=fecha_v, fecha_cierre=fecha_v)
+                db.session.add(ot)
+                db.session.flush()
+                ot.asignar_numero()
+                item = ItemVisita(visita_id=v.id, servicio_contrato_id=servicio.id, estado="Cumplido")
+                db.session.add(item)
+                db.session.flush()
+
+                for eq in muestra_bomba:
+                    f = Formulario(item_visita_id=item.id, tipo_formulario_id=t_bomba.id, equipo_id=eq.id,
+                                   fecha_creacion=datetime.combine(fecha_v, datetime.min.time()))
+                    f.set_datos(datos_bomba(118))
+                    db.session.add(f)
+                for eq in muestra_eca:
+                    f = Formulario(item_visita_id=item.id, tipo_formulario_id=t_eca.id, equipo_id=eq.id,
+                                   fecha_creacion=datetime.combine(fecha_v, datetime.min.time()))
+                    f.set_datos(datos_eca())
+                    db.session.add(f)
+                for eq in muestra_bie:
+                    f = Formulario(item_visita_id=item.id, tipo_formulario_id=t_bie.id, equipo_id=eq.id,
+                                   fecha_creacion=datetime.combine(fecha_v, datetime.min.time()))
+                    f.set_datos(datos_bie())
+                    db.session.add(f)
+
+            for dias_adelante in (10, 35):
+                fecha_v = hoy + timedelta(days=dias_adelante)
+                v = Visita(instalacion_id=inst.id, contrato_id=contrato.id, fecha=fecha_v,
+                          tecnico="Diego Fernandez", estado="Pendiente")
+                db.session.add(v)
+
+            if rng.random() < 0.5 and muestra_bie:
+                obs = Observacion(instalacion_id=inst.id, equipo_id=muestra_bie[0].id,
+                                  clasificacion=rng.choice(["Deficiencia crítica", "Deficiencia no crítica"]),
+                                  descripcion="Manguera con desgaste visible, evaluar cambio.",
+                                  fecha_carga=hoy - timedelta(days=10), resuelto=False,
+                                  estado_revision="Aprobada", requiere_presupuesto=True)
+                db.session.add(obs)
+                db.session.flush()
+                presu = Presupuesto(codigo=f"PRESUP-{hoy.year}-{1000 + cliente.id * 10 + idx_inst}",
+                                    empresa_id=empresa_id, observacion_id=obs.id, estado="Pendiente")
+                db.session.add(presu)
+
+        db.session.commit()
 
