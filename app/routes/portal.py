@@ -4,8 +4,20 @@ from flask import Blueprint, abort, render_template
 from flask_login import current_user
 
 from app.auth_utils import rol_requerido
-from app.models import CLASIFICACIONES_OBSERVACION, TIPOS_BOMBA_PRINCIPAL, Equipo, Visita, categorias_equipo_agrupadas
-from app.utils import bloques_equipos_historico, checklists_aprobados_de_equipo, filas_checklist
+from app.models import (
+    CLASIFICACIONES_OBSERVACION,
+    TIPOS_BOMBA_PRINCIPAL,
+    Equipo,
+    Observacion,
+    Visita,
+    categorias_equipo_agrupadas,
+)
+from app.utils import (
+    bloques_equipos_historico,
+    checklists_aprobados_de_equipo,
+    filas_checklist,
+    resumen_visita_por_categoria,
+)
 
 portal_bp = Blueprint("portal", __name__, url_prefix="/portal")
 
@@ -22,6 +34,60 @@ def _checklists_visibles(visita):
     cuando se cumplen las dos cosas: la visita está Cerrada Y su OT
     asociada está Finalizada — no alcanza con una sola."""
     return bool(visita.cerrada and visita.orden_trabajo and visita.orden_trabajo.estado == "Finalizada")
+
+
+def _panel_instalacion(instalacion, hoy):
+    """Todo lo que necesita el Inicio del portal para una instalación: las
+    tarjetas con modal que reemplazan 'Mis equipos'/'Mi contrato' (deficiencia
+    crítica, última visita, próxima visita, categorías de equipo)."""
+    def_criticas = sorted(
+        (
+            o
+            for o in instalacion.deficiencias
+            if not o.resuelto and o.estado_revision == "Aprobada" and o.clasificacion == "Deficiencia crítica"
+        ),
+        key=lambda o: o.fecha_carga,
+        reverse=True,
+    )
+
+    ultima = None
+    visita_cerrada = (
+        Visita.query.filter_by(instalacion_id=instalacion.id, cerrada=True)
+        .order_by(Visita.fecha.desc())
+        .first()
+    )
+    if visita_cerrada:
+        ids_items = [it.id for it in visita_cerrada.items]
+        deficiencias_visita = (
+            Observacion.query.filter(
+                Observacion.item_visita_id.in_(ids_items), Observacion.estado_revision == "Aprobada"
+            ).all()
+            if ids_items
+            else []
+        )
+        ultima = {
+            "visita": visita_cerrada,
+            "resumen": resumen_visita_por_categoria(visita_cerrada),
+            "deficiencias": deficiencias_visita,
+            "pdf_visible": _checklists_visibles(visita_cerrada),
+        }
+
+    proxima_visita = (
+        Visita.query.filter(Visita.instalacion_id == instalacion.id, Visita.fecha >= hoy)
+        .order_by(Visita.fecha)
+        .first()
+    )
+
+    grupos_categoria = _grupos_categoria(instalacion)
+    categorias = [(nombre, len(lista)) for nombre, lista in grupos_categoria.items()]
+
+    return {
+        "instalacion": instalacion,
+        "def_criticas": def_criticas,
+        "ultima": ultima,
+        "proxima": proxima_visita,
+        "categorias": categorias,
+    }
 
 
 @portal_bp.route("/")
@@ -45,6 +111,8 @@ def inicio():
         1 for c in contratos_todos if c.estado == "Activo" and (c.fecha_fin - hoy).days <= 30
     )
 
+    paneles = [_panel_instalacion(inst, hoy) for inst in cliente.instalaciones]
+
     return render_template(
         "portal/inicio.html",
         cliente=cliente,
@@ -52,6 +120,7 @@ def inicio():
         proximas_visitas=proximas_visitas,
         indicadores=cliente.indicadores(),
         contratos_por_vencer=contratos_por_vencer,
+        paneles=paneles,
     )
 
 

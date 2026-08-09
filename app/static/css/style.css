@@ -1303,6 +1303,42 @@ a.card-atencion:hover { transform: translateY(-2px); box-shadow: var(--shadow-do
 .card-atencion.calmo { border-left-color: var(--border-strong); }
 .card-atencion.calmo .num, .card-atencion.calmo .etiqueta { color: var(--ink-faint); }
 
+/* ---- Portal cliente: Inicio, selector de instalación + tarjetas con modal
+   (reemplaza los nav items "Mis equipos" / "Mi contrato") --------------- */
+.selector-inst { display: flex; gap: .4rem; flex-wrap: wrap; margin-bottom: .9rem; border-bottom: 1px solid var(--border); }
+.tab-inst {
+    font-family: var(--font-display); font-weight: 600; font-size: .86rem; padding: .55rem .9rem;
+    color: var(--ink-muted); background: none; border: none; border-bottom: 2px solid transparent;
+    margin-bottom: -1px; cursor: pointer;
+}
+.tab-inst.activo { color: var(--ink); border-bottom-color: var(--accent); }
+.panel-inst { display: none; }
+.panel-inst.activo { display: block; }
+.inst-direccion { font-size: .78rem; color: var(--ink-muted); margin: -.3rem 0 .8rem; }
+
+.grid-cat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem; margin-bottom: 1rem; }
+.card-cat {
+    border: 1px solid var(--border); border-left: 3px solid var(--border-strong); border-radius: .6rem;
+    padding: .8rem 1rem; background: var(--surface); cursor: pointer; text-align: left;
+    font-family: var(--font-body); transition: border-color .12s ease, transform .12s ease;
+}
+.card-cat:hover { border-color: var(--accent); transform: translateY(-1px); }
+.card-cat .n { font-family: var(--font-mono); font-weight: 700; font-size: 1.25rem; display: block; margin-bottom: .2rem; }
+.card-cat .t { font-size: .78rem; font-weight: 600; }
+.card-cat .sub { display: block; font-size: .68rem; color: var(--ink-muted); margin-top: .15rem; font-weight: 400; }
+.card-cat.deficiencias.critico { border-left-color: var(--accent); }
+.card-cat.deficiencias.critico .n { color: var(--accent); }
+.card-cat.deficiencias.calmo { border-left-color: var(--border-strong); }
+.card-cat.deficiencias.calmo .n { color: var(--ink-faint); }
+.punto-nota { display: inline-block; width: .4rem; height: .4rem; border-radius: 50%; background: var(--bs-info); margin-left: .3rem; vertical-align: middle; }
+
+.resumen-visita .fila { display: flex; justify-content: space-between; gap: .8rem; padding: .5rem 0; border-bottom: 1px solid var(--border); font-size: .85rem; }
+.resumen-visita .fila:last-child { border-bottom: none; }
+.nota-cliente { margin-top: .9rem; padding: .8rem .9rem; border-radius: .5rem; background: var(--info-soft); }
+.nota-cliente-etiqueta { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em; color: var(--bs-info); margin-bottom: .3rem; }
+.nota-cliente-texto { font-size: .85rem; color: var(--ink); white-space: pre-line; }
+.nota-cliente-fecha { font-size: .72rem; color: var(--ink-muted); margin-top: .35rem; }
+
 /* ---- Inicio: bitácora de prioridad + riel de estadísticas ----------------- */
 
 .log-prioridad { display: flex; flex-direction: column; gap: .45rem; margin-bottom: .9rem; }

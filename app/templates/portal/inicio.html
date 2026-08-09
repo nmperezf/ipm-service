@@ -40,26 +40,42 @@
                 </a>
             </div>
 
-            <p class="text-muted small mb-3">
-                <strong>Última visita:</strong> {{ indicadores.ultima_visita.strftime('%d/%m/%Y') if indicadores.ultima_visita else 'Sin visitas registradas' }}
-                &nbsp;|&nbsp;
-                <strong>Próxima visita:</strong> {{ indicadores.proxima_visita.strftime('%d/%m/%Y') if indicadores.proxima_visita else '-' }}
-            </p>
-
-            <div class="grid-atencion">
-                <a href="{{ url_for('portal.historico') }}" class="card-atencion" style="grid-column: span 2;">
-                    <span class="num" style="font-size:1.3rem;">Ver histórico técnico</span>
-                    <span class="etiqueta">Visitas cerradas y observaciones aprobadas</span>
-                </a>
-                <a href="{{ url_for('portal.equipos') }}" class="card-atencion" style="grid-column: span 1;">
-                    <span class="num" style="font-size:1.3rem;">Mis equipos</span>
-                    <span class="etiqueta">Ver por categoría</span>
-                </a>
-                <a href="{{ url_for('portal.contratos') }}" class="card-atencion" style="grid-column: span 1;">
-                    <span class="num" style="font-size:1.3rem;">Mi contrato</span>
-                    <span class="etiqueta">Servicios y vigencia</span>
-                </a>
+            {% if paneles|length > 1 %}
+            <div class="seccion-titulo-doc">Instalación</div>
+            <div class="selector-inst">
+                {% for panel in paneles %}
+                <button type="button" class="tab-inst{{ ' activo' if loop.first }}" onclick="cambiarInstalacion({{ loop.index0 }})">{{ panel.instalacion.nombre }}</button>
+                {% endfor %}
             </div>
+            {% endif %}
+
+            {% for panel in paneles %}
+            <div class="panel-inst{{ ' activo' if loop.first }}" data-panel-inst="{{ loop.index0 }}">
+                {% if paneles|length > 1 %}
+                <div class="inst-direccion">{{ panel.instalacion.direccion or '' }}</div>
+                {% endif %}
+                <div class="grid-cat-cards">
+                    <button type="button" class="card-cat deficiencias{{ ' critico' if panel.def_criticas else ' calmo' }}" onclick="abrirModalInicio('def-{{ panel.instalacion.id }}')">
+                        <span class="n">{{ panel.def_criticas|length }}</span><span class="t">Deficiencias críticas</span>
+                    </button>
+                    {% if panel.ultima %}
+                    <button type="button" class="card-cat" onclick="abrirModalInicio('visita-{{ panel.instalacion.id }}')">
+                        <span class="n" style="font-size:1rem;">{{ panel.ultima.visita.fecha.strftime('%d/%m/%Y') }}</span><span class="t">Última visita</span>
+                    </button>
+                    {% endif %}
+                    {% if panel.proxima %}
+                    <button type="button" class="card-cat" onclick="abrirModalInicio('proxima-{{ panel.instalacion.id }}')">
+                        <span class="n" style="font-size:1rem;">{{ panel.proxima.fecha.strftime('%d/%m/%Y') }}</span><span class="t">Próxima visita{% if panel.proxima.nota_cliente %}<span class="punto-nota" title="Tiene una nota del Administrador"></span>{% endif %}</span>
+                    </button>
+                    {% endif %}
+                    {% for nombre_cat, cantidad in panel.categorias %}
+                    <a class="card-cat" href="{{ url_for('portal.equipos_categoria', instalacion_id=panel.instalacion.id, categoria=nombre_cat) }}">
+                        <span class="n">{{ cantidad }}</span><span class="t">{{ nombre_cat }}</span>
+                    </a>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
 
             <div class="seccion-titulo-doc">Próximas visitas</div>
             <div class="table-responsive">
@@ -86,4 +102,92 @@
 
     </div>
 </div>
+
+{% for panel in paneles %}
+<div class="modal-backdrop-doc" id="modal-def-{{ panel.instalacion.id }}" onclick="if(event.target===this)cerrarModalInicio(this)">
+    <div class="modal-flotante-doc">
+        <div class="modal-cab-doc"><h3>Deficiencias críticas — {{ panel.instalacion.nombre }}</h3><button type="button" class="modal-cerrar-doc" onclick="cerrarModalInicio(this.closest('.modal-backdrop-doc'))">✕</button></div>
+        <div class="modal-cuerpo-doc">
+            {% if not panel.def_criticas %}
+            <div class="sin-novedad-modal-doc">✓ Sin deficiencias críticas abiertas</div>
+            {% else %}
+            {% for o in panel.def_criticas %}
+            <div class="def-item-modal-doc">
+                <span class="def-badge-modal-doc critica">{{ o.clasificacion }}</span>
+                <div><div class="def-texto-modal-doc">{{ o.descripcion }}</div><div class="def-fecha-modal-doc">{% if o.equipo %}{{ o.equipo.nombre }} · {% endif %}{{ o.fecha_carga.strftime('%d/%m/%Y') }}</div></div>
+            </div>
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if panel.ultima %}
+<div class="modal-backdrop-doc" id="modal-visita-{{ panel.instalacion.id }}" onclick="if(event.target===this)cerrarModalInicio(this)">
+    <div class="modal-flotante-doc">
+        <div class="modal-cab-doc"><h3>Última visita — {{ panel.instalacion.nombre }}</h3><button type="button" class="modal-cerrar-doc" onclick="cerrarModalInicio(this.closest('.modal-backdrop-doc'))">✕</button></div>
+        <div class="modal-cuerpo-doc">
+            <div class="resumen-visita">
+                <div class="fila"><span>Fecha</span><span>{{ panel.ultima.visita.fecha.strftime('%d/%m/%Y') }}</span></div>
+                {% for r in panel.ultima.resumen %}
+                <div class="fila"><span>{{ r.categoria }}</span><span>{{ r.equipos_revisados }} equipo{{ 's' if r.equipos_revisados != 1 }} revisado{{ 's' if r.equipos_revisados != 1 }}</span></div>
+                {% endfor %}
+                <div class="fila">
+                    <span>Deficiencias encontradas</span>
+                    <span>
+                        {%- if not panel.ultima.deficiencias %}Ninguna
+                        {%- else -%}
+                        {{ panel.ultima.deficiencias|length }}{% if panel.ultima.deficiencias[0].equipo %} ({{ panel.ultima.deficiencias[0].equipo.nombre }}{% if panel.ultima.deficiencias|length > 1 %}, …{% endif %}){% endif -%}
+                        {%- endif %}
+                    </span>
+                </div>
+            </div>
+            {% if panel.ultima.pdf_visible %}
+            <a href="{{ url_for('visitas.pdf_devolucion', visita_id=panel.ultima.visita.id) }}" class="btn btn-dark btn-sm mt-3" target="_blank"><i class="bi bi-download me-1"></i>Descargar PDF de devolución</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if panel.proxima %}
+<div class="modal-backdrop-doc" id="modal-proxima-{{ panel.instalacion.id }}" onclick="if(event.target===this)cerrarModalInicio(this)">
+    <div class="modal-flotante-doc">
+        <div class="modal-cab-doc"><h3>Próxima visita — {{ panel.instalacion.nombre }}</h3><button type="button" class="modal-cerrar-doc" onclick="cerrarModalInicio(this.closest('.modal-backdrop-doc'))">✕</button></div>
+        <div class="modal-cuerpo-doc">
+            <div class="resumen-visita">
+                <div class="fila"><span>Fecha</span><span>{{ panel.proxima.fecha.strftime('%d/%m/%Y') }}</span></div>
+                <div class="fila"><span>Servicio</span><span>{{ panel.proxima.items|map(attribute='servicio.nombre')|join(', ') if panel.proxima.items else '-' }}</span></div>
+            </div>
+            {% if panel.proxima.nota_cliente %}
+            <div class="nota-cliente">
+                <div class="nota-cliente-etiqueta">Nota del Administrador para vos</div>
+                <div class="nota-cliente-texto">{{ panel.proxima.nota_cliente }}</div>
+                {% if panel.proxima.nota_cliente_fecha %}<div class="nota-cliente-fecha">Agregada el {{ panel.proxima.nota_cliente_fecha.strftime('%d/%m/%Y') }}</div>{% endif %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endfor %}
+
+<script>
+(function () {
+    window.cambiarInstalacion = function (idx) {
+        document.querySelectorAll('.tab-inst').forEach(function (b, i) { b.classList.toggle('activo', i === idx); });
+        document.querySelectorAll('.panel-inst').forEach(function (p) { p.classList.toggle('activo', Number(p.dataset.panelInst) === idx); });
+    };
+    window.abrirModalInicio = function (id) {
+        var m = document.getElementById('modal-' + id);
+        if (m) m.classList.add('abierta');
+    };
+    window.cerrarModalInicio = function (el) {
+        el.classList.remove('abierta');
+    };
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') document.querySelectorAll('.modal-backdrop-doc.abierta').forEach(function (m) { m.classList.remove('abierta'); });
+    });
+})();
+</script>
 {% endblock %}

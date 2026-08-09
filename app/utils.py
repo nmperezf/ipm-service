@@ -4,7 +4,7 @@ from flask import request
 from sqlalchemy.exc import IntegrityError
 
 from app import db
-from app.models import Contrato, Presupuesto, Visita
+from app.models import Contrato, Formulario, Presupuesto, Visita, categorias_equipo_agrupadas
 
 
 def es_ajax():
@@ -116,6 +116,30 @@ def polilinea_svg(serie, ancho=520, alto=90, padding=12):
         for (fecha, _), (x, y) in zip(serie, coords)
     ]
     return puntos, minimo, maximo, area, punto_final, puntos_detalle
+
+
+def resumen_visita_por_categoria(visita):
+    """Cuántos equipos se revisaron (tienen al menos un formulario cargado
+    en esta visita) por categoría, sin repetir el detalle equipo por
+    equipo — usado en el cierre de visita, el PDF de devolución y el
+    portal del cliente."""
+    ids_items = [it.id for it in visita.items]
+    formularios = Formulario.query.filter(Formulario.item_visita_id.in_(ids_items)).all() if ids_items else []
+
+    resumen = []
+    for nombre_categoria, tipos_equipo in categorias_equipo_agrupadas():
+        equipos_ids = {
+            f.equipo_id for f in formularios if f.equipo and f.equipo.tipo in tipos_equipo
+        }
+        if equipos_ids:
+            resumen.append({"categoria": nombre_categoria, "equipos_revisados": len(equipos_ids)})
+
+    # Formularios generales (no ligados a un equipo puntual, ej. checklist mensual)
+    generales = [f for f in formularios if not f.equipo_id]
+    if generales:
+        resumen.append({"categoria": "Otros formularios", "equipos_revisados": len(generales)})
+
+    return resumen
 
 
 def filas_checklist(formularios, incluir_equipo=False):

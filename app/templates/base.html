@@ -48,8 +48,6 @@
 <li class="nav-item"><a class="{{ clase }}" href="{{ url_for('empresas.listar') }}" title="Empresas"><i class="bi bi-building"></i><span class="rotulo-sidebar">Empresas</span></a></li>
 {% endif %}
 {% if current_user.is_authenticated and current_user.rol == 'Cliente' %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.equipos') }}" title="Mis equipos"><i class="bi bi-hdd-stack"></i><span class="rotulo-sidebar">Mis equipos</span></a></li>
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.contratos') }}" title="Mi contrato"><i class="bi bi-file-earmark-text"></i><span class="rotulo-sidebar">Mi contrato</span></a></li>
 <li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.historico') }}" title="Histórico técnico"><i class="bi bi-clock-history"></i><span class="rotulo-sidebar">Histórico técnico</span></a></li>
 {% endif %}
 {% endmacro %}

@@ -15,7 +15,6 @@ from app.models import (
     ESTADOS_VISITA,
     TIPOS_BOMBA_PRINCIPAL,
     Equipo,
-    Formulario,
     Instalacion,
     ItemVisita,
     Observacion,
@@ -27,7 +26,7 @@ from app.models import (
 )
 from app.notificaciones import notificar_gestion, notificar_usuario
 from app.pdf_devolucion import generar_pdf_devolucion
-from app.utils import equipos_por_categoria, es_ajax, filas_checklist
+from app.utils import equipos_por_categoria, es_ajax, filas_checklist, resumen_visita_por_categoria
 
 visitas_bp = Blueprint("visitas", __name__, url_prefix="/visitas")
 
@@ -64,29 +63,6 @@ def _parse_fecha(valor, por_defecto=None):
     if not valor:
         return por_defecto or date.today()
     return datetime.strptime(valor, "%Y-%m-%d").date()
-
-
-def _resumen_por_categoria(visita):
-    """Para el cierre y el PDF de devolución: cuántos equipos se revisaron
-    (tienen al menos un formulario cargado en esta visita) por categoría,
-    sin repetir el detalle equipo por equipo."""
-    ids_items = [it.id for it in visita.items]
-    formularios = Formulario.query.filter(Formulario.item_visita_id.in_(ids_items)).all() if ids_items else []
-
-    resumen = []
-    for nombre_categoria, tipos_equipo in categorias_equipo_agrupadas():
-        equipos_ids = {
-            f.equipo_id for f in formularios if f.equipo and f.equipo.tipo in tipos_equipo
-        }
-        if equipos_ids:
-            resumen.append({"categoria": nombre_categoria, "equipos_revisados": len(equipos_ids)})
-
-    # Formularios generales (no ligados a un equipo puntual, ej. checklist mensual)
-    generales = [f for f in formularios if not f.equipo_id]
-    if generales:
-        resumen.append({"categoria": "Otros formularios", "equipos_revisados": len(generales)})
-
-    return resumen
 
 
 def _antecedentes(visita):
@@ -372,7 +348,7 @@ def enviar_revision(visita_id):
         "visitas/enviar_revision.html",
         visita=visita,
         antecedentes=_antecedentes(visita),
-        resumen=_resumen_por_categoria(visita),
+        resumen=resumen_visita_por_categoria(visita),
         items_sin_cumplir=items_sin_cumplir,
     )
 
@@ -424,7 +400,7 @@ def cerrar(visita_id):
         visita=visita,
         pendientes=pendientes,
         antecedentes=_antecedentes(visita),
-        resumen=_resumen_por_categoria(visita),
+        resumen=resumen_visita_por_categoria(visita),
     )
 
 
@@ -507,7 +483,7 @@ def pdf_devolucion(visita_id):
     )
 
     pdf_bytes = generar_pdf_devolucion(
-        visita, _resumen_por_categoria(visita), deficiencias, observaciones_vigentes
+        visita, resumen_visita_por_categoria(visita), deficiencias, observaciones_vigentes
     )
     nombre_archivo = f"Devolucion_{visita.instalacion.nombre.replace(' ', '_')}_{visita.fecha.isoformat()}.pdf"
     return Response(
