@@ -1,6 +1,6 @@
 import json
 import random
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 from flask import Flask
 from flask_login import LoginManager
@@ -127,6 +127,7 @@ def create_app():
         _migrar_columnas_faltantes()
         _seed_super_admin()
         _seed_tipos_equipo()
+        _seed_catalogo_nfpa()
         _seed_clientes_demo()
 
     return app
@@ -200,15 +201,123 @@ def _seed_tipos_equipo():
     db.session.commit()
 
 
+def _seed_catalogo_nfpa():
+    """Catálogo de checklists de inspección NFPA 25 (con estado por punto:
+    Aprobado/Observado/Deficiencia/N-A) para sala de bombas, ECA y BIE --
+    se arma una vez por empresa; cada cliente los importa desde acá (ver
+    TipoFormulario.desde_catalogo) en vez de tener que armarlos a mano.
+    Las referencias de norma/sección son orientativas -- conviene
+    verificarlas contra la edición de NFPA 25 realmente adoptada antes de
+    usarlas en un documento de cumplimiento."""
+    from app.models import Empresa, ServicioTipo
+
+    def crear(empresa_id, nombre, tipo_equipo, referencia, campos, por_equipo=True):
+        if ServicioTipo.query.filter_by(empresa_id=empresa_id, nombre=nombre).first():
+            return
+        db.session.add(ServicioTipo(
+            empresa_id=empresa_id, nombre=nombre, por_equipo=por_equipo,
+            tipo_equipo_aplicable=tipo_equipo, referencia_normativa=referencia,
+            schema_json=json.dumps(campos),
+        ))
+
+    def punto_estado(campo, label, descripcion):
+        return {"campo": campo, "tipo": "estado", "label": label, "descripcion": descripcion}
+
+    def punto_numero(campo, label, unidad, descripcion):
+        return {"campo": campo, "tipo": "numero", "label": label, "unidad": unidad,
+                "descripcion": descripcion, "con_estado": True}
+
+    campos_jockey = [
+        punto_numero("presion_arranque", "Presión de arranque", "PSI", "Registrar la presión a la que arranca la bomba jockey."),
+        punto_numero("presion_corte", "Presión de corte", "PSI", "Registrar la presión a la que se detiene al alcanzar el setpoint superior."),
+        punto_estado("ciclado_excesivo", "Ciclado excesivo", "Verificar que no arranque y pare repetidamente en poco tiempo — indicio de fuga en el sistema."),
+        punto_estado("fuga_sello", "Fugas en sello mecánico", "Inspeccionar el sello del eje por goteo excesivo o continuo."),
+        punto_numero("amperaje", "Amperaje del motor", "A", "Corriente de línea con la bomba en marcha, comparada contra la placa del motor."),
+    ]
+
+    campos_electrobomba = [
+        punto_estado("selector_auto", "Selector en modo Automático", "El selector del controlador debe estar siempre en posición Automático."),
+        punto_numero("arranques", "Arranques desde la última visita", "arr.", "Contador de arranques del panel menos el valor registrado en la visita anterior."),
+        punto_numero("horometro", "Horómetro (horas acumuladas)", "h", "Lectura acumulada del horómetro del panel de control."),
+        punto_estado("alarmas_panel", "Alarmas o fallas activas", "Revisar el historial de fallas del controlador desde la última visita."),
+        punto_numero("presion_succion", "Presión de succión", "PSI", "Con la bomba operando a régimen normal."),
+        punto_numero("presion_descarga", "Presión de descarga", "PSI", "Verificar que esté dentro del rango de la curva característica del fabricante."),
+        punto_numero("rpm", "RPM", "rpm", "Velocidad de giro del motor con la bomba a régimen."),
+        punto_numero("voltaje", "Voltaje (3 fases)", "V", "Tensión de línea en el tablero de arranque."),
+        punto_numero("amperaje", "Amperaje (3 fases)", "A", "Corriente de línea comparada contra la placa del motor."),
+        punto_numero("temp_rodamientos", "Temperatura de rodamientos", "°C", "Rodamiento lado acople (drive end), por contacto."),
+        punto_numero("temp_motor", "Temperatura de motor", "°C", "Carcasa del motor eléctrico, por contacto, con la bomba en régimen."),
+        punto_estado("vibracion", "Vibración anómala", "Verificar ausencia de vibración o ruido inusual en bomba y motor."),
+    ]
+
+    campos_motobomba = [
+        punto_estado("selector_auto", "Selector en modo Automático", "El selector del controlador debe estar siempre en posición Automático."),
+        punto_numero("arranques", "Arranques desde la última visita", "arr.", "Contador de arranques del panel menos el valor registrado en la visita anterior."),
+        punto_numero("horometro", "Horómetro (horas acumuladas)", "h", "Lectura acumulada del horómetro del motor diésel."),
+        punto_estado("fallas_motor", "Códigos de falla del motor", "Revisar el historial de fallas del motor diésel desde la última visita."),
+        punto_numero("presion_descarga", "Presión de descarga", "PSI", "Con el motor diésel en marcha, bomba a régimen."),
+        punto_numero("rpm_motor", "RPM del motor", "rpm", "Velocidad de giro del motor diésel a régimen."),
+        punto_numero("temp_motor", "Temperatura de motor", "°C", "Temperatura del refrigerante del motor diésel en régimen."),
+        punto_numero("presion_aceite", "Presión de aceite de motor", "PSI", "Presión de lubricación del motor diésel a régimen."),
+        punto_numero("nivel_combustible", "Nivel de combustible", "%", "Debe mantenerse sobre el 66% de la capacidad del tanque diario."),
+        punto_numero("bateria", "Batería de arranque", "V", "Voltaje de cada banco de baterías en reposo."),
+        punto_estado("fugas", "Fugas de combustible o aceite", "Inspección visual del motor y sus conexiones."),
+    ]
+
+    campos_reserva_agua = [
+        punto_numero("nivel_agua", "Nivel de agua", "%", "Verificar que el nivel esté en la marca de rebose o el nivel normal de operación."),
+        punto_estado("estado_tanque", "Estado estructural del tanque", "Inspección visual de fisuras, corrosión o daños en paredes y tapa de acceso."),
+        punto_estado("valvulas_succion", "Válvulas de succión", "Confirmar que estén completamente abiertas y precintadas o supervisadas."),
+        punto_estado("limpieza", "Limpieza y sedimentos", "Verificar ausencia de sedimentos, algas u obstrucciones visibles en el punto de acceso."),
+    ]
+
+    campos_senales = [
+        punto_estado("falla_energia_normal", "Falla de energía normal", "Simular corte de energía normal y verificar que la señal de falla llegue a la central de alarma."),
+        punto_estado("bomba_en_marcha", "Bomba en marcha", "Verificar que la señal de 'bomba en marcha' se transmita correctamente al arrancar."),
+        punto_estado("selector_no_automatico", "Selector fuera de Automático", "Simular el selector en Manual/Apagado y verificar que se transmita la señal de supervisión."),
+        punto_estado("nivel_bajo_reserva", "Nivel bajo de reserva de agua", "Simular nivel bajo y verificar que la señal llegue a la central."),
+        punto_estado("valvula_succion_cerrada", "Válvula de succión no totalmente abierta", "Verificar la señal de supervisión de la válvula de succión/descarga."),
+        punto_estado("falla_motor_diesel", "Falla de motor diésel / batería baja", "Si hay bomba de respaldo diésel, verificar que sus fallas se transmitan correctamente. N/A si no aplica."),
+    ]
+
+    campos_eca = [
+        punto_estado("valvula_principal", "Válvula principal totalmente abierta y supervisada", "Confirmar posición y supervisión eléctrica de la válvula."),
+        punto_numero("presion_agua", "Presión de agua (manómetro)", "PSI", "Lectura del manómetro de la estación."),
+        punto_estado("alarma_flujo", "Prueba de alarma de flujo", "Activar el flujo de prueba y verificar que la alarma suene y se transmita."),
+        punto_estado("valvula_drenaje", "Válvula de drenaje / prueba", "Verificar que abra y cierre sin fugas."),
+        punto_estado("estado_general", "Estado general y señalización", "Corrosión, identificación y accesibilidad de la estación."),
+    ]
+
+    campos_bie = [
+        punto_estado("manguera", "Estado de la manguera", "Inspección visual: sin cortes, desgaste ni acople dañado."),
+        punto_estado("boquilla", "Boquilla / pitón", "Presente, sin obstrucciones, cierra y abre correctamente."),
+        punto_estado("valvula_angular", "Válvula angular", "Opera sin trabarse y sin fugas."),
+        punto_numero("presion_boca", "Presión en boca", "PSI", "Solo si la boca tiene manómetro propio."),
+        punto_estado("gabinete", "Gabinete accesible y en buen estado", "Puerta/vidrio intacto, sin obstrucciones delante, señalización visible."),
+    ]
+
+    for empresa in Empresa.query.all():
+        eid = empresa.id
+        crear(eid, "Inspección semanal — Bomba jockey", "Bomba jockey", "NFPA 25 · §8.3 Inspección semanal", campos_jockey)
+        crear(eid, "Inspección semanal — Electrobomba", "Electrobomba", "NFPA 25 · §8.3.3 Prueba de funcionamiento semanal", campos_electrobomba)
+        crear(eid, "Inspección semanal — Motobomba", "Motobomba", "NFPA 25 · §8.3 Inspección semanal — motor diésel", campos_motobomba)
+        crear(eid, "Inspección — Reserva de agua", "Reserva de agua", "NFPA 25 · §9.2 Inspección de tanques", campos_reserva_agua)
+        crear(eid, "Señales de supervisión y falla — Sala de bombas", None, "NFPA 25 · §4.6 — Señales de supervisión y falla", campos_senales, por_equipo=False)
+        crear(eid, "Inspección — ECA", "ECA", "NFPA 25 · Cap. 13 (Válvulas) / Cap. 5", campos_eca)
+        crear(eid, "Inspección — BIE", "BIE", "NFPA 25 · Cap. 6 (Standpipe and Hose Systems)", campos_bie)
+
+    db.session.commit()
+
+
 def _seed_clientes_demo():
     """Carga 10 clientes de ejemplo (con instalaciones, equipos, contratos,
     hoja de ruta e historial de checklists) para que nmperezf pueda probar
     la app con datos realistas -- se corre en cada arranque pero cada
     cliente se crea una sola vez (se salta si ya existe por nombre)."""
     from app.models import (
-        Cliente, Contrato, Equipo, Formulario, Instalacion, ItemVisita,
+        Cliente, Contrato, Equipo, Instalacion, ItemVisita,
         Observacion, OrdenTrabajo, Presupuesto, ServicioContrato,
-        TipoFormulario, Usuario, Visita,
+        ServicioTipo, TipoFormulario, Usuario, Visita,
     )
 
     ref = Usuario.query.filter_by(username="nmperezf").first()
@@ -219,10 +328,20 @@ def _seed_clientes_demo():
     rng = random.Random(42)
 
     perfiles = {
-        "chico": {"bombas": 2, "eca": 2, "bie": 3, "otros": 2},
-        "mediano": {"bombas": 3, "eca": 5, "bie": 8, "otros": 3},
-        "grande": {"bombas": 4, "eca": 12, "bie": 15, "otros": 5},
+        "chico": {"eca": 2, "bie": 3, "otros": 2},
+        "mediano": {"eca": 5, "bie": 8, "otros": 3},
+        "grande": {"eca": 12, "bie": 15, "otros": 5},
     }
+
+    # Las 4 combinaciones de sala de bombas que se ven en la práctica --
+    # se van rotando entre los 10 clientes de ejemplo para mostrar todas.
+    # Todas llevan además su reserva de agua (se agrega aparte, siempre).
+    combos_sala_bombas = [
+        [("Bomba jockey", "Bomba jockey"), ("Electrobomba", "Bomba principal")],
+        [("Bomba jockey", "Bomba jockey"), ("Electrobomba", "Bomba principal"), ("Electrobomba", "Bomba secundaria")],
+        [("Bomba jockey", "Bomba jockey"), ("Motobomba", "Bomba principal (diésel)")],
+        [("Bomba jockey", "Bomba jockey"), ("Electrobomba", "Bomba principal"), ("Motobomba", "Bomba de respaldo (diésel)")],
+    ]
 
     clientes_demo = [
         {"nombre": "Frigorifico del Norte SA", "contacto": "Martin Silveira", "telefono": "099123001",
@@ -248,46 +367,22 @@ def _seed_clientes_demo():
          "instalaciones": [("Planta Quimica", "Camino Cibils 3400, Montevideo", "mediano", None)]},
     ]
 
-    def crear_tipos_formulario(cliente):
-        t_bomba = TipoFormulario(
-            cliente_id=cliente.id, nombre="Inspeccion mensual bomba", por_equipo=True,
-            schema_json=json.dumps([
-                {"campo": "presion_descarga", "label": "Presion descarga", "tipo": "numero"},
-                {"campo": "presion_succion", "label": "Presion succion", "tipo": "numero"},
-                {"campo": "rpm", "label": "RPM", "tipo": "numero"},
-                {"campo": "estado", "label": "Estado general", "tipo": "texto"},
-            ]),
-        )
-        t_eca = TipoFormulario(
-            cliente_id=cliente.id, nombre="Inspeccion mensual ECA", por_equipo=True,
-            tipo_equipo_aplicable="ECA",
-            schema_json=json.dumps([
-                {"campo": "voltaje", "label": "Voltaje bateria", "tipo": "numero"},
-                {"campo": "zona", "label": "Estado zona", "tipo": "texto"},
-            ]),
-        )
-        t_bie = TipoFormulario(
-            cliente_id=cliente.id, nombre="Inspeccion mensual BIE", por_equipo=True,
-            tipo_equipo_aplicable="BIE",
-            schema_json=json.dumps([
-                {"campo": "presion", "label": "Presion manometro", "tipo": "numero"},
-                {"campo": "manguera", "label": "Estado manguera", "tipo": "texto"},
-            ]),
-        )
-        db.session.add_all([t_bomba, t_eca, t_bie])
+    def importar_catalogo(cliente):
+        for servicio_tipo in ServicioTipo.query.filter_by(empresa_id=empresa_id).all():
+            TipoFormulario.desde_catalogo(servicio_tipo, cliente.id)
         db.session.flush()
-        return t_bomba, t_eca, t_bie
 
-    def crear_equipos(inst, perfil, n_eca_override):
+    def crear_equipos(inst, perfil, n_eca_override, idx_cliente):
         p = perfiles[perfil]
         equipos = {"bomba": [], "eca": [], "bie": [], "otro": []}
-        nombres_bomba = ["Bomba principal", "Bomba jockey", "Bomba reserva", "Bomba auxiliar"]
-        for i in range(p["bombas"]):
-            tipo = "Bomba" if i == 0 else ("Bomba jockey" if i == 1 else "Electrobomba")
-            e = Equipo(instalacion_id=inst.id, nombre=nombres_bomba[i % len(nombres_bomba)] + (f" {i+1}" if i >= len(nombres_bomba) else ""),
-                      tipo=tipo, ubicacion="Sala de bombas")
+        combo = combos_sala_bombas[idx_cliente % len(combos_sala_bombas)]
+        for tipo, nombre in combo:
+            e = Equipo(instalacion_id=inst.id, nombre=nombre, tipo=tipo, ubicacion="Sala de bombas")
             db.session.add(e)
             equipos["bomba"].append(e)
+        reserva = Equipo(instalacion_id=inst.id, nombre="Reserva de agua", tipo="Reserva de agua", ubicacion="Sala de bombas")
+        db.session.add(reserva)
+        equipos["bomba"].append(reserva)
         n_eca = n_eca_override or p["eca"]
         for i in range(n_eca):
             e = Equipo(instalacion_id=inst.id, nombre=f"ECA Sector {chr(65 + i % 26)}{i // 26 or ''}",
@@ -305,19 +400,7 @@ def _seed_clientes_demo():
         db.session.flush()
         return equipos
 
-    def datos_bomba(base):
-        return {"presion_descarga": round(base + rng.uniform(-4, 4), 0),
-                "presion_succion": round(base * 0.15 + rng.uniform(-1, 1), 0),
-                "rpm": 1770 + rng.choice([-5, 0, 0, 5]),
-                "estado": rng.choice(["OK", "OK", "OK", "Revisar"])}
-
-    def datos_eca():
-        return {"voltaje": round(13.2 + rng.uniform(-0.3, 0.4), 1), "zona": "OK"}
-
-    def datos_bie():
-        return {"presion": round(90 + rng.uniform(-10, 10), 0), "manguera": rng.choice(["OK", "OK", "Cambiar"])}
-
-    for cdata in clientes_demo:
+    for idx_cliente, cdata in enumerate(clientes_demo):
         if Cliente.query.filter_by(nombre=cdata["nombre"]).first():
             continue
         cliente = Cliente(empresa_id=empresa_id, nombre=cdata["nombre"], contacto=cdata["contacto"],
@@ -325,14 +408,14 @@ def _seed_clientes_demo():
         db.session.add(cliente)
         db.session.flush()
 
-        t_bomba, t_eca, t_bie = crear_tipos_formulario(cliente)
+        importar_catalogo(cliente)
 
         for idx_inst, (nombre_inst, direccion, perfil, n_eca_override) in enumerate(cdata["instalaciones"]):
             inst = Instalacion(cliente_id=cliente.id, nombre=nombre_inst, direccion=direccion)
             db.session.add(inst)
             db.session.flush()
 
-            equipos = crear_equipos(inst, perfil, n_eca_override)
+            equipos = crear_equipos(inst, perfil, n_eca_override, idx_cliente)
 
             contrato = Contrato(instalacion_id=inst.id, nombre=f"Contrato anual {hoy.year}",
                                 fecha_inicio=hoy - timedelta(days=200), fecha_fin=hoy + timedelta(days=165),
@@ -343,10 +426,12 @@ def _seed_clientes_demo():
             db.session.add(servicio)
             db.session.flush()
 
-            muestra_bomba = equipos["bomba"][:2]
-            muestra_eca = equipos["eca"][:2]
             muestra_bie = equipos["bie"][:2]
 
+            # Historial de visitas cerradas, sin checklists precargados --
+            # quedan listos para que se completen desde la app (mismo
+            # criterio que "Cargar checklist de categoría"), en vez de
+            # simular datos que no se corresponden con ningún ensayo real.
             for dias_atras in (75, 45, 15):
                 fecha_v = hoy - timedelta(days=dias_atras)
                 v = Visita(instalacion_id=inst.id, contrato_id=contrato.id, fecha=fecha_v,
@@ -360,23 +445,6 @@ def _seed_clientes_demo():
                 ot.asignar_numero()
                 item = ItemVisita(visita_id=v.id, servicio_contrato_id=servicio.id, estado="Cumplido")
                 db.session.add(item)
-                db.session.flush()
-
-                for eq in muestra_bomba:
-                    f = Formulario(item_visita_id=item.id, tipo_formulario_id=t_bomba.id, equipo_id=eq.id,
-                                   fecha_creacion=datetime.combine(fecha_v, datetime.min.time()))
-                    f.set_datos(datos_bomba(118))
-                    db.session.add(f)
-                for eq in muestra_eca:
-                    f = Formulario(item_visita_id=item.id, tipo_formulario_id=t_eca.id, equipo_id=eq.id,
-                                   fecha_creacion=datetime.combine(fecha_v, datetime.min.time()))
-                    f.set_datos(datos_eca())
-                    db.session.add(f)
-                for eq in muestra_bie:
-                    f = Formulario(item_visita_id=item.id, tipo_formulario_id=t_bie.id, equipo_id=eq.id,
-                                   fecha_creacion=datetime.combine(fecha_v, datetime.min.time()))
-                    f.set_datos(datos_bie())
-                    db.session.add(f)
 
             for dias_adelante in (10, 35):
                 fecha_v = hoy + timedelta(days=dias_adelante)
