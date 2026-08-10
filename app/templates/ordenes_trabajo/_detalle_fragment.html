@@ -9,9 +9,16 @@
         <span class="badge badge-{{ ot.estado.replace(' ', '.') }} fs-6">{{ ot.estado }}</span>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+        {% if ot.visita_id %}
+            {% if ot.visita.fase == 'Abierta' and current_user.rol in ('Técnico', 'Administrador', 'Jefe') %}
+            <a href="{{ url_for('visitas.enviar_revision', visita_id=ot.visita_id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-send me-1"></i>Enviar a revisión</a>
+            {% elif ot.visita.fase == 'En revisión' and current_user.rol in ('Administrador', 'Jefe') %}
+            <a href="{{ url_for('visitas.cerrar', visita_id=ot.visita_id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-lock me-1"></i>Cerrar visita</a>
+            {% endif %}
+        {% endif %}
         <a href="{{ url_for('ordenes.pdf', ot_id=ot.id) }}" class="btn btn-sm btn-outline-dark" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
         {% if current_user.rol in ('Administrador', 'Jefe') %}
-        <a href="{{ url_for('ordenes.editar', ot_id=ot.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Editar</a>
+        <a href="{{ url_for('ordenes.editar', ot_id=ot.id) }}" class="btn btn-sm btn-outline-secondary" data-modal-form><i class="bi bi-pencil me-1"></i>Editar</a>
         {% endif %}
     </div>
 </div>
@@ -35,11 +42,12 @@
         <div class="campo-info"><div class="l">Apertura</div><div class="v">{{ ot.fecha_apertura.strftime('%d/%m/%Y') }}</div></div>
         <div class="campo-info"><div class="l">Cierre</div><div class="v {{ 'muted' if not ot.fecha_cierre }}">{{ ot.fecha_cierre.strftime('%d/%m/%Y') if ot.fecha_cierre else '-' }}</div></div>
         {% if ot.visita %}
+        {% set badge_fase = 'Cumplido' if ot.visita.fase == 'Cerrada' else ('Pendiente' if ot.visita.fase == 'En revisión' else 'Programado') %}
         <div class="campo-info">
             <div class="l">Visita planificada</div>
             <div class="v">
                 <a href="{{ url_for('visitas.detalle', visita_id=ot.visita_id) }}">Ver visita del {{ ot.visita.fecha.strftime('%d/%m/%Y') }}</a>
-                <span class="badge badge-{{ ot.visita.fase.replace(' ', '.') }} ms-1">{{ ot.visita.fase }}</span>
+                <span class="badge badge-{{ badge_fase }} ms-1">{{ ot.visita.fase }}</span>
             </div>
         </div>
         {% endif %}

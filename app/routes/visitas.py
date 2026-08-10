@@ -331,6 +331,11 @@ def enviar_revision(visita_id):
         firma_tecnico = request.form.get("firma_tecnico")
         if firma_tecnico:
             visita.firma_tecnico = firma_tecnico
+        # La OT no tiene un estado propio editable mientras esté ligada a
+        # una visita (ver ordenes.editar) -- se sincroniza sola con la fase
+        # de la visita, para no terminar con dos estados desincronizados.
+        if visita.orden_trabajo and visita.orden_trabajo.estado not in ("Finalizada", "Cancelada"):
+            visita.orden_trabajo.estado = "En proceso"
         notificar_gestion(
             empresa_id=current_user.empresa_id,
             tipo="visita_revision",
@@ -392,6 +397,14 @@ def cerrar(visita_id):
         if visita.orden_trabajo and visita.orden_trabajo.estado != "Cancelada":
             visita.orden_trabajo.estado = "Finalizada"
             visita.orden_trabajo.fecha_cierre = visita.fecha_cierre
+            # Si la OT viene de un presupuesto aprobado, cerrarla acá
+            # también cierra el presupuesto y resuelve la deficiencia que
+            # lo originó (mismo efecto que finalizar una OT correctiva a
+            # mano desde ordenes.editar).
+            presupuesto = visita.orden_trabajo.presupuesto_origen
+            if presupuesto and presupuesto.estado != "Cerrado":
+                presupuesto.cambiar_estado("Cerrado", current_user.id, "Cerrado automáticamente al cerrar la visita.")
+                presupuesto.observacion.marcar_resuelta(current_user.id)
         db.session.commit()
         flash("Visita cerrada. Ya podés descargar el PDF de devolución.", "success")
         return redirect(url_for("visitas.detalle", visita_id=visita.id))
@@ -423,6 +436,9 @@ def reabrir(visita_id):
     visita.cerrada = False
     visita.fecha_cierre = None
     visita.cerrada_por_id = None
+    if visita.orden_trabajo and visita.orden_trabajo.estado == "Finalizada":
+        visita.orden_trabajo.estado = "En proceso"
+        visita.orden_trabajo.fecha_cierre = None
     db.session.commit()
     flash(
         "Visita reabierta. Recordá que el PDF de devolución ya entregado no va a reflejar los cambios hasta volver a cerrarla.",

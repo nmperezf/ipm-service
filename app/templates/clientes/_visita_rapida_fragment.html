@@ -57,7 +57,7 @@
             <select name="tecnico_id" class="form-select">
                 <option value="">-- Sin asignar --</option>
                 {% for t in tecnicos %}
-                <option value="{{ t.id }}" {% if current_user.rol == 'Técnico' and t.id == current_user.id %}selected{% endif %}>{{ t.nombre_completo or t.username }}{% if t.rol == 'Jefe' %} (Jefe){% endif %}</option>
+                <option value="{{ t.id }}" {% if current_user.rol == 'Técnico' and t.id == current_user.id %}selected{% endif %}>{{ t.nombre_completo or t.username }}{% if t.rol != 'Técnico' %} ({{ t.rol }}){% endif %}</option>
                 {% endfor %}
             </select>
         </div>

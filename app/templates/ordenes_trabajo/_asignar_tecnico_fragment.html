@@ -7,7 +7,7 @@
         <select name="tecnico_id" class="form-select" autofocus>
             <option value="">-- Sin asignar --</option>
             {% for t in tecnicos %}
-            <option value="{{ t.id }}" {% if ot.tecnico_id == t.id %}selected{% endif %}>{{ t.nombre_completo or t.username }}{% if t.rol == 'Jefe' %} (Jefe){% endif %}</option>
+            <option value="{{ t.id }}" {% if ot.tecnico_id == t.id %}selected{% endif %}>{{ t.nombre_completo or t.username }}{% if t.rol != 'Técnico' %} ({{ t.rol }}){% endif %}</option>
             {% endfor %}
         </select>
         <div class="form-text">Un Jefe también puede asignarse a sí mismo para salir a hacer el servicio.</div>

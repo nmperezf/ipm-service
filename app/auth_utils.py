@@ -111,13 +111,14 @@ def verificar_escritura_cliente(cliente):
 
 def tecnicos_de_la_empresa(empresa_id=None):
     """Usuarios elegibles como 'técnico asignado' de una OT: rol Técnico,
-    y también Jefe (sale a campo como uno más), activos, de una empresa
-    (por defecto, la del usuario logueado)."""
+    y también Jefe/Administrador (salen a campo como uno más -- en muchas
+    empresas chicas el "jefe" de la operación tiene rol Administrador, no
+    Jefe), activos, de una empresa (por defecto, la del usuario logueado)."""
     from app.models import Usuario
 
     empresa_id = empresa_id or current_user.empresa_id
     return Usuario.query.filter(
-        Usuario.rol.in_(["Técnico", "Jefe"]), Usuario.empresa_id == empresa_id, Usuario.activo == True  # noqa: E712
+        Usuario.rol.in_(["Técnico", "Jefe", "Administrador"]), Usuario.empresa_id == empresa_id, Usuario.activo == True  # noqa: E712
     ).order_by(Usuario.nombre_completo).all()
 
 
