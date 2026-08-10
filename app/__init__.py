@@ -280,12 +280,21 @@ def _seed_catalogo_nfpa():
         punto_estado("falla_motor_diesel", "Falla de motor diésel / batería baja", "Si hay bomba de respaldo diésel, verificar que sus fallas se transmitan correctamente. N/A si no aplica."),
     ]
 
-    campos_eca = [
-        punto_estado("valvula_principal", "Válvula principal totalmente abierta y supervisada", "Confirmar posición y supervisión eléctrica de la válvula."),
-        punto_numero("presion_agua", "Presión de agua (manómetro)", "PSI", "Lectura del manómetro de la estación."),
-        punto_estado("alarma_flujo", "Prueba de alarma de flujo", "Activar el flujo de prueba y verificar que la alarma suene y se transmita."),
-        punto_estado("valvula_drenaje", "Válvula de drenaje / prueba", "Verificar que abra y cierre sin fugas."),
-        punto_estado("estado_general", "Estado general y señalización", "Corrosión, identificación y accesibilidad de la estación."),
+    # ECA: dos planillas separadas -- la inspección de rutina (más
+    # frecuente) solo mira posición/manómetros/estado sin accionar nada;
+    # la de inspección + prueba agrega los ensayos activos de tamper y
+    # sensor de flujo, con una frecuencia más espaciada (semestral es lo
+    # típico para el tamper). Ambas comparten los primeros 5 puntos.
+    campos_eca_inspeccion = [
+        punto_estado("posicion_valvula", "Posición de válvula", "Verificar que la válvula de control esté en la posición correcta (normalmente abierta) y visualmente asegurada/sellada o supervisada."),
+        punto_numero("presion_arriba", "Presión manómetro arriba", "PSI", "Lectura del manómetro aguas arriba (lado de suministro)."),
+        punto_numero("presion_abajo", "Presión manómetro abajo", "PSI", "Lectura del manómetro aguas abajo (lado de sistema)."),
+        punto_estado("estado_eca", "Estado del ECA", "Corrosión, fugas, identificación y accesibilidad de la estación."),
+        punto_estado("estado_supervision", "Estado del sistema de supervisión y alarma", "Inspección visual: sin indicación de falla en el panel para esta zona (no se activa la señal en esta planilla)."),
+    ]
+    campos_eca_inspeccion_prueba = campos_eca_inspeccion + [
+        punto_estado("prueba_tamper", "Prueba de tamper de válvula", "Accionar el interruptor de supervisión de la válvula y verificar que la señal llegue correctamente a la central de alarma."),
+        punto_estado("prueba_flujo", "Prueba de sensor de flujo", "Abrir el drenaje de prueba (o testigo) y verificar que la alarma de flujo se active y transmita correctamente."),
     ]
 
     campos_bie = [
@@ -303,7 +312,8 @@ def _seed_catalogo_nfpa():
         crear(eid, "Inspección semanal — Motobomba", "Motobomba", "NFPA 25 · §8.3 Inspección semanal — motor diésel", campos_motobomba)
         crear(eid, "Inspección — Reserva de agua", "Reserva de agua", "NFPA 25 · §9.2 Inspección de tanques", campos_reserva_agua)
         crear(eid, "Señales de supervisión y falla — Sala de bombas", None, "NFPA 25 · §4.6 — Señales de supervisión y falla", campos_senales, por_equipo=False)
-        crear(eid, "Inspección — ECA", "ECA", "NFPA 25 · Cap. 13 (Válvulas) / Cap. 5", campos_eca)
+        crear(eid, "Inspección — ECA", "ECA", "NFPA 25 · Cap. 13 §13.3.2 — Inspección de válvulas (posición, manómetros, estado)", campos_eca_inspeccion)
+        crear(eid, "Inspección + prueba — ECA", "ECA", "NFPA 25 · Cap. 13 §13.3.3 — Prueba de válvula y dispositivos de supervisión/alarma (frecuencia varía según edición adoptada)", campos_eca_inspeccion_prueba)
         crear(eid, "Inspección — BIE", "BIE", "NFPA 25 · Cap. 6 (Standpipe and Hose Systems)", campos_bie)
 
     db.session.commit()
