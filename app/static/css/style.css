@@ -1671,6 +1671,8 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .grid-info .campo-info .l { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-muted); margin-bottom: .3rem; }
 .grid-info .campo-info .v { font-size: .92rem; font-weight: 600; }
 .grid-info .campo-info .v.muted { color: var(--ink-faint); font-weight: 500; }
+.link-cambiar-tecnico { margin-left: .35rem; color: var(--ink-faint); font-size: .82rem; }
+.link-cambiar-tecnico:hover { color: var(--accent); }
 
 .panel-detalle .empty-detalle {
     display: flex; align-items: center; justify-content: center; min-height: 320px;

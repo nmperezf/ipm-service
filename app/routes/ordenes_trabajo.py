@@ -1,6 +1,6 @@
 from datetime import date, datetime
 
-from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
+from flask import Blueprint, Response, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
 
 from app import db
@@ -18,6 +18,7 @@ from app.models import (
 )
 from app.notificaciones import notificar_usuario
 from app.pdf_ot import generar_pdf_ot
+from app.utils import es_ajax
 
 ordenes_bp = Blueprint("ordenes", __name__, url_prefix="/ordenes-trabajo")
 
@@ -153,11 +154,53 @@ def nueva():
 def detalle(ot_id):
     ot = OrdenTrabajo.query.get_or_404(ot_id)
     _verificar_acceso_ot(ot)
-    datos = _datos_lista()
     repuestos_disponibles = _repuestos_disponibles()
+    if es_ajax():
+        # Refresco parcial del panel de detalle (ver #contenido-refrescable
+        # en list.html) -- lo usa el modal de "cambiar técnico" para
+        # actualizar el nombre sin recargar toda la lista de OT.
+        return render_template(
+            "ordenes_trabajo/_detalle_fragment.html", ot_actual=ot, repuestos_disponibles=repuestos_disponibles
+        )
+    datos = _datos_lista()
     return render_template(
         "ordenes_trabajo/list.html", ot_actual=ot, repuestos_disponibles=repuestos_disponibles, **datos
     )
+
+
+@ordenes_bp.route("/<int:ot_id>/asignar-tecnico", methods=["GET", "POST"])
+@rol_requerido("Administrador", "Jefe")
+def asignar_tecnico(ot_id):
+    """Cambiar el técnico de una OT ya existente sin pasar por 'Editar OT'
+    completo -- se abre como modal desde el detalle (ver data-modal-form
+    en _detalle_fragment.html)."""
+    ot = OrdenTrabajo.query.get_or_404(ot_id)
+    verificar_acceso_cliente(ot.instalacion.cliente)
+    tecnicos = tecnicos_de_la_empresa()
+
+    if request.method == "POST":
+        tecnico_id_anterior = ot.tecnico_id
+        tecnico_id = request.form.get("tecnico_id")
+        ot.tecnico_id = int(tecnico_id) if tecnico_id else None
+        db.session.commit()
+        if ot.tecnico_id and ot.tecnico_id != tecnico_id_anterior:
+            notificar_usuario(
+                ot.tecnico_usuario,
+                tipo="ot_asignada",
+                titulo=f"OT {ot.numero} asignada — {ot.instalacion.nombre}",
+                empresa_id=current_user.empresa_id,
+                cliente_id=ot.instalacion.cliente_id,
+                enlace=url_for("ordenes.detalle", ot_id=ot.id),
+                remitente=current_user,
+            )
+        mensaje = f"Técnico asignado: {ot.nombre_tecnico}." if ot.tecnico_id else "OT sin técnico asignado."
+        if es_ajax():
+            return jsonify(ok=True, mensaje=mensaje)
+        flash(mensaje, "success")
+        return redirect(url_for("ordenes.detalle", ot_id=ot.id))
+
+    template = "ordenes_trabajo/_asignar_tecnico_fragment.html" if es_ajax() else "ordenes_trabajo/asignar_tecnico.html"
+    return render_template(template, ot=ot, tecnicos=tecnicos)
 
 
 @ordenes_bp.route("/<int:ot_id>/editar", methods=["GET", "POST"])
