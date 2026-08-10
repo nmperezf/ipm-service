@@ -89,7 +89,8 @@ def listar():
     ot_actual = datos["ordenes"][0] if datos["ordenes"] else None
     repuestos_disponibles = _repuestos_disponibles() if ot_actual else []
     return render_template(
-        "ordenes_trabajo/list.html", ot_actual=ot_actual, repuestos_disponibles=repuestos_disponibles, **datos
+        "ordenes_trabajo/list.html", ot_actual=ot_actual, repuestos_disponibles=repuestos_disponibles,
+        tecnicos=tecnicos_de_la_empresa(), tipos=TIPOS_OT, prioridades=PRIORIDADES_OT, **datos
     )
 
 
@@ -155,36 +156,47 @@ def detalle(ot_id):
     ot = OrdenTrabajo.query.get_or_404(ot_id)
     _verificar_acceso_ot(ot)
     repuestos_disponibles = _repuestos_disponibles()
+    tecnicos = tecnicos_de_la_empresa()
     if es_ajax():
         # Refresco parcial del panel de detalle (ver #contenido-refrescable
-        # en list.html) -- lo usa el modal de "cambiar técnico" para
-        # actualizar el nombre sin recargar toda la lista de OT.
+        # en list.html) -- lo usa el guardado inline de cada campo para
+        # actualizar la ficha sin recargar toda la lista de OT.
         return render_template(
-            "ordenes_trabajo/_detalle_fragment.html", ot_actual=ot, repuestos_disponibles=repuestos_disponibles
+            "ordenes_trabajo/_detalle_fragment.html",
+            ot_actual=ot, repuestos_disponibles=repuestos_disponibles, tecnicos=tecnicos,
+            tipos=TIPOS_OT, prioridades=PRIORIDADES_OT, estados=ESTADOS_OT,
         )
     datos = _datos_lista()
     return render_template(
-        "ordenes_trabajo/list.html", ot_actual=ot, repuestos_disponibles=repuestos_disponibles, **datos
+        "ordenes_trabajo/list.html", ot_actual=ot, repuestos_disponibles=repuestos_disponibles,
+        tecnicos=tecnicos, tipos=TIPOS_OT, prioridades=PRIORIDADES_OT, **datos
     )
 
 
-@ordenes_bp.route("/<int:ot_id>/asignar-tecnico", methods=["GET", "POST"])
+@ordenes_bp.route("/<int:ot_id>/actualizar-campo", methods=["POST"])
 @rol_requerido("Administrador", "Jefe")
-def asignar_tecnico(ot_id):
-    """Cambiar el técnico de una OT ya existente sin pasar por 'Editar OT'
-    completo -- se abre como modal desde el detalle (ver data-modal-form
-    en _detalle_fragment.html)."""
+def actualizar_campo(ot_id):
+    """Guarda un solo campo de la OT al vuelo (select o textarea que se
+    guardan solos al cambiar, directo en la ficha -- ver
+    _detalle_fragment.html) en vez de pasar por una pantalla de 'Editar'
+    aparte. tecnico_id y observaciones siempre están disponibles; estado y
+    descripcion solo en OT correctivas (sin visita) -- si la OT tiene una
+    visita ligada, su estado lo define la fase de la visita (ver
+    visitas.enviar_revision / visitas.cerrar), no un campo editable acá."""
     ot = OrdenTrabajo.query.get_or_404(ot_id)
     verificar_acceso_cliente(ot.instalacion.cliente)
-    tecnicos = tecnicos_de_la_empresa()
+    campo = request.form.get("campo")
+    valor = request.form.get("valor", "").strip()
 
-    if request.method == "POST":
+    if campo == "tipo" and valor in TIPOS_OT:
+        ot.tipo = valor
+    elif campo == "prioridad" and valor in PRIORIDADES_OT:
+        ot.prioridad = valor
+    elif campo == "tecnico_id":
         tecnico_id_anterior = ot.tecnico_id
-        tecnico_id = request.form.get("tecnico_id")
-        ot.tecnico_id = int(tecnico_id) if tecnico_id else None
+        ot.tecnico_id = int(valor) if valor else None
         if ot.tecnico_id and ot.estado == "Pendiente":
             ot.estado = "Asignada"
-        db.session.commit()
         if ot.tecnico_id and ot.tecnico_id != tecnico_id_anterior:
             notificar_usuario(
                 ot.tecnico_usuario,
@@ -195,62 +207,23 @@ def asignar_tecnico(ot_id):
                 enlace=url_for("ordenes.detalle", ot_id=ot.id),
                 remitente=current_user,
             )
-        mensaje = f"Técnico asignado: {ot.nombre_tecnico}." if ot.tecnico_id else "OT sin técnico asignado."
-        if es_ajax():
-            return jsonify(ok=True, mensaje=mensaje)
-        flash(mensaje, "success")
-        return redirect(url_for("ordenes.detalle", ot_id=ot.id))
-
-    template = "ordenes_trabajo/_asignar_tecnico_fragment.html" if es_ajax() else "ordenes_trabajo/asignar_tecnico.html"
-    return render_template(template, ot=ot, tecnicos=tecnicos)
-
-
-@ordenes_bp.route("/<int:ot_id>/editar", methods=["GET", "POST"])
-@rol_requerido("Administrador", "Jefe")
-def editar(ot_id):
-    """Tipo, prioridad, descripción y observaciones -- el técnico se
-    asigna aparte (ver ordenes.asignar_tecnico) y, si la OT tiene una
-    visita ligada, el estado también se maneja aparte (lo define la fase
-    de la visita: Abierta/En revisión/Cerrada -- ver visitas.enviar_revision
-    / visitas.cerrar) en vez de un campo editable acá, para no tener dos
-    estados de la misma OT desincronizados entre sí."""
-    ot = OrdenTrabajo.query.get_or_404(ot_id)
-    verificar_acceso_cliente(ot.instalacion.cliente)
-    if request.method == "POST":
-        nuevo_estado = request.form.get("estado", ot.estado) if not ot.visita_id else ot.estado
-        if nuevo_estado == "Finalizada" and ot.visita and ot.visita.observaciones_pendientes_de_revision:
-            mensaje = (
-                "No se puede finalizar: la visita asociada tiene observaciones sin aprobar. "
-                "Aprobalas primero (podés hacerlo desde 'Cerrar visita')."
-            )
-            if es_ajax():
-                return jsonify(ok=False, mensaje=mensaje), 400
-            flash(mensaje, "danger")
-            return redirect(url_for("ordenes.editar", ot_id=ot.id))
-        ot.tipo = request.form.get("tipo", ot.tipo)
-        ot.prioridad = request.form.get("prioridad", ot.prioridad)
-        ot.estado = nuevo_estado
-        ot.descripcion = request.form.get("descripcion")
-        ot.observaciones = request.form.get("observaciones")
-        if ot.estado == "Finalizada" and not ot.fecha_cierre:
-            ot.fecha_cierre = date.today()
-        # Si esta OT viene de un presupuesto aprobado, terminarla cierra
-        # también el presupuesto (el trabajo ya se ejecutó) y resuelve la
-        # deficiencia que lo originó — sin depender de que alguien se
-        # acuerde de tocar esas dos pantallas por separado.
-        if ot.estado == "Finalizada" and ot.presupuesto_origen and ot.presupuesto_origen.estado != "Cerrado":
+    elif campo == "observaciones":
+        ot.observaciones = valor or None
+    elif campo == "estado" and not ot.visita_id and valor in ESTADOS_OT:
+        if valor == "Finalizada" and ot.presupuesto_origen and ot.presupuesto_origen.estado != "Cerrado":
             presupuesto = ot.presupuesto_origen
             presupuesto.cambiar_estado("Cerrado", current_user.id, "Cerrado automáticamente al finalizar la OT.")
             presupuesto.observacion.marcar_resuelta(current_user.id)
-        db.session.commit()
-        mensaje = f"Orden {ot.numero} actualizada."
-        if es_ajax():
-            return jsonify(ok=True, mensaje=mensaje)
-        flash(mensaje, "success")
-        return redirect(url_for("ordenes.detalle", ot_id=ot.id))
+        ot.estado = valor
+        if valor == "Finalizada" and not ot.fecha_cierre:
+            ot.fecha_cierre = date.today()
+    elif campo == "descripcion" and not ot.visita_id:
+        ot.descripcion = valor or None
+    else:
+        return jsonify(ok=False, mensaje="No se pudo guardar ese campo."), 400
 
-    template = "ordenes_trabajo/_editar_fragment.html" if es_ajax() else "ordenes_trabajo/editar.html"
-    return render_template(template, ot=ot, estados=ESTADOS_OT, prioridades=PRIORIDADES_OT, tipos=TIPOS_OT)
+    db.session.commit()
+    return jsonify(ok=True, mensaje="Guardado.", tecnico=ot.nombre_tecnico, estado=ot.estado)
 
 
 @ordenes_bp.route("/<int:ot_id>/pdf")

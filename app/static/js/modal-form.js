@@ -149,6 +149,7 @@
 
         window.cerrarModalFormulario = cerrarModal;
         window.abrirModalFormulario = cargarFormulario;
+        window.mostrarToast = mostrarToast;
         backdrop.addEventListener('click', function (e) { if (e.target === backdrop) cerrarModal(); });
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && backdrop.classList.contains('abierta')) cerrarModal();

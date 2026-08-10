@@ -72,11 +72,59 @@
 
         </div>
 
-        <div class="panel-detalle" id="contenido-refrescable" data-fragmento-url="{% if ot_actual %}{{ url_for('ordenes.detalle', ot_id=ot_actual.id) }}{% endif %}">
+        <div class="panel-detalle" id="contenido-refrescable"
+             data-fragmento-url="{% if ot_actual %}{{ url_for('ordenes.detalle', ot_id=ot_actual.id) }}{% endif %}"
+             data-ot-id="{% if ot_actual %}{{ ot_actual.id }}{% endif %}">
             {% include "ordenes_trabajo/_detalle_fragment.html" %}
         </div>
     </div>
 </div>
+
+<script>
+(function () {
+    var panel = document.getElementById('contenido-refrescable');
+    if (!panel) return;
+
+    function refrescarPanel() {
+        if (!panel.dataset.fragmentoUrl) return;
+        fetch(panel.dataset.fragmentoUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(function (r) { return r.text(); })
+            .then(function (html) {
+                panel.innerHTML = html;
+                if (window.initTabla) panel.querySelectorAll('table.data-table').forEach(window.initTabla);
+            });
+    }
+
+    function guardarCampoOT(el) {
+        var otId = panel.dataset.otId;
+        if (!otId) return;
+        fetch('/ordenes-trabajo/' + otId + '/actualizar-campo', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
+            body: 'campo=' + encodeURIComponent(el.dataset.campo) + '&valor=' + encodeURIComponent(el.value),
+        })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (window.mostrarToast) window.mostrarToast(data.mensaje || (data.ok ? 'Guardado.' : 'No se pudo guardar.'));
+                if (data.ok) refrescarPanel();
+            })
+            .catch(function () {
+                if (window.mostrarToast) window.mostrarToast('No se pudo guardar. Probá de nuevo.');
+            });
+    }
+
+    // Delegación de eventos en el panel (no en cada campo): el panel se
+    // reemplaza entero después de cada guardado (ver refrescarPanel), así
+    // que atar el listener a un elemento que sobrevive el reemplazo evita
+    // tener que reengancharlo cada vez.
+    panel.addEventListener('change', function (e) {
+        if (e.target.matches('select.campo-ot')) guardarCampoOT(e.target);
+    });
+    panel.addEventListener('blur', function (e) {
+        if (e.target.matches('textarea.campo-ot')) guardarCampoOT(e.target);
+    }, true);
+})();
+</script>
 
 {% if current_user.rol != 'Técnico' %}
 <script>

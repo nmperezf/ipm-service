@@ -1671,13 +1671,69 @@ a.panel-cumplimiento:hover { transform: translateY(-1px); color: inherit; }
 .grid-info .campo-info .l { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-muted); margin-bottom: .3rem; }
 .grid-info .campo-info .v { font-size: .92rem; font-weight: 600; }
 .grid-info .campo-info .v.muted { color: var(--ink-faint); font-weight: 500; }
-.link-cambiar-tecnico { margin-left: .35rem; color: var(--ink-faint); font-size: .82rem; }
-.link-cambiar-tecnico:hover { color: var(--accent); }
 
 .panel-detalle .empty-detalle {
     display: flex; align-items: center; justify-content: center; min-height: 320px;
     color: var(--ink-faint); font-size: .9rem; padding: 2rem;
 }
+
+/* ---- Ficha de OT: edición inline -------------------------------------------
+   Tipo/prioridad/técnico/estado son selects reales que se guardan solos al
+   cambiar; descripción/observaciones se guardan solas al salir del campo.
+   Ver ordenes_trabajo/_detalle_fragment.html (estructura) y el JS de
+   guardado en ordenes_trabajo/list.html (delegación de eventos sobre
+   [data-campo], POST a ordenes.actualizar_campo). */
+.detalle-cuerpo-ot { padding: 1.1rem 1.3rem 1.5rem; }
+
+.tarjeta-estado-ot {
+    border-radius: .7rem; padding: 1rem 1.2rem; margin-bottom: 1.1rem;
+    display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap;
+    border: 1px solid var(--border);
+}
+.tarjeta-estado-ot.abierta { background: var(--surface-muted); }
+.tarjeta-estado-ot.en-revision { background: var(--warn-soft); border-color: var(--bs-warning); }
+.tarjeta-estado-ot.cerrada { background: var(--ok-soft); border-color: var(--bs-success); }
+.etiqueta-fase-ot { font-family: var(--font-mono); font-size: .68rem; text-transform: uppercase; letter-spacing: .05em; color: var(--ink-muted); margin-bottom: .3rem; }
+.tarjeta-estado-ot.en-revision .etiqueta-fase-ot { color: var(--bs-warning); }
+.tarjeta-estado-ot.cerrada .etiqueta-fase-ot { color: var(--bs-success); }
+.texto-fase-ot { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
+.sub-fase-ot { font-size: .8rem; color: var(--ink-muted); margin-top: .15rem; }
+.btn-primario-ot {
+    font-family: var(--font-display); font-weight: 700; font-size: .86rem; padding: .6rem 1.1rem; border-radius: .5rem;
+    border: none; background: var(--ink); color: var(--surface); cursor: pointer; text-decoration: none;
+    display: inline-flex; align-items: center; gap: .5rem; white-space: nowrap;
+}
+.btn-primario-ot:hover { opacity: .88; color: var(--surface); }
+.btn-primario-ot.ok { background: var(--bs-success); }
+
+.grid-campos-ot { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: .7rem; margin-bottom: 1rem; }
+.campo-ot-editable { background: var(--surface); border: 1px solid var(--border); border-radius: .6rem; padding: .55rem .75rem; position: relative; }
+.campo-ot-editable .l { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-muted); margin-bottom: .3rem; }
+.campo-ot-editable select.campo-ot {
+    width: 100%; border: none; background: none; font-family: var(--font-body); font-size: .88rem; font-weight: 600;
+    color: var(--ink); padding: 0 1.1rem 0 0; cursor: pointer; appearance: none; -webkit-appearance: none;
+}
+.campo-ot-editable::after {
+    content: "⌄"; position: absolute; right: .7rem; top: 50%; transform: translateY(-65%); color: var(--ink-faint); font-size: .85rem; pointer-events: none;
+}
+.campo-ot-editable:hover { border-color: var(--ink-faint); }
+.campo-ot-editable:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+
+.campo-ot-lectura { background: var(--surface); border: 1px solid var(--border); border-radius: .6rem; padding: .55rem .75rem; }
+.campo-ot-lectura .l { font-size: .66rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-muted); margin-bottom: .3rem; }
+.campo-ot-lectura .v { font-size: .88rem; font-weight: 600; }
+.campo-ot-lectura .v.muted { color: var(--ink-faint); font-weight: 500; }
+.campo-ot-lectura .v a { color: var(--ink); }
+
+.campo-texto-ot { background: var(--surface); border: 1px solid var(--border); border-radius: .6rem; padding: .7rem .8rem; margin-bottom: 1rem; }
+.campo-texto-ot:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+.campo-texto-ot textarea.campo-ot { width: 100%; border: none; background: none; font-family: var(--font-body); font-size: .85rem; color: var(--ink); resize: vertical; min-height: 3rem; padding: 0; }
+.campo-texto-ot textarea.campo-ot::placeholder { color: var(--ink-faint); }
+
+.lista-servicios-ot { border: 1px solid var(--border); border-radius: .7rem; overflow: hidden; margin-bottom: 1.1rem; }
+.fila-servicio-ot { padding: .6rem 1rem; border-bottom: 1px solid var(--border); background: var(--surface); font-weight: 600; font-size: .88rem; }
+.fila-servicio-ot:last-child { border-bottom: none; }
+.fila-servicio-ot.text-muted { font-weight: 500; }
 
 /* ---- Clientes: fila compacta de la lista + panel de vista previa ---------
    Elegir un cliente no navega ni recarga — todas las vistas previas ya

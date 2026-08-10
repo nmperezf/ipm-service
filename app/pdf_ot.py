@@ -44,18 +44,23 @@ def generar_pdf_ot(ot):
     )
     elementos.append(tabla_datos)
 
-    elementos.append(Paragraph("Descripción del trabajo", h2))
-    elementos.append(Paragraph(ot.descripcion or "-", normal))
-
-    # Checklist de servicios, solo para OT preventivas ligadas a una visita
-    if ot.visita and ot.visita.items:
-        elementos.append(Paragraph("Servicios de esta visita", h2))
+    # OT ligada a una visita: la "descripción libre" de siempre se
+    # reemplaza por la lista real de servicios contratados de esa visita
+    # (mismo criterio que ordenes_trabajo/_detalle_fragment.html). Las
+    # OT correctivas (sin visita) siguen con su descripción de texto.
+    if ot.visita_id:
+        elementos.append(Paragraph("Servicios contratados de esta visita", h2))
         filas = [["Servicio", "Completado"]]
         for item in ot.visita.items:
             filas.append([item.nombre_mostrado, "[ ] Sí   [ ] No"])
+        if len(filas) == 1:
+            filas.append(["Sin servicios cargados.", ""])
         tabla_servicios = Table(filas, colWidths=[11 * cm, 5 * cm])
         tabla_servicios.setStyle(estilo_tabla_encabezado())
         elementos.append(tabla_servicios)
+    else:
+        elementos.append(Paragraph("Descripción del trabajo", h2))
+        elementos.append(Paragraph(ot.descripcion or "-", normal))
 
     # Repuestos utilizados
     if ot.repuestos_usados:

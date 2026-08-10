@@ -6,105 +6,182 @@
 <div class="detalle-cab">
     <div>
         <h2>{{ ot.numero }} — {{ ot.descripcion or ot.tipo }}</h2>
-        <span class="badge badge-{{ ot.estado.replace(' ', '.') }} fs-6">{{ ot.estado }}</span>
     </div>
     <div class="d-flex gap-2 flex-wrap">
-        {% if ot.visita_id %}
-            {% if ot.visita.fase == 'Abierta' and current_user.rol in ('Técnico', 'Administrador', 'Jefe') %}
-            <a href="{{ url_for('visitas.enviar_revision', visita_id=ot.visita_id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-send me-1"></i>Enviar a revisión</a>
-            {% elif ot.visita.fase == 'En revisión' and current_user.rol in ('Administrador', 'Jefe') %}
-            <a href="{{ url_for('visitas.cerrar', visita_id=ot.visita_id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-lock me-1"></i>Cerrar visita</a>
-            {% endif %}
-        {% endif %}
         <a href="{{ url_for('ordenes.pdf', ot_id=ot.id) }}" class="btn btn-sm btn-outline-dark" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
-        {% if current_user.rol in ('Administrador', 'Jefe') %}
-        <a href="{{ url_for('ordenes.editar', ot_id=ot.id) }}" class="btn btn-sm btn-outline-secondary" data-modal-form><i class="bi bi-pencil me-1"></i>Editar</a>
-        {% endif %}
     </div>
 </div>
 
-<div class="detalle-cuerpo">
+<div class="detalle-cuerpo-ot">
 
-    <div class="grid-info">
-        <div class="campo-info"><div class="l">Tipo</div><div class="v">{{ ot.tipo }}</div></div>
-        <div class="campo-info"><div class="l">Prioridad</div><div class="v"><span class="badge badge-{{ ot.prioridad }}">{{ ot.prioridad }}</span></div></div>
-        <div class="campo-info"><div class="l">Cliente</div><div class="v"><a href="{{ url_for('clientes.detalle', cliente_id=ot.instalacion.cliente_id) }}">{{ ot.instalacion.cliente.nombre }}</a></div></div>
-        <div class="campo-info"><div class="l">Instalación</div><div class="v"><a href="{{ url_for('instalaciones.detalle', instalacion_id=ot.instalacion_id) }}">{{ ot.instalacion.nombre }}</a></div></div>
-        <div class="campo-info">
-            <div class="l">Técnico</div>
-            <div class="v {{ 'muted' if ot.nombre_tecnico == '-' }}">
-                {{ ot.nombre_tecnico }}
-                {% if current_user.rol in ('Administrador', 'Jefe') %}
-                <a href="{{ url_for('ordenes.asignar_tecnico', ot_id=ot.id) }}" class="link-cambiar-tecnico" data-modal-form title="Cambiar técnico"><i class="bi bi-pencil-square"></i></a>
-                {% endif %}
-            </div>
-        </div>
-        <div class="campo-info"><div class="l">Apertura</div><div class="v">{{ ot.fecha_apertura.strftime('%d/%m/%Y') }}</div></div>
-        <div class="campo-info"><div class="l">Cierre</div><div class="v {{ 'muted' if not ot.fecha_cierre }}">{{ ot.fecha_cierre.strftime('%d/%m/%Y') if ot.fecha_cierre else '-' }}</div></div>
-        {% if ot.visita %}
-        {% set badge_fase = 'Cumplido' if ot.visita.fase == 'Cerrada' else ('Pendiente' if ot.visita.fase == 'En revisión' else 'Programado') %}
-        <div class="campo-info">
-            <div class="l">Visita planificada</div>
-            <div class="v">
-                <a href="{{ url_for('visitas.detalle', visita_id=ot.visita_id) }}">Ver visita del {{ ot.visita.fecha.strftime('%d/%m/%Y') }}</a>
-                <span class="badge badge-{{ badge_fase }} ms-1">{{ ot.visita.fase }}</span>
-            </div>
-        </div>
+{% if ot.visita_id %}
+{# La OT ligada a una visita no tiene un estado propio para elegir --
+   lo define la fase de la visita (Abierta/En revisión/Cerrada). El
+   técnico manda a revisión desde LA VISITA, no desde acá (no tiene por
+   qué pensar en dos lugares distintos para completar un mismo trabajo);
+   acá solo aparece la acción de Cerrar, que es la que hace el Jefe al
+   revisar. #}
+{% set fase = ot.visita.fase %}
+<div class="tarjeta-estado-ot {{ 'en-revision' if fase == 'En revisión' else ('cerrada' if fase == 'Cerrada' else 'abierta') }}">
+    <div>
+        <div class="etiqueta-fase-ot">Estado actual</div>
+        {% if fase == 'Abierta' %}
+        <div class="texto-fase-ot">Abierta — el técnico todavía está en el service</div>
+        <div class="sub-fase-ot">Esto lo maneja el técnico desde la visita. Se actualiza solo cuando la mande a revisión.</div>
+        {% elif fase == 'En revisión' %}
+        <div class="texto-fase-ot">En revisión — el técnico ya la mandó</div>
+        <div class="sub-fase-ot">Revisá lo que cargó en la visita y cerrala si está todo OK.</div>
+        {% else %}
+        <div class="texto-fase-ot">Cerrada — trabajo terminado</div>
+        <div class="sub-fase-ot">Cerrada el {{ ot.visita.fecha_cierre.strftime('%d/%m/%Y') if ot.visita.fecha_cierre else '-' }}{% if ot.visita.cerrada_por %} por {{ ot.visita.cerrada_por.nombre_completo or ot.visita.cerrada_por.username }}{% endif %}. Ya se puede descargar el PDF de devolución.</div>
         {% endif %}
     </div>
-
-    <p><strong>Descripción:</strong><br>{{ ot.descripcion or '-' }}</p>
-    {% if ot.observaciones %}<p><strong>Observaciones:</strong><br>{{ ot.observaciones }}</p>{% endif %}
-
-    {% if current_user.rol in ('Administrador', 'Jefe') and not ot.visita_id %}
-    <form method="POST" action="{{ url_for('ordenes.eliminar', ot_id=ot.id) }}" class="mb-4"
-          onsubmit="return confirm('¿Eliminar la OT {{ ot.numero }}? Si tenía repuestos consumidos, se repone el stock. Esta acción no se puede deshacer.');">
-        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar OT</button>
-    </form>
+    {% if fase == 'En revisión' and current_user.rol in ('Administrador', 'Jefe') %}
+    <a href="{{ url_for('visitas.cerrar', visita_id=ot.visita_id) }}" class="btn-primario-ot ok"><i class="bi bi-lock me-1"></i>Cerrar</a>
     {% endif %}
+</div>
+{% endif %}
 
-    <div class="seccion-titulo-doc">Repuestos utilizados</div>
-    <div class="table-responsive">
-    <table class="table table-sm data-table">
-        <thead><tr><th>Repuesto</th><th>Cantidad</th><th>Fecha</th><th></th></tr></thead>
-        <tbody>
-            {% for uso in ot.repuestos_usados %}
-            <tr>
-                <td>{{ uso.repuesto.nombre }}</td>
-                <td>{{ uso.cantidad }} {{ uso.repuesto.unidad }}</td>
-                <td>{{ uso.fecha.strftime('%d/%m/%Y') }}</td>
-                <td>
-                    <form method="POST" action="{{ url_for('ordenes.eliminar_repuesto_usado', uso_id=uso.id) }}"
-                          onsubmit="return confirm('¿Quitar este repuesto de la OT? Se repone al stock.');">
-                        <button type="submit" class="btn btn-sm btn-outline-danger">Quitar</button>
-                    </form>
-                </td>
-            </tr>
-            {% else %}
-            <tr><td colspan="4"><div class="estado-vacio-doc"><i class="bi bi-box-seam"></i><p class="mb-0">Sin repuestos cargados en esta OT.</p></div></td></tr>
+{% set puede_editar_ot = current_user.rol in ('Administrador', 'Jefe') %}
+<div class="grid-campos-ot">
+    {% if puede_editar_ot %}
+    <div class="campo-ot-editable">
+        <div class="l">Tipo</div>
+        <select class="campo-ot" data-campo="tipo">
+            {% for t in tipos %}
+            <option value="{{ t }}" {% if ot.tipo == t %}selected{% endif %}>{{ t }}</option>
             {% endfor %}
-        </tbody>
-    </table>
+        </select>
     </div>
+    <div class="campo-ot-editable">
+        <div class="l">Prioridad</div>
+        <select class="campo-ot" data-campo="prioridad">
+            {% for p in prioridades %}
+            <option value="{{ p }}" {% if ot.prioridad == p %}selected{% endif %}>{{ p }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="campo-ot-editable">
+        <div class="l">Técnico</div>
+        <select class="campo-ot" data-campo="tecnico_id">
+            <option value="">-- Sin asignar --</option>
+            {% for t in tecnicos %}
+            <option value="{{ t.id }}" {% if ot.tecnico_id == t.id %}selected{% endif %}>{{ t.nombre_completo or t.username }}{% if t.rol != 'Técnico' %} ({{ t.rol }}){% endif %}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% if not ot.visita_id %}
+    <div class="campo-ot-editable">
+        <div class="l">Estado</div>
+        <select class="campo-ot" data-campo="estado">
+            {% for e in estados %}
+            <option value="{{ e }}" {% if ot.estado == e %}selected{% endif %}>{{ e }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="campo-ot-lectura"><div class="l">Tipo</div><div class="v">{{ ot.tipo }}</div></div>
+    <div class="campo-ot-lectura"><div class="l">Prioridad</div><div class="v">{{ ot.prioridad }}</div></div>
+    <div class="campo-ot-lectura"><div class="l">Técnico</div><div class="v {{ 'muted' if ot.nombre_tecnico == '-' }}">{{ ot.nombre_tecnico }}</div></div>
+    {% if not ot.visita_id %}
+    <div class="campo-ot-lectura"><div class="l">Estado</div><div class="v">{{ ot.estado }}</div></div>
+    {% endif %}
+    {% endif %}
+    <div class="campo-ot-lectura">
+        <div class="l">Cliente</div>
+        <div class="v"><a href="{{ url_for('clientes.detalle', cliente_id=ot.instalacion.cliente_id) }}">{{ ot.instalacion.cliente.nombre }}</a></div>
+    </div>
+    <div class="campo-ot-lectura">
+        <div class="l">Instalación</div>
+        <div class="v"><a href="{{ url_for('instalaciones.detalle', instalacion_id=ot.instalacion_id) }}">{{ ot.instalacion.nombre }}</a></div>
+    </div>
+    <div class="campo-ot-lectura">
+        <div class="l">Apertura</div>
+        <div class="v">{{ ot.fecha_apertura.strftime('%d/%m/%Y') }}</div>
+    </div>
+    {% if ot.fecha_cierre %}
+    <div class="campo-ot-lectura">
+        <div class="l">Cierre</div>
+        <div class="v">{{ ot.fecha_cierre.strftime('%d/%m/%Y') }}</div>
+    </div>
+    {% endif %}
+</div>
 
-    <div class="seccion-titulo-doc">Agregar repuesto</div>
-    <form method="POST" action="{{ url_for('ordenes.agregar_repuesto', ot_id=ot.id) }}" class="row g-2 align-items-end">
-        <div class="col-md-6">
-            <select name="repuesto_id" class="form-select" required>
-                {% for r in repuestos_disponibles %}
-                <option value="{{ r.id }}">{{ r.nombre }} (stock: {{ r.stock_actual }} {{ r.unidad }})</option>
-                {% else %}
-                <option value="" disabled>No hay repuestos cargados en inventario</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="col-md-3">
-            <input type="number" name="cantidad" class="form-control" min="1" placeholder="Cantidad" required>
-        </div>
-        <div class="col-md-3">
-            <button type="submit" class="btn btn-outline-primary w-100">Descontar del stock</button>
-        </div>
-    </form>
+{% if ot.visita_id %}
+<div class="seccion-titulo-doc">Servicios contratados de esta visita</div>
+<div class="lista-servicios-ot">
+    {% for item in ot.visita.items %}
+    <div class="fila-servicio-ot">{{ item.nombre_mostrado }}</div>
+    {% else %}
+    <div class="fila-servicio-ot text-muted">Sin servicios cargados.</div>
+    {% endfor %}
+</div>
+{% elif puede_editar_ot %}
+<div class="campo-texto-ot">
+    <textarea class="campo-ot" data-campo="descripcion" placeholder="Descripción del trabajo...">{{ ot.descripcion or '' }}</textarea>
+</div>
+{% elif ot.descripcion %}
+<p>{{ ot.descripcion }}</p>
+{% endif %}
+
+{% if puede_editar_ot %}
+<div class="campo-texto-ot">
+    <textarea class="campo-ot" data-campo="observaciones" placeholder="Observaciones (opcional)...">{{ ot.observaciones or '' }}</textarea>
+</div>
+{% elif ot.observaciones %}
+<p><strong>Observaciones:</strong><br>{{ ot.observaciones }}</p>
+{% endif %}
+
+{% if current_user.rol in ('Administrador', 'Jefe') and not ot.visita_id %}
+<form method="POST" action="{{ url_for('ordenes.eliminar', ot_id=ot.id) }}" class="mb-4"
+      onsubmit="return confirm('¿Eliminar la OT {{ ot.numero }}? Si tenía repuestos consumidos, se repone el stock. Esta acción no se puede deshacer.');">
+    <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar OT</button>
+</form>
+{% endif %}
+
+<div class="seccion-titulo-doc">Repuestos utilizados</div>
+<div class="table-responsive">
+<table class="table table-sm data-table">
+    <thead><tr><th>Repuesto</th><th>Cantidad</th><th>Fecha</th><th></th></tr></thead>
+    <tbody>
+        {% for uso in ot.repuestos_usados %}
+        <tr>
+            <td>{{ uso.repuesto.nombre }}</td>
+            <td>{{ uso.cantidad }} {{ uso.repuesto.unidad }}</td>
+            <td>{{ uso.fecha.strftime('%d/%m/%Y') }}</td>
+            <td>
+                <form method="POST" action="{{ url_for('ordenes.eliminar_repuesto_usado', uso_id=uso.id) }}"
+                      onsubmit="return confirm('¿Quitar este repuesto de la OT? Se repone al stock.');">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Quitar</button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="4"><div class="estado-vacio-doc"><i class="bi bi-box-seam"></i><p class="mb-0">Sin repuestos cargados en esta OT.</p></div></td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+<div class="seccion-titulo-doc">Agregar repuesto</div>
+<form method="POST" action="{{ url_for('ordenes.agregar_repuesto', ot_id=ot.id) }}" class="row g-2 align-items-end">
+    <div class="col-md-6">
+        <select name="repuesto_id" class="form-select" required>
+            {% for r in repuestos_disponibles %}
+            <option value="{{ r.id }}">{{ r.nombre }} (stock: {{ r.stock_actual }} {{ r.unidad }})</option>
+            {% else %}
+            <option value="" disabled>No hay repuestos cargados en inventario</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-md-3">
+        <input type="number" name="cantidad" class="form-control" min="1" placeholder="Cantidad" required>
+    </div>
+    <div class="col-md-3">
+        <button type="submit" class="btn btn-outline-primary w-100">Descontar del stock</button>
+    </div>
+</form>
 
 </div>
 {% endif %}
