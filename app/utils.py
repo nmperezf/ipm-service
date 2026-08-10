@@ -78,6 +78,8 @@ def serie_numerica(formularios, nombre_campo):
     serie = []
     for f in formularios:
         valor = f.datos().get(nombre_campo)
+        if isinstance(valor, dict):
+            valor = valor.get("valor")
         try:
             valor_float = float(valor)
         except (TypeError, ValueError):
@@ -246,6 +248,7 @@ TIPOS_CAMPO = [
     ("booleano", "Sí / No"),
     ("seleccion", "Selección (una opción)"),
     ("multi_seleccion", "Checklist (varias opciones)"),
+    ("estado", "Punto de inspección (Aprobado/Observado/Deficiencia/N-A)"),
 ]
 
 
@@ -348,15 +351,22 @@ def equipos_por_categoria(instalacion):
 
 def armar_campos_desde_formulario(form):
     """Reconstruye la lista de campos (schema_json) a partir de los inputs
-    repetidos del constructor dinámico."""
+    repetidos del constructor dinámico. con_estado viene de un <select>
+    Sí/No (no un checkbox) para que getlist() no pierda la alineación por
+    índice con el resto de las filas -- un checkbox sin marcar no manda
+    ningún valor, lo que correría el resto de las columnas de esa fila."""
     labels = form.getlist("campo_label")
     tipos = form.getlist("campo_tipo")
     opciones_list = form.getlist("campo_opciones")
     normas_list = form.getlist("campo_norma")
+    descripciones_list = form.getlist("campo_descripcion")
+    unidades_list = form.getlist("campo_unidad")
+    con_estado_list = form.getlist("campo_con_estado")
 
     campos = []
     usados = set()
-    for label, tipo, opciones_str, norma in zip(labels, tipos, opciones_list, normas_list):
+    filas = zip(labels, tipos, opciones_list, normas_list, descripciones_list, unidades_list, con_estado_list)
+    for label, tipo, opciones_str, norma, descripcion, unidad, con_estado in filas:
         label = (label or "").strip()
         if not label:
             continue
@@ -373,5 +383,11 @@ def armar_campos_desde_formulario(form):
             campo["opciones"] = [o.strip() for o in opciones_str.split(",") if o.strip()]
         if norma and norma.strip():
             campo["norma"] = norma.strip()
+        if descripcion and descripcion.strip():
+            campo["descripcion"] = descripcion.strip()
+        if tipo == "numero" and unidad and unidad.strip():
+            campo["unidad"] = unidad.strip()
+        if tipo in ("numero", "texto") and con_estado == "1":
+            campo["con_estado"] = True
         campos.append(campo)
     return campos

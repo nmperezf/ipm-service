@@ -63,6 +63,12 @@ def create_app():
 
         return {"TIPOS_BOMBA_PRINCIPAL": TIPOS_BOMBA_PRINCIPAL}
 
+    @app.context_processor
+    def inyectar_estados_checklist():
+        from app.models import ESTADOS_CHECKLIST, ESTADOS_CHECKLIST_LABEL
+
+        return {"ESTADOS_CHECKLIST": ESTADOS_CHECKLIST, "ESTADOS_CHECKLIST_LABEL": ESTADOS_CHECKLIST_LABEL}
+
     # Registro de blueprints (cada módulo queda desacoplado del resto)
     from app.routes.auth import auth_bp
     from app.routes.clientes import clientes_bp
@@ -118,11 +124,37 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        _migrar_columnas_faltantes()
         _seed_super_admin()
         _seed_tipos_equipo()
         _seed_clientes_demo()
 
     return app
+
+
+def _migrar_columnas_faltantes():
+    """Alta de columnas nuevas en tablas ya existentes -- sin Alembic,
+    db.create_all() no las agrega solo a una tabla que ya existía. Cada
+    entrada se agrega con ALTER TABLE si todavía no está (sirve tanto
+    para SQLite local como para Postgres en producción)."""
+    from sqlalchemy import inspect, text
+
+    columnas_nuevas = [
+        ("tipos_formulario", "referencia_normativa", "VARCHAR(200)"),
+        ("tipos_formulario", "orden", "INTEGER DEFAULT 0"),
+    ]
+    inspector = inspect(db.engine)
+    tablas_existentes = set(inspector.get_table_names())
+    cambio = False
+    for tabla, columna, tipo_sql in columnas_nuevas:
+        if tabla not in tablas_existentes:
+            continue
+        columnas_existentes = {c["name"] for c in inspector.get_columns(tabla)}
+        if columna not in columnas_existentes:
+            db.session.execute(text(f"ALTER TABLE {tabla} ADD COLUMN {columna} {tipo_sql}"))
+            cambio = True
+    if cambio:
+        db.session.commit()
 
 
 def _seed_super_admin():

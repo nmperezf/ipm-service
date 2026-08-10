@@ -63,6 +63,19 @@ CLASIFICACIONES_OBSERVACION = [
     "Comentario",
 ]
 
+# Estado por punto de un checklist de inspección (campo tipo "estado" en el
+# schema de TipoFormulario) -- distinto de CLASIFICACIONES_OBSERVACION, que
+# es la clasificación de la deficiencia que un punto en "observado" o
+# "deficiencia" genera automáticamente (ver _crear_observacion_de_punto en
+# app/routes/formularios.py).
+ESTADOS_CHECKLIST = ["aprobado", "observado", "deficiencia", "na"]
+ESTADOS_CHECKLIST_LABEL = {
+    "aprobado": "Aprobado",
+    "observado": "Observado",
+    "deficiencia": "Deficiencia",
+    "na": "N/A",
+}
+
 # Cómo se traduce el estado interno de una visita a lo que se muestra en
 # el calendario mensual (agrupa Pendiente/Programado/En proceso en "Pendientes")
 ETIQUETA_CALENDARIO = {
@@ -656,9 +669,23 @@ class TipoFormulario(db.Model):
     cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=False)
     nombre = db.Column(db.String(150), nullable=False)
     descripcion = db.Column(db.Text)
-    schema_json = db.Column(db.Text, nullable=False)  # lista de campos: [{campo, tipo, label, opciones?}]
+    # lista de campos: [{campo, tipo, label, descripcion?, unidad?, opciones?, con_estado?}]
+    # tipo: numero | texto | multi_seleccion | estado (punto de inspección sin
+    # valor propio, solo estado -- ver ESTADOS_CHECKLIST). con_estado=true en un
+    # campo numero/texto le agrega ADEMÁS el control de estado (ej. "Presión de
+    # descarga" con su valor Y un Aprobado/Observado/Deficiencia/N-A al lado).
+    # Un campo con estado (tipo=estado o con_estado=true) guarda
+    # {"valor": <escalar o None>, "estado": <ver ESTADOS_CHECKLIST>, "nota": texto}
+    # en vez de un escalar plano.
+    schema_json = db.Column(db.Text, nullable=False)
     por_equipo = db.Column(db.Boolean, default=False, nullable=False)
     tipo_equipo_aplicable = db.Column(db.String(40), nullable=True)  # nombre de un TipoEquipo
+    referencia_normativa = db.Column(db.String(200), nullable=True)  # ej. "NFPA 25 · §8.3.3"
+    # Orden manual de las secciones en la pantalla combinada de carga por
+    # categoría (ver formularios.checklist_categoria) -- sin esto, el orden
+    # sería alfabético por nombre, que no necesariamente sigue una
+    # secuencia operativa lógica (ej. reserva de agua antes que la bomba).
+    orden = db.Column(db.Integer, default=0, nullable=False)
 
     cliente = db.relationship("Cliente", backref=db.backref("tipos_formulario", cascade="all, delete-orphan"))
 

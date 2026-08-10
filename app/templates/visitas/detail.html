@@ -182,34 +182,34 @@
 
                     {% if puede_editar %}
                     {% if hay_tipos_formulario %}
-                    <div class="mb-3" style="max-width: 320px;">
-                        <select class="form-select form-select-sm" onchange="if (this.value) { window.location = this.value; }">
-                            <option value="">+ Elegir formulario…</option>
-                            {% for nombre_categoria, tipos in grupos_formulario.items() %}
-                            {% if tipos %}
-                            <optgroup label="{{ nombre_categoria }}">
-                                {% for tipo in tipos %}
-                                {% if item.equipo %}
-                                <option value="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id, equipo_id=item.equipo_id) }}">{{ tipo.nombre }}</option>
-                                {% else %}
-                                <option value="{{ url_for('formularios.elegir_equipo', item_id=item.id, tipo_formulario_id=tipo.id) }}">{{ tipo.nombre }}</option>
-                                {% endif %}
-                                {% endfor %}
-                            </optgroup>
-                            {% endif %}
-                            {% endfor %}
-                            {% if formularios_generales %}
-                            <optgroup label="Otros formularios">
-                                {% for tipo in formularios_generales %}
-                                {% if item.equipo %}
-                                <option value="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id, equipo_id=item.equipo_id) }}">{{ tipo.nombre }}</option>
-                                {% else %}
-                                <option value="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id) }}">{{ tipo.nombre }}</option>
-                                {% endif %}
-                                {% endfor %}
-                            </optgroup>
-                            {% endif %}
-                        </select>
+                    <div class="d-flex flex-wrap gap-2 mb-3">
+                        {% if not item.equipo %}
+                        {% for nombre_categoria, tipos in grupos_formulario.items() %}
+                        {% if tipos %}
+                        <a href="{{ url_for('formularios.checklist_categoria', item_id=item.id, categoria=nombre_categoria) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-ui-checks-grid"></i> Cargar checklist de {{ nombre_categoria }}
+                        </a>
+                        {% endif %}
+                        {% endfor %}
+                        {% else %}
+                        {% for nombre_categoria, tipos in grupos_formulario.items() %}
+                        {% for tipo in tipos %}
+                        <a href="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id, equipo_id=item.equipo_id) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-clipboard-plus"></i> {{ tipo.nombre }}
+                        </a>
+                        {% endfor %}
+                        {% endfor %}
+                        {% endif %}
+
+                        {% for tipo in formularios_generales %}
+                        {% if item.equipo %}
+                        <a href="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id, equipo_id=item.equipo_id) }}" class="btn btn-outline-secondary btn-sm">+ {{ tipo.nombre }}</a>
+                        {% elif tipo.por_equipo %}
+                        <a href="{{ url_for('formularios.elegir_equipo', item_id=item.id, tipo_formulario_id=tipo.id) }}" class="btn btn-outline-secondary btn-sm">+ {{ tipo.nombre }}</a>
+                        {% else %}
+                        <a href="{{ url_for('formularios.nuevo', item_id=item.id, tipo_formulario_id=tipo.id) }}" class="btn btn-outline-secondary btn-sm">+ {{ tipo.nombre }}</a>
+                        {% endif %}
+                        {% endfor %}
                     </div>
                     {% else %}
                     <p class="text-muted small mb-3">

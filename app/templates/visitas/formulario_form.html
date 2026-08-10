@@ -44,16 +44,23 @@
             <form method="POST" class="mt-3">
                 {% if equipo %}<input type="hidden" name="equipo_id" value="{{ equipo.id }}">{% endif %}
                 {% for campo in tipo.campos() %}
+                {% set con_estado = campo.tipo == 'estado' or campo.con_estado %}
                 {% set valor_actual = datos.get(campo.campo) %}
+                {% set estado_previo = valor_actual.estado if con_estado and valor_actual else '' %}
                 <div class="mb-3">
                     <label class="form-label">
                         {{ campo.label }}
                         {% if campo.norma %}<span class="badge bg-light text-dark border ms-1" style="font-weight:500;">{{ campo.norma }}</span>{% endif %}
                     </label>
+                    {% if campo.descripcion %}<div class="text-muted small mb-1">{{ campo.descripcion }}</div>{% endif %}
+
                     {% if campo.tipo == 'texto_largo' %}
                         <textarea name="{{ campo.campo }}" class="form-control" rows="3">{{ valor_actual or '' }}</textarea>
                     {% elif campo.tipo == 'numero' %}
-                        <input type="number" step="any" name="{{ campo.campo }}" class="form-control" value="{{ valor_actual if valor_actual is not none else '' }}">
+                        <div class="valor-input">
+                            <input type="number" step="any" name="{{ campo.campo }}" value="{{ (valor_actual.valor if con_estado and valor_actual else valor_actual) if (valor_actual is not none) else '' }}">
+                            {% if campo.unidad %}<span class="unidad">{{ campo.unidad }}</span>{% endif %}
+                        </div>
                     {% elif campo.tipo == 'fecha' %}
                         <input type="date" name="{{ campo.campo }}" class="form-control" value="{{ valor_actual or '' }}">
                     {% elif campo.tipo == 'booleano' %}
@@ -76,8 +83,27 @@
                             </div>
                             {% endfor %}
                         </div>
+                    {% elif campo.tipo == 'estado' %}
+                        {# tipo 'estado' es solo el punto de inspección, sin input de valor propio #}
                     {% else %}
-                        <input type="text" name="{{ campo.campo }}" class="form-control" value="{{ valor_actual or '' }}">
+                        <div class="valor-input texto">
+                            <input type="text" name="{{ campo.campo }}" value="{{ (valor_actual.valor if con_estado and valor_actual else valor_actual) or '' }}">
+                        </div>
+                    {% endif %}
+
+                    {% if con_estado %}
+                    <div class="grupo-estado mt-2" data-nota="nota-{{ campo.campo }}">
+                        {% for est in ESTADOS_CHECKLIST %}
+                        <button type="button" class="{{ est }}{{ ' activo' if estado_previo == est }}" onclick="marcarEstadoChecklist(this,'{{ est }}')">{{ ESTADOS_CHECKLIST_LABEL[est] }}</button>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" class="estado-hidden" name="estado__{{ campo.campo }}" value="{{ estado_previo }}">
+                    <div class="fila-nota-carga{{ (' visible ' ~ estado_previo) if estado_previo in ('observado', 'deficiencia') }}" id="nota-{{ campo.campo }}">
+                        <div class="nota-caja">
+                            <div class="nota-etiqueta">{{ 'Descripción de la deficiencia' if estado_previo == 'deficiencia' else 'Nota' }}</div>
+                            <textarea name="nota__{{ campo.campo }}" placeholder="Describí lo observado...">{{ valor_actual.nota if valor_actual else '' }}</textarea>
+                        </div>
+                    </div>
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -92,4 +118,25 @@
 
     </div>
 </div>
+<script>
+function marcarEstadoChecklist(btn, estado) {
+    var grupo = btn.closest('.grupo-estado');
+    grupo.querySelectorAll('button').forEach(function (b) { b.classList.remove('activo'); });
+    btn.classList.add('activo');
+    grupo.nextElementSibling.value = estado;
+
+    var nota = document.getElementById(grupo.dataset.nota);
+    if (!nota) return;
+    nota.classList.remove('visible', 'observado', 'deficiencia');
+    if (estado === 'observado' || estado === 'deficiencia') {
+        nota.classList.add('visible', estado);
+        nota.querySelector('.nota-etiqueta').textContent = estado === 'deficiencia' ? 'Descripción de la deficiencia' : 'Nota';
+    }
+}
+document.querySelectorAll('.estado-hidden').forEach(function (hidden) {
+    if (hidden.value) return;
+    var primero = hidden.previousElementSibling.querySelector('button.aprobado');
+    if (primero) marcarEstadoChecklist(primero, 'aprobado');
+});
+</script>
 {% endblock %}

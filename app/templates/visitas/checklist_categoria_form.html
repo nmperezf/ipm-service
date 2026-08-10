@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Checklist de {{ categoria }} - {{ instalacion.nombre }}{% endblock %}
+{% block content %}
+<div class="pagina-ancha">
+    <h1>Checklist de {{ categoria }}</h1>
+    <div class="tarjeta-doc">
+
+            <p class="mb-1"><a href="{{ url_for('visitas.detalle', visita_id=item.visita_id) }}">&larr; Volver a la visita</a></p>
+            <p class="text-muted small mb-3">
+                {{ instalacion.nombre }} — completá lo que corresponda y guardá todo junto. Cada equipo se guarda
+                por separado, como si lo hubieras cargado individualmente: su ficha, su histórico y su gráfico de
+                tendencia no cambian en nada.
+            </p>
+
+            <form method="POST">
+            {% for seccion in secciones %}
+            <div class="seccion-eq-carga">
+                <div class="seccion-eq-carga-cab">
+                    <div class="seccion-eq-carga-tit">{{ seccion.tipo.nombre }}</div>
+                    {% if seccion.tipo.referencia_normativa %}<div class="seccion-eq-carga-ref">{{ seccion.tipo.referencia_normativa }}</div>{% endif %}
+                </div>
+
+                {% for equipo in seccion.equipos %}
+                {% set datos = seccion.formularios[equipo.id].datos() if equipo.id in seccion.formularios else {} %}
+                {% if seccion.equipos|length > 1 %}
+                <div class="subgrupo-titulo-carga">{{ equipo.nombre }}{% if equipo.ubicacion %} · {{ equipo.ubicacion }}{% endif %}</div>
+                {% endif %}
+
+                {% for campo in seccion.campos %}
+                {% set con_estado = campo.tipo == 'estado' or campo.con_estado %}
+                {% set valor_actual = datos.get(campo.campo) %}
+                {% set base_id = seccion.tipo.id ~ '__' ~ equipo.id ~ '__' ~ campo.campo %}
+                {% set estado_previo = valor_actual.estado if con_estado and valor_actual else '' %}
+
+                <div class="item-check">
+                    <div class="item-check-info">
+                        <div class="item-check-punto">{{ campo.label }}</div>
+                        {% if campo.descripcion %}<div class="item-check-desc">{{ campo.descripcion }}</div>{% endif %}
+                    </div>
+
+                    {% if campo.tipo != 'estado' %}
+                    <div class="valor-input{{ ' texto' if campo.tipo == 'texto' }}">
+                        {% if campo.tipo == 'numero' %}
+                        <input type="number" step="any" name="campo__{{ base_id }}" value="{{ (valor_actual.valor if con_estado and valor_actual else valor_actual) if (valor_actual is not none) else '' }}">
+                        {% if campo.unidad %}<span class="unidad">{{ campo.unidad }}</span>{% endif %}
+                        {% else %}
+                        <input type="text" name="campo__{{ base_id }}" value="{{ (valor_actual.valor if con_estado and valor_actual else valor_actual) or '' }}">
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if con_estado %}
+                    <div class="grupo-estado" data-nota="nota-{{ base_id }}">
+                        {% for est in ESTADOS_CHECKLIST %}
+                        <button type="button" class="{{ est }}{{ ' activo' if estado_previo == est }}" onclick="marcarEstadoChecklist(this,'{{ est }}')">{{ ESTADOS_CHECKLIST_LABEL[est] }}</button>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" class="estado-hidden" name="estado__{{ base_id }}" value="{{ estado_previo }}">
+                    {% endif %}
+                </div>
+
+                {% if con_estado %}
+                <div class="fila-nota-carga{{ (' visible ' ~ estado_previo) if estado_previo in ('observado', 'deficiencia') }}" id="nota-{{ base_id }}">
+                    <div class="nota-caja">
+                        <div class="nota-etiqueta">{{ 'Descripción de la deficiencia' if estado_previo == 'deficiencia' else 'Nota' }}</div>
+                        <textarea name="nota__{{ base_id }}" placeholder="Describí lo observado...">{{ valor_actual.nota if valor_actual else '' }}</textarea>
+                    </div>
+                </div>
+                {% endif %}
+                {% endfor %}
+                {% endfor %}
+            </div>
+            {% endfor %}
+
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <button type="submit" class="btn btn-dark">Guardar checklist</button>
+            </div>
+            </form>
+
+    </div>
+</div>
+
+<script>
+function marcarEstadoChecklist(btn, estado) {
+    var grupo = btn.closest('.grupo-estado');
+    grupo.querySelectorAll('button').forEach(function (b) { b.classList.remove('activo'); });
+    btn.classList.add('activo');
+    grupo.nextElementSibling.value = estado;
+
+    var nota = document.getElementById(grupo.dataset.nota);
+    if (!nota) return;
+    nota.classList.remove('visible', 'observado', 'deficiencia');
+    if (estado === 'observado' || estado === 'deficiencia') {
+        nota.classList.add('visible', estado);
+        nota.querySelector('.nota-etiqueta').textContent = estado === 'deficiencia' ? 'Descripción de la deficiencia' : 'Nota';
+    }
+}
+// Puntos sin estado previo (checklist nuevo) arrancan en "Aprobado" -- se
+// puede cambiar con un clic, igual que en el mockup que se validó.
+document.querySelectorAll('.estado-hidden').forEach(function (hidden) {
+    if (hidden.value) return;
+    var primero = hidden.previousElementSibling.querySelector('button.aprobado');
+    if (primero) marcarEstadoChecklist(primero, 'aprobado');
+});
+</script>
+{% endblock %}

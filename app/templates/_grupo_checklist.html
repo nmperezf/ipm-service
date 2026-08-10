@@ -22,7 +22,17 @@
                 <td class="fecha">{{ fila.formulario.fecha_creacion.strftime('%d/%m/%Y') }}</td>
                 {% if grupo.incluir_equipo %}<td>{{ fila.equipo.nombre if fila.equipo else '-' }}</td>{% endif %}
                 {% for campo, valor in fila.valores %}
-                <td>{{ valor|join(', ') if valor is iterable and valor is not string else (valor if valor else '-') }}</td>
+                <td>
+                    {%- if campo.tipo == 'estado' or campo.con_estado -%}
+                        {% if valor and valor.estado %}
+                        {%- if valor.valor is not none and valor.valor != '' %}<span class="valor-con-estado">{{ valor.valor }}{% if campo.unidad %} {{ campo.unidad }}{% endif %}</span> {% endif -%}
+                        <span class="badge-estado {{ valor.estado }}">{{ ESTADOS_CHECKLIST_LABEL.get(valor.estado, valor.estado) }}</span>
+                        {%- if valor.nota %}<span class="nota-badge-estado" title="{{ valor.nota }}">💬</span>{% endif -%}
+                        {% else %}-{% endif %}
+                    {%- else -%}
+                        {{ valor|join(', ') if valor is iterable and valor is not string else (valor if valor else '-') }}
+                    {%- endif -%}
+                </td>
                 {% endfor %}
             </tr>
             {% else %}

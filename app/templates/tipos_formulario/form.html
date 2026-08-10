@@ -46,6 +46,20 @@
                     <label class="form-label">Descripción (opcional)</label>
                     <input type="text" name="descripcion" class="form-control" value="{{ tipo.descripcion or '' }}">
                 </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-sm-8">
+                        <label class="form-label">Referencia normativa (opcional)</label>
+                        <input type="text" name="referencia_normativa" class="form-control"
+                               placeholder="Ej: NFPA 25 · §8.3.3 Prueba de funcionamiento semanal"
+                               value="{{ tipo.referencia_normativa or '' }}">
+                        <div class="form-text">Se muestra debajo del título de esta sección cuando se completa desde "Cargar checklist de categoría".</div>
+                    </div>
+                    <div class="col-sm-4">
+                        <label class="form-label">Orden</label>
+                        <input type="number" name="orden" class="form-control" value="{{ tipo.orden if tipo else 0 }}">
+                        <div class="form-text">Menor primero, en la pantalla combinada por categoría (ej. reserva de agua antes que la bomba).</div>
+                    </div>
+                </div>
 
                 <div class="card mb-3">
                     <div class="card-body">
@@ -73,10 +87,13 @@
     <table class="table table-sm align-middle" id="tabla-campos">
                     <thead>
                         <tr>
-                            <th style="width: 28%">Etiqueta (lo que ve el técnico)</th>
-                            <th style="width: 15%">Tipo de campo</th>
-                            <th style="width: 25%">Opciones (solo para selección/checklist, separadas por coma)</th>
-                            <th style="width: 27%">Referencia NFPA (opcional)</th>
+                            <th style="min-width: 180px;">Etiqueta (lo que ve el técnico)</th>
+                            <th style="min-width: 150px;">Tipo de campo</th>
+                            <th style="min-width: 160px;">Opciones (selección/checklist, separadas por coma)</th>
+                            <th style="min-width: 70px;">Unidad</th>
+                            <th style="min-width: 90px;">Con estado</th>
+                            <th style="min-width: 220px;">Descripción / qué verificar</th>
+                            <th style="min-width: 160px;">Referencia NFPA (opcional)</th>
                             <th></th>
                         </tr>
                     </thead>
@@ -109,29 +126,49 @@ function opcionesTiposCampo() {
 }
 
 function agregarFila(campo) {
-    campo = campo || { campo: '', tipo: 'texto', label: '', opciones: [], norma: '' };
+    campo = campo || { campo: '', tipo: 'texto', label: '', opciones: [], norma: '', descripcion: '', unidad: '', con_estado: false };
     const tbody = document.getElementById('cuerpo-campos');
     const fila = document.createElement('tr');
     fila.innerHTML =
         '<td><input type="text" name="campo_label" class="form-control form-control-sm" required value="' +
         (campo.label || '').replace(/"/g, '&quot;') + '"></td>' +
-        '<td><select name="campo_tipo" class="form-select form-select-sm" onchange="toggleOpciones(this)">' +
+        '<td><select name="campo_tipo" class="form-select form-select-sm" onchange="toggleCamposSegunTipo(this)">' +
         opcionesTiposCampo() + '</select></td>' +
         '<td><input type="text" name="campo_opciones" class="form-control form-control-sm" placeholder="opción 1, opción 2..." value="' +
         ((campo.opciones || []).join(', ')).replace(/"/g, '&quot;') + '"></td>' +
+        '<td><input type="text" name="campo_unidad" class="form-control form-control-sm" placeholder="Ej: PSI, °C" value="' +
+        (campo.unidad || '').replace(/"/g, '&quot;') + '"></td>' +
+        '<td><select name="campo_con_estado" class="form-select form-select-sm">' +
+        '<option value="">No</option><option value="1">Sí</option></select></td>' +
+        '<td><input type="text" name="campo_descripcion" class="form-control form-control-sm" placeholder="Qué tiene que verificar el técnico" value="' +
+        (campo.descripcion || '').replace(/"/g, '&quot;') + '"></td>' +
         '<td><input type="text" name="campo_norma" class="form-control form-control-sm" placeholder="Ej: NFPA 25 §8.3.1" value="' +
         (campo.norma || '').replace(/"/g, '&quot;') + '"></td>' +
         '<td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest(\'tr\').remove()">Quitar</button></td>';
     tbody.appendChild(fila);
     fila.querySelector('select[name="campo_tipo"]').value = campo.tipo || 'texto';
-    toggleOpciones(fila.querySelector('select[name="campo_tipo"]'));
+    fila.querySelector('select[name="campo_con_estado"]').value = campo.con_estado ? '1' : '';
+    toggleCamposSegunTipo(fila.querySelector('select[name="campo_tipo"]'));
 }
 
-function toggleOpciones(select) {
+function toggleCamposSegunTipo(select) {
     const fila = select.closest('tr');
     const inputOpciones = fila.querySelector('input[name="campo_opciones"]');
-    const necesitaOpciones = select.value === 'seleccion' || select.value === 'multi_seleccion';
-    inputOpciones.style.display = necesitaOpciones ? 'block' : 'none';
+    inputOpciones.style.display = (select.value === 'seleccion' || select.value === 'multi_seleccion') ? 'block' : 'none';
+
+    const inputUnidad = fila.querySelector('input[name="campo_unidad"]');
+    inputUnidad.style.display = select.value === 'numero' ? 'block' : 'none';
+
+    // "estado" es en sí mismo un punto de inspección (Aprobado/Observado/...)
+    // -- "con estado" no aplica ahí, solo tiene sentido para agregarle ESE
+    // control a un campo numero/texto que además tiene su propio valor.
+    // Ocultar el <select> en sí (no el <td> que lo contiene): esconder la
+    // celda entera correría el resto de las columnas de esta fila hacia la
+    // izquierda respecto del encabezado de la tabla.
+    const selectConEstado = fila.querySelector('select[name="campo_con_estado"]');
+    const aplicaConEstado = select.value === 'numero' || select.value === 'texto';
+    selectConEstado.style.display = aplicaConEstado ? 'block' : 'none';
+    if (!aplicaConEstado) selectConEstado.value = '';
 }
 
 document.addEventListener('DOMContentLoaded', function () {

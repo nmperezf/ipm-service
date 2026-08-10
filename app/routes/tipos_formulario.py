@@ -68,6 +68,8 @@ def nuevo(cliente_id):
             descripcion=request.form.get("descripcion"),
             por_equipo=bool(request.form.get("por_equipo")),
             tipo_equipo_aplicable=request.form.get("tipo_equipo_aplicable") or None,
+            referencia_normativa=request.form.get("referencia_normativa") or None,
+            orden=request.form.get("orden", type=int, default=0),
             schema_json=json.dumps(campos),
         )
         db.session.add(tipo_formulario)
@@ -120,6 +122,8 @@ def editar(tipo_id):
         tipo_formulario.descripcion = request.form.get("descripcion")
         tipo_formulario.por_equipo = bool(request.form.get("por_equipo"))
         tipo_formulario.tipo_equipo_aplicable = request.form.get("tipo_equipo_aplicable") or None
+        tipo_formulario.referencia_normativa = request.form.get("referencia_normativa") or None
+        tipo_formulario.orden = request.form.get("orden", type=int, default=0)
         tipo_formulario.schema_json = json.dumps(campos)
         db.session.commit()
         flash(f"Tipo de formulario '{tipo_formulario.nombre}' actualizado.", "success")
