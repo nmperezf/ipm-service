@@ -55,6 +55,8 @@ def nuevo():
             descripcion=request.form.get("descripcion"),
             por_equipo=True if es_curva_caudal else bool(request.form.get("por_equipo")),
             tipo_equipo_aplicable=request.form.get("tipo_equipo_aplicable") or None,
+            referencia_normativa=request.form.get("referencia_normativa") or None,
+            orden=request.form.get("orden", type=int, default=0),
             es_curva_caudal=es_curva_caudal,
             schema_json=json.dumps(campos),
         )
@@ -83,6 +85,8 @@ def editar(servicio_id):
         servicio.descripcion = request.form.get("descripcion")
         servicio.por_equipo = True if es_curva_caudal else bool(request.form.get("por_equipo"))
         servicio.tipo_equipo_aplicable = request.form.get("tipo_equipo_aplicable") or None
+        servicio.referencia_normativa = request.form.get("referencia_normativa") or None
+        servicio.orden = request.form.get("orden", type=int, default=0)
         servicio.es_curva_caudal = es_curva_caudal
         servicio.schema_json = json.dumps(campos)
         db.session.commit()

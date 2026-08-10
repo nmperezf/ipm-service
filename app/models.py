@@ -731,6 +731,8 @@ class TipoFormulario(db.Model):
             descripcion=servicio_tipo.descripcion,
             por_equipo=servicio_tipo.por_equipo,
             tipo_equipo_aplicable=servicio_tipo.tipo_equipo_aplicable,
+            referencia_normativa=servicio_tipo.referencia_normativa,
+            orden=servicio_tipo.orden,
             schema_json=servicio_tipo.schema_json,
         )
         db.session.add(tipo_formulario)
@@ -764,6 +766,8 @@ class ServicioTipo(db.Model):
     # directamente "Cargar ensayo de curva de caudal" (ver visitas.detalle /
     # curvas.ensayo_nuevo) en vez del selector de formularios de siempre.
     es_curva_caudal = db.Column(db.Boolean, default=False, nullable=False)
+    referencia_normativa = db.Column(db.String(200), nullable=True)  # ej. "NFPA 25 · §8.3.3"
+    orden = db.Column(db.Integer, default=0, nullable=False)
 
     empresa = db.relationship("Empresa", backref=db.backref("servicios_tipo", cascade="all, delete-orphan"))
 

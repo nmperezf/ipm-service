@@ -142,6 +142,8 @@ def _migrar_columnas_faltantes():
     columnas_nuevas = [
         ("tipos_formulario", "referencia_normativa", "VARCHAR(200)"),
         ("tipos_formulario", "orden", "INTEGER DEFAULT 0"),
+        ("servicios_tipo", "referencia_normativa", "VARCHAR(200)"),
+        ("servicios_tipo", "orden", "INTEGER DEFAULT 0"),
     ]
     inspector = inspect(db.engine)
     tablas_existentes = set(inspector.get_table_names())
