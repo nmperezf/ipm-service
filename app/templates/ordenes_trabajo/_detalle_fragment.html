@@ -146,11 +146,19 @@
 <p><strong>Observaciones:</strong><br>{{ ot.observaciones }}</p>
 {% endif %}
 
-{% if current_user.rol in ('Administrador', 'Jefe') and not ot.visita_id %}
-<form method="POST" action="{{ url_for('ordenes.eliminar', ot_id=ot.id) }}" class="mb-4"
-      onsubmit="return confirm('¿Eliminar la OT {{ ot.numero }}? Si tenía repuestos consumidos, se repone el stock. Esta acción no se puede deshacer.');">
-    <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar OT</button>
-</form>
+{% if current_user.rol in ('Administrador', 'Jefe') %}
+    {% if ot.visita_id %}
+    {# Borrar una OT ligada a una visita directamente dejaría el árbol
+       inconsistente (la visita quedaría sin su OT) -- ver
+       ordenes.eliminar, que rechaza esto server-side. El borrado real
+       para estas se hace desde la propia visita. #}
+    <a href="{{ url_for('visitas.editar', visita_id=ot.visita_id) }}" class="btn btn-outline-danger btn-sm mb-4"><i class="bi bi-trash me-1"></i>Eliminar (desde la visita)</a>
+    {% else %}
+    <form method="POST" action="{{ url_for('ordenes.eliminar', ot_id=ot.id) }}" class="mb-4"
+          onsubmit="return confirm('¿Eliminar la OT {{ ot.numero }}? Si tenía repuestos consumidos, se repone el stock. Esta acción no se puede deshacer.');">
+        <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar OT</button>
+    </form>
+    {% endif %}
 {% endif %}
 
 <div class="seccion-titulo-doc">Repuestos utilizados</div>

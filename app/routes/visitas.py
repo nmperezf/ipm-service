@@ -331,8 +331,9 @@ def enviar_revision(visita_id):
         if firma_tecnico:
             visita.firma_tecnico = firma_tecnico
         # La OT no tiene un estado propio editable mientras esté ligada a
-        # una visita (ver ordenes.editar) -- se sincroniza sola con la fase
-        # de la visita, para no terminar con dos estados desincronizados.
+        # una visita (ver ordenes.actualizar_campo) -- se sincroniza sola
+        # con la fase de la visita, para no terminar con dos estados
+        # desincronizados.
         if visita.orden_trabajo and visita.orden_trabajo.estado not in ("Finalizada", "Cancelada"):
             visita.orden_trabajo.estado = "En proceso"
         notificar_gestion(
@@ -399,7 +400,7 @@ def cerrar(visita_id):
             # Si la OT viene de un presupuesto aprobado, cerrarla acá
             # también cierra el presupuesto y resuelve la deficiencia que
             # lo originó (mismo efecto que finalizar una OT correctiva a
-            # mano desde ordenes.editar).
+            # mano desde ordenes.actualizar_campo).
             presupuesto = visita.orden_trabajo.presupuesto_origen
             if presupuesto and presupuesto.estado != "Cerrado":
                 presupuesto.cambiar_estado("Cerrado", current_user.id, "Cerrado automáticamente al cerrar la visita.")

@@ -7,22 +7,17 @@
    problema y además no necesita ids únicos por instancia. #}
 <div class="grupo-checklist">
     <div class="tipo-nombre">{{ grupo.tipo_formulario.nombre }}</div>
-    <div class="tabla-check-wrap">
-    <table class="tabla-check">
-        <thead>
-            <tr>
-                <th>Fecha</th>
-                {% if grupo.incluir_equipo %}<th>Equipo</th>{% endif %}
-                {% for campo in grupo.campos %}<th>{{ campo.label }}</th>{% endfor %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for fila in grupo.filas %}
-            <tr>
-                <td class="fecha">{{ fila.formulario.fecha_creacion.strftime('%d/%m/%Y') }}</td>
-                {% if grupo.incluir_equipo %}<td>{{ fila.equipo.nombre if fila.equipo else '-' }}</td>{% endif %}
-                {% for campo, valor in fila.valores %}
-                <td>
+    <div class="lista-cargas-checklist">
+        {% for fila in grupo.filas %}
+        <div class="tarjeta-carga-checklist">
+            <div class="cab-carga-checklist">
+                <span class="fecha">{{ fila.formulario.fecha_creacion.strftime('%d/%m/%Y') }}</span>
+                {% if grupo.incluir_equipo and fila.equipo %}<span class="equipo">{{ fila.equipo.nombre }}</span>{% endif %}
+            </div>
+            {% for campo, valor in fila.valores %}
+            <div class="fila-punto-checklist">
+                <span class="label">{{ campo.label }}</span>
+                <span class="valor">
                     {%- if campo.tipo == 'estado' or campo.con_estado -%}
                         {% if valor and valor.estado %}
                         {%- if valor.valor is not none and valor.valor != '' %}<span class="valor-con-estado">{{ valor.valor }}{% if campo.unidad %} {{ campo.unidad }}{% endif %}</span> {% endif -%}
@@ -32,14 +27,13 @@
                     {%- else -%}
                         {{ valor|join(', ') if valor is iterable and valor is not string else (valor if valor else '-') }}
                     {%- endif -%}
-                </td>
-                {% endfor %}
-            </tr>
-            {% else %}
-            <tr><td colspan="{{ grupo.campos|length + (2 if grupo.incluir_equipo else 1) }}" class="text-muted text-center">Sin datos cargados.</td></tr>
+                </span>
+            </div>
             {% endfor %}
-        </tbody>
-    </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center small mb-0">Sin datos cargados.</p>
+        {% endfor %}
     </div>
 
     {% if grupo.campos_numericos %}

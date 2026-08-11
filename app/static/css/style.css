@@ -2020,16 +2020,20 @@ details.bloque-equipo .ir-ficha { display: inline-block; margin-bottom: .8rem; f
 .grupo-checklist:last-child { margin-bottom: 0; }
 .grupo-checklist > .tipo-nombre { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); margin-bottom: .35rem; }
 
-.tabla-check-wrap { overflow-x: auto; }
-.tabla-check { width: 100%; border-collapse: collapse; font-size: .82rem; }
-.tabla-check th {
-    text-align: left; font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .03em;
-    color: var(--ink-muted); padding: .4rem .7rem; border-bottom: 1px solid var(--border); white-space: nowrap;
-}
-.tabla-check td { padding: .45rem .7rem; border-bottom: 1px solid var(--border); white-space: nowrap; }
-.tabla-check tbody tr:last-child td { border-bottom: none; }
-.tabla-check tbody tr:hover { background: var(--surface-alt); }
-.tabla-check td.fecha { font-family: var(--font-mono); font-size: .76rem; color: var(--ink-muted); }
+/* Un checklist cargado se lee de arriba a abajo (un punto por fila), no
+   de izquierda a derecha -- con 10-12 puntos por tipo (ej. Electrobomba)
+   una tabla ancha obligaba a scrollear horizontal para ver la pastilla
+   de estado de cada uno. Acá cada carga (fecha + equipo) es su propia
+   tarjeta, con sus puntos apilados verticalmente adentro. */
+.lista-cargas-checklist { display: flex; flex-direction: column; gap: .6rem; }
+.tarjeta-carga-checklist { background: var(--surface-muted); border: 1px solid var(--border); border-radius: .5rem; padding: .5rem .75rem; font-size: .84rem; }
+.cab-carga-checklist { display: flex; justify-content: space-between; gap: 1rem; padding-bottom: .3rem; margin-bottom: .2rem; border-bottom: 1px solid var(--border-strong); }
+.cab-carga-checklist .fecha { font-family: var(--font-mono); font-size: .76rem; color: var(--ink-muted); }
+.cab-carga-checklist .equipo { font-weight: 600; font-size: .8rem; }
+.fila-punto-checklist { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .3rem 0; border-bottom: 1px solid var(--border); }
+.fila-punto-checklist:last-child { border-bottom: none; }
+.fila-punto-checklist .label { color: var(--ink-muted); }
+.fila-punto-checklist .valor { text-align: right; white-space: nowrap; }
 
 /* Gráfico como <details> inline en vez de modal: esto se anida a veces
    dentro de OTRO modal ya abierto (preview de equipo en
@@ -2050,8 +2054,8 @@ details.grafico-desplegable summary:hover { text-decoration: underline; }
 .grafico-campo svg { width: 100%; max-width: 100%; height: 92px; display: block; }
 .grafico-campo .punto-mes { font-size: 9px; fill: var(--ink-faint); font-family: var(--font-mono); }
 
-/* Estado de un punto de checklist (columna de .tabla-check para campos
-   tipo "estado") -- mismos 4 valores que ESTADOS_CHECKLIST. */
+/* Estado de un punto de checklist (dentro de .fila-punto-checklist para
+   campos tipo "estado") -- mismos 4 valores que ESTADOS_CHECKLIST. */
 .valor-con-estado { font-family: var(--font-mono); font-weight: 600; margin-right: .2rem; }
 .badge-estado { display: inline-block; font-size: .68rem; font-weight: 700; padding: .15rem .5rem; border-radius: .3rem; white-space: nowrap; }
 .badge-estado.aprobado { background: var(--ok-soft); color: var(--bs-success); }

@@ -109,6 +109,14 @@
                 </div>
             </form>
 
+            {% if tipo %}
+            <form method="POST" action="{{ url_for('tipos_formulario.eliminar', tipo_id=tipo.id) }}" class="mt-4"
+                  onsubmit="return confirm('¿Eliminar el tipo de formulario \'{{ tipo.nombre }}\'? Si ya tiene formularios completados con este esquema, no se puede borrar sin perder esos datos.');">
+                {% if volver_a %}<input type="hidden" name="volver_a" value="{{ volver_a }}">{% endif %}
+                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar tipo de formulario</button>
+            </form>
+            {% endif %}
+
     </div>
 </div>
 <script type="application/json" id="campos-iniciales">{{ (tipo.campos() if tipo else [])|tojson }}</script>

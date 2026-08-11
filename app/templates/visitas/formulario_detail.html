@@ -20,18 +20,26 @@
             <table class="table">
                 <tbody>
                     {% for campo in formulario.tipo_formulario.campos() %}
+                    {% set con_estado = campo.tipo == 'estado' or campo.con_estado %}
                     {% set valor = formulario.datos().get(campo.campo) %}
                     <tr>
                         <th style="width: 30%">
                             {{ campo.label }}
+                            {% if campo.descripcion %}<br><span class="text-muted small fw-normal">{{ campo.descripcion }}</span>{% endif %}
                             {% if campo.norma %}<br><span class="badge bg-light text-dark border" style="font-weight:500;">{{ campo.norma }}</span>{% endif %}
                         </th>
                         <td>
-                            {% if valor is iterable and valor is not string %}
+                            {%- if con_estado -%}
+                                {% if valor and valor.estado %}
+                                    {%- if valor.valor is not none and valor.valor != '' %}<span class="valor-con-estado">{{ valor.valor }}{% if campo.unidad %} {{ campo.unidad }}{% endif %}</span> {% endif -%}
+                                    <span class="badge-estado {{ valor.estado }}">{{ ESTADOS_CHECKLIST_LABEL.get(valor.estado, valor.estado) }}</span>
+                                    {%- if valor.nota %}<div class="text-muted small mt-1">{{ valor.nota }}</div>{% endif -%}
+                                {% else %}-{% endif %}
+                            {%- elif valor is iterable and valor is not string -%}
                                 {{ valor|join(', ') if valor else '-' }}
-                            {% else %}
+                            {%- else -%}
                                 {{ valor if valor else '-' }}
-                            {% endif %}
+                            {%- endif -%}
                         </td>
                     </tr>
                     {% endfor %}

@@ -16,7 +16,7 @@
                         <label class="form-label">Técnico</label>
                         <input type="text" class="form-control" value="{{ visita.nombre_tecnico }}" disabled>
                         {% if visita.orden_trabajo %}
-                        <div class="form-text">Se asigna desde la <a href="{{ url_for('ordenes.editar', ot_id=visita.orden_trabajo.id) }}">Orden de Trabajo {{ visita.orden_trabajo.numero }}</a>.</div>
+                        <div class="form-text">Se asigna desde la <a href="{{ url_for('ordenes.detalle', ot_id=visita.orden_trabajo.id) }}">Orden de Trabajo {{ visita.orden_trabajo.numero }}</a>.</div>
                         {% endif %}
                     </div>
                     <div class="col-md-4 mb-3">
