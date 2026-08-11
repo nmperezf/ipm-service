@@ -8,6 +8,9 @@
         <h2>{{ ot.numero }} — {{ ot.descripcion or ot.tipo }}</h2>
     </div>
     <div class="d-flex gap-2 flex-wrap">
+        {% if ot.visita_id %}
+        <a href="{{ url_for('visitas.detalle', visita_id=ot.visita_id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-clipboard-check me-1"></i>Ver visita</a>
+        {% endif %}
         <a href="{{ url_for('ordenes.pdf', ot_id=ot.id) }}" class="btn btn-sm btn-outline-dark" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF</a>
     </div>
 </div>
@@ -25,8 +28,15 @@
 <div class="tarjeta-estado-ot {{ 'en-revision' if fase == 'En revisión' else ('cerrada' if fase == 'Cerrada' else 'abierta') }}">
     <div>
         <div class="etiqueta-fase-ot">Estado actual</div>
-        {% if fase == 'Abierta' %}
-        <div class="texto-fase-ot">Abierta — el técnico todavía está en el service</div>
+        {% if fase == 'Abierta' and not ot.tecnico_id %}
+        <div class="texto-fase-ot">Abierta — todavía no se asignó un técnico</div>
+        <div class="sub-fase-ot">Asigná uno en el campo Técnico de abajo para que pueda completar el service.</div>
+        {% elif fase == 'Abierta' %}
+        {# No hay forma de saber si el técnico ya arrancó el service o
+           todavía no llegó -- solo que está asignado y la visita sigue sin
+           mandarse a revisión. El texto queda deliberadamente amplio en vez
+           de afirmar algo que no se puede confirmar. #}
+        <div class="texto-fase-ot">Abierta — asignada a {{ ot.nombre_tecnico }}</div>
         <div class="sub-fase-ot">Esto lo maneja el técnico desde la visita. Se actualiza solo cuando la mande a revisión.</div>
         {% elif fase == 'En revisión' %}
         <div class="texto-fase-ot">En revisión — el técnico ya la mandó</div>
@@ -100,7 +110,10 @@
         <div class="l">Apertura</div>
         <div class="v">{{ ot.fecha_apertura.strftime('%d/%m/%Y') }}</div>
     </div>
-    {% if ot.fecha_cierre %}
+    {% if ot.fecha_cierre and not ot.visita_id %}
+    {# Para OT ligadas a una visita, la fecha de cierre ya se muestra arriba
+       en la tarjeta de estado ("Cerrada el ... por ...") -- repetirla acá
+       sería la misma redundancia que se sacó del resto de la ficha. #}
     <div class="campo-ot-lectura">
         <div class="l">Cierre</div>
         <div class="v">{{ ot.fecha_cierre.strftime('%d/%m/%Y') }}</div>
