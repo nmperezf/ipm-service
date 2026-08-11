@@ -18,6 +18,7 @@ from app.models import (
     ServicioContrato,
     ServicioTipo,
     TipoFormulario,
+    categoria_de_tipo_equipo,
 )
 from app.utils import TIPOS_CAMPO
 
@@ -68,18 +69,33 @@ def detalle(contrato_id):
     verificar_acceso_cliente(contrato.instalacion.cliente)
     visitas = sorted(contrato.visitas, key=lambda v: v.fecha, reverse=True)
     cliente = contrato.instalacion.cliente
-    servicios_tipo = ServicioTipo.query.filter_by(empresa_id=cliente.empresa_id).order_by(ServicioTipo.nombre).all()
+    # oculto=True son servicios "miembro" de un paquete (ej. Bomba jockey,
+    # parte de "Inspecciones y pruebas en sala de bombas") -- no se ofrecen
+    # sueltos acá, solo a través del paquete (ver nuevo_servicio).
+    servicios_tipo = (
+        ServicioTipo.query.filter_by(empresa_id=cliente.empresa_id, oculto=False)
+        .order_by(ServicioTipo.nombre).all()
+    )
     # El formulario de cada servicio contratado es la copia que se importó
     # al cliente al agregarlo (ver nuevo_servicio) — se busca por nombre
-    # porque ServicioContrato no tiene FK directa a ella.
+    # porque ServicioContrato no tiene FK directa a ella. Un servicio
+    # "paquete" (categoria seteada) no tiene un único formulario propio --
+    # importó uno por cada tipo de equipo que agrupa (ver miembros_por_servicio).
     formularios_por_servicio = {
         s.id: TipoFormulario.query.filter_by(cliente_id=cliente.id, nombre=s.nombre).first()
-        for s in contrato.servicios
+        for s in contrato.servicios if not s.categoria
+    }
+    miembros_por_servicio = {
+        s.id: [
+            t for t in TipoFormulario.query.filter_by(cliente_id=cliente.id, por_equipo=True).all()
+            if categoria_de_tipo_equipo(t.tipo_equipo_aplicable) == s.categoria
+        ]
+        for s in contrato.servicios if s.categoria
     }
     return render_template(
         "contratos/detail.html", contrato=contrato, visitas=visitas, frecuencias=FRECUENCIAS_DISPONIBLES,
         servicios_tipo=servicios_tipo, formularios_por_servicio=formularios_por_servicio,
-        etiquetas_tipo_campo=dict(TIPOS_CAMPO),
+        miembros_por_servicio=miembros_por_servicio, etiquetas_tipo_campo=dict(TIPOS_CAMPO),
     )
 
 
@@ -127,11 +143,23 @@ def nuevo_servicio(contrato_id):
 
     cliente = contrato.instalacion.cliente
 
-    # La curva de caudal no usa el sistema de formularios genérico — el
-    # ítem de la visita ofrece directamente la pantalla de ensayo de la
-    # bomba (ver visitas.detalle), así que no hace falta importar un
-    # TipoFormulario para esto.
-    if not servicio_tipo.es_curva_caudal:
+    if servicio_tipo.categoria:
+        # Paquete (ej. "Inspecciones y pruebas en sala de bombas"): no
+        # tiene campos propios, así que no hay nada suyo para importar --
+        # en cambio, importa el checklist de cada tipo de equipo que
+        # agrupa, para que la pantalla combinada de la visita
+        # (formularios.checklist_categoria) tenga con qué armarse.
+        miembros = [
+            st for st in ServicioTipo.query.filter_by(empresa_id=servicio_tipo.empresa_id, por_equipo=True).all()
+            if categoria_de_tipo_equipo(st.tipo_equipo_aplicable) == servicio_tipo.categoria
+        ]
+        for miembro in miembros:
+            TipoFormulario.desde_catalogo(miembro, cliente.id)
+    elif not servicio_tipo.es_curva_caudal:
+        # La curva de caudal no usa el sistema de formularios genérico — el
+        # ítem de la visita ofrece directamente la pantalla de ensayo de la
+        # bomba (ver visitas.detalle), así que no hace falta importar un
+        # TipoFormulario para esto.
         TipoFormulario.desde_catalogo(servicio_tipo, cliente.id)
 
     fecha_inicio_servicio = _parse_mes(request.form.get("mes_inicio"))  # None = usa el del contrato
@@ -142,6 +170,7 @@ def nuevo_servicio(contrato_id):
         fecha_inicio=fecha_inicio_servicio,
         activo=True,
         tipo_equipo_aplicable=servicio_tipo.tipo_equipo_aplicable,
+        categoria=servicio_tipo.categoria,
         es_curva_caudal=servicio_tipo.es_curva_caudal,
     )
     db.session.add(servicio)

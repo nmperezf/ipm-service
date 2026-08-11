@@ -145,6 +145,9 @@ def _migrar_columnas_faltantes():
         ("tipos_formulario", "orden", "INTEGER DEFAULT 0"),
         ("servicios_tipo", "referencia_normativa", "VARCHAR(200)"),
         ("servicios_tipo", "orden", "INTEGER DEFAULT 0"),
+        ("servicios_tipo", "categoria", "VARCHAR(60)"),
+        ("servicios_tipo", "oculto", "BOOLEAN DEFAULT 0"),
+        ("servicios_contrato", "categoria", "VARCHAR(60)"),
     ]
     inspector = inspect(db.engine)
     tablas_existentes = set(inspector.get_table_names())
@@ -211,13 +214,13 @@ def _seed_catalogo_nfpa():
     usarlas en un documento de cumplimiento."""
     from app.models import Empresa, ServicioTipo
 
-    def crear(empresa_id, nombre, tipo_equipo, referencia, campos, por_equipo=True):
+    def crear(empresa_id, nombre, tipo_equipo, referencia, campos, por_equipo=True, oculto=False, categoria=None):
         if ServicioTipo.query.filter_by(empresa_id=empresa_id, nombre=nombre).first():
             return
         db.session.add(ServicioTipo(
             empresa_id=empresa_id, nombre=nombre, por_equipo=por_equipo,
             tipo_equipo_aplicable=tipo_equipo, referencia_normativa=referencia,
-            schema_json=json.dumps(campos),
+            schema_json=json.dumps(campos), oculto=oculto, categoria=categoria,
         ))
 
     def punto_estado(campo, label, descripcion):
@@ -307,11 +310,30 @@ def _seed_catalogo_nfpa():
 
     for empresa in Empresa.query.all():
         eid = empresa.id
-        crear(eid, "Inspección semanal — Bomba jockey", "Bomba jockey", "NFPA 25 · §8.3 Inspección semanal", campos_jockey)
-        crear(eid, "Inspección semanal — Electrobomba", "Electrobomba", "NFPA 25 · §8.3.3 Prueba de funcionamiento semanal", campos_electrobomba)
-        crear(eid, "Inspección semanal — Motobomba", "Motobomba", "NFPA 25 · §8.3 Inspección semanal — motor diésel", campos_motobomba)
-        crear(eid, "Inspección — Reserva de agua", "Reserva de agua", "NFPA 25 · §9.2 Inspección de tanques", campos_reserva_agua)
+        # Los 4 de acá abajo son "miembros" del paquete "Inspecciones y
+        # pruebas en sala de bombas" (oculto=True): siguen existiendo para
+        # definir su propio checklist por tipo de equipo, pero no se
+        # ofrecen sueltos al agregar un servicio a un contrato -- antes,
+        # contratarlos uno por uno generaba un ítem de visita por cada
+        # equipo (4 tarjetas con el mismo botón de checklist repetido, y 4
+        # "marcar cumplido" para un solo trabajo).
+        crear(eid, "Inspección semanal — Bomba jockey", "Bomba jockey", "NFPA 25 · §8.3 Inspección semanal", campos_jockey, oculto=True)
+        crear(eid, "Inspección semanal — Electrobomba", "Electrobomba", "NFPA 25 · §8.3.3 Prueba de funcionamiento semanal", campos_electrobomba, oculto=True)
+        crear(eid, "Inspección semanal — Motobomba", "Motobomba", "NFPA 25 · §8.3 Inspección semanal — motor diésel", campos_motobomba, oculto=True)
+        crear(eid, "Inspección — Reserva de agua", "Reserva de agua", "NFPA 25 · §9.2 Inspección de tanques", campos_reserva_agua, oculto=True)
+        crear(eid, "Inspecciones y pruebas en sala de bombas", None, None, [], por_equipo=False, categoria="Sala de bombas")
         crear(eid, "Señales de supervisión y falla — Sala de bombas", None, "NFPA 25 · §4.6 — Señales de supervisión y falla", campos_senales, por_equipo=False)
+
+        # crear() no toca un ServicioTipo que ya existía (de una corrida
+        # anterior de este seed, antes de que existiera el paquete) -- acá
+        # se ocultan igual, aunque ya estuvieran cargados.
+        ServicioTipo.query.filter(
+            ServicioTipo.empresa_id == eid,
+            ServicioTipo.nombre.in_([
+                "Inspección semanal — Bomba jockey", "Inspección semanal — Electrobomba",
+                "Inspección semanal — Motobomba", "Inspección — Reserva de agua",
+            ]),
+        ).update({"oculto": True}, synchronize_session=False)
         crear(eid, "Inspección — ECA", "ECA", "NFPA 25 · Cap. 13 §13.3.2 — Inspección de válvulas (posición, manómetros, estado)", campos_eca_inspeccion)
         crear(eid, "Inspección + prueba — ECA", "ECA", "NFPA 25 · Cap. 13 §13.3.3 — Prueba de válvula y dispositivos de supervisión/alarma (frecuencia varía según edición adoptada)", campos_eca_inspeccion_prueba)
         crear(eid, "Inspección — BIE", "BIE", "NFPA 25 · Cap. 6 (Standpipe and Hose Systems)", campos_bie)

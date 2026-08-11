@@ -22,6 +22,7 @@ from app.models import (
     TipoFormulario,
     Usuario,
     Visita,
+    categoria_de_tipo_equipo,
     categorias_equipo_agrupadas,
 )
 from app.notificaciones import notificar_gestion, notificar_tecnico_asignado
@@ -155,8 +156,16 @@ def detalle(visita_id):
                 e for e in visita.instalacion.equipos if e.activo and e.tipo in tipos_bomba
             ]
             continue
-        tipo_equipo_ref = item.servicio.tipo_equipo_aplicable if item.servicio else (item.equipo.tipo if item.equipo else None)
-        tipos_item = [t for t in tipos if t.aplica_a_tipo_equipo(tipo_equipo_ref)]
+        if item.servicio and item.servicio.categoria:
+            # Servicio "paquete" (ej. "Inspecciones y pruebas en sala de
+            # bombas"): un solo ítem para toda la categoría, no un tipo de
+            # equipo puntual -- se ofrecen todos los tipos de esa categoría
+            # juntos (ver formularios.checklist_categoria), no filtrados
+            # por aplica_a_tipo_equipo (que compara un único tipo).
+            tipos_item = [t for t in tipos if categoria_de_tipo_equipo(t.tipo_equipo_aplicable) == item.servicio.categoria]
+        else:
+            tipo_equipo_ref = item.servicio.tipo_equipo_aplicable if item.servicio else (item.equipo.tipo if item.equipo else None)
+            tipos_item = [t for t in tipos if t.aplica_a_tipo_equipo(tipo_equipo_ref)]
         grupos, generales = _agrupar_tipos_formulario(tipos_item)
         formularios_por_item[item.id] = {"grupos": grupos, "generales": generales}
 

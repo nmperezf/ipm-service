@@ -29,6 +29,7 @@
                     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <div>
                             <strong>{{ s.nombre }}</strong>
+                            {% if s.categoria %}<span class="badge bg-secondary-subtle text-secondary-emphasis ms-1">paquete</span>{% endif %}
                             <span class="badge badge-Programado text-capitalize ms-1">{{ s.frecuencia }}</span>
                             <span class="text-muted small ms-2">
                                 {{ s.fechas_ocurrencia()|length }} ejecución(es) en el año, desde {{ s.fecha_base.strftime('%m/%Y') }}
@@ -46,7 +47,13 @@
                         </div>
                     </div>
 
-                    {% if tipo_formulario %}
+                    {% if s.categoria %}
+                    {% set miembros = miembros_por_servicio.get(s.id, []) %}
+                    <p class="text-muted small mb-0 mt-2">
+                        Agrupa el checklist de: {% for m in miembros %}<a href="{{ url_for('tipos_formulario.editar', tipo_id=m.id, volver_a=url_for('contratos.detalle', contrato_id=contrato.id)) }}">{{ m.tipo_equipo_aplicable }}</a>{% if not loop.last %}, {% endif %}{% else %}<span class="text-danger">ningún tipo de equipo de "{{ s.categoria }}" está cargado en el catálogo de la empresa</span>{% endfor %}.
+                        Solo se cargan los que existan como equipo en esta instalación.
+                    </p>
+                    {% elif tipo_formulario %}
                     <div class="formulario-inline mt-2">
                         {% for campo in tipo_formulario.campos() %}
                         <div class="campo-inline"><span class="text-muted">{{ campo.label }}</span><span>{{ etiquetas_tipo_campo.get(campo.tipo, campo.tipo) }}</span></div>
@@ -82,10 +89,13 @@
                     <select name="servicio_tipo_id" class="form-select" required>
                         <option value="">-- Seleccioná --</option>
                         {% for s in servicios_tipo %}
-                        <option value="{{ s.id }}">{{ s.nombre }}</option>
+                        <option value="{{ s.id }}">{{ s.nombre }}{% if s.categoria %} (paquete){% endif %}</option>
                         {% endfor %}
                     </select>
-                    <div class="form-text">¿Falta el que necesitás? <a href="{{ url_for('servicios_tipo.nuevo') }}">Creá uno nuevo</a> en el catálogo de la empresa.</div>
+                    <div class="form-text">
+                        ¿Falta el que necesitás? <a href="{{ url_for('servicios_tipo.nuevo') }}">Creá uno nuevo</a> en el catálogo de la empresa.
+                        {% if servicios_tipo|selectattr('categoria')|list %}Un "paquete" agrupa varios tipos de equipo de la misma categoría (ej. sala de bombas) en un solo servicio, con un solo checklist combinado por visita.{% endif %}
+                    </div>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Frecuencia</label>

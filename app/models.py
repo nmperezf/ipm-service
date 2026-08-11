@@ -367,6 +367,13 @@ class ServicioContrato(db.Model):
     # Copiado de ServicioTipo.es_curva_caudal al agregar el servicio (ver
     # contratos.nuevo_servicio) — mismo criterio que tipo_equipo_aplicable.
     es_curva_caudal = db.Column(db.Boolean, default=False, nullable=False)
+    # Copiado de ServicioTipo.categoria (ver contratos.nuevo_servicio): si
+    # está seteado, este servicio es un "paquete" que agrupa varios tipos de
+    # equipo de esa categoría (ej. "Inspecciones y pruebas en sala de
+    # bombas" agrupa jockey/electrobomba/motobomba/reserva) en un solo ítem
+    # de visita, en vez de uno por cada tipo de equipo -- mutuamente
+    # excluyente con tipo_equipo_aplicable (nunca los dos a la vez).
+    categoria = db.Column(db.String(60), nullable=True)
 
     items = db.relationship("ItemVisita", backref="servicio", lazy=True, cascade="all, delete-orphan")
 
@@ -768,6 +775,18 @@ class ServicioTipo(db.Model):
     es_curva_caudal = db.Column(db.Boolean, default=False, nullable=False)
     referencia_normativa = db.Column(db.String(200), nullable=True)  # ej. "NFPA 25 · §8.3.3"
     orden = db.Column(db.Integer, default=0, nullable=False)
+    # Si está seteado, este ServicioTipo es un "paquete" contratable que
+    # agrupa TODOS los ServicioTipo de la misma categoría (ver
+    # categoria_de_tipo_equipo) en un solo servicio de contrato -- no tiene
+    # campos propios (schema_json vacío), sus campos son los de los
+    # miembros que agrupa. Mutuamente excluyente con tipo_equipo_aplicable.
+    categoria = db.Column(db.String(60), nullable=True)
+    # Un ServicioTipo "miembro" de un paquete (ej. Bomba jockey, parte de
+    # "Inspecciones y pruebas en sala de bombas") no se ofrece solo en el
+    # desplegable de "agregar servicio" de un contrato -- solo a través del
+    # paquete. Sigue existiendo normalmente para definir su propio checklist
+    # (ver TipoFormulario.desde_catalogo, contratos.nuevo_servicio).
+    oculto = db.Column(db.Boolean, default=False, nullable=False)
 
     empresa = db.relationship("Empresa", backref=db.backref("servicios_tipo", cascade="all, delete-orphan"))
 
