@@ -4,7 +4,6 @@ from flask_login import current_user
 from app import db
 from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_escritura_cliente, verificar_visita_editable
 from app.models import Equipo, Formulario, ItemVisita, Observacion, TipoFormulario, categoria_de_tipo_equipo
-from app.notificaciones import notificar_gestion
 from app.pdf_reporte import generar_pdf_reporte_equipos
 
 formularios_bp = Blueprint("formularios", __name__, url_prefix="/formularios")
@@ -101,15 +100,6 @@ def carga_masiva(item_id, tipo_formulario_id):
                     obs.confirmar_vigencia(item.visita_id, current_user.id)
             guardados += 1
 
-        if guardados:
-            notificar_gestion(
-                empresa_id=instalacion.cliente.empresa_id,
-                tipo="formulario_cargado",
-                titulo=f"Formulario cargado — {tipo.nombre} ({instalacion.nombre})",
-                cliente_id=instalacion.cliente_id,
-                enlace=url_for("visitas.detalle", visita_id=item.visita_id),
-                remitente=current_user,
-            )
         db.session.commit()
         flash(f"Se guardaron {guardados} checklist(s) de '{tipo.nombre}'.", "success")
         return redirect(url_for("visitas.detalle", visita_id=item.visita_id))
@@ -233,15 +223,6 @@ def checklist_categoria(item_id, categoria):
                         obs.confirmar_vigencia(item.visita_id, current_user.id)
                 guardados += 1
 
-        if guardados:
-            notificar_gestion(
-                empresa_id=instalacion.cliente.empresa_id,
-                tipo="formulario_cargado",
-                titulo=f"Checklist de {categoria} cargado — {instalacion.nombre}",
-                cliente_id=instalacion.cliente_id,
-                enlace=url_for("visitas.detalle", visita_id=item.visita_id),
-                remitente=current_user,
-            )
         db.session.commit()
         flash(f"Checklist de {categoria} guardado ({guardados} equipo(s)).", "success")
         return redirect(url_for("visitas.detalle", visita_id=item.visita_id))
@@ -332,15 +313,6 @@ def nuevo(item_id, tipo_formulario_id):
             for obs in equipo.deficiencias:
                 if not obs.resuelto:
                     obs.confirmar_vigencia(item.visita_id, current_user.id)
-        if es_nuevo:
-            notificar_gestion(
-                empresa_id=item.visita.instalacion.cliente.empresa_id,
-                tipo="formulario_cargado",
-                titulo=f"Formulario cargado — {tipo.nombre} ({item.visita.instalacion.nombre})",
-                cliente_id=item.visita.instalacion.cliente_id,
-                enlace=url_for("visitas.detalle", visita_id=item.visita_id),
-                remitente=current_user,
-            )
         db.session.commit()
         destino = f"'{tipo.nombre}'" + (f" para {equipo.nombre}" if equipo else "")
         verbo = "agregado a" if es_nuevo else "actualizado en"

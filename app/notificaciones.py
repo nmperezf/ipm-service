@@ -2,6 +2,8 @@
 commit) para que quede en la misma transacción que la acción que las
 dispara — el caller ya hace su propio db.session.commit()."""
 
+from flask import url_for
+
 from app import db
 from app.models import Notificacion, Usuario
 
@@ -29,7 +31,7 @@ def notificar_gestion(empresa_id, tipo, titulo, cliente_id=None, enlace=None, re
     """Notifica a todos los Administrador/Jefe de la empresa (menos a quien
     generó el evento, si fue uno de ellos) — para los eventos operativos
     que le interesan a la gestión: ensayo nuevo, visita a revisión,
-    observación nueva, equipo nuevo, formulario cargado."""
+    observación nueva, equipo nuevo."""
     destinatarios = Usuario.query.filter(
         Usuario.empresa_id == empresa_id, Usuario.rol.in_(("Administrador", "Jefe"))
     )
@@ -46,4 +48,34 @@ def notificar_gestion(empresa_id, tipo, titulo, cliente_id=None, enlace=None, re
                 titulo=titulo,
                 enlace=enlace,
             )
+        )
+
+
+def notificar_tecnico_asignado(ot, remitente):
+    """Avisa al técnico/Jefe que quedó a cargo de una OT. Si la OT viene de
+    una visita, el aviso y el link apuntan a LA VISITA -- ahí es donde
+    completa el trabajo (ver visitas.enviar_revision), no en la ficha de la
+    OT. Las correctivas (sin visita) siguen apuntando a la OT, que ahí sí
+    es donde se completa todo."""
+    if not ot.tecnico_id:
+        return
+    if ot.visita_id:
+        notificar_usuario(
+            ot.tecnico_usuario,
+            tipo="visita_asignada",
+            titulo=f"Visita asignada — {ot.instalacion.nombre} ({ot.visita.fecha.strftime('%d/%m/%Y')})",
+            empresa_id=remitente.empresa_id,
+            cliente_id=ot.instalacion.cliente_id,
+            enlace=url_for("visitas.detalle", visita_id=ot.visita_id),
+            remitente=remitente,
+        )
+    else:
+        notificar_usuario(
+            ot.tecnico_usuario,
+            tipo="ot_asignada",
+            titulo=f"OT {ot.numero} asignada — {ot.instalacion.nombre}",
+            empresa_id=remitente.empresa_id,
+            cliente_id=ot.instalacion.cliente_id,
+            enlace=url_for("ordenes.detalle", ot_id=ot.id),
+            remitente=remitente,
         )

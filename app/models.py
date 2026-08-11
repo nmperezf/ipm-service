@@ -1552,24 +1552,24 @@ TIPOS_NOTIFICACION = {
     "visita_revision": "Visita enviada a revisión",
     "observacion_nueva": "Observación nueva",
     "equipo_nuevo": "Equipo nuevo",
-    "formulario_cargado": "Formulario cargado",
     "mensaje_nuevo": "Mensaje nuevo",
     "ot_asignada": "Orden de trabajo asignada",
+    "visita_asignada": "Visita asignada",
     "ensayo_validado": "Ensayo validado",
     "ensayo_rechazado": "Ensayo rechazado",
     "observacion_aprobada": "Observación aprobada",
     "cliente_nuevo": "Cliente nuevo registrado en campo",
 }
 
-# Para el título de una tarjeta agrupada ("3 formularios cargados"): la
+# Para el título de una tarjeta agrupada ("3 observaciones nuevas"): la
 # forma en plural de cada tipo — lo que no está acá no suele agruparse
 # (ver notificaciones._agrupar), así que cae en descripcion_tipo tal cual.
 TIPOS_NOTIFICACION_PLURAL = {
     "ensayo_nuevo": "nuevos ensayos de curva de caudal",
     "observacion_nueva": "observaciones nuevas",
     "equipo_nuevo": "equipos nuevos",
-    "formulario_cargado": "formularios cargados",
     "ot_asignada": "órdenes de trabajo asignadas",
+    "visita_asignada": "visitas asignadas",
     "ensayo_validado": "ensayos validados",
     "ensayo_rechazado": "ensayos rechazados",
     "observacion_aprobada": "observaciones aprobadas",
@@ -1591,9 +1591,9 @@ VERBOS_NOTIFICACION = {
     "visita_revision": "Ver visita →",
     "observacion_nueva": "Ver observación →",
     "equipo_nuevo": "Ver equipo →",
-    "formulario_cargado": "Ver visita →",
     "mensaje_nuevo": "Ir al mensaje →",
     "ot_asignada": "Ver OT →",
+    "visita_asignada": "Ver visita →",
     "ensayo_validado": "Ver ensayo →",
     "ensayo_rechazado": "Ver ensayo →",
     "observacion_aprobada": "Ver observación →",

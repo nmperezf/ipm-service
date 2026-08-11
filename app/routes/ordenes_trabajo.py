@@ -16,7 +16,7 @@ from app.models import (
     TIPOS_OT_MANUAL,
     Usuario,
 )
-from app.notificaciones import notificar_usuario
+from app.notificaciones import notificar_tecnico_asignado
 from app.pdf_ot import generar_pdf_ot
 from app.utils import es_ajax
 
@@ -127,16 +127,7 @@ def nueva():
         db.session.add(ot)
         db.session.flush()
         ot.asignar_numero()
-        if ot.tecnico_id:
-            notificar_usuario(
-                ot.tecnico_usuario,
-                tipo="ot_asignada",
-                titulo=f"OT {ot.numero} asignada — {instalacion.nombre}",
-                empresa_id=current_user.empresa_id,
-                cliente_id=instalacion.cliente_id,
-                enlace=url_for("ordenes.detalle", ot_id=ot.id),
-                remitente=current_user,
-            )
+        notificar_tecnico_asignado(ot, current_user)
         db.session.commit()
         flash(f"Orden de trabajo {ot.numero} creada.", "success")
         return redirect(url_for("ordenes.detalle", ot_id=ot.id))
@@ -198,15 +189,7 @@ def actualizar_campo(ot_id):
         if ot.tecnico_id and ot.estado == "Pendiente":
             ot.estado = "Asignada"
         if ot.tecnico_id and ot.tecnico_id != tecnico_id_anterior:
-            notificar_usuario(
-                ot.tecnico_usuario,
-                tipo="ot_asignada",
-                titulo=f"OT {ot.numero} asignada — {ot.instalacion.nombre}",
-                empresa_id=current_user.empresa_id,
-                cliente_id=ot.instalacion.cliente_id,
-                enlace=url_for("ordenes.detalle", ot_id=ot.id),
-                remitente=current_user,
-            )
+            notificar_tecnico_asignado(ot, current_user)
     elif campo == "observaciones":
         ot.observaciones = valor or None
     elif campo == "estado" and not ot.visita_id and valor in ESTADOS_OT:

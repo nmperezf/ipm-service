@@ -24,7 +24,7 @@ from app.models import (
     Visita,
     categorias_equipo_agrupadas,
 )
-from app.notificaciones import notificar_gestion, notificar_usuario
+from app.notificaciones import notificar_gestion, notificar_tecnico_asignado
 from app.pdf_checklist_tecnico import generar_pdf_checklist_tecnico
 from app.pdf_devolucion import generar_pdf_devolucion
 from app.utils import equipos_por_categoria, es_ajax, filas_checklist, resumen_visita_por_categoria
@@ -111,17 +111,7 @@ def nueva(instalacion_id):
         db.session.add(ot)
         db.session.flush()
         ot.asignar_numero()
-
-        if ot.tecnico_id:
-            notificar_usuario(
-                ot.tecnico_usuario,
-                tipo="ot_asignada",
-                titulo=f"OT {ot.numero} asignada — {instalacion.nombre} ({visita.fecha.strftime('%d/%m/%Y')})",
-                empresa_id=current_user.empresa_id,
-                cliente_id=instalacion.cliente_id,
-                enlace=url_for("ordenes.detalle", ot_id=ot.id),
-                remitente=current_user,
-            )
+        notificar_tecnico_asignado(ot, current_user)
 
         db.session.commit()
         if es_ajax():
