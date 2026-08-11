@@ -2035,6 +2035,16 @@ details.bloque-equipo .ir-ficha { display: inline-block; margin-bottom: .8rem; f
 .fila-punto-checklist .label { color: var(--ink-muted); }
 .fila-punto-checklist .valor { text-align: right; white-space: nowrap; }
 
+/* Ficha de UN checklist puntual (formularios.detalle): mismo lenguaje que
+   la lista compacta de arriba, pero acá el punto es el protagonista (hay
+   uno solo cargado en la página, no una lista para escanear) -- la
+   etiqueta va en primer plano y el valor puede ocupar varias líneas
+   (descripción del punto, nota de la deficiencia completa, no acortada). */
+.tarjeta-carga-checklist-detalle { font-size: .88rem; }
+.tarjeta-carga-checklist-detalle .fila-punto-checklist { align-items: flex-start; }
+.tarjeta-carga-checklist-detalle .fila-punto-checklist .label { color: var(--ink); font-weight: 600; }
+.tarjeta-carga-checklist-detalle .fila-punto-checklist .valor { white-space: normal; max-width: 55%; }
+
 /* Gráfico como <details> inline en vez de modal: esto se anida a veces
    dentro de OTRO modal ya abierto (preview de equipo en
    instalaciones/equipos_categoria.html), donde un modal-backdrop-doc
