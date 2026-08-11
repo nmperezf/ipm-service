@@ -146,7 +146,7 @@ def _migrar_columnas_faltantes():
         ("servicios_tipo", "referencia_normativa", "VARCHAR(200)"),
         ("servicios_tipo", "orden", "INTEGER DEFAULT 0"),
         ("servicios_tipo", "categoria", "VARCHAR(60)"),
-        ("servicios_tipo", "oculto", "BOOLEAN DEFAULT 0"),
+        ("servicios_tipo", "oculto", "BOOLEAN DEFAULT FALSE"),
         ("servicios_contrato", "categoria", "VARCHAR(60)"),
     ]
     inspector = inspect(db.engine)
