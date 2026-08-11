@@ -3,7 +3,7 @@ from flask_login import current_user
 
 from app import db
 from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_escritura_cliente, verificar_visita_editable
-from app.models import Equipo, Formulario, ItemVisita, Observacion, TipoFormulario, categoria_de_tipo_equipo
+from app.models import Equipo, Formulario, Foto, ItemVisita, Observacion, TipoFormulario, categoria_de_tipo_equipo
 from app.pdf_reporte import generar_pdf_reporte_equipos
 
 formularios_bp = Blueprint("formularios", __name__, url_prefix="/formularios")
@@ -175,6 +175,15 @@ def checklist_categoria(item_id, categoria):
     if not secciones:
         abort(404)
 
+    # Fotos ya subidas ligadas a un punto puntual (campo_formulario) de
+    # esta visita, agrupadas por (equipo, campo) para mostrarlas de
+    # entrada al redibujar la pantalla (ver foto-campo.js).
+    fotos_por_campo = {}
+    for foto in Foto.query.filter(
+        Foto.item_visita_id == item.id, Foto.campo_formulario.isnot(None)
+    ).all():
+        fotos_por_campo.setdefault((foto.equipo_id, foto.campo_formulario), []).append(foto)
+
     if request.method == "POST":
         guardados = 0
         for seccion in secciones:
@@ -230,6 +239,7 @@ def checklist_categoria(item_id, categoria):
     return render_template(
         "visitas/checklist_categoria_form.html",
         item=item, categoria=categoria, secciones=secciones, instalacion=instalacion,
+        fotos_por_campo=fotos_por_campo,
     )
 
 
@@ -321,7 +331,18 @@ def nuevo(item_id, tipo_formulario_id):
             return redirect(url_for("formularios.elegir_equipo", item_id=item.id, tipo_formulario_id=tipo.id))
         return redirect(url_for("visitas.detalle", visita_id=item.visita_id))
 
-    return render_template("visitas/formulario_form.html", item=item, tipo=tipo, equipo=equipo, formulario=formulario)
+    fotos_por_campo = {}
+    for foto in Foto.query.filter(
+        Foto.item_visita_id == item.id,
+        Foto.equipo_id == (equipo.id if equipo else None),
+        Foto.campo_formulario.isnot(None),
+    ).all():
+        fotos_por_campo.setdefault(foto.campo_formulario, []).append(foto)
+
+    return render_template(
+        "visitas/formulario_form.html", item=item, tipo=tipo, equipo=equipo, formulario=formulario,
+        fotos_por_campo=fotos_por_campo,
+    )
 
 
 @formularios_bp.route("/<int:formulario_id>")

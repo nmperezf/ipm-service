@@ -26,7 +26,7 @@ from app.models import (
     categorias_equipo_agrupadas,
 )
 from app.notificaciones import notificar_gestion, notificar_tecnico_asignado
-from app.pdf_checklist_tecnico import generar_pdf_checklist_tecnico
+from app.pdf_checklist_tecnico import categorias_de_visita, generar_pdf_checklist_tecnico
 from app.pdf_devolucion import generar_pdf_devolucion
 from app.utils import equipos_por_categoria, es_ajax, filas_checklist, resumen_visita_por_categoria
 
@@ -190,6 +190,7 @@ def detalle(visita_id):
         equipos_agrupados=equipos_por_categoria(visita.instalacion),
         deficiencias_abiertas=deficiencias_abiertas,
         grupos_checklist=grupos_checklist,
+        categorias_pdf=categorias_de_visita(visita) if visita.cerrada else [],
     )
 
 
@@ -510,25 +511,52 @@ def pdf_devolucion(visita_id):
     )
 
 
-@visitas_bp.route("/<int:visita_id>/checklist-tecnico-pdf")
-@rol_requerido("Administrador", "Jefe", "Técnico", "Cliente")
-def checklist_tecnico_pdf(visita_id):
-    """Documento técnico con cada punto cargado (valor, estado, nota) --
-    a diferencia del PDF de devolución, que es el resumen ejecutivo. Mismo
-    candado de acceso que ese: para el Cliente, solo si la visita está
-    Cerrada y su OT Finalizada."""
-    visita = Visita.query.get_or_404(visita_id)
-    verificar_acceso_cliente(visita.instalacion.cliente)
-
+def _verificar_acceso_checklist_pdf(visita):
+    """Mismo candado que el PDF de devolución: para el Cliente, solo si
+    la visita está Cerrada y su OT Finalizada; para el resto, solo si ya
+    está Cerrada (mientras se sigue cargando, el checklist puede
+    cambiar)."""
     if current_user.rol == "Cliente":
         if not (visita.cerrada and visita.orden_trabajo and visita.orden_trabajo.estado == "Finalizada"):
             abort(404)
     elif not visita.cerrada:
         flash("Esta visita todavía no está cerrada.", "danger")
+        return False
+    return True
+
+
+@visitas_bp.route("/<int:visita_id>/checklist-tecnico-pdf")
+@rol_requerido("Administrador", "Jefe", "Técnico", "Cliente")
+def checklist_tecnico_pdf(visita_id):
+    """Documento técnico con cada punto cargado (valor, estado, nota) --
+    a diferencia del PDF de devolución, que es el resumen ejecutivo."""
+    visita = Visita.query.get_or_404(visita_id)
+    verificar_acceso_cliente(visita.instalacion.cliente)
+    if not _verificar_acceso_checklist_pdf(visita):
         return redirect(url_for("visitas.detalle", visita_id=visita.id))
 
     pdf_bytes = generar_pdf_checklist_tecnico(visita)
     nombre_archivo = f"Checklist_{visita.instalacion.nombre.replace(' ', '_')}_{visita.fecha.isoformat()}.pdf"
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f"inline; filename={nombre_archivo}"},
+    )
+
+
+@visitas_bp.route("/<int:visita_id>/checklist-tecnico-pdf/<categoria>")
+@rol_requerido("Administrador", "Jefe", "Técnico", "Cliente")
+def checklist_tecnico_pdf_categoria(visita_id, categoria):
+    """Mismo documento, acotado a una sola categoría (Sala de bombas,
+    Estaciones de control y alarma, Bocas de incendio) -- para archivar
+    cada sistema por separado en vez de un solo PDF con todo mezclado."""
+    visita = Visita.query.get_or_404(visita_id)
+    verificar_acceso_cliente(visita.instalacion.cliente)
+    if not _verificar_acceso_checklist_pdf(visita):
+        return redirect(url_for("visitas.detalle", visita_id=visita.id))
+
+    pdf_bytes = generar_pdf_checklist_tecnico(visita, categoria=categoria)
+    nombre_archivo = f"Checklist_{categoria.replace(' ', '_')}_{visita.instalacion.nombre.replace(' ', '_')}_{visita.fecha.isoformat()}.pdf"
     return Response(
         pdf_bytes,
         mimetype="application/pdf",

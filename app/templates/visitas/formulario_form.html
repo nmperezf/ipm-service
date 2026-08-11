@@ -91,6 +91,24 @@
                         </div>
                     {% endif %}
 
+                    {% if campo.requiere_foto and equipo %}
+                    <div class="widget-foto-campo" data-equipo="{{ equipo.id }}" data-campo="{{ campo.campo }}"
+                         data-url-subir="{{ url_for('fotos.subir', item_id=item.id) }}"
+                         data-url-eliminar-plantilla="{{ url_for('fotos.eliminar', foto_id=0) }}">
+                        <div class="miniaturas-foto-campo">
+                            {% for foto in fotos_por_campo.get(campo.campo, []) %}
+                            <div class="miniatura-foto" data-foto-id="{{ foto.id }}">
+                                <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" target="_blank"><img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" alt=""></a>
+                                <button type="button" class="quitar" title="Quitar">✕</button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <label class="btn-foto-campo"><i class="bi bi-camera me-1"></i>Foto
+                            <input type="file" accept="image/*" class="d-none">
+                        </label>
+                    </div>
+                    {% endif %}
+
                     {% if con_estado %}
                     <div class="grupo-estado mt-2" data-nota="nota-{{ campo.campo }}">
                         {% for est in ESTADOS_CHECKLIST %}

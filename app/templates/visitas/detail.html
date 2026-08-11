@@ -23,6 +23,18 @@
                         {% endif %}
                     {% elif visita.fase == 'Cerrada' %}
                         <a href="{{ url_for('visitas.pdf_devolucion', visita_id=visita.id) }}" class="btn btn-sm btn-outline-dark" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>Descargar PDF de devolución</a>
+                        <div class="dropdown d-inline-block">
+                            <button class="btn btn-sm btn-outline-dark dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-file-earmark-pdf me-1"></i>Checklist técnico
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{{ url_for('visitas.checklist_tecnico_pdf', visita_id=visita.id) }}" target="_blank">Completo</a></li>
+                                {% if categorias_pdf %}<li><hr class="dropdown-divider"></li>{% endif %}
+                                {% for cat in categorias_pdf %}
+                                <li><a class="dropdown-item" href="{{ url_for('visitas.checklist_tecnico_pdf_categoria', visita_id=visita.id, categoria=cat) }}" target="_blank">{{ cat }}</a></li>
+                                {% endfor %}
+                            </ul>
+                        </div>
                         {% if current_user.rol in ('Administrador', 'Jefe') %}
                         <form method="POST" action="{{ url_for('visitas.reabrir', visita_id=visita.id) }}" class="d-inline" onsubmit="return confirm('¿Reabrir esta visita para corregirla? El PDF ya entregado no va a reflejar los cambios hasta que la vuelvas a cerrar.');">
                             <button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-unlock me-1"></i>Reabrir visita</button>

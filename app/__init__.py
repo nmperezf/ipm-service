@@ -148,6 +148,7 @@ def _migrar_columnas_faltantes():
         ("servicios_tipo", "categoria", "VARCHAR(60)"),
         ("servicios_tipo", "oculto", "BOOLEAN DEFAULT FALSE"),
         ("servicios_contrato", "categoria", "VARCHAR(60)"),
+        ("fotos", "campo_formulario", "VARCHAR(100)"),
     ]
     inspector = inspect(db.engine)
     tablas_existentes = set(inspector.get_table_names())
@@ -223,12 +224,24 @@ def _seed_catalogo_nfpa():
             schema_json=json.dumps(campos), oculto=oculto, categoria=categoria,
         ))
 
-    def punto_estado(campo, label, descripcion):
-        return {"campo": campo, "tipo": "estado", "label": label, "descripcion": descripcion}
+    def punto_estado(campo, label, descripcion, foto=False):
+        d = {"campo": campo, "tipo": "estado", "label": label, "descripcion": descripcion}
+        if foto:
+            d["requiere_foto"] = True
+        return d
 
     def punto_numero(campo, label, unidad, descripcion):
         return {"campo": campo, "tipo": "numero", "label": label, "unidad": unidad,
                 "descripcion": descripcion, "con_estado": True}
+
+    def punto_booleano(campo, label, descripcion):
+        return {"campo": campo, "tipo": "booleano", "label": label, "descripcion": descripcion}
+
+    def punto_seleccion(campo, label, opciones, descripcion):
+        return {"campo": campo, "tipo": "seleccion", "label": label, "opciones": opciones, "descripcion": descripcion}
+
+    def punto_texto_largo(campo, label, descripcion):
+        return {"campo": campo, "tipo": "texto_largo", "label": label, "descripcion": descripcion}
 
     campos_jockey = [
         punto_numero("presion_arranque", "Presión de arranque", "PSI", "Registrar la presión a la que arranca la bomba jockey."),
@@ -300,6 +313,71 @@ def _seed_catalogo_nfpa():
         punto_estado("prueba_flujo", "Prueba de sensor de flujo", "Abrir el drenaje de prueba (o testigo) y verificar que la alarma de flujo se active y transmita correctamente."),
     ]
 
+    # Mantenimiento anual con desarme -- extremo hidráulico de la bomba
+    # (común a Electrobomba y Motobomba, el motor se cubre en checklists
+    # aparte). Los puntos de condición física llevan foto para dejar
+    # evidencia de lo encontrado al desarmar; las mediciones y las
+    # confirmaciones sí/no no la requieren.
+    campos_bomba_desarme = [
+        punto_estado("alineacion_antes", "Alineación motor-bomba (antes del desarme)",
+                      "Verificar visualmente la alineación motor-bomba antes de desacoplar, para comparar contra el estado post-armado.", foto=True),
+        punto_numero("desviacion_alineacion", "Desviación de alineación medida (si corresponde corregir)", "mm",
+                      "Valor medido con reloj comparador o láser antes de corregir, solo si se detectó desalineación."),
+        punto_estado("estado_acoplamiento", "Estado del acoplamiento",
+                      "Desgaste, grietas o juego excesivo en el elemento de acoplamiento (goma, disco, etc.).", foto=True),
+        punto_seleccion("tipo_sello", "Tipo de sello del eje", ["Mecánico", "Empaquetadura (packing)"],
+                         "Según lo encontrado al desarmar."),
+        punto_estado("estado_sello_antes", "Estado de la empaquetadura/sello (antes)",
+                      "Desgaste, endurecimiento o daño del sello/empaquetadura antes de intervenir.", foto=True),
+        punto_booleano("reemplazo_sello", "¿Se reemplazó la empaquetadura/sello?", ""),
+        punto_booleano("ajuste_prensaestopas", "Ajuste de prensaestopas realizado", "Aplica solo si el sello es por empaquetadura."),
+        punto_estado("estado_rodamientos", "Estado de rodamientos de la bomba",
+                      "Juego, ruido o señales de sobrecalentamiento en los rodamientos de la bomba.", foto=True),
+        punto_booleano("lubricacion_rodamientos", "¿Se lubricaron los rodamientos?", ""),
+        punto_estado("estado_impulsor", "Estado del impulsor/rodete",
+                      "Erosión, cavitación, corrosión o desbalance visible del impulsor.", foto=True),
+        punto_numero("juego_axial", "Juego axial medido", "mm", "Medido con reloj comparador tras el armado."),
+        punto_estado("estado_wear_rings", "Estado de anillos de desgaste (wear rings)",
+                      "Holgura entre anillo de desgaste e impulsor, comparada contra la tolerancia del fabricante.", foto=True),
+        punto_numero("vibracion_post_armado", "Vibración medida post-armado (si tenés medidor)", "mm/s",
+                      "Solo si se dispone de medidor de vibraciones."),
+        punto_texto_largo("observaciones_generales", "Observaciones generales", ""),
+    ]
+
+    campos_motor_electrico = [
+        punto_numero("resistencia_aislacion", "Resistencia de aislación (megado)", "MΩ",
+                      "Medida entre fases y a tierra con megóhmetro. El valor mínimo aceptable depende de la tensión y el fabricante del motor."),
+        punto_estado("estado_bobinado", "Estado del bobinado",
+                      "Inspección visual: decoloración, olor a quemado o daño en el aislamiento del bobinado.", foto=True),
+        punto_estado("estado_rodamientos_motor", "Estado de rodamientos del motor",
+                      "Juego, ruido o señales de sobrecalentamiento en los rodamientos del motor eléctrico.", foto=True),
+        punto_booleano("ajuste_bornera", "Ajuste de bornera de conexiones realizado", ""),
+    ]
+
+    campos_motor_diesel = [
+        punto_numero("horas_motor", "Horas de motor al momento del servicio", "h", "Lectura del horómetro del motor diésel."),
+        punto_estado("nivel_aceite", "Nivel de aceite", "Verificar contra las marcas mín./máx. de la varilla."),
+        punto_booleano("cambio_aceite", "Cambio de aceite de motor", ""),
+        punto_booleano("cambio_filtro_aceite", "Cambio de filtro de aceite", ""),
+        punto_booleano("cambio_filtro_combustible", "Cambio de filtro de combustible", ""),
+        punto_booleano("cambio_filtro_aire", "Cambio de filtro de aire", ""),
+        punto_estado("nivel_refrigerante", "Nivel de refrigerante", "Verificar contra las marcas del tanque de expansión o radiador."),
+        punto_estado("estado_intercambiador", "Estado del intercambiador de calor",
+                      "Corrosión, incrustaciones o fugas en el intercambiador de calor.", foto=True),
+        punto_booleano("recambio_anodo", "Recambio del ánodo de sacrificio", ""),
+        punto_booleano("recambio_termostato", "Recambio del termostato", ""),
+        punto_booleano("recambio_bomba_agua", "Recambio de la bomba de agua", ""),
+        punto_booleano("recambio_mangones_refrigeracion", "Recambio de mangones de refrigeración", ""),
+        punto_estado("estado_mangones_combustible", "Estado de mangones de combustible",
+                      "Grietas, resecamiento o fugas en las mangueras de combustible.", foto=True),
+        punto_booleano("recambio_correas", "Recambio de correas", ""),
+        punto_booleano("kit_recambio_anual", "Kit de recambio anual aplicado", ""),
+        punto_booleano("kit_recambio_segundo_anio", "Kit de recambio de segundo año aplicado", ""),
+        punto_estado("estado_escape", "Estado del sistema de escape",
+                      "Corrosión, fugas o daño visible en el sistema de escape.", foto=True),
+        punto_texto_largo("observaciones_generales", "Observaciones generales", ""),
+    ]
+
     campos_bie = [
         punto_estado("manguera", "Estado de la manguera", "Inspección visual: sin cortes, desgaste ni acople dañado."),
         punto_estado("boquilla", "Boquilla / pitón", "Presente, sin obstrucciones, cierra y abre correctamente."),
@@ -337,6 +415,15 @@ def _seed_catalogo_nfpa():
         crear(eid, "Inspección — ECA", "ECA", "NFPA 25 · Cap. 13 §13.3.2 — Inspección de válvulas (posición, manómetros, estado)", campos_eca_inspeccion)
         crear(eid, "Inspección + prueba — ECA", "ECA", "NFPA 25 · Cap. 13 §13.3.3 — Prueba de válvula y dispositivos de supervisión/alarma (frecuencia varía según edición adoptada)", campos_eca_inspeccion_prueba)
         crear(eid, "Inspección — BIE", "BIE", "NFPA 25 · Cap. 6 (Standpipe and Hose Systems)", campos_bie)
+
+        crear(eid, "Mantenimiento anual — Bomba (desarme) — Electrobomba", "Electrobomba",
+              "Mantenimiento preventivo anual con desarme — extremo hidráulico", campos_bomba_desarme)
+        crear(eid, "Mantenimiento anual — Bomba (desarme) — Motobomba", "Motobomba",
+              "Mantenimiento preventivo anual con desarme — extremo hidráulico", campos_bomba_desarme)
+        crear(eid, "Mantenimiento anual — Motor eléctrico (desarme)", "Electrobomba",
+              "Mantenimiento preventivo anual con desarme — motor eléctrico", campos_motor_electrico)
+        crear(eid, "Mantenimiento anual — Motor diésel (desarme)", "Motobomba",
+              "Mantenimiento preventivo anual con desarme — motor diésel", campos_motor_diesel)
 
     db.session.commit()
 

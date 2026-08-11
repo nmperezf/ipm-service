@@ -79,6 +79,7 @@
                             <th style="min-width: 160px;">Opciones (selección/checklist, separadas por coma)</th>
                             <th style="min-width: 70px;">Unidad</th>
                             <th style="min-width: 90px;">Con estado</th>
+                            <th style="min-width: 90px;">Requiere foto</th>
                             <th style="min-width: 220px;">Descripción / qué verificar</th>
                             <th style="min-width: 160px;">Referencia NFPA (opcional)</th>
                             <th></th>
@@ -143,7 +144,7 @@ function opcionesTiposCampo() {
 }
 
 function agregarFila(campo) {
-    campo = campo || { campo: '', tipo: 'texto', label: '', opciones: [], norma: '', descripcion: '', unidad: '', con_estado: false };
+    campo = campo || { campo: '', tipo: 'texto', label: '', opciones: [], norma: '', descripcion: '', unidad: '', con_estado: false, requiere_foto: false };
     const tbody = document.getElementById('cuerpo-campos');
     const fila = document.createElement('tr');
     fila.innerHTML =
@@ -157,6 +158,8 @@ function agregarFila(campo) {
         (campo.unidad || '').replace(/"/g, '&quot;') + '"></td>' +
         '<td><select name="campo_con_estado" class="form-select form-select-sm">' +
         '<option value="">No</option><option value="1">Sí</option></select></td>' +
+        '<td><select name="campo_requiere_foto" class="form-select form-select-sm">' +
+        '<option value="">No</option><option value="1">Sí</option></select></td>' +
         '<td><input type="text" name="campo_descripcion" class="form-control form-control-sm" placeholder="Qué tiene que verificar el técnico" value="' +
         (campo.descripcion || '').replace(/"/g, '&quot;') + '"></td>' +
         '<td><input type="text" name="campo_norma" class="form-control form-control-sm" placeholder="Ej: NFPA 25 §8.3.1" value="' +
@@ -165,6 +168,7 @@ function agregarFila(campo) {
     tbody.appendChild(fila);
     fila.querySelector('select[name="campo_tipo"]').value = campo.tipo || 'texto';
     fila.querySelector('select[name="campo_con_estado"]').value = campo.con_estado ? '1' : '';
+    fila.querySelector('select[name="campo_requiere_foto"]').value = campo.requiere_foto ? '1' : '';
     toggleCamposSegunTipo(fila.querySelector('select[name="campo_tipo"]'));
 }
 

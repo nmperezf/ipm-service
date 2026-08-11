@@ -7,8 +7,33 @@ import io
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
 
-from app.models import ESTADOS_CHECKLIST_LABEL
+from app.models import ESTADOS_CHECKLIST_LABEL, categoria_de_tipo_equipo
 from app.pdf_base import ACCENT_SOFT, construir, crear_documento, estilo_tabla_encabezado, estilos
+
+
+def categoria_de_formulario(formulario):
+    """La categoría (Sala de bombas, Bocas de incendio, etc) a la que
+    pertenece un Formulario ya cargado -- del equipo si está ligado a
+    uno, si no del tipo de equipo que declaró su TipoFormulario (ej.
+    "Señales de supervisión y falla — Sala de bombas", que no se liga a
+    un equipo puntual pero sí declara "Bomba jockey" como referencia).
+    None si no se puede determinar (checklist realmente general)."""
+    if formulario.equipo:
+        return categoria_de_tipo_equipo(formulario.equipo.tipo)
+    return categoria_de_tipo_equipo(formulario.tipo_formulario.tipo_equipo_aplicable)
+
+
+def categorias_de_visita(visita):
+    """Categorías con al menos un checklist cargado en esta visita, en el
+    orden en que aparecen -- para armar los botones de PDF por categoría
+    (ver visitas.checklist_tecnico_pdf_categoria)."""
+    vistas = []
+    for item in visita.items:
+        for f in item.formularios:
+            categoria = categoria_de_formulario(f)
+            if categoria and categoria not in vistas:
+                vistas.append(categoria)
+    return vistas
 
 
 def _fila_valores(valor, campo):
@@ -34,7 +59,11 @@ def _fila_valores(valor, campo):
     return _fmt(valor.get("valor")), estado_label, valor.get("nota") or ""
 
 
-def generar_pdf_checklist_tecnico(visita):
+def generar_pdf_checklist_tecnico(visita, categoria=None):
+    """categoria=None arma el documento completo, con todo lo cargado en
+    la visita; con una categoría (ver categorias_de_visita) arma uno
+    acotado a esa sala/sistema puntual (ej. "Sala de bombas" separado de
+    "Bocas de incendio"), para archivar cada uno por su lado."""
     buffer = io.BytesIO()
     doc = crear_documento(buffer)
     styles = estilos()
@@ -44,7 +73,7 @@ def generar_pdf_checklist_tecnico(visita):
 
     instalacion = visita.instalacion
     elementos = []
-    elementos.append(Paragraph("Checklist técnico de la visita", titulo))
+    elementos.append(Paragraph(f"Checklist técnico — {categoria}" if categoria else "Checklist técnico de la visita", titulo))
     elementos.append(
         Paragraph(
             f"{instalacion.cliente.nombre} &middot; {instalacion.nombre} &middot; "
@@ -55,7 +84,10 @@ def generar_pdf_checklist_tecnico(visita):
     elementos.append(Spacer(1, 0.5 * cm))
 
     formularios = sorted(
-        (f for item in visita.items for f in item.formularios),
+        (
+            f for item in visita.items for f in item.formularios
+            if categoria is None or categoria_de_formulario(f) == categoria
+        ),
         key=lambda f: ((f.equipo.nombre if f.equipo else ""), f.tipo_formulario.nombre),
     )
 

@@ -850,6 +850,12 @@ class Foto(db.Model):
     instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=True)
     equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True)
     observacion_id = db.Column(db.Integer, db.ForeignKey("observaciones.id"), nullable=True)
+    # Clave interna del campo del checklist al que corresponde esta foto
+    # (el mismo string que "campo" en schema_json de TipoFormulario/
+    # ServicioTipo, ver requiere_foto) -- None cuando la foto es general
+    # del equipo/instalación, no de un punto puntual (comportamiento de
+    # siempre).
+    campo_formulario = db.Column(db.String(100), nullable=True)
     nombre_archivo = db.Column(db.String(300), nullable=False)  # ruta relativa dentro de UPLOAD_FOLDER
     descripcion = db.Column(db.String(250))
     origen = db.Column(db.String(20), default="Visita", nullable=False)  # ver ORIGENES_FOTO

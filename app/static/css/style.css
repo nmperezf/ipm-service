@@ -2127,6 +2127,27 @@ details.grafico-desplegable summary:hover { text-decoration: underline; }
     padding: .5rem .6rem; font-family: inherit; font-size: .82rem; color: var(--ink); background: var(--surface);
 }
 
+/* Foto ligada a un punto puntual del checklist (campo "requiere_foto"),
+   no al equipo en general -- ver foto-campo.js. Vive dentro de
+   .item-check-info (mismo bloque que la etiqueta/descripción del punto),
+   no al lado del control de valor/estado, para que quede claro que es
+   evidencia DEL PUNTO, no un dato más a completar. */
+.widget-foto-campo { display: flex; align-items: center; gap: .5rem; margin-top: .6rem; flex-wrap: wrap; }
+.miniaturas-foto-campo { display: flex; gap: .4rem; flex-wrap: wrap; }
+.miniatura-foto { position: relative; width: 52px; height: 52px; border-radius: .4rem; overflow: hidden; border: 1px solid var(--border); flex-shrink: 0; }
+.miniatura-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.miniatura-foto .quitar {
+    position: absolute; top: 1px; right: 1px; width: 16px; height: 16px; border-radius: 50%; background: rgba(20,24,31,.65);
+    color: #fff; font-size: .6rem; border: none; padding: 0; line-height: 1; cursor: pointer;
+}
+.btn-foto-campo {
+    font-family: var(--font-body); font-weight: 600; font-size: .76rem; padding: .35rem .65rem; border-radius: .4rem;
+    border: 1px dashed var(--border-strong); background: var(--surface-alt); color: var(--ink-muted); cursor: pointer;
+    display: inline-flex; align-items: center; gap: .35rem; margin: 0;
+}
+.btn-foto-campo:hover { border-color: var(--ink-faint); color: var(--ink); }
+.btn-foto-campo.disabled { pointer-events: none; opacity: .7; }
+
 @media (max-width: 640px) {
     .item-check { grid-template-columns: 1fr; gap: .55rem; }
 }

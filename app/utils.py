@@ -362,11 +362,15 @@ def armar_campos_desde_formulario(form):
     descripciones_list = form.getlist("campo_descripcion")
     unidades_list = form.getlist("campo_unidad")
     con_estado_list = form.getlist("campo_con_estado")
+    requiere_foto_list = form.getlist("campo_requiere_foto")
 
     campos = []
     usados = set()
-    filas = zip(labels, tipos, opciones_list, normas_list, descripciones_list, unidades_list, con_estado_list)
-    for label, tipo, opciones_str, norma, descripcion, unidad, con_estado in filas:
+    filas = zip(
+        labels, tipos, opciones_list, normas_list, descripciones_list, unidades_list,
+        con_estado_list, requiere_foto_list,
+    )
+    for label, tipo, opciones_str, norma, descripcion, unidad, con_estado, requiere_foto in filas:
         label = (label or "").strip()
         if not label:
             continue
@@ -389,5 +393,7 @@ def armar_campos_desde_formulario(form):
             campo["unidad"] = unidad.strip()
         if tipo in ("numero", "texto") and con_estado == "1":
             campo["con_estado"] = True
+        if requiere_foto == "1":
+            campo["requiere_foto"] = True
         campos.append(campo)
     return campos

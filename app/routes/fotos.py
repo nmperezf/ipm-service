@@ -2,13 +2,16 @@ import os
 import uuid
 from datetime import date, datetime
 
-from flask import Blueprint, abort, current_app, flash, redirect, render_template, request, send_from_directory, url_for
+from flask import (
+    Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, send_from_directory, url_for,
+)
 from flask_login import current_user
 from werkzeug.utils import secure_filename
 
 from app import db
 from app.auth_utils import rol_requerido, verificar_escritura_cliente, verificar_visita_editable
 from app.models import Equipo, Foto, Instalacion, ItemVisita, ORIGENES_FOTO
+from app.utils import es_ajax
 
 fotos_bp = Blueprint("fotos", __name__, url_prefix="/fotos")
 
@@ -47,7 +50,9 @@ def _guardar_archivo(archivo, empresa_id, cliente_id, instalacion_id, equipo_id=
 def subir(item_id):
     """Foto sacada durante un servicio puntual de una visita (flujo de
     siempre). Opcionalmente se le puede indicar a qué equipo corresponde
-    (ej. cuál de los 5 ECA que se revisaron en la visita)."""
+    (ej. cuál de los 5 ECA que se revisaron en la visita), y a qué campo
+    puntual del checklist (ej. "estado del acoplamiento") si el campo lo
+    requiere -- ver TipoFormulario/ServicioTipo campo requiere_foto."""
     item = ItemVisita.query.get_or_404(item_id)
     instalacion = item.visita.instalacion
     cliente = instalacion.cliente
@@ -74,6 +79,7 @@ def subir(item_id):
         item_visita_id=item.id,
         instalacion_id=instalacion.id,
         equipo_id=equipo.id if equipo else None,
+        campo_formulario=request.form.get("campo_formulario") or None,
         nombre_archivo=ruta_relativa,
         descripcion=request.form.get("descripcion"),
         origen="Visita",
@@ -83,6 +89,8 @@ def subir(item_id):
     db.session.add(foto)
     db.session.commit()
     flash("Foto subida correctamente.", "success")
+    if es_ajax():
+        return jsonify(ok=True, mensaje="Foto subida.", foto_id=foto.id, url=url_for("fotos.ver", nombre_archivo=foto.nombre_archivo))
     return redirect(url_for("visitas.detalle", visita_id=item.visita_id))
 
 
@@ -166,6 +174,8 @@ def eliminar(foto_id):
     db.session.commit()
     flash("Foto eliminada.", "info")
 
+    if es_ajax():
+        return jsonify(ok=True, mensaje="Foto eliminada.")
     if request.referrer:
         return redirect(request.referrer)
     if destino_visita_id:
