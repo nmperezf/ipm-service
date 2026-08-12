@@ -28,6 +28,15 @@
                         {{ valor|join(', ') if valor is iterable and valor is not string else (valor if valor else '-') }}
                     {%- endif -%}
                 </span>
+                {% if fila.fotos.get(campo.campo) %}
+                <div class="miniaturas-punto-checklist">
+                    {% for foto in fila.fotos[campo.campo] %}
+                    <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" class="foto-lightbox">
+                        <img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" alt="">
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
             </div>
             {% endfor %}
         </div>

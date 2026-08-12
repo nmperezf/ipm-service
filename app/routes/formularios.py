@@ -358,7 +358,14 @@ def nuevo(item_id, tipo_formulario_id):
 def detalle(formulario_id):
     formulario = Formulario.query.get_or_404(formulario_id)
     verificar_acceso_cliente(formulario.item_visita.visita.instalacion.cliente)
-    return render_template("visitas/formulario_detail.html", formulario=formulario)
+    fotos_por_campo = {}
+    for foto in Foto.query.filter(
+        Foto.item_visita_id == formulario.item_visita_id,
+        Foto.equipo_id == formulario.equipo_id,
+        Foto.campo_formulario.isnot(None),
+    ).all():
+        fotos_por_campo.setdefault(foto.campo_formulario, []).append(foto)
+    return render_template("visitas/formulario_detail.html", formulario=formulario, fotos_por_campo=fotos_por_campo)
 
 
 @formularios_bp.route("/<int:formulario_id>/eliminar", methods=["POST"])

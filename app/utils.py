@@ -4,7 +4,7 @@ from flask import request
 from sqlalchemy.exc import IntegrityError
 
 from app import db
-from app.models import Contrato, Formulario, Presupuesto, Visita, categorias_equipo_agrupadas
+from app.models import Contrato, Foto, Formulario, Presupuesto, Visita, categorias_equipo_agrupadas
 
 
 def es_ajax():
@@ -161,6 +161,17 @@ def filas_checklist(formularios, incluir_equipo=False):
     for formulario in formularios:
         por_tipo.setdefault(formulario.tipo_formulario, []).append(formulario)
 
+    # Fotos ligadas a un punto puntual (campo_formulario) de alguno de estos
+    # formularios, agrupadas por (item_visita, equipo, campo) -- una sola
+    # consulta acá en vez de una por cada campo con foto de cada fila.
+    item_visita_ids = {f.item_visita_id for f in formularios}
+    fotos_por_clave = {}
+    if item_visita_ids:
+        for foto in Foto.query.filter(
+            Foto.item_visita_id.in_(item_visita_ids), Foto.campo_formulario.isnot(None)
+        ).all():
+            fotos_por_clave.setdefault((foto.item_visita_id, foto.equipo_id, foto.campo_formulario), []).append(foto)
+
     grupos = []
     for tipo_formulario, lista in por_tipo.items():
         campos = tipo_formulario.campos()
@@ -169,7 +180,12 @@ def filas_checklist(formularios, incluir_equipo=False):
         for f in reversed(lista):
             datos = f.datos()
             valores = [(campo, datos.get(campo["campo"])) for campo in campos]
-            filas.append({"formulario": f, "equipo": f.equipo, "valores": valores})
+            fotos = {
+                campo["campo"]: fotos_por_clave[(f.item_visita_id, f.equipo_id, campo["campo"])]
+                for campo in campos
+                if (f.item_visita_id, f.equipo_id, campo["campo"]) in fotos_por_clave
+            }
+            filas.append({"formulario": f, "equipo": f.equipo, "valores": valores, "fotos": fotos})
 
         # El gráfico asume una sola serie por campo evolucionando en el
         # tiempo — no tiene sentido si incluir_equipo mezcla varios

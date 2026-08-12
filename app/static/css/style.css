@@ -2030,10 +2030,12 @@ details.bloque-equipo .ir-ficha { display: inline-block; margin-bottom: .8rem; f
 .cab-carga-checklist { display: flex; justify-content: space-between; gap: 1rem; padding-bottom: .3rem; margin-bottom: .2rem; border-bottom: 1px solid var(--border-strong); }
 .cab-carga-checklist .fecha { font-family: var(--font-mono); font-size: .76rem; color: var(--ink-muted); }
 .cab-carga-checklist .equipo { font-weight: 600; font-size: .8rem; }
-.fila-punto-checklist { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .3rem 0; border-bottom: 1px solid var(--border); }
+.fila-punto-checklist { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; padding: .3rem 0; border-bottom: 1px solid var(--border); }
 .fila-punto-checklist:last-child { border-bottom: none; }
 .fila-punto-checklist .label { color: var(--ink-muted); }
 .fila-punto-checklist .valor { text-align: right; white-space: nowrap; }
+.miniaturas-punto-checklist { flex-basis: 100%; display: flex; gap: .3rem; justify-content: flex-end; margin-top: .3rem; flex-wrap: wrap; }
+.miniaturas-punto-checklist img { width: 36px; height: 36px; object-fit: cover; border-radius: .3rem; border: 1px solid var(--border); display: block; }
 
 /* Ficha de UN checklist puntual (formularios.detalle): mismo lenguaje que
    la lista compacta de arriba, pero acá el punto es el protagonista (hay
