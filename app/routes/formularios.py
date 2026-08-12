@@ -159,6 +159,14 @@ def checklist_categoria(item_id, categoria):
         .order_by(TipoFormulario.orden, TipoFormulario.nombre)
         .all()
     )
+    # Un servicio "paquete" (categoria seteada) sigue mostrando todos los
+    # tipos de esa categoría física, como siempre. Un servicio puntual (sin
+    # categoria) muestra solo el tipo que se importó con su mismo nombre --
+    # no el resto de checklists que compartan tipo de equipo (ver el mismo
+    # criterio en visitas.detalle).
+    if item.servicio and not item.servicio.categoria:
+        tipos = [t for t in tipos if t.nombre == item.servicio.nombre]
+
     secciones = []
     for tipo in tipos:
         if categoria_de_tipo_equipo(tipo.tipo_equipo_aplicable) != categoria:

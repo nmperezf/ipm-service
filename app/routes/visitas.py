@@ -163,8 +163,16 @@ def detalle(visita_id):
             # juntos (ver formularios.checklist_categoria), no filtrados
             # por aplica_a_tipo_equipo (que compara un único tipo).
             tipos_item = [t for t in tipos if categoria_de_tipo_equipo(t.tipo_equipo_aplicable) == item.servicio.categoria]
+        elif item.servicio:
+            # Servicio puntual (no paquete): el checklist es exactamente el
+            # que se importó con el mismo nombre al agregar el servicio al
+            # contrato (ver TipoFormulario.desde_catalogo) -- no todo lo que
+            # comparta tipo de equipo, que puede tener más de un checklist
+            # para el mismo equipo (ej. inspección semanal vs. mantenimiento
+            # anual con desarme de la misma Electrobomba).
+            tipos_item = [t for t in tipos if t.nombre == item.servicio.nombre]
         else:
-            tipo_equipo_ref = item.servicio.tipo_equipo_aplicable if item.servicio else (item.equipo.tipo if item.equipo else None)
+            tipo_equipo_ref = item.equipo.tipo if item.equipo else None
             tipos_item = [t for t in tipos if t.aplica_a_tipo_equipo(tipo_equipo_ref)]
         grupos, generales = _agrupar_tipos_formulario(tipos_item)
         formularios_por_item[item.id] = {"grupos": grupos, "generales": generales}
