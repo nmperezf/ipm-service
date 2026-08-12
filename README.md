@@ -348,6 +348,20 @@ base de datos nueva, y de nuevo cada vez que haya una migración nueva.
 
 Abrí http://localhost:5000
 
+## Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+Corren contra un SQLite temporal propio (esquema creado directo desde los
+modelos, sin tocar la base real ni las migraciones) — no hace falta nada
+más levantado. Cubre la lógica de negocio más sensible a romperse
+silenciosamente: fechas de ocurrencia de un servicio contratado, cambios
+de estado por vencimiento, validación NFPA 25, permisos por rol, y las
+rutas de login/errores/paginación.
+
 > En macOS, si el puerto 5000 aparece ocupado por AirPlay Receiver, cambiá
 > el puerto en `run.py` (`port=5001`) o desactivá AirPlay Receiver en
 > Preferencias del Sistema → General → AirDrop y Handoff.
