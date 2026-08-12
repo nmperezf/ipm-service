@@ -7,7 +7,9 @@ from app import db
 from app.auth_utils import clientes_visibles, rol_requerido, tecnicos_de_la_empresa, verificar_acceso_cliente
 from app.models import (
     ESTADOS_OT,
+    Equipo,
     Instalacion,
+    ItemVisita,
     OrdenTrabajo,
     PRIORIDADES_OT,
     Repuesto,
@@ -15,6 +17,7 @@ from app.models import (
     TIPOS_OT,
     TIPOS_OT_MANUAL,
     Usuario,
+    Visita,
 )
 from app.notificaciones import notificar_tecnico_asignado
 from app.pdf_ot import generar_pdf_ot
@@ -101,7 +104,11 @@ def _repuestos_disponibles():
 @ordenes_bp.route("/nueva", methods=["GET", "POST"])
 @rol_requerido("Administrador", "Jefe")
 def nueva():
-    """Alta de una OT correctiva (trabajo suelto, sin contrato de por medio)."""
+    """Alta de una OT correctiva (trabajo suelto, sin contrato de por medio).
+    Si se elige un equipo puntual, además arma por detrás una Visita suelta
+    (igual que visitas.nueva) con un ítem para ese equipo, para poder cargar
+    ahí mismo el checklist que corresponda -- sin equipo, sigue siendo una OT
+    simple con su propio Estado, como siempre."""
     ids_clientes = [c.id for c in clientes_visibles().all()]
     instalaciones = (
         Instalacion.query.join(Instalacion.cliente)
@@ -110,19 +117,58 @@ def nueva():
         .all()
     )
     tecnicos = tecnicos_de_la_empresa()
+    equipos_por_instalacion = {
+        inst.id: [{"id": e.id, "nombre": e.nombre, "tipo": e.tipo} for e in inst.equipos if e.activo]
+        for inst in instalaciones
+    }
 
     if request.method == "POST":
         instalacion = Instalacion.query.get_or_404(int(request.form["instalacion_id"]))
         verificar_acceso_cliente(instalacion.cliente)
         tecnico_id = request.form.get("tecnico_id")
+        tipo = request.form.get("tipo", "Correctivo")
+        prioridad = request.form.get("prioridad", "Media")
+        descripcion = request.form.get("descripcion")
+        fecha_apertura = _parse_fecha(request.form.get("fecha_apertura"), date.today())
+
+        equipo = None
+        equipo_id = request.form.get("equipo_id", type=int)
+        if equipo_id:
+            equipo = Equipo.query.get_or_404(equipo_id)
+            if equipo.instalacion_id != instalacion.id:
+                abort(400)
+
+        if equipo:
+            visita = Visita(instalacion_id=instalacion.id, fecha=fecha_apertura, observaciones=descripcion)
+            db.session.add(visita)
+            db.session.flush()
+            ot = OrdenTrabajo(
+                instalacion_id=instalacion.id,
+                visita_id=visita.id,
+                tipo=tipo,
+                prioridad=prioridad,
+                estado="Pendiente",
+                tecnico_id=int(tecnico_id) if tecnico_id else None,
+                descripcion=descripcion,
+                fecha_apertura=fecha_apertura,
+            )
+            db.session.add(ot)
+            db.session.flush()
+            ot.asignar_numero()
+            db.session.add(ItemVisita(visita_id=visita.id, equipo_id=equipo.id, estado="Pendiente"))
+            notificar_tecnico_asignado(ot, current_user)
+            db.session.commit()
+            flash(f"Orden de trabajo {ot.numero} creada. Elegí el checklist de '{equipo.nombre}' desde acá abajo.", "success")
+            return redirect(url_for("visitas.detalle", visita_id=visita.id))
+
         ot = OrdenTrabajo(
             instalacion_id=instalacion.id,
-            tipo=request.form.get("tipo", "Correctivo"),
-            prioridad=request.form.get("prioridad", "Media"),
+            tipo=tipo,
+            prioridad=prioridad,
             estado="Pendiente",
             tecnico_id=int(tecnico_id) if tecnico_id else None,
-            descripcion=request.form.get("descripcion"),
-            fecha_apertura=_parse_fecha(request.form.get("fecha_apertura"), date.today()),
+            descripcion=descripcion,
+            fecha_apertura=fecha_apertura,
         )
         db.session.add(ot)
         db.session.flush()
@@ -138,6 +184,7 @@ def nueva():
         prioridades=PRIORIDADES_OT,
         tipos=TIPOS_OT_MANUAL,
         tecnicos=tecnicos,
+        equipos_por_instalacion=equipos_por_instalacion,
     )
 
 

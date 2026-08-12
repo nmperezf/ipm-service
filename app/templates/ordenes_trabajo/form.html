@@ -9,12 +9,19 @@
             <form method="POST" class="mt-3">
                 <div class="mb-3">
                     <label class="form-label">Instalación</label>
-                    <select name="instalacion_id" class="form-select" required>
+                    <select name="instalacion_id" id="selectInstalacionOt" class="form-select" required>
                         <option value="">-- Seleccioná --</option>
                         {% for inst in instalaciones %}
                         <option value="{{ inst.id }}">{{ inst.cliente.nombre }} — {{ inst.nombre }}</option>
                         {% endfor %}
                     </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Equipo (opcional)</label>
+                    <select name="equipo_id" id="selectEquipoOt" class="form-select">
+                        <option value="">-- Sin equipo (trabajo general) --</option>
+                    </select>
+                    <div class="form-text">Si el trabajo es sobre un equipo puntual, elegilo para poder cargar el checklist correspondiente apenas se cree la OT.</div>
                 </div>
                 <div class="row">
                     <div class="col-md-3 mb-3">
@@ -58,4 +65,19 @@
 
     </div>
 </div>
+<script>
+const equiposPorInstalacionOt = {{ equipos_por_instalacion|tojson }};
+const selectInstalacionOt = document.getElementById('selectInstalacionOt');
+const selectEquipoOt = document.getElementById('selectEquipoOt');
+selectInstalacionOt.addEventListener('change', function () {
+    const equipos = equiposPorInstalacionOt[this.value] || [];
+    selectEquipoOt.innerHTML = '<option value="">-- Sin equipo (trabajo general) --</option>';
+    equipos.forEach(function (eq) {
+        const opt = document.createElement('option');
+        opt.value = eq.id;
+        opt.textContent = eq.nombre + ' (' + eq.tipo + ')';
+        selectEquipoOt.appendChild(opt);
+    });
+});
+</script>
 {% endblock %}

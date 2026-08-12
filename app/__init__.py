@@ -125,6 +125,7 @@ def create_app():
     with app.app_context():
         db.create_all()
         _migrar_columnas_faltantes()
+        _corregir_servicio_contrato_id_nullable()
         _seed_super_admin()
         _seed_tipos_equipo()
         _seed_catalogo_nfpa()
@@ -162,6 +163,55 @@ def _migrar_columnas_faltantes():
             cambio = True
     if cambio:
         db.session.commit()
+
+
+def _corregir_servicio_contrato_id_nullable():
+    """items_visita.servicio_contrato_id quedó NOT NULL desde la creación
+    original de la tabla, de antes de que existiera el ítem suelto (ver
+    ItemVisita, visitas.agregar_item, ordenes.nueva) -- el modelo ya lo
+    declara nullable, pero sin Alembic un cambio de columna nunca se aplicó
+    a las bases ya creadas, y un INSERT con ese campo en None revienta con
+    IntegrityError. En Postgres se resuelve con un ALTER simple. SQLite no
+    soporta modificar una restricción de columna existente -- en vez de
+    reconstruir la tabla entera (con el riesgo de tocar las FK de las 4
+    tablas que la referencian: formularios, fotos, observaciones,
+    ensayos_caudal), se parchea directo el SQL guardado en sqlite_master,
+    que no mueve una sola fila."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(db.engine)
+    if "items_visita" not in inspector.get_table_names():
+        return
+    columnas = {c["name"]: c for c in inspector.get_columns("items_visita")}
+    col = columnas.get("servicio_contrato_id")
+    if not col or col["nullable"]:
+        return
+
+    if db.engine.dialect.name == "postgresql":
+        db.session.execute(text("ALTER TABLE items_visita ALTER COLUMN servicio_contrato_id DROP NOT NULL"))
+        db.session.commit()
+        return
+
+    sql_actual = db.session.execute(
+        text("SELECT sql FROM sqlite_master WHERE type='table' AND name='items_visita'")
+    ).scalar()
+    sql_nuevo = sql_actual.replace("servicio_contrato_id INTEGER NOT NULL", "servicio_contrato_id INTEGER")
+    if sql_nuevo == sql_actual:
+        return  # el texto no calzó como se esperaba -- mejor no tocar nada a ciegas
+
+    conn = db.engine.raw_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("PRAGMA writable_schema=1")
+        cursor.execute("UPDATE sqlite_master SET sql=? WHERE type='table' AND name='items_visita'", (sql_nuevo,))
+        conn.commit()
+        cursor.execute("PRAGMA writable_schema=0")
+        cursor.execute("PRAGMA schema_version")
+        version = cursor.fetchone()[0]
+        cursor.execute(f"PRAGMA schema_version={version + 1}")
+        conn.commit()
+    finally:
+        conn.close()
 
 
 def _seed_super_admin():
