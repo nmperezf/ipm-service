@@ -2,11 +2,8 @@
 {% block title %}{{ instalacion.nombre }}{% endblock %}
 {% block content %}
 <div class="pagina-ancha">
-    <h1>{{ instalacion.nombre }}</h1>
-    <div class="tarjeta-doc">
-        <div id="contenido-refrescable" data-fragmento-url="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}">
-            {% include "instalaciones/_contenido.html" %}
-        </div>
+    <div id="contenido-refrescable" data-fragmento-url="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}">
+        {% include "instalaciones/_contenido.html" %}
     </div>
 </div>
 {% endblock %}

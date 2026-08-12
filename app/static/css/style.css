@@ -1491,6 +1491,22 @@ html[data-bs-theme="dark"] .desglose-clasif .mini-chip { background: rgba(255,25
 .rail-stats.rail-stats-vertical > .stat { border-left: none; border-top: 1px solid var(--border); }
 .rail-stats.rail-stats-vertical > .stat:first-child { border-top: none; }
 
+/* ---- Ficha de instalación: cabecera compacta + columna lateral con
+   observaciones abiertas (ver instalaciones/_contenido.html) --------------- */
+
+.cab-instalacion { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: .8rem; margin: .3rem 0 1rem; }
+
+.lista-obs-lateral { display: flex; flex-direction: column; gap: .5rem; padding: 0 .85rem .8rem; }
+.obs-lateral { border-left: 3px solid var(--border-strong); background: var(--surface-muted); border-radius: 0 .4rem .4rem 0; padding: .5rem .7rem; font-size: .8rem; }
+.obs-lateral-critica { border-left-color: var(--accent); }
+.obs-lateral-cab { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-bottom: .3rem; font-family: var(--font-mono); font-size: .68rem; color: var(--ink-muted); }
+.obs-lateral-desc { margin-bottom: .5rem; }
+.obs-lateral-acciones { display: flex; gap: .35rem; flex-wrap: wrap; }
+.obs-lateral-acciones .btn { font-size: .7rem; padding: .2rem .5rem; }
+
+.tira-fotos-lateral { display: flex; gap: .4rem; flex-wrap: wrap; }
+.tira-fotos-lateral img { width: 56px; height: 56px; object-fit: cover; border-radius: .35rem; border: 1px solid var(--border); display: block; }
+
 /* ---- Inicio: cumplimiento de mantenimiento --------------------------------- */
 
 .panel-cumplimiento {

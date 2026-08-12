@@ -2,44 +2,45 @@
 {% block title %}{{ equipo.nombre }}{% endblock %}
 {% block content %}
 <div class="pagina-ancha">
-    <h1>{{ equipo.nombre }}</h1>
-    <div class="tarjeta-doc">
+    <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=equipo.instalacion_id) }}">&larr; {{ equipo.instalacion.nombre }}</a></p>
 
-            <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=equipo.instalacion_id) }}">&larr; {{ equipo.instalacion.nombre }}</a></p>
+    <div class="cab-instalacion">
+        <div>
+            <h1 class="mb-0">{{ equipo.nombre }}</h1>
+            <p class="text-muted mb-0">
+                <span class="badge badge-Pendiente">{{ equipo.tipo }}</span>
+                {{ equipo.ubicacion or '' }}
+                {% if equipo.manifold %} &middot; Depende de: {{ equipo.manifold.nombre }}{% endif %}
+            </p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{{ url_for('fotos.subir_manual', instalacion_id=equipo.instalacion_id, equipo_id=equipo.id) }}" class="btn btn-outline-info btn-sm"><i class="bi bi-camera me-1"></i>Foto</a>
+            <a href="{{ url_for('observaciones.nueva', instalacion_id=equipo.instalacion_id, equipo_id=equipo.id) }}" class="btn btn-outline-warning btn-sm"><i class="bi bi-exclamation-triangle me-1"></i>Observación</a>
+            <a href="{{ url_for('equipos.editar', equipo_id=equipo.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Editar equipo</a>
+        </div>
+    </div>
 
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
-                <p class="text-muted mb-0">
-                    <span class="badge badge-Pendiente">{{ equipo.tipo }}</span>
-                    {{ equipo.ubicacion or '' }}
-                    {% if equipo.manifold %} &middot; Depende de: {{ equipo.manifold.nombre }}{% endif %}
-                </p>
-                <div class="d-flex gap-2 flex-wrap">
-                    <a href="{{ url_for('fotos.subir_manual', instalacion_id=equipo.instalacion_id, equipo_id=equipo.id) }}" class="btn btn-outline-info btn-sm"><i class="bi bi-camera me-1"></i>Foto</a>
-                    <a href="{{ url_for('observaciones.nueva', instalacion_id=equipo.instalacion_id, equipo_id=equipo.id) }}" class="btn btn-outline-warning btn-sm"><i class="bi bi-exclamation-triangle me-1"></i>Observación</a>
-                    <a href="{{ url_for('equipos.editar', equipo_id=equipo.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Editar equipo</a>
-                </div>
-            </div>
+    <div class="rail-stats mb-3">
+        <div class="stat{{ '' if deficiencias_abiertas else ' calmo' }}">
+            <span class="num">{{ deficiencias_abiertas|length }}</span>
+            <span class="etiqueta">Deficiencias abiertas</span>
+        </div>
+        <div class="stat{{ ' calmo' if not equipo.fotos }}">
+            <span class="num">{{ equipo.fotos|length }}</span>
+            <span class="etiqueta">Fotos</span>
+        </div>
+        <div class="stat{{ ' calmo' if total_checklists == 0 }}">
+            <span class="num">{{ total_checklists }}</span>
+            <span class="etiqueta">Checklists cargados</span>
+        </div>
+        <div class="stat{{ ' calmo' if not ultimo_checklist }}">
+            <span class="num">{{ ultimo_checklist.fecha_creacion.strftime('%d/%m/%y') if ultimo_checklist else '-' }}</span>
+            <span class="etiqueta">Último checklist</span>
+        </div>
+    </div>
 
-            {% if equipo.fotos %}
-            <div class="seccion-titulo-doc">Fotos ({{ equipo.fotos|length }})</div>
-            <p class="mb-2"><a href="{{ url_for('instalaciones.fotos', instalacion_id=equipo.instalacion_id) }}" class="small">Ver todas las fotos de la instalación →</a></p>
-            <div class="d-flex flex-wrap gap-2 mb-3">
-                {% for foto in equipo.fotos|sort(attribute='fecha_toma', reverse=true) %}
-                <div class="text-center">
-                    <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" class="foto-lightbox">
-                        <img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" alt="{{ foto.descripcion or '' }}" style="height:110px; border-radius:6px;">
-                    </a>
-                    <div class="text-muted" style="font-size:.7rem;">
-                        {{ foto.fecha_toma.strftime('%d/%m/%Y') if foto.fecha_toma else '-' }}
-                        {% if foto.origen != 'Visita' %}&middot; {{ foto.origen }}{% endif %}
-                    </div>
-                    <form method="POST" action="{{ url_for('fotos.eliminar', foto_id=foto.id) }}" onsubmit="return confirm('¿Eliminar foto?');">
-                        <button type="submit" class="btn btn-sm btn-link text-danger p-0">Eliminar</button>
-                    </form>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
+    <div class="grid-inicio">
+        <div class="columna-principal">
 
             {% if equipo.tipo in ('Bomba', 'Electrobomba', 'Motobomba') %}
             <div class="seccion-titulo-doc">Curva de caudal</div>
@@ -116,26 +117,43 @@
             </div>
             {% endif %}
 
+            <div class="seccion-titulo-doc">Histórico y trazabilidad</div>
+            {% if not grupos %}
+            <div class="estado-vacio-doc">
+                <i class="bi bi-clipboard-data"></i>
+                <p class="mb-0">Este equipo todavía no tiene ningún checklist completado.</p>
+            </div>
+            {% endif %}
+
+            {% for grupo in grupos %}
+            {% include "_grupo_checklist.html" %}
+            {% endfor %}
+
+        </div>
+
+        <div class="columna-lateral">
+
             {% if deficiencias_abiertas %}
-            <div class="seccion-titulo-doc">Deficiencias abiertas</div>
-            <div class="table-responsive">
-            <table class="table table-sm data-table">
-                <thead><tr><th>Fecha</th><th>Clasificación</th><th>Descripción</th><th>Revisión</th><th></th></tr></thead>
-                <tbody>
+            <details class="card-expandible critico" open>
+                <summary>
+                    <span class="num">{{ deficiencias_abiertas|length }}</span>
+                    <span class="textos">
+                        <span class="etiqueta">Deficiencias abiertas</span>
+                        <span class="sub">requieren revisión o resolución</span>
+                    </span>
+                    <span class="flecha">▶</span>
+                </summary>
+                <div class="lista-obs-lateral">
                     {% for obs in deficiencias_abiertas %}
-                    <tr data-href="{{ url_for('historial.ver', instalacion_id=equipo.instalacion_id) }}">
-                        <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
-                        <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
-                        <td>{{ obs.descripcion }}</td>
-                        <td>
-                            {% if obs.estado_revision == 'Aprobada' %}
-                            <span class="badge badge-Cumplido">Aprobada</span>
-                            {% if obs.aprobado_por %}<div class="text-muted small">{{ obs.aprobado_por.nombre_completo or obs.aprobado_por.username }} — {{ obs.fecha_aprobacion.strftime('%d/%m/%Y') if obs.fecha_aprobacion }}</div>{% endif %}
-                            {% else %}<span class="badge badge-Pendiente">Pendiente de revisión</span>{% endif %}
-                        </td>
-                        <td>
+                    <div class="obs-lateral{{ ' obs-lateral-critica' if obs.clasificacion == 'Deficiencia crítica' }}">
+                        <div class="obs-lateral-cab">
+                            <span>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</span>
+                            {% if obs.estado_revision == 'Aprobada' %}<span class="badge badge-Cumplido">Aprobada</span>{% else %}<span class="badge badge-Pendiente">Pendiente</span>{% endif %}
+                        </div>
+                        <div class="obs-lateral-desc">{{ obs.descripcion }}</div>
+                        <div class="obs-lateral-acciones">
                             <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}" class="d-inline">
-                                <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>
+                                <button type="submit" class="btn btn-sm btn-outline-success">Resuelta</button>
                             </form>
                             {% if obs.estado_revision != 'Aprobada' %}
                             {% if obs.editable %}
@@ -153,46 +171,66 @@
                                 <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
                             </form>
                             {% endif %}
-                        </td>
-                    </tr>
+                        </div>
+                    </div>
                     {% endfor %}
-                </tbody>
-            </table>
-            </div>
+                </div>
+            </details>
             {% endif %}
 
-            <div class="seccion-titulo-doc">Histórico y trazabilidad</div>
-            {% if not grupos %}
-            <div class="estado-vacio-doc">
-                <i class="bi bi-clipboard-data"></i>
-                <p class="mb-0">Este equipo todavía no tiene ningún checklist completado.</p>
-            </div>
+            {% if equipo.fotos %}
+            <details class="card-expandible" open>
+                <summary>
+                    <span class="num">{{ equipo.fotos|length }}</span>
+                    <span class="textos">
+                        <span class="etiqueta">Fotos</span>
+                        <span class="sub">de este equipo</span>
+                    </span>
+                    <span class="flecha">▶</span>
+                </summary>
+                <div style="padding: 0 .85rem .8rem;">
+                    <p class="mb-2"><a href="{{ url_for('instalaciones.fotos', instalacion_id=equipo.instalacion_id) }}" class="small">Ver todas las fotos de la instalación →</a></p>
+                    <div class="tira-fotos-lateral">
+                        {% for foto in equipo.fotos|sort(attribute='fecha_toma', reverse=true) %}
+                        <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" class="foto-lightbox" title="{{ foto.fecha_toma.strftime('%d/%m/%Y') if foto.fecha_toma else '' }}">
+                            <img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" alt="{{ foto.descripcion or '' }}">
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </details>
             {% endif %}
-
-            {% for grupo in grupos %}
-            {% include "_grupo_checklist.html" %}
-            {% endfor %}
 
             {% if deficiencias_resueltas %}
-            <div class="seccion-titulo-doc">Deficiencias resueltas (histórico)</div>
-            <div class="table-responsive">
-            <table class="table table-sm data-table">
-                <thead><tr><th>Fecha carga</th><th>Fecha resolución</th><th>Resuelta por</th><th>Clasificación</th><th>Descripción</th></tr></thead>
-                <tbody>
-                    {% for obs in deficiencias_resueltas %}
-                    <tr data-href="{{ url_for('historial.ver', instalacion_id=equipo.instalacion_id) }}">
-                        <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ obs.fecha_resolucion.strftime('%d/%m/%Y') if obs.fecha_resolucion else '-' }}</td>
-                        <td>{{ (obs.resuelto_por.nombre_completo or obs.resuelto_por.username) if obs.resuelto_por else '-' }}</td>
-                        <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
-                        <td>{{ obs.descripcion }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            </div>
+            <details class="card-expandible mudo">
+                <summary>
+                    <span class="num">{{ deficiencias_resueltas|length }}</span>
+                    <span class="textos">
+                        <span class="etiqueta">Deficiencias resueltas</span>
+                        <span class="sub">histórico</span>
+                    </span>
+                    <span class="flecha">▶</span>
+                </summary>
+                <div class="table-responsive" style="padding: 0 .85rem .8rem;">
+                <table class="table table-sm data-table mb-0">
+                    <thead><tr><th>Carga</th><th>Resolución</th><th>Por</th><th>Clasificación</th></tr></thead>
+                    <tbody>
+                        {% for obs in deficiencias_resueltas %}
+                        <tr data-href="{{ url_for('historial.ver', instalacion_id=equipo.instalacion_id) }}">
+                            <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+                            <td>{{ obs.fecha_resolucion.strftime('%d/%m/%Y') if obs.fecha_resolucion else '-' }}</td>
+                            <td>{{ (obs.resuelto_por.nombre_completo or obs.resuelto_por.username) if obs.resuelto_por else '-' }}</td>
+                            <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </details>
             {% endif %}
 
+        </div>
     </div>
+
 </div>
 {% endblock %}

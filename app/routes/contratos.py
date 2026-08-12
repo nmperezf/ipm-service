@@ -92,10 +92,17 @@ def detalle(contrato_id):
         ]
         for s in contrato.servicios if s.categoria
     }
+    hoy = date.today()
+    proxima_visita = min(
+        (v for v in visitas if v.fecha >= hoy and v.estado != "Cancelado"),
+        key=lambda v: v.fecha,
+        default=None,
+    )
     return render_template(
         "contratos/detail.html", contrato=contrato, visitas=visitas, frecuencias=FRECUENCIAS_DISPONIBLES,
         servicios_tipo=servicios_tipo, formularios_por_servicio=formularios_por_servicio,
         miembros_por_servicio=miembros_por_servicio, etiquetas_tipo_campo=dict(TIPOS_CAMPO),
+        proxima_visita=proxima_visita,
     )
 
 

@@ -2,18 +2,40 @@
 {% block title %}{{ contrato.nombre }}{% endblock %}
 {% block content %}
 <div class="pagina-ancha">
-    <h1>{{ contrato.nombre }}</h1>
-    <div class="tarjeta-doc">
+    <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=contrato.instalacion_id) }}">&larr; {{ contrato.instalacion.nombre }}</a></p>
 
-            <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=contrato.instalacion_id) }}">&larr; {{ contrato.instalacion.nombre }}</a></p>
+    <div class="cab-instalacion">
+        <div>
+            <h1 class="mb-0">{{ contrato.nombre }}</h1>
+            <p class="text-muted mb-0">
+                {{ contrato.fecha_inicio.strftime('%m/%Y') }} a {{ contrato.fecha_fin.strftime('%m/%Y') }}
+                &middot; <span class="badge badge-{{ contrato.estado.replace(' ', '.') }}">{{ contrato.estado }}</span>
+            </p>
+        </div>
+        <a href="{{ url_for('contratos.editar', contrato_id=contrato.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Editar</a>
+    </div>
 
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
-                <p class="text-muted mb-0">
-                    Vigencia: <strong class="text-body">{{ contrato.fecha_inicio.strftime('%m/%Y') }}</strong> a <strong class="text-body">{{ contrato.fecha_fin.strftime('%m/%Y') }}</strong>
-                    &nbsp;|&nbsp; Estado: <span class="badge badge-{{ contrato.estado.replace(' ', '.') }}">{{ contrato.estado }}</span>
-                </p>
-                <a href="{{ url_for('contratos.editar', contrato_id=contrato.id) }}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil me-1"></i>Editar</a>
-            </div>
+    <div class="rail-stats mb-3">
+        <div class="stat{{ ' calmo' if not contrato.servicios }}">
+            <span class="num">{{ contrato.servicios|length }}</span>
+            <span class="etiqueta">Servicios</span>
+        </div>
+        <div class="stat{{ ' calmo' if not visitas }}">
+            <span class="num">{{ visitas|length }}</span>
+            <span class="etiqueta">Visitas coordinadas</span>
+        </div>
+        <div class="stat{{ '' if proxima_visita else ' calmo' }}">
+            <span class="num">{{ proxima_visita.fecha.strftime('%d/%m') if proxima_visita else '-' }}</span>
+            <span class="etiqueta">Próxima visita</span>
+        </div>
+        <div class="stat{{ ' calmo' if contrato.estado != 'Activo' }}">
+            <span class="num">{{ contrato.fecha_fin.strftime('%m/%y') }}</span>
+            <span class="etiqueta">Vence</span>
+        </div>
+    </div>
+
+    <div class="grid-inicio">
+        <div class="columna-principal">
 
             <div class="seccion-titulo-doc">Servicios contratados</div>
             {% if not contrato.servicios %}
@@ -76,46 +98,6 @@
             </p>
             {% endif %}
 
-            <div class="seccion-titulo-doc">Agregar servicio</div>
-            {% if not servicios_tipo %}
-            <div class="alert alert-warning">
-                Tu empresa todavía no tiene ningún <a href="{{ url_for('servicios_tipo.listar') }}">servicio tipo</a> cargado —
-                creá al menos uno ahí antes de poder agregarlo a un contrato.
-            </div>
-            {% else %}
-            <form method="POST" action="{{ url_for('contratos.nuevo_servicio', contrato_id=contrato.id) }}" class="row g-2 align-items-end mb-4">
-                <div class="col-md-5">
-                    <label class="form-label">Servicio</label>
-                    <select name="servicio_tipo_id" class="form-select" required>
-                        <option value="">-- Seleccioná --</option>
-                        {% for s in servicios_tipo %}
-                        <option value="{{ s.id }}">{{ s.nombre }}{% if s.categoria %} (paquete){% endif %}</option>
-                        {% endfor %}
-                    </select>
-                    <div class="form-text">
-                        ¿Falta el que necesitás? <a href="{{ url_for('servicios_tipo.nuevo') }}">Creá uno nuevo</a> en el catálogo de la empresa.
-                        {% if servicios_tipo|selectattr('categoria')|list %}Un "paquete" agrupa varios tipos de equipo de la misma categoría (ej. sala de bombas) en un solo servicio, con un solo checklist combinado por visita.{% endif %}
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label">Frecuencia</label>
-                    <select name="frecuencia" class="form-select" required>
-                        {% for f in frecuencias %}
-                        <option value="{{ f }}">{{ f|capitalize }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Mes de inicio</label>
-                    <input type="month" name="mes_inicio" class="form-control">
-                    <div class="form-text">Vacío = mismo mes del contrato</div>
-                </div>
-                <div class="col-md-2">
-                    <button type="submit" class="btn btn-primary w-100">Agregar</button>
-                </div>
-            </form>
-            {% endif %}
-
             <div class="seccion-titulo-doc">Visitas coordinadas</div>
             <p class="text-muted">Cuando varios servicios coinciden en fecha, aparecen agrupados en la misma visita. Las visitas se crean al <a href="{{ url_for('coordinacion.index') }}">coordinar la fecha con el cliente</a> — no antes.</p>
             <div class="table-responsive">
@@ -125,7 +107,7 @@
                     {% for visita in visitas %}
                     <tr>
                         <td>{{ visita.fecha.strftime('%d/%m/%Y') }}</td>
-                        <td>{{ visita.items|map(attribute='servicio.nombre')|join(', ') }}</td>
+                        <td>{{ visita.items|map(attribute='nombre_mostrado')|join(', ') }}</td>
                         <td><span class="badge badge-{{ visita.estado.replace(' ', '.') }}">{{ visita.estado }}</span></td>
                         <td>
                             <a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a>
@@ -139,11 +121,62 @@
             </table>
             </div>
 
-            <form method="POST" action="{{ url_for('contratos.eliminar', contrato_id=contrato.id) }}" class="form-confirmar-password" data-sin-bloqueo
+            <form method="POST" action="{{ url_for('contratos.eliminar', contrato_id=contrato.id) }}" class="form-confirmar-password mt-4" data-sin-bloqueo
                   data-mensaje="¿Eliminar '{{ contrato.nombre }}'? Se borran también todos sus servicios, visitas, checklists y fotos asociadas. Esta acción no se puede deshacer.">
                 <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar contrato</button>
             </form>
 
+        </div>
+
+        <div class="columna-lateral">
+            <details class="card-expandible" open>
+                <summary>
+                    <span class="textos">
+                        <span class="etiqueta">Agregar servicio</span>
+                        <span class="sub">sumar un servicio a este contrato</span>
+                    </span>
+                    <span class="flecha">▶</span>
+                </summary>
+                <div style="padding: 0 .85rem .9rem;">
+                {% if not servicios_tipo %}
+                <div class="alert alert-warning mb-0">
+                    Tu empresa todavía no tiene ningún <a href="{{ url_for('servicios_tipo.listar') }}">servicio tipo</a> cargado —
+                    creá al menos uno ahí antes de poder agregarlo a un contrato.
+                </div>
+                {% else %}
+                <form method="POST" action="{{ url_for('contratos.nuevo_servicio', contrato_id=contrato.id) }}" class="d-flex flex-column gap-2">
+                    <div>
+                        <label class="form-label">Servicio</label>
+                        <select name="servicio_tipo_id" class="form-select" required>
+                            <option value="">-- Seleccioná --</option>
+                            {% for s in servicios_tipo %}
+                            <option value="{{ s.id }}">{{ s.nombre }}{% if s.categoria %} (paquete){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            ¿Falta el que necesitás? <a href="{{ url_for('servicios_tipo.nuevo') }}">Creá uno nuevo</a> en el catálogo de la empresa.
+                            {% if servicios_tipo|selectattr('categoria')|list %}Un "paquete" agrupa varios tipos de equipo de la misma categoría (ej. sala de bombas) en un solo servicio, con un solo checklist combinado por visita.{% endif %}
+                        </div>
+                    </div>
+                    <div>
+                        <label class="form-label">Frecuencia</label>
+                        <select name="frecuencia" class="form-select" required>
+                            {% for f in frecuencias %}
+                            <option value="{{ f }}">{{ f|capitalize }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Mes de inicio</label>
+                        <input type="month" name="mes_inicio" class="form-control">
+                        <div class="form-text">Vacío = mismo mes del contrato</div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Agregar</button>
+                </form>
+                {% endif %}
+                </div>
+            </details>
+        </div>
     </div>
 </div>
 {% endblock %}

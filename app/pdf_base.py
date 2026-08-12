@@ -25,13 +25,18 @@ from reportlab.lib.units import cm
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import SimpleDocTemplate
 
-INK = colors.HexColor("#1A2233")
-INK_MUTED = colors.HexColor("#5B6673")
-BORDE = colors.HexColor("#E1E5EA")
+INK = colors.HexColor("#14181F")
+INK_MUTED = colors.HexColor("#5B6773")
+INK_FAINT = colors.HexColor("#9AA1AC")
+BORDE = colors.HexColor("#DEE2D8")
+BORDE_FUERTE = colors.HexColor("#C7CDC0")
 SURFACE_MUTED = colors.HexColor("#F4F6F8")
 ACCENT = colors.HexColor("#E2131D")
 ACCENT_SOFT = colors.HexColor("#FBEAE7")
+SLATE = colors.HexColor("#2B3D4F")
+SLATE_SOFT = colors.HexColor("#EDF1F3")
 VERDE = colors.HexColor("#1F8A54")
+VERDE_SUAVE = colors.HexColor("#E6F4EB")
 
 TAGLINE = "IPM Manager — Gestión de mantenimiento de sistemas contra incendio en Uruguay"
 
@@ -39,15 +44,14 @@ _LOGO_PATH = os.path.join(os.path.dirname(__file__), "static", "img", "logo.png"
 _LOGO_PROPORCION = 190 / 220  # ancho/alto real del archivo, para no deformarlo
 
 MARGEN_LAT = 1.8 * cm
-MARGEN_SUP = 3.0 * cm  # deja lugar a la franja negra + filete rojo
+# El masthead pasa a ser una línea chica y apagada (chip con el logo +
+# "IPM Manager" + tipo de documento, un filete fino debajo) en vez de la
+# franja negra de antes -- ocupa mucho menos alto, así que el margen
+# superior baja de 3cm a 1.9cm y cada documento gana esa diferencia de
+# espacio útil.
+MARGEN_SUP = 1.9 * cm
 MARGEN_INF = 1.7 * cm  # deja lugar al pie
-ALTO_FRANJA = 1.15 * cm
-# La franja negra y el filete rojo se dibujan "a sangre" (hasta el borde de
-# la hoja) para que se vean como el header real de la app. Casi ninguna
-# impresora doméstica/de oficina imprime hasta el borde físico sin modo
-# "sin bordes" — recortan lo que cae en esta franja de seguridad, así que
-# la franja se inset a este margen en vez de ir a x=0/borde superior real.
-MARGEN_IMPRESION = 0.4 * cm
+ALTO_MASTHEAD = 0.55 * cm  # alto del chip de logo -- define el resto del masthead
 
 
 def estilos():
@@ -57,7 +61,7 @@ def estilos():
     return {
         "titulo": ParagraphStyle(
             "PDFTitulo", parent=base["Title"], textColor=INK, fontName="Helvetica-Bold",
-            fontSize=17, leading=20, spaceAfter=2, alignment=0,
+            fontSize=19, leading=22, spaceAfter=2, alignment=0,
         ),
         "subtitulo": ParagraphStyle("PDFSubtitulo", parent=base["Normal"], textColor=INK_MUTED, fontSize=9.5),
         "h2": ParagraphStyle(
@@ -114,48 +118,49 @@ def _crear_canvas_numerado(tipo_doc):
             ancho, alto = self._pagesize  # respeta vertical u horizontal
             self.saveState()
 
-            # Franja negra — inset MARGEN_IMPRESION del borde real (ver
-            # comentario junto a la constante) en vez de ir de canto a canto.
-            ancho_franja = ancho - 2 * MARGEN_IMPRESION
-            borde_sup_franja = alto - MARGEN_IMPRESION
-            borde_inf_franja = borde_sup_franja - ALTO_FRANJA
-
-            self.setFillColor(colors.black)
-            self.rect(MARGEN_IMPRESION, borde_inf_franja, ancho_franja, ALTO_FRANJA, stroke=0, fill=1)
-
+            # Masthead chico y apagado: chip oscuro con el logo (el archivo
+            # tiene partes blancas pensadas para un fondo oscuro, por eso el
+            # chip) + "IPM Manager" en gris, tipo de documento a la derecha,
+            # un filete fino abajo -- nada de franja a sangre ni bloque de
+            # color grande. El contenido de cada PDF queda como protagonista.
+            y_base = alto - MARGEN_SUP + 0.55 * cm
             x = MARGEN_LAT
+
+            self.setFillColor(INK)
+            self.roundRect(x, y_base, ALTO_MASTHEAD, ALTO_MASTHEAD, 1, stroke=0, fill=1)
             if os.path.exists(_LOGO_PATH):
-                alto_logo = 0.6 * cm
+                pad = 0.05 * cm
+                alto_logo = ALTO_MASTHEAD - 2 * pad
                 ancho_logo = alto_logo * _LOGO_PROPORCION
                 self.drawImage(
                     _LOGO_PATH,
-                    x,
-                    borde_inf_franja + (ALTO_FRANJA - alto_logo) / 2,
+                    x + (ALTO_MASTHEAD - ancho_logo) / 2,
+                    y_base + pad,
                     width=ancho_logo,
                     height=alto_logo,
                     mask="auto",
                     preserveAspectRatio=True,
                 )
-                x += ancho_logo + 0.3 * cm
+            x += ALTO_MASTHEAD + 0.25 * cm
 
-            self.setFillColor(colors.white)
-            self.setFont("Helvetica-Bold", 11)
-            self.drawString(x, borde_inf_franja + ALTO_FRANJA / 2 - 4, "IPM MANAGER")
+            self.setFillColor(INK_MUTED)
+            self.setFont("Helvetica-Bold", 8)
+            self.drawString(x, y_base + ALTO_MASTHEAD / 2 - 3, "IPM MANAGER")
 
-            self.setFillColor(colors.HexColor("#B8BEC9"))
-            self.setFont("Helvetica", 8)
-            self.drawRightString(ancho - MARGEN_LAT, borde_inf_franja + ALTO_FRANJA / 2 - 3, tipo_doc.upper())
+            self.setFillColor(INK_FAINT)
+            self.setFont("Helvetica", 7.5)
+            self.drawRightString(ancho - MARGEN_LAT, y_base + ALTO_MASTHEAD / 2 - 2.5, tipo_doc.upper())
 
-            # Filete rojo
-            self.setFillColor(ACCENT)
-            self.rect(MARGEN_IMPRESION, borde_inf_franja - 0.09 * cm, ancho_franja, 0.09 * cm, stroke=0, fill=1)
+            self.setStrokeColor(BORDE_FUERTE)
+            self.setLineWidth(0.6)
+            self.line(MARGEN_LAT, y_base - 0.18 * cm, ancho - MARGEN_LAT, y_base - 0.18 * cm)
 
             # Pie de página
             self.setStrokeColor(BORDE)
             self.setLineWidth(0.5)
             self.line(MARGEN_LAT, MARGEN_INF - 0.35 * cm, ancho - MARGEN_LAT, MARGEN_INF - 0.35 * cm)
 
-            self.setFillColor(INK_MUTED)
+            self.setFillColor(INK_FAINT)
             self.setFont("Helvetica", 7)
             self.drawString(MARGEN_LAT, MARGEN_INF - 0.7 * cm, TAGLINE)
             self.drawRightString(

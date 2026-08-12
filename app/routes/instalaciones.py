@@ -1,4 +1,5 @@
 from collections import defaultdict
+from datetime import date
 
 from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 
@@ -54,6 +55,7 @@ def detalle(instalacion_id):
     instalacion = Instalacion.query.get_or_404(instalacion_id)
     verificar_acceso_cliente(instalacion.cliente)
     contratos = sorted(instalacion.contratos, key=lambda c: c.fecha_inicio, reverse=True)
+    categorias = equipos_por_categoria(instalacion)
 
     agrupado = defaultdict(list)
     for v in instalacion.visitas:
@@ -67,11 +69,29 @@ def detalle(instalacion_id):
         for (anio, mes) in meses_ordenados
     ]
 
+    # Resumen de un vistazo para la cabecera compacta -- evita que el
+    # técnico/administrador tenga que recorrer toda la ficha para saber si
+    # hay algo pendiente antes de entrar a mirar el detalle.
+    hoy = date.today()
+    proxima_visita = min(
+        (v for v in instalacion.visitas if v.fecha >= hoy and v.estado != "Cancelado"),
+        key=lambda v: v.fecha,
+        default=None,
+    )
+    observaciones_abiertas = sorted(
+        (o for o in instalacion.deficiencias if not o.resuelto),
+        key=lambda o: (o.clasificacion != "Deficiencia crítica", o.fecha_carga),
+    )
+
     contexto = dict(
         instalacion=instalacion,
         contratos=contratos,
-        categorias=equipos_por_categoria(instalacion),
+        categorias=categorias,
         bloques_hoja_ruta=bloques_hoja_ruta,
+        total_equipos=sum(len(equipos_cat) for _, equipos_cat in categorias),
+        contratos_activos=sum(1 for c in contratos if c.estado == "Activo"),
+        proxima_visita=proxima_visita,
+        observaciones_abiertas=observaciones_abiertas,
     )
     template = "instalaciones/_contenido.html" if es_ajax() else "instalaciones/detail.html"
     return render_template(template, **contexto)

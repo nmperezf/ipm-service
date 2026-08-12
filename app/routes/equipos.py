@@ -205,4 +205,6 @@ def detalle(equipo_id):
         deficiencias_abiertas=deficiencias_abiertas,
         deficiencias_resueltas=deficiencias_resueltas,
         ultimos_ensayos=ultimos_ensayos,
+        total_checklists=len(formularios),
+        ultimo_checklist=formularios[-1] if formularios else None,
     )
