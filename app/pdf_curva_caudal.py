@@ -14,7 +14,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import cm
-from reportlab.platypus import Flowable, Image, Paragraph, Spacer, Table, TableStyle
+from reportlab.platypus import Flowable, Image, KeepTogether, Paragraph, Spacer, Table, TableStyle
 
 from app.pdf_base import (
     ACCENT,
@@ -93,7 +93,7 @@ def _grafico_curvas(gpm, presiones_fabrica, presiones_ensayo_ajustadas, presione
     ajustada_ft = [p * FT_POR_PSI for p in presiones_ensayo_ajustadas]
     sin_ajustar_ft = [p * FT_POR_PSI for p in presiones_ensayo_sin_ajustar]
 
-    fig, ax = plt.subplots(figsize=(6.1, 3.55), dpi=150)
+    fig, ax = plt.subplots(figsize=(9.8, 2.15), dpi=150)
 
     xs_fabrica, ys_fabrica = curva_suavizada(gpm, fabrica_ft)
     ax.plot(xs_fabrica, ys_fabrica, color="#14181F", linewidth=1.8, label="Curva de fábrica")
@@ -178,10 +178,12 @@ def generar_pdf_ensayo(ensayo):
     def tabla_identificacion(pares, columnas=2):
         """pares: lista de (label, valor) -> grilla sin bordes, ancho total
         ANCHO_CONTENIDO. Dos columnas por defecto para que "Lugar" (cliente
-        + instalación, el valor más largo de la ficha) entre en una línea."""
+        + instalación, el valor más largo de la ficha) entre en una línea.
+        Fila compacta a propósito: esta tabla convive con otras tres
+        secciones más el gráfico grande en la misma hoja."""
         filas, fila = [], []
         for label, valor in pares:
-            fila.append(Paragraph(f"<font size=6.8 color='{INK_FAINT_HEX}'>{label.upper()}</font><br/><b>{valor}</b>", celda))
+            fila.append(Paragraph(f"<font size=6.6 color='{INK_FAINT_HEX}'>{label.upper()}</font><br/><b>{valor}</b>", celda))
             if len(fila) == columnas:
                 filas.append(fila)
                 fila = []
@@ -191,25 +193,26 @@ def generar_pdf_ensayo(ensayo):
         t = Table(filas, colWidths=[ANCHO_CONTENIDO / columnas] * columnas)
         t.setStyle(TableStyle([
             ("VALIGN", (0, 0), (-1, -1), "TOP"),
-            ("BOTTOMPADDING", (0, 0), (-1, -1), 8),
-            ("TOPPADDING", (0, 0), (-1, -1), 4),
+            ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+            ("TOPPADDING", (0, 0), (-1, -1), 1.5),
         ]))
         return t
 
     def estilo_hairline(filas_totales, columnas_totales):
         """Filete bajo el encabezado (más marcado) y bajo cada fila de
         datos (más suave) -- sin grilla vertical ni relleno de color,
-        como una hoja de datos, no una tabla de UI."""
+        como una hoja de datos, no una tabla de UI. Filas apretadas por la
+        misma razón que tabla_identificacion."""
         estilo = [
             ("LINEBELOW", (0, 0), (-1, 0), 0.75, BORDE_FUERTE),
-            ("TOPPADDING", (0, 0), (-1, -1), 5),
+            ("TOPPADDING", (0, 0), (-1, -1), 2.2),
             ("BOTTOMPADDING", (0, 0), (-1, -1), 1),
-            ("BOTTOMPADDING", (0, 0), (-1, 0), 5),
+            ("BOTTOMPADDING", (0, 0), (-1, 0), 2.2),
             ("VALIGN", (0, 0), (-1, -1), "TOP"),
         ]
         for fila in range(1, filas_totales):
             estilo.append(("LINEBELOW", (0, fila), (-1, fila), 0.5, BORDE))
-            estilo.append(("BOTTOMPADDING", (0, fila), (-1, fila), 5))
+            estilo.append(("BOTTOMPADDING", (0, fila), (-1, fila), 2.2))
         return TableStyle(estilo)
 
     elementos = []
@@ -222,7 +225,7 @@ def generar_pdf_ensayo(ensayo):
 
     tipo_bomba = (equipo.tipo_motor or "-") + (f" · {equipo.motor_potencia_hp} HP" if equipo.motor_potencia_hp else "")
     elementos.append(titulo_seccion("Identificación del ensayo"))
-    elementos.append(Spacer(1, 0.35 * cm))
+    elementos.append(Spacer(1, 0.2 * cm))
     elementos.append(tabla_identificacion([
         ("Lugar", f"{instalacion.cliente.nombre} — {instalacion.nombre}"),
         ("Modelo", equipo.modelo or "-"),
@@ -240,9 +243,9 @@ def generar_pdf_ensayo(ensayo):
     if ensayo.presion_succion_estatica is not None:
         condiciones.append(("Presión succión (estática)", f"{ensayo.presion_succion_estatica} PSI"))
     if condiciones:
-        elementos.append(Spacer(1, 0.75 * cm))
+        elementos.append(Spacer(1, 0.4 * cm))
         elementos.append(titulo_seccion("Condiciones de prueba"))
-        elementos.append(Spacer(1, 0.35 * cm))
+        elementos.append(Spacer(1, 0.2 * cm))
         elementos.append(tabla_identificacion(condiciones, columnas=3))
     if ensayo.normativa_aplicable:
         elementos.append(Spacer(1, 0.15 * cm))
@@ -253,9 +256,9 @@ def generar_pdf_ensayo(ensayo):
     # el ensayo) repitiendo Caudal/GPM/RPM en las dos -- acá la presión de
     # fábrica es una columna más al lado de cada punto del ensayo, para
     # comparar en la misma fila y no tener que ir y volver entre tablas.
-    elementos.append(Spacer(1, 0.75 * cm))
+    elementos.append(Spacer(1, 0.4 * cm))
     elementos.append(titulo_seccion("Curva de fábrica y ensayo"))
-    elementos.append(Spacer(1, 0.35 * cm))
+    elementos.append(Spacer(1, 0.2 * cm))
     if curva_fabrica:
         elementos.append(Paragraph(f"RPM nominal de fábrica: {curva_fabrica.rpm_nominal}", nota_style))
         elementos.append(Spacer(1, 0.15 * cm))
@@ -301,11 +304,12 @@ def generar_pdf_ensayo(ensayo):
         variacion_txt = f"{variaciones[i]:+.1f}%" if variaciones[i] is not None else "-"
         filas.append([
             caudal_cell, fabrica_cell, Paragraph(str(rpm[i]), celda_num),
-            Paragraph(f"{descargas[i]:.1f}", celda_num), Paragraph(f"{succiones[i]:.1f}", celda_num),
+            Paragraph(f"{descargas[i]:.1f} PSI", celda_num), Paragraph(f"{succiones[i]:.1f} PSI", celda_num),
             neta_cell, ajust_cell, Paragraph(variacion_txt, celda_num),
         ])
     tabla_datos = Table(
         filas, colWidths=[2.6 * cm, 2.6 * cm, 1.8 * cm, 2.0 * cm, 2.0 * cm, 2.4 * cm, 2.4 * cm, 2.2 * cm],
+        repeatRows=1,
     )
     tabla_datos.setStyle(estilo_hairline(len(filas), len(encabezados)))
     elementos.append(tabla_datos)
@@ -315,13 +319,23 @@ def generar_pdf_ensayo(ensayo):
         f"Variación = (ajustada − fábrica) / fábrica &middot; ft Head = PSI × {FT_POR_PSI}", nota_style,
     ))
 
-    # ---- Criterios NFPA 25 y gráfico, lado a lado ----
-    # Antes iban uno abajo del otro (y el gráfico quedaba en la hoja 2) --
-    # ahora comparten la mitad inferior de la hoja 1, sin perder el orden:
-    # primero se leen los criterios (izquierda), el gráfico queda como
-    # respaldo visual (derecha).
+    # ---- Gráfico, protagonista a ancho completo ----
+    elementos.append(Spacer(1, 0.5 * cm))
+    elementos.append(titulo_seccion("Representación del ensayo"))
+    elementos.append(Spacer(1, 0.3 * cm))
+    if curva_fabrica:
+        netas_redondeadas = [round(n, 1) for n in netas]
+        grafico_buffer = _grafico_curvas(gpm_fabrica, presiones_fabrica, ajustadas, netas_redondeadas)
+        elementos.append(Image(grafico_buffer, width=ANCHO_CONTENIDO, height=3.9 * cm))
+    else:
+        elementos.append(Paragraph("Sin curva de fábrica cargada para graficar.", normal))
+
+    # ---- Criterios NFPA 25 (debajo del gráfico) ----
+    # KeepTogether: si el título y la tabla no entran enteros en lo que
+    # queda de la hoja, pasan juntos a la siguiente en vez de dejar el
+    # título huérfano arriba y la tabla cortada abajo.
+    bloque_criterios = [Spacer(1, 0.5 * cm), titulo_seccion("Criterios NFPA 25", veredicto=True), Spacer(1, 0.25 * cm)]
     validacion = ensayo.validacion_nfpa25()
-    columna_criterios = [titulo_seccion("Criterios NFPA 25", veredicto=True), Spacer(1, 0.35 * cm)]
     if validacion:
         filas_crit = [[
             Paragraph("Criterio", celda_encabezado), Paragraph("Valor", celda_encabezado_der),
@@ -341,26 +355,14 @@ def generar_pdf_ensayo(ensayo):
                 Paragraph(con_ft(criterio["limite"]), celda_num),
                 estado_cell,
             ])
-        tabla_crit = Table(filas_crit, colWidths=[3.1 * cm, 2.3 * cm, 2.1 * cm, 1.9 * cm])
+        tabla_crit = Table(filas_crit, colWidths=[6 * cm, 4.6 * cm, 4.4 * cm, 3 * cm], repeatRows=1)
         tabla_crit.setStyle(estilo_hairline(len(filas_crit), 4))
-        columna_criterios.append(tabla_crit)
-        columna_criterios.append(Spacer(1, 0.1 * cm))
-        columna_criterios.append(Paragraph(" &middot; ".join(formulas), nota_style))
+        bloque_criterios.append(tabla_crit)
+        bloque_criterios.append(Spacer(1, 0.1 * cm))
+        bloque_criterios.append(Paragraph(" &middot; ".join(formulas), nota_style))
     else:
-        columna_criterios.append(Paragraph("No se puede comparar contra NFPA 25 sin una curva de fábrica cargada.", normal))
-
-    columna_grafico = [titulo_seccion("Representación del ensayo"), Spacer(1, 0.35 * cm)]
-    if curva_fabrica:
-        netas_redondeadas = [round(n, 1) for n in netas]
-        grafico_buffer = _grafico_curvas(gpm_fabrica, presiones_fabrica, ajustadas, netas_redondeadas)
-        columna_grafico.append(Image(grafico_buffer, width=8.6 * cm, height=5 * cm))
-    else:
-        columna_grafico.append(Paragraph("Sin curva de fábrica cargada para graficar.", normal))
-
-    elementos.append(Spacer(1, 0.75 * cm))
-    fila_2col = Table([[columna_criterios, columna_grafico]], colWidths=[ANCHO_CONTENIDO / 2 - 0.2 * cm, ANCHO_CONTENIDO / 2 - 0.2 * cm])
-    fila_2col.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (1, 0), (1, 0), 12)]))
-    elementos.append(fila_2col)
+        bloque_criterios.append(Paragraph("No se puede comparar contra NFPA 25 sin una curva de fábrica cargada.", normal))
+    elementos.append(KeepTogether(bloque_criterios))
 
     # ---- Comentarios ----
     if ensayo.comentarios:
