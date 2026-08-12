@@ -3,7 +3,9 @@ from datetime import date, timedelta
 from dateutil.relativedelta import relativedelta
 from flask import Blueprint, redirect, render_template, request, url_for
 from flask_login import current_user
+from sqlalchemy import case, func
 
+from app import db
 from app.auth_utils import clientes_visibles, destinatarios_posibles_mensaje, rol_requerido
 from app.models import (
     CLASIFICACIONES_OBSERVACION,
@@ -130,16 +132,27 @@ def inicio():
         tecnicos = Usuario.query.filter_by(
             empresa_id=current_user.empresa_id, rol="Técnico", activo=True
         ).order_by(Usuario.nombre_completo).all()
-        for t in tecnicos:
-            ot_tecnico = OrdenTrabajo.query.join(Instalacion).filter(
+        conteo_por_tecnico = (
+            db.session.query(
+                OrdenTrabajo.tecnico_id,
+                func.count(OrdenTrabajo.id),
+                func.sum(case((OrdenTrabajo.prioridad == "Urgente", 1), else_=0)),
+            )
+            .join(Instalacion)
+            .filter(
                 Instalacion.cliente_id.in_(ids_clientes),
-                OrdenTrabajo.tecnico_id == t.id,
                 OrdenTrabajo.estado.notin_(["Finalizada", "Cancelada"]),
-            ).all()
+            )
+            .group_by(OrdenTrabajo.tecnico_id)
+            .all()
+        )
+        carga_por_tecnico = {tecnico_id: (abiertas, urgentes or 0) for tecnico_id, abiertas, urgentes in conteo_por_tecnico}
+        for t in tecnicos:
+            abiertas, urgentes = carga_por_tecnico.get(t.id, (0, 0))
             carga_tecnicos.append({
                 "usuario": t,
-                "abiertas": len(ot_tecnico),
-                "urgentes": sum(1 for o in ot_tecnico if o.prioridad == "Urgente"),
+                "abiertas": abiertas,
+                "urgentes": urgentes,
             })
         max_carga_tecnico = max((c["abiertas"] for c in carga_tecnicos), default=0)
     else:

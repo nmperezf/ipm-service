@@ -824,6 +824,11 @@ html.sidebar-oculta .sidebar-footer .sidebar-link {
 .th-ordenable:hover {
     color: var(--brand);
 }
+.th-ordenable a {
+    color: inherit;
+    text-decoration: none;
+    display: block;
+}
 .indicador-orden {
     font-size: .65rem;
     margin-left: 2px;
@@ -831,6 +836,38 @@ html.sidebar-oculta .sidebar-footer .sidebar-link {
 .buscador-tabla-doc {
     max-width: 320px;
     margin-bottom: .7rem;
+}
+
+/* ---- Paginador server-side (listados grandes) ----------------------------- */
+
+.paginador-doc {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1.2rem 0;
+    flex-wrap: wrap;
+}
+.paginador-link {
+    padding: .4rem .9rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: .85rem;
+    color: var(--ink);
+    text-decoration: none;
+    background: var(--surface);
+}
+.paginador-link:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+}
+.paginador-link.deshabilitado {
+    opacity: .4;
+    pointer-events: none;
+}
+.paginador-info {
+    font-size: .82rem;
+    color: var(--ink-muted);
 }
 
 /* ---- Tablas como tarjetas apiladas en celular (.tabla-tarjetas) ----------

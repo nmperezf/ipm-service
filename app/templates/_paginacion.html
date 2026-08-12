@@ -1,0 +1,34 @@
+{# Paginación y orden por columna del lado del servidor, para listados
+   grandes que no pueden traer todo a la vez (a diferencia de las pantallas
+   con vista maestro-detalle tipo Clientes/OT, que sí cargan todo para
+   tener búsqueda instantánea). Usa request.endpoint + request.view_args
+   automáticamente, así que no hace falta pasarle el endpoint a mano. #}
+
+{% macro paginador(pagination) %}
+{% if pagination.pages > 1 %}
+{% set args_prev = dict(request.view_args, **request.args.to_dict()) %}
+{% set args_next = dict(request.view_args, **request.args.to_dict()) %}
+{% set _p = args_prev.update({'pagina': pagination.prev_num}) %}
+{% set _n = args_next.update({'pagina': pagination.next_num}) %}
+<nav class="paginador-doc" aria-label="Paginación">
+    {% if pagination.has_prev %}
+    <a class="paginador-link" href="{{ url_for(request.endpoint, **args_prev) }}">« Anterior</a>
+    {% else %}
+    <span class="paginador-link deshabilitado">« Anterior</span>
+    {% endif %}
+    <span class="paginador-info">Página {{ pagination.page }} de {{ pagination.pages }} · {{ pagination.total }} en total</span>
+    {% if pagination.has_next %}
+    <a class="paginador-link" href="{{ url_for(request.endpoint, **args_next) }}">Siguiente »</a>
+    {% else %}
+    <span class="paginador-link deshabilitado">Siguiente »</span>
+    {% endif %}
+</nav>
+{% endif %}
+{% endmacro %}
+
+{% macro th_ordenable(texto, campo, orden_actual, dir_actual) %}
+{% set nueva_dir = 'asc' if (orden_actual == campo and dir_actual == 'desc') else 'desc' %}
+{% set args = dict(request.view_args, **request.args.to_dict()) %}
+{% set _ = args.update({'orden': campo, 'dir': nueva_dir, 'pagina': 1}) %}
+<th class="th-ordenable"><a href="{{ url_for(request.endpoint, **args) }}">{{ texto }}{% if orden_actual == campo %}<span class="indicador-orden">{{ ' ▲' if dir_actual == 'asc' else ' ▼' }}</span>{% endif %}</a></th>
+{% endmacro %}

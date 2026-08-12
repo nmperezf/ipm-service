@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date
 
 from flask import Blueprint, Response, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
@@ -28,7 +28,7 @@ from app.models import (
 from app.notificaciones import notificar_gestion, notificar_tecnico_asignado
 from app.pdf_checklist_tecnico import categorias_de_visita, generar_pdf_checklist_tecnico
 from app.pdf_devolucion import generar_pdf_devolucion
-from app.utils import equipos_por_categoria, es_ajax, filas_checklist, resumen_visita_por_categoria
+from app.utils import equipos_por_categoria, es_ajax, filas_checklist, parse_fecha, resumen_visita_por_categoria
 
 visitas_bp = Blueprint("visitas", __name__, url_prefix="/visitas")
 
@@ -61,12 +61,6 @@ def _agrupar_tipos_formulario(tipos):
     return grupos, generales
 
 
-def _parse_fecha(valor, por_defecto=None):
-    if not valor:
-        return por_defecto or date.today()
-    return datetime.strptime(valor, "%Y-%m-%d").date()
-
-
 def _antecedentes(visita):
     """Deficiencias abiertas de la misma instalación, de visitas anteriores
     a esta (para que el técnico tenga contexto al cerrar)."""
@@ -91,7 +85,7 @@ def nueva(instalacion_id):
     if request.method == "POST":
         visita = Visita(
             instalacion_id=instalacion.id,
-            fecha=_parse_fecha(request.form.get("fecha")),
+            fecha=parse_fecha(request.form.get("fecha"), date.today()),
             observaciones=request.form.get("observaciones"),
             estado=request.form.get("estado", "Pendiente"),
         )
@@ -211,7 +205,7 @@ def editar(visita_id):
     verificar_escritura_cliente(visita.instalacion.cliente)
     verificar_visita_editable(visita)
     if request.method == "POST":
-        visita.fecha = _parse_fecha(request.form.get("fecha"), visita.fecha)
+        visita.fecha = parse_fecha(request.form.get("fecha"), visita.fecha)
         visita.observaciones = request.form.get("observaciones")
         visita.estado = request.form.get("estado", visita.estado)
         db.session.commit()

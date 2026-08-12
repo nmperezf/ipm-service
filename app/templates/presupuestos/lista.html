@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% import "_paginacion.html" as pag %}
 {% block title %}Presupuestos{% endblock %}
 {% block content %}
 <div class="pagina-ancha">
@@ -12,52 +13,99 @@
             <div class="chips-filtro-doc mb-4">
                 <a href="{{ url_for('presupuestos.listar') }}" class="chip-filtro-doc{{ ' activo' if not estado_filtro }}">Todos</a>
                 {% for estado in estados %}
-                <a href="{{ url_for('presupuestos.listar', estado=estado) }}" class="chip-filtro-doc{{ ' activo' if estado_filtro == estado }}">{{ estado }} ({{ por_estado[estado]|length }})</a>
+                <a href="{{ url_for('presupuestos.listar', estado=estado) }}" class="chip-filtro-doc{{ ' activo' if estado_filtro == estado }}">{{ estado }} ({{ conteo_por_estado.get(estado, 0) }})</a>
                 {% endfor %}
             </div>
 
-            {% set hay_alguno = por_estado.values()|map('length')|sum > 0 %}
-            {% if not hay_alguno %}
-            <div class="estado-vacio-doc">
-                <i class="bi bi-receipt"></i>
-                <p>No hay presupuestos {{ 'con ese estado' if estado_filtro else 'cargados todavía' }}.</p>
-            </div>
-            {% endif %}
+            {% if pagination is not none %}
+                {# Vista de un estado puntual: lista completa, paginada y ordenable de verdad #}
+                {% if pagination.total == 0 %}
+                <div class="estado-vacio-doc">
+                    <i class="bi bi-receipt"></i>
+                    <p>No hay presupuestos con ese estado.</p>
+                </div>
+                {% else %}
+                <div class="seccion-titulo-doc">{{ estado_filtro }} ({{ pagination.total }})</div>
+                <div class="table-responsive">
+                <table class="table table-sm table-hover" data-orden-propio data-buscador-propio>
+                    <thead>
+                        <tr>
+                            {{ pag.th_ordenable('Código', 'codigo', orden_actual, dir_actual) }}
+                            <th>Cliente</th><th>Instalación</th><th>Deficiencia</th>
+                            {{ pag.th_ordenable('Fecha', 'fecha_creacion', orden_actual, dir_actual) }}
+                            <th>OT correctiva</th><th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for p in pagination.items %}
+                        <tr data-href="{{ url_for('presupuestos.detalle', presupuesto_id=p.id) }}">
+                            <td><strong>{{ p.codigo }}</strong></td>
+                            <td>{{ p.observacion.instalacion.cliente.nombre }}</td>
+                            <td>{{ p.observacion.instalacion.nombre }}</td>
+                            <td>
+                                {% if p.observacion.equipo %}<span class="text-muted small">{{ p.observacion.equipo.nombre }} — </span>{% endif %}{{ p.observacion.descripcion[:60] }}{{ '…' if p.observacion.descripcion|length > 60 }}
+                            </td>
+                            <td>
+                                <span class="badge {{ 'bg-warning' if p.dias_abierto > 7 else 'bg-secondary' }}">{{ p.dias_abierto }} día{{ 's' if p.dias_abierto != 1 }}</span>
+                            </td>
+                            <td>
+                                {% if p.ot_correctiva %}
+                                <a href="{{ url_for('ordenes.detalle', ot_id=p.ot_correctiva.id) }}">{{ p.ot_correctiva.numero }}</a>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td><a href="{{ url_for('presupuestos.detalle', presupuesto_id=p.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+                {{ pag.paginador(pagination) }}
+                {% endif %}
+            {% else %}
+                {# Vista "Todos": resumen agrupado, cada balde suele ser chico #}
+                {% set hay_alguno = por_estado.values()|map('length')|sum > 0 %}
+                {% if not hay_alguno %}
+                <div class="estado-vacio-doc">
+                    <i class="bi bi-receipt"></i>
+                    <p>No hay presupuestos cargados todavía.</p>
+                </div>
+                {% endif %}
 
-            {% for estado in estados %}
-            {% set items = por_estado[estado] %}
-            {% if items and (not estado_filtro or estado_filtro == estado) %}
-            <div class="seccion-titulo-doc">{{ estado }} ({{ items|length }})</div>
-            <div class="table-responsive">
-            <table class="table table-sm table-hover data-table">
-                <thead>
-                    <tr><th>Código</th><th>Cliente</th><th>Instalación</th><th>Deficiencia</th><th>Días abierto</th><th>OT correctiva</th><th></th></tr>
-                </thead>
-                <tbody>
-                    {% for p in items %}
-                    <tr data-href="{{ url_for('presupuestos.detalle', presupuesto_id=p.id) }}">
-                        <td><strong>{{ p.codigo }}</strong></td>
-                        <td>{{ p.observacion.instalacion.cliente.nombre }}</td>
-                        <td>{{ p.observacion.instalacion.nombre }}</td>
-                        <td>
-                            {% if p.observacion.equipo %}<span class="text-muted small">{{ p.observacion.equipo.nombre }} — </span>{% endif %}{{ p.observacion.descripcion[:60] }}{{ '…' if p.observacion.descripcion|length > 60 }}
-                        </td>
-                        <td>
-                            <span class="badge {{ 'bg-warning' if p.dias_abierto > 7 else 'bg-secondary' }}">{{ p.dias_abierto }} día{{ 's' if p.dias_abierto != 1 }}</span>
-                        </td>
-                        <td>
-                            {% if p.ot_correctiva %}
-                            <a href="{{ url_for('ordenes.detalle', ot_id=p.ot_correctiva.id) }}">{{ p.ot_correctiva.numero }}</a>
-                            {% else %}—{% endif %}
-                        </td>
-                        <td><a href="{{ url_for('presupuestos.detalle', presupuesto_id=p.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a></td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-            </div>
+                {% for estado in estados %}
+                {% set items = por_estado[estado] %}
+                {% if items %}
+                <div class="seccion-titulo-doc">{{ estado }} ({{ items|length }})</div>
+                <div class="table-responsive">
+                <table class="table table-sm table-hover data-table">
+                    <thead>
+                        <tr><th>Código</th><th>Cliente</th><th>Instalación</th><th>Deficiencia</th><th>Días abierto</th><th>OT correctiva</th><th></th></tr>
+                    </thead>
+                    <tbody>
+                        {% for p in items %}
+                        <tr data-href="{{ url_for('presupuestos.detalle', presupuesto_id=p.id) }}">
+                            <td><strong>{{ p.codigo }}</strong></td>
+                            <td>{{ p.observacion.instalacion.cliente.nombre }}</td>
+                            <td>{{ p.observacion.instalacion.nombre }}</td>
+                            <td>
+                                {% if p.observacion.equipo %}<span class="text-muted small">{{ p.observacion.equipo.nombre }} — </span>{% endif %}{{ p.observacion.descripcion[:60] }}{{ '…' if p.observacion.descripcion|length > 60 }}
+                            </td>
+                            <td>
+                                <span class="badge {{ 'bg-warning' if p.dias_abierto > 7 else 'bg-secondary' }}">{{ p.dias_abierto }} día{{ 's' if p.dias_abierto != 1 }}</span>
+                            </td>
+                            <td>
+                                {% if p.ot_correctiva %}
+                                <a href="{{ url_for('ordenes.detalle', ot_id=p.ot_correctiva.id) }}">{{ p.ot_correctiva.numero }}</a>
+                                {% else %}—{% endif %}
+                            </td>
+                            <td><a href="{{ url_for('presupuestos.detalle', presupuesto_id=p.id) }}" class="btn btn-sm btn-outline-secondary">Ver</a></td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                </div>
+                {% endif %}
+                {% endfor %}
             {% endif %}
-            {% endfor %}
 
 </div>
 {% endblock %}

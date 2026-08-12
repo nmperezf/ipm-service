@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date
 
 from flask import Blueprint, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
@@ -13,17 +13,11 @@ from app.auth_utils import (
 from app.models import CLASIFICACIONES_OBSERVACION, Equipo, Foto, Instalacion, ItemVisita, Observacion
 from app.notificaciones import notificar_gestion, notificar_usuario
 from app.routes.fotos import _extension_permitida, _guardar_archivo
-from app.utils import crear_presupuesto, es_ajax
+from app.utils import crear_presupuesto, es_ajax, parse_fecha
 
 observaciones_bp = Blueprint("observaciones", __name__, url_prefix="/observaciones")
 
 CLASIFICACIONES_CON_PRESUPUESTO = ("Deficiencia crítica", "Deficiencia no crítica")
-
-
-def _parse_fecha(valor, por_defecto=None):
-    if not valor:
-        return por_defecto or date.today()
-    return datetime.strptime(valor, "%Y-%m-%d").date()
 
 
 @observaciones_bp.route("/nueva/<int:instalacion_id>", methods=["GET", "POST"])
@@ -51,7 +45,7 @@ def nueva(instalacion_id):
             equipo_id=equipo.id if equipo else None,
             clasificacion=clasificacion,
             descripcion=request.form["descripcion"],
-            fecha_carga=_parse_fecha(request.form.get("fecha_carga")),
+            fecha_carga=parse_fecha(request.form.get("fecha_carga"), date.today()),
             estado_revision="Pendiente",
             creado_por_id=current_user.id,
             requiere_presupuesto=requiere_presupuesto,
@@ -138,7 +132,7 @@ def editar(observacion_id):
     if request.method == "POST":
         observacion.clasificacion = request.form["clasificacion"]
         observacion.descripcion = request.form["descripcion"]
-        observacion.fecha_carga = _parse_fecha(request.form.get("fecha_carga"), observacion.fecha_carga)
+        observacion.fecha_carga = parse_fecha(request.form.get("fecha_carga"), observacion.fecha_carga)
         db.session.commit()
         flash("Observación actualizada.", "success")
         return redirect(request.referrer or url_for("instalaciones.detalle", instalacion_id=observacion.instalacion_id))

@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date
 
 from flask import Blueprint, Response, abort, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
@@ -21,7 +21,7 @@ from app.models import (
 )
 from app.notificaciones import notificar_tecnico_asignado
 from app.pdf_ot import generar_pdf_ot
-from app.utils import es_ajax
+from app.utils import es_ajax, parse_fecha
 
 ordenes_bp = Blueprint("ordenes", __name__, url_prefix="/ordenes-trabajo")
 
@@ -29,12 +29,6 @@ ordenes_bp = Blueprint("ordenes", __name__, url_prefix="/ordenes-trabajo")
 # y cambia el estado/cierra la OT. El Técnico ve solo las OT que tiene
 # asignadas, y puede cargar ahí los repuestos que usó (se descuentan del
 # stock en el momento).
-
-
-def _parse_fecha(valor, por_defecto=None):
-    if not valor:
-        return por_defecto
-    return datetime.strptime(valor, "%Y-%m-%d").date()
 
 
 def _verificar_acceso_ot(ot):
@@ -129,7 +123,7 @@ def nueva():
         tipo = request.form.get("tipo", "Correctivo")
         prioridad = request.form.get("prioridad", "Media")
         descripcion = request.form.get("descripcion")
-        fecha_apertura = _parse_fecha(request.form.get("fecha_apertura"), date.today())
+        fecha_apertura = parse_fecha(request.form.get("fecha_apertura"), date.today())
 
         equipo = None
         equipo_id = request.form.get("equipo_id", type=int)

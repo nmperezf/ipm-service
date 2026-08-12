@@ -1,10 +1,44 @@
-from datetime import date
+from datetime import date, datetime
 
 from flask import request
 from sqlalchemy.exc import IntegrityError
 
 from app import db
 from app.models import Contrato, Foto, Formulario, Presupuesto, Visita, categorias_equipo_agrupadas
+
+PAGINA_TAMANO = 25
+
+
+def parse_orden(columnas, campo_default, dir_default="desc"):
+    """Lee ?orden=&dir= de la URL para listados con orden server-side,
+    validado contra columnas (dict {nombre: columna SQLAlchemy}) para no
+    aceptar un nombre de columna arbitrario del navegador. Devuelve
+    (nombre_campo, direccion, columna_ordenada_lista_para_order_by)."""
+    campo = request.args.get("orden", campo_default)
+    if campo not in columnas:
+        campo = campo_default
+    direccion = request.args.get("dir", dir_default)
+    if direccion not in ("asc", "desc"):
+        direccion = dir_default
+    columna = columnas[campo]
+    return campo, direccion, (columna.asc() if direccion == "asc" else columna.desc())
+
+
+def parse_fecha(valor, por_defecto=None, silencioso=False):
+    """Convierte un string "AAAA-MM-DD" (el formato de <input type="date">)
+    a date. Sin valor, devuelve por_defecto tal cual. Con formato inválido
+    propaga el ValueError, salvo que silencioso=True — pensado para
+    filtros de reporte por querystring o altas rápidas, donde un valor
+    manual mal formado no debería tirar un 500 sino simplemente caer al
+    valor por defecto."""
+    if not valor:
+        return por_defecto
+    try:
+        return datetime.strptime(valor, "%Y-%m-%d").date()
+    except ValueError:
+        if silencioso:
+            return por_defecto
+        raise
 
 
 def es_ajax():
@@ -20,7 +54,8 @@ def actualizar_vencimientos(hoy=None):
     Se llama al entrar a cualquier vista de planificación/dashboard, así
     el estado siempre refleja la realidad sin intervención manual."""
     hoy = hoy or date.today()
-    for visita in Visita.query.all():
+    visitas_abiertas = Visita.query.filter(Visita.estado.notin_(["Realizado", "Cancelado"]))
+    for visita in visitas_abiertas.all():
         visita.actualizar_estado_por_vencimiento(hoy=hoy)
     for contrato in Contrato.query.filter_by(activo=True).all():
         contrato.actualizar_estado_por_vencimiento(hoy=hoy)

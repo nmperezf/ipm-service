@@ -57,6 +57,13 @@
                 {% endfor %}
             </div>
 
+            {% if hay_mas_no_leidas %}
+            <p class="text-muted small text-center">
+                Mostrando las {{ grupos_no_leidas|length }} novedades más recientes de {{ total_no_leidas }} sin leer —
+                marcá algunas como leídas para ver el resto.
+            </p>
+            {% endif %}
+
             {% if leidas %}
             <div class="seccion-titulo-doc">Leídas recientemente</div>
             <div class="log-prioridad">

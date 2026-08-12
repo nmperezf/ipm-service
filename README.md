@@ -124,22 +124,33 @@ bombas** (Bomba), **Estaciones de control y alarma** (ECA y Manifold), y
 **Bocas de incendio** (BIE). El acceso por defecto de cada categoría es la
 carga masiva; cargar equipo por equipo sigue disponible como alternativa.
 
-## Actualizar la base de datos ya desplegada (Railway)
+## Migraciones de base de datos (Alembic / Flask-Migrate)
 
-El proyecto todavía no usa migraciones (Alembic), así que `db.create_all()`
-solo crea tablas nuevas — nunca agrega columnas a una tabla que ya existe
-en Postgres. Desde que armamos el multiempresa hasta esta vuelta del
-cierre de visita, se acumularon bastantes cambios de esquema (empresa_id,
-cliente_id, tecnico_id, y ahora los campos de cierre en `visitas` y
-`estado_revision` en `observaciones`, entre otros).
+El esquema ya no lo crea `db.create_all()` (ni los parches manuales que
+vivían en `app/__init__.py`) — lo maneja Alembic vía Flask-Migrate, con
+el historial de cambios versionado en `migrations/`.
 
-Como seguís trabajando en local sin haber vuelto a tocar Railway, no te
-dejo una lista de `ALTER TABLE` — ya no sería confiable sin saber
-exactamente qué versión quedó pusheada. Cuando decidas volver a subir a
-Railway, avisame en qué momento estás y te arreglo la base a mano en ese
-momento (lo más simple, si no te importan los datos de prueba que haya
-ahí, es resetearla entera y dejar que `db.create_all()` + `seed_demo.py`
-la reconstruyan al día).
+**Flujo normal, cada vez que se cambia un modelo en `app/models.py`:**
+```bash
+flask --app run.py db migrate -m "descripción corta del cambio"
+```
+Revisá el archivo generado en `migrations/versions/` (Alembic no siempre
+detecta bien renombres o cambios de tipo), commiteálo junto con el cambio
+de modelo, y aplicalo con:
+```bash
+flask --app run.py db upgrade
+```
+
+**Despliegue (Railway):** el `Procfile` corre `python release.py` como
+fase de `release`, antes de levantar el proceso `web`. Ese script no es
+solo `flask db upgrade`: primero revisa si la base ya tiene tablas pero
+todavía no tiene el historial de Alembic (`alembic_version`) — el caso de
+la base de Railway ya desplegada — y si es así, la marca como "ya al día"
+con la migración inicial sin tocar ni una tabla, antes de aplicar el
+upgrade. En cualquier otro caso (base nueva, o una que ya tiene historial
+de Alembic) simplemente aplica las migraciones pendientes. No hace falta
+ningún paso manual: el primer deploy con este cambio se autodetecta y se
+resuelve solo.
 
 ## Tablas ordenables y filtrables
 
@@ -294,12 +305,6 @@ rol Cliente). Muestra:
   **Cerradas** — nada que todavía esté en revisión o pendiente de
   aprobación.
 
-> **Si ya tenías una base local de antes de esta vuelta** (`ipm_service.db`),
-> borrala antes de levantar la app — esta ronda agrega varias columnas y
-> el rol Jefe, y `db.create_all()` no altera tablas que ya existen. Correr
-> `seed_demo.py` de nuevo la recrea entera con los datos de ejemplo al día
-> (incluye ahora `admin1`/`jefe1`/`tecnico1`/`cliente1`, todos `demo123`).
-
 Cada Cliente pertenece a una Empresa; el Inventario de repuestos y los
 Recordatorios pertenecen directo a la Empresa; los tipos de formulario
 pertenecen a un Cliente puntual (cada instalación es distinta — se cargan
@@ -322,6 +327,7 @@ empresa de ejemplo y un usuario de cada rol (`jefe`, `tecnico1`,
 python -m venv venv
 venv\Scripts\activate
 pip install -r requirements.txt
+flask --app run.py db upgrade
 python seed_demo.py
 python run.py
 ```
@@ -331,9 +337,14 @@ python run.py
 python3 -m venv venv
 source venv/bin/activate
 pip install -r requirements.txt
+flask --app run.py db upgrade
 python seed_demo.py
 python run.py
 ```
+
+`flask db upgrade` aplica las migraciones y crea el esquema (reemplaza al
+viejo `db.create_all()` automático). Hace falta correrlo una sola vez por
+base de datos nueva, y de nuevo cada vez que haya una migración nueva.
 
 Abrí http://localhost:5000
 

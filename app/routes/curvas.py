@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from flask import Blueprint, Response, abort, flash, redirect, render_template, request, url_for
 from flask_login import current_user
 
@@ -13,7 +11,7 @@ from app.auth_utils import (
 from app.models import TIPOS_BOMBA_PRINCIPAL, CurvaFabrica, EnsayoCaudal, Equipo, ItemVisita
 from app.notificaciones import notificar_gestion, notificar_usuario
 from app.pdf_curva_caudal import generar_pdf_ensayo
-from app.utils import calcular_presion_ajustada, curva_suavizada, validar_nfpa25
+from app.utils import calcular_presion_ajustada, curva_suavizada, parse_fecha, validar_nfpa25
 
 curvas_bp = Blueprint("curvas", __name__, url_prefix="/equipos")
 
@@ -23,10 +21,6 @@ PUNTOS = ["0", "50", "100", "150"]
 def _verificar_es_bomba(equipo):
     if equipo.tipo not in TIPOS_BOMBA_PRINCIPAL:
         abort(404)
-
-
-def _parse_fecha(valor):
-    return datetime.strptime(valor, "%Y-%m-%d").date()
 
 
 def _float_opcional(form, nombre):
@@ -175,7 +169,7 @@ def ensayo_nuevo(equipo_id):
 
     if request.method == "POST":
         try:
-            fecha_ensayo = _parse_fecha(request.form["fecha_ensayo"])
+            fecha_ensayo = parse_fecha(request.form["fecha_ensayo"])
             datos_puntos = _parse_puntos_ensayo(request.form)
         except (KeyError, ValueError):
             flash("Completá los 4 puntos (RPM, presión de descarga y succión) con valores numéricos.", "danger")
@@ -228,7 +222,7 @@ def ensayo_editar(equipo_id, ensayo_id):
 
     if request.method == "POST":
         try:
-            fecha_ensayo = _parse_fecha(request.form["fecha_ensayo"])
+            fecha_ensayo = parse_fecha(request.form["fecha_ensayo"])
             datos_puntos = _parse_puntos_ensayo(request.form)
         except (KeyError, ValueError):
             flash("Completá los 4 puntos (RPM, presión de descarga y succión) con valores numéricos.", "danger")

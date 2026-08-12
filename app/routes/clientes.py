@@ -1,8 +1,9 @@
-from datetime import date, datetime
+from datetime import date
 
 from dateutil.relativedelta import relativedelta
 from flask import Blueprint, Response, flash, jsonify, redirect, render_template, request, url_for
 from flask_login import current_user
+from sqlalchemy.orm import selectinload
 
 from app import db
 from app.auth_utils import (
@@ -23,7 +24,7 @@ from app.models import (
 )
 from app.notificaciones import notificar_gestion
 from app.pdf_reporte_periodo import generar_pdf_reporte_periodo
-from app.utils import es_ajax
+from app.utils import es_ajax, parse_fecha
 
 clientes_bp = Blueprint("clientes", __name__, url_prefix="/clientes")
 
@@ -32,7 +33,12 @@ clientes_bp = Blueprint("clientes", __name__, url_prefix="/clientes")
 @rol_requerido("Administrador", "Jefe", "Técnico")
 def listar():
     q = request.args.get("q", "").strip()
-    query = clientes_visibles()
+    # eager loading: deficiencias_abiertas() recorre instalaciones ->
+    # deficiencias por cada cliente del listado — sin esto sería 1 query
+    # por cliente más 1 por instalación (N+1).
+    query = clientes_visibles().options(
+        selectinload(Cliente.instalaciones).selectinload(Instalacion.deficiencias)
+    )
     if q:
         query = query.filter(Cliente.nombre.ilike(f"%{q}%"))
     clientes = query.order_by(Cliente.nombre).all()
@@ -65,15 +71,6 @@ def nuevo():
         return redirect(url_for("clientes.listar"))
     template = "clientes/_form_fragment.html" if es_ajax() else "clientes/form.html"
     return render_template(template, cliente=None)
-
-
-def _parse_fecha_visita_rapida(valor):
-    if not valor:
-        return date.today()
-    try:
-        return datetime.strptime(valor, "%Y-%m-%d").date()
-    except ValueError:
-        return date.today()
 
 
 @clientes_bp.route("/visita-rapida", methods=["GET", "POST"])
@@ -112,7 +109,7 @@ def visita_rapida():
         db.session.add(instalacion)
         db.session.flush()
 
-        fecha = _parse_fecha_visita_rapida(request.form.get("fecha"))
+        fecha = parse_fecha(request.form.get("fecha"), date.today(), silencioso=True)
         descripcion = request.form.get("descripcion")
 
         visita = Visita(
@@ -203,15 +200,6 @@ def deficiencias(cliente_id, clasificacion):
     )
 
 
-def _parse_fecha_iso(valor, por_defecto=None):
-    if not valor:
-        return por_defecto
-    try:
-        return datetime.strptime(valor, "%Y-%m-%d").date()
-    except ValueError:
-        return por_defecto
-
-
 @clientes_bp.route("/<int:cliente_id>/reporte-periodo")
 @rol_requerido("Administrador", "Jefe")
 def reporte_periodo(cliente_id):
@@ -224,8 +212,8 @@ def reporte_periodo(cliente_id):
     verificar_acceso_cliente(cliente)
 
     hoy = date.today()
-    fecha_desde = _parse_fecha_iso(request.args.get("fecha_desde"), hoy - relativedelta(months=6))
-    fecha_hasta = _parse_fecha_iso(request.args.get("fecha_hasta"), hoy)
+    fecha_desde = parse_fecha(request.args.get("fecha_desde"), hoy - relativedelta(months=6), silencioso=True)
+    fecha_hasta = parse_fecha(request.args.get("fecha_hasta"), hoy, silencioso=True)
 
     ids_instalaciones = [i.id for i in cliente.instalaciones]
 

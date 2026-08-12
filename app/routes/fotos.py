@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import date, datetime
+from datetime import date
 
 from flask import (
     Blueprint, abort, current_app, flash, jsonify, redirect, render_template, request, send_from_directory, url_for,
@@ -11,7 +11,7 @@ from werkzeug.utils import secure_filename
 from app import db
 from app.auth_utils import rol_requerido, verificar_escritura_cliente, verificar_visita_editable
 from app.models import Equipo, Foto, Instalacion, ItemVisita, ORIGENES_FOTO
-from app.utils import es_ajax
+from app.utils import es_ajax, parse_fecha
 
 fotos_bp = Blueprint("fotos", __name__, url_prefix="/fotos")
 
@@ -21,12 +21,6 @@ def _extension_permitida(nombre_archivo):
         "." in nombre_archivo
         and nombre_archivo.rsplit(".", 1)[1].lower() in current_app.config["EXTENSIONES_PERMITIDAS"]
     )
-
-
-def _parse_fecha(valor, por_defecto=None):
-    if not valor:
-        return por_defecto
-    return datetime.strptime(valor, "%Y-%m-%d").date()
 
 
 def _guardar_archivo(archivo, empresa_id, cliente_id, instalacion_id, equipo_id=None):
@@ -135,7 +129,7 @@ def subir_manual(instalacion_id):
             nombre_archivo=ruta_relativa,
             descripcion=request.form.get("descripcion"),
             origen=origen,
-            fecha_toma=_parse_fecha(request.form.get("fecha_toma"), date.today()),
+            fecha_toma=parse_fecha(request.form.get("fecha_toma"), date.today()),
             subido_por_id=current_user.id,
         )
         db.session.add(foto)

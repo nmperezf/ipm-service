@@ -151,7 +151,7 @@ class Cliente(db.Model):
     __tablename__ = "clientes"
 
     id = db.Column(db.Integer, primary_key=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False, index=True)
     nombre = db.Column(db.String(150), nullable=False)
     direccion = db.Column(db.String(250))
     contacto = db.Column(db.String(150))
@@ -264,7 +264,7 @@ class Instalacion(db.Model):
     __tablename__ = "instalaciones"
 
     id = db.Column(db.Integer, primary_key=True)
-    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=False)
+    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=False, index=True)
     nombre = db.Column(db.String(150), nullable=False)
     direccion = db.Column(db.String(250))
     fecha_alta = db.Column(db.Date, default=date.today, nullable=False)
@@ -317,7 +317,7 @@ class Contrato(db.Model):
     __tablename__ = "contratos"
 
     id = db.Column(db.Integer, primary_key=True)
-    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False)
+    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False, index=True)
     nombre = db.Column(db.String(150), nullable=False)
     fecha_inicio = db.Column(db.Date, nullable=False)
     fecha_fin = db.Column(db.Date, nullable=False)  # fecha_inicio + 1 año
@@ -354,7 +354,7 @@ class ServicioContrato(db.Model):
     __tablename__ = "servicios_contrato"
 
     id = db.Column(db.Integer, primary_key=True)
-    contrato_id = db.Column(db.Integer, db.ForeignKey("contratos.id"), nullable=False)
+    contrato_id = db.Column(db.Integer, db.ForeignKey("contratos.id"), nullable=False, index=True)
     nombre = db.Column(db.String(150), nullable=False)
     frecuencia = db.Column(db.String(30), nullable=False)  # ver FRECUENCIAS_DISPONIBLES
     fecha_inicio = db.Column(db.Date, nullable=True)  # si es None, usa contrato.fecha_inicio
@@ -432,15 +432,15 @@ class SolicitudCoordinacion(db.Model):
     )
 
     id = db.Column(db.Integer, primary_key=True)
-    contrato_id = db.Column(db.Integer, db.ForeignKey("contratos.id"), nullable=False)
+    contrato_id = db.Column(db.Integer, db.ForeignKey("contratos.id"), nullable=False, index=True)
     anio = db.Column(db.Integer, nullable=False)
     mes = db.Column(db.Integer, nullable=False)  # 1-12
     coordinada = db.Column(db.Boolean, default=False, nullable=False)
     fecha_coordinada = db.Column(db.Date, nullable=True)
     notas = db.Column(db.Text, nullable=True)
-    coordinado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    coordinado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
     fecha_coordinacion = db.Column(db.DateTime, nullable=True)
-    visita_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=True)
+    visita_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=True, index=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     contrato = db.relationship("Contrato", backref=db.backref("solicitudes_coordinacion", cascade="all, delete-orphan"))
@@ -476,10 +476,10 @@ class CoordinacionAudit(db.Model):
     __tablename__ = "coordinacion_audit"
 
     id = db.Column(db.Integer, primary_key=True)
-    solicitud_id = db.Column(db.Integer, db.ForeignKey("solicitudes_coordinacion.id"), nullable=False)
+    solicitud_id = db.Column(db.Integer, db.ForeignKey("solicitudes_coordinacion.id"), nullable=False, index=True)
     fecha_anterior = db.Column(db.Date, nullable=True)
     fecha_nueva = db.Column(db.Date, nullable=False)
-    usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False, index=True)
     nota = db.Column(db.Text, nullable=True)
     fecha_cambio = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
@@ -502,8 +502,8 @@ class Visita(db.Model):
     __tablename__ = "visitas"
 
     id = db.Column(db.Integer, primary_key=True)
-    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False)
-    contrato_id = db.Column(db.Integer, db.ForeignKey("contratos.id"), nullable=True)
+    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False, index=True)
+    contrato_id = db.Column(db.Integer, db.ForeignKey("contratos.id"), nullable=True, index=True)
     fecha = db.Column(db.Date, default=date.today, nullable=False)
     tecnico = db.Column(db.String(150))
     observaciones = db.Column(db.Text)
@@ -516,12 +516,12 @@ class Visita(db.Model):
     # enviar, el Jefe las puede editar antes de cerrar.
     en_revision = db.Column(db.Boolean, default=False, nullable=False)
     fecha_enviada_revision = db.Column(db.Date, nullable=True)
-    enviada_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    enviada_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
 
     cerrada = db.Column(db.Boolean, default=False, nullable=False)
     fecha_cierre = db.Column(db.Date, nullable=True)
     notas_cierre = db.Column(db.Text)
-    cerrada_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    cerrada_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
     firma_cliente = db.Column(db.Text, nullable=True)  # imagen en base64 (data URI), capturada al enviar a revisión
     firma_tecnico = db.Column(db.Text, nullable=True)  # ídem, firma del técnico que hizo el servicio
 
@@ -631,9 +631,9 @@ class ItemVisita(db.Model):
     __tablename__ = "items_visita"
 
     id = db.Column(db.Integer, primary_key=True)
-    visita_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=False)
-    servicio_contrato_id = db.Column(db.Integer, db.ForeignKey("servicios_contrato.id"), nullable=True)
-    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True)
+    visita_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=False, index=True)
+    servicio_contrato_id = db.Column(db.Integer, db.ForeignKey("servicios_contrato.id"), nullable=True, index=True)
+    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True, index=True)
     nombre_libre = db.Column(db.String(200), nullable=True)
     estado = db.Column(db.String(30), default="Pendiente", nullable=False)
     observaciones = db.Column(db.Text)
@@ -673,7 +673,7 @@ class TipoFormulario(db.Model):
     __table_args__ = (db.UniqueConstraint("cliente_id", "nombre", name="uq_tipo_formulario_cliente_nombre"),)
 
     id = db.Column(db.Integer, primary_key=True)
-    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=False)
+    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=False, index=True)
     nombre = db.Column(db.String(150), nullable=False)
     descripcion = db.Column(db.Text)
     # lista de campos: [{campo, tipo, label, descripcion?, unidad?, opciones?, con_estado?}]
@@ -762,7 +762,7 @@ class ServicioTipo(db.Model):
     __table_args__ = (db.UniqueConstraint("empresa_id", "nombre", name="uq_servicio_tipo_empresa_nombre"),)
 
     id = db.Column(db.Integer, primary_key=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False, index=True)
     nombre = db.Column(db.String(150), nullable=False)
     descripcion = db.Column(db.Text)
     schema_json = db.Column(db.Text, nullable=False)
@@ -803,9 +803,9 @@ class Formulario(db.Model):
     __tablename__ = "formularios"
 
     id = db.Column(db.Integer, primary_key=True)
-    item_visita_id = db.Column(db.Integer, db.ForeignKey("items_visita.id"), nullable=False)
-    tipo_formulario_id = db.Column(db.Integer, db.ForeignKey("tipos_formulario.id"), nullable=False)
-    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True)
+    item_visita_id = db.Column(db.Integer, db.ForeignKey("items_visita.id"), nullable=False, index=True)
+    tipo_formulario_id = db.Column(db.Integer, db.ForeignKey("tipos_formulario.id"), nullable=False, index=True)
+    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True, index=True)
     datos_json = db.Column(db.Text)  # respuestas, según el schema del tipo
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
@@ -846,10 +846,10 @@ class Foto(db.Model):
     __tablename__ = "fotos"
 
     id = db.Column(db.Integer, primary_key=True)
-    item_visita_id = db.Column(db.Integer, db.ForeignKey("items_visita.id"), nullable=True)
-    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=True)
-    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True)
-    observacion_id = db.Column(db.Integer, db.ForeignKey("observaciones.id"), nullable=True)
+    item_visita_id = db.Column(db.Integer, db.ForeignKey("items_visita.id"), nullable=True, index=True)
+    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=True, index=True)
+    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True, index=True)
+    observacion_id = db.Column(db.Integer, db.ForeignKey("observaciones.id"), nullable=True, index=True)
     # Clave interna del campo del checklist al que corresponde esta foto
     # (el mismo string que "campo" en schema_json de TipoFormulario/
     # ServicioTipo, ver requiere_foto) -- None cuando la foto es general
@@ -861,7 +861,7 @@ class Foto(db.Model):
     origen = db.Column(db.String(20), default="Visita", nullable=False)  # ver ORIGENES_FOTO
     fecha_toma = db.Column(db.Date, nullable=True)  # cuándo se sacó, no cuándo se cargó al sistema
     fecha_subida = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    subido_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    subido_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
 
     instalacion = db.relationship("Instalacion", backref="fotos")
     equipo = db.relationship("Equipo", backref="fotos")
@@ -903,28 +903,28 @@ class Observacion(db.Model):
     __tablename__ = "observaciones"
 
     id = db.Column(db.Integer, primary_key=True)
-    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False)
-    item_visita_id = db.Column(db.Integer, db.ForeignKey("items_visita.id"), nullable=True)
-    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True)
+    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False, index=True)
+    item_visita_id = db.Column(db.Integer, db.ForeignKey("items_visita.id"), nullable=True, index=True)
+    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True, index=True)
     clasificacion = db.Column(db.String(40), nullable=False)  # ver CLASIFICACIONES_OBSERVACION
     descripcion = db.Column(db.Text, nullable=False)
     fecha_carga = db.Column(db.Date, default=date.today, nullable=False)
     resuelto = db.Column(db.Boolean, default=False, nullable=False)
     fecha_resolucion = db.Column(db.Date, nullable=True)
     estado_revision = db.Column(db.String(20), default="Pendiente", nullable=False)  # Pendiente / Aprobada
-    creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
-    aprobado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
+    aprobado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
     fecha_aprobacion = db.Column(db.Date, nullable=True)
-    resuelto_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
-    reabierto_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    resuelto_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
+    reabierto_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
     fecha_reapertura = db.Column(db.Date, nullable=True)
     # Se completan solos (sin que el técnico haga nada aparte) cada vez que
     # guarda un checklist de un equipo con esta deficiencia todavía
     # abierta — deja rastro de que se la volvió a ver en esa visita, sin
     # sumarle un paso más al flujo de carga (ver formularios.nuevo).
-    ultima_visita_confirmada_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=True)
+    ultima_visita_confirmada_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=True, index=True)
     fecha_ultima_confirmacion = db.Column(db.Date, nullable=True)
-    confirmada_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    confirmada_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
     # Solo tiene sentido para Deficiencia crítica/no crítica (se valida en
     # observaciones.nueva) — dispara la creación de un Presupuesto para no
     # depender de que el mail de solicitud le llegue a quien presupuesta.
@@ -1007,12 +1007,12 @@ class Presupuesto(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     codigo = db.Column(db.String(20), unique=True, nullable=False)  # PRESUP-2026-0001
-    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
-    observacion_id = db.Column(db.Integer, db.ForeignKey("observaciones.id"), nullable=False)
-    ot_correctiva_id = db.Column(db.Integer, db.ForeignKey("ordenes_trabajo.id"), nullable=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False, index=True)
+    observacion_id = db.Column(db.Integer, db.ForeignKey("observaciones.id"), nullable=False, index=True)
+    ot_correctiva_id = db.Column(db.Integer, db.ForeignKey("ordenes_trabajo.id"), nullable=True, index=True)
     estado = db.Column(db.String(20), default="Pendiente", nullable=False)  # ver ESTADOS_PRESUPUESTO
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
-    creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
 
     empresa = db.relationship("Empresa", backref=db.backref("presupuestos", cascade="all, delete-orphan"))
     observacion = db.relationship("Observacion", backref=db.backref("presupuesto", uselist=False, cascade="all, delete-orphan"))
@@ -1071,10 +1071,10 @@ class PresupuestoAudit(db.Model):
     __tablename__ = "presupuestos_audit"
 
     id = db.Column(db.Integer, primary_key=True)
-    presupuesto_id = db.Column(db.Integer, db.ForeignKey("presupuestos.id"), nullable=False)
+    presupuesto_id = db.Column(db.Integer, db.ForeignKey("presupuestos.id"), nullable=False, index=True)
     estado_anterior = db.Column(db.String(20), nullable=True)
     estado_nuevo = db.Column(db.String(20), nullable=False)
-    usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False, index=True)
     nota = db.Column(db.Text, nullable=True)
     fecha_cambio = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
@@ -1154,11 +1154,11 @@ class Equipo(db.Model):
     __tablename__ = "equipos"
 
     id = db.Column(db.Integer, primary_key=True)
-    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False)
+    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False, index=True)
     tipo = db.Column(db.String(40), nullable=False)  # nombre de un TipoEquipo
     nombre = db.Column(db.String(150), nullable=False)  # ej: "ECA 3° piso ala norte"
     ubicacion = db.Column(db.String(250))
-    manifold_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True)
+    manifold_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True, index=True)
     activo = db.Column(db.Boolean, default=True, nullable=False)
 
     # Datos de placa, solo aplican para tipo in TIPOS_CON_DATOS_PLACA (ver
@@ -1258,7 +1258,7 @@ class EnsayoCaudal(db.Model):
     __table_args__ = (db.UniqueConstraint("equipo_id", "fecha_ensayo", name="uq_ensayo_equipo_fecha"),)
 
     id = db.Column(db.Integer, primary_key=True)
-    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=False)
+    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=False, index=True)
     fecha_ensayo = db.Column(db.Date, nullable=False)
 
     rpm_punto_0 = db.Column(db.Integer, nullable=False)
@@ -1295,7 +1295,7 @@ class EnsayoCaudal(db.Model):
     presion_succion_estatica = db.Column(db.Float, nullable=True)  # PSI, condición general (no por punto)
     normativa_aplicable = db.Column(db.Text, nullable=True)
 
-    creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
     fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     # Si el ensayo se cargó desde el ítem de una visita programada (servicio
@@ -1304,14 +1304,14 @@ class EnsayoCaudal(db.Model):
     # sigue funcionando igual que siempre. No cascadea: si se borra el
     # ítem/visita, el ensayo (dato real medido en la bomba) se conserva,
     # solo pierde la referencia a qué visita lo generó.
-    item_visita_id = db.Column(db.Integer, db.ForeignKey("items_visita.id"), nullable=True)
+    item_visita_id = db.Column(db.Integer, db.ForeignKey("items_visita.id"), nullable=True, index=True)
 
     # Firma del Jefe/Administrador, independiente del cálculo NFPA25 (ver
     # resultado_nfpa25): el técnico carga el ensayo como Pendiente, y solo
     # Administrador/Jefe puede validarlo o rechazarlo — mismo patrón que
     # Observacion.estado_revision.
     estado_revision = db.Column(db.String(20), default="Pendiente", nullable=False)  # Pendiente/Validado/Rechazado
-    validado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    validado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
     fecha_validacion = db.Column(db.DateTime, nullable=True)
 
     comentarios = db.Column(db.Text, nullable=True)
@@ -1440,13 +1440,13 @@ class OrdenTrabajo(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     numero = db.Column(db.String(20), unique=True)
-    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False)
-    visita_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=True)
+    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False, index=True)
+    visita_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=True, index=True)
     tipo = db.Column(db.String(20), nullable=False)  # ver TIPOS_OT
     prioridad = db.Column(db.String(20), default="Media", nullable=False)  # ver PRIORIDADES_OT
     estado = db.Column(db.String(20), default="Pendiente", nullable=False)  # ver ESTADOS_OT
     tecnico = db.Column(db.String(150))  # resabio de antes de tener usuarios reales
-    tecnico_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)
+    tecnico_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
     descripcion = db.Column(db.Text)
     observaciones = db.Column(db.Text)
     fecha_apertura = db.Column(db.Date, default=date.today, nullable=False)
@@ -1485,7 +1485,7 @@ class Repuesto(db.Model):
     __tablename__ = "repuestos"
 
     id = db.Column(db.Integer, primary_key=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False, index=True)
     nombre = db.Column(db.String(150), nullable=False)
     codigo = db.Column(db.String(60))
     unidad = db.Column(db.String(30), default="unidad")
@@ -1511,8 +1511,8 @@ class RepuestoUsado(db.Model):
     __tablename__ = "repuestos_usados"
 
     id = db.Column(db.Integer, primary_key=True)
-    orden_trabajo_id = db.Column(db.Integer, db.ForeignKey("ordenes_trabajo.id"), nullable=False)
-    repuesto_id = db.Column(db.Integer, db.ForeignKey("repuestos.id"), nullable=False)
+    orden_trabajo_id = db.Column(db.Integer, db.ForeignKey("ordenes_trabajo.id"), nullable=False, index=True)
+    repuesto_id = db.Column(db.Integer, db.ForeignKey("repuestos.id"), nullable=False, index=True)
     cantidad = db.Column(db.Integer, nullable=False)
     fecha = db.Column(db.Date, default=date.today, nullable=False)
 
@@ -1537,10 +1537,10 @@ class Mensaje(db.Model):
     __tablename__ = "mensajes"
 
     id = db.Column(db.Integer, primary_key=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
-    remitente_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
-    destinatario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
-    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False, index=True)
+    remitente_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False, index=True)
+    destinatario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False, index=True)
+    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=True, index=True)
     titulo = db.Column(db.String(200), nullable=False)
     prioridad = db.Column(db.String(20), default="Media", nullable=False)  # ver PRIORIDADES_OT
     leido = db.Column(db.Boolean, default=False, nullable=False)
@@ -1633,10 +1633,10 @@ class Notificacion(db.Model):
     __tablename__ = "notificaciones"
 
     id = db.Column(db.Integer, primary_key=True)
-    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False)
-    destinatario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
-    remitente_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True)  # None = sistema
-    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False, index=True)
+    destinatario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False, index=True)
+    remitente_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)  # None = sistema
+    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=True, index=True)
     tipo = db.Column(db.String(30), nullable=False)  # ver TIPOS_NOTIFICACION
     titulo = db.Column(db.String(250), nullable=False)
     enlace = db.Column(db.String(300), nullable=True)
@@ -1720,8 +1720,8 @@ class Usuario(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     nombre_completo = db.Column(db.String(150))
     rol = db.Column(db.String(30), nullable=False)  # ver ROLES
-    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=True)
-    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=True)
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=True, index=True)
+    cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=True, index=True)
     activo = db.Column(db.Boolean, default=True, nullable=False)
 
     empresa = db.relationship("Empresa", backref="usuarios")

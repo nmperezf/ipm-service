@@ -2,11 +2,14 @@ import json
 import random
 from datetime import date, timedelta
 
-from flask import Flask
+from flask import Flask, render_template
 from flask_login import LoginManager
+from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.exc import OperationalError
 
 db = SQLAlchemy()
+migrate = Migrate()
 login_manager = LoginManager()
 
 
@@ -15,6 +18,7 @@ def create_app():
     app.config.from_object("app.config.Config")
 
     db.init_app(app)
+    migrate.init_app(app, db)
     login_manager.init_app(app)
     login_manager.login_view = "auth.login"
     login_manager.login_message = "Iniciá sesión para continuar."
@@ -122,96 +126,33 @@ def create_app():
     app.register_blueprint(curvas_bp)
     app.register_blueprint(coordinacion_bp)
 
+    @app.errorhandler(404)
+    def error_404(error):
+        return render_template("errores/404.html"), 404
+
+    @app.errorhandler(500)
+    def error_500(error):
+        # Una excepción no controlada puede dejar la sesión de SQLAlchemy en
+        # un estado inconsistente — sin este rollback, la próxima query de
+        # esta misma request (ej. el context_processor de notificaciones al
+        # renderizar la página de error) fallaría también.
+        db.session.rollback()
+        return render_template("errores/500.html"), 500
+
     with app.app_context():
-        db.create_all()
-        _migrar_columnas_faltantes()
-        _corregir_servicio_contrato_id_nullable()
-        _seed_super_admin()
-        _seed_tipos_equipo()
-        _seed_catalogo_nfpa()
-        _seed_clientes_demo()
+        try:
+            _seed_super_admin()
+            _seed_tipos_equipo()
+            _seed_catalogo_nfpa()
+            _seed_clientes_demo()
+        except OperationalError:
+            # El esquema todavía no existe (falta correr "flask db upgrade")
+            # — pasa la primera vez que se clona el repo, y durante los
+            # comandos "flask db init/migrate". Se resuelve solo en el
+            # próximo arranque, una vez aplicadas las migraciones.
+            db.session.rollback()
 
     return app
-
-
-def _migrar_columnas_faltantes():
-    """Alta de columnas nuevas en tablas ya existentes -- sin Alembic,
-    db.create_all() no las agrega solo a una tabla que ya existía. Cada
-    entrada se agrega con ALTER TABLE si todavía no está (sirve tanto
-    para SQLite local como para Postgres en producción)."""
-    from sqlalchemy import inspect, text
-
-    columnas_nuevas = [
-        ("tipos_formulario", "referencia_normativa", "VARCHAR(200)"),
-        ("tipos_formulario", "orden", "INTEGER DEFAULT 0"),
-        ("servicios_tipo", "referencia_normativa", "VARCHAR(200)"),
-        ("servicios_tipo", "orden", "INTEGER DEFAULT 0"),
-        ("servicios_tipo", "categoria", "VARCHAR(60)"),
-        ("servicios_tipo", "oculto", "BOOLEAN DEFAULT FALSE"),
-        ("servicios_contrato", "categoria", "VARCHAR(60)"),
-        ("fotos", "campo_formulario", "VARCHAR(100)"),
-    ]
-    inspector = inspect(db.engine)
-    tablas_existentes = set(inspector.get_table_names())
-    cambio = False
-    for tabla, columna, tipo_sql in columnas_nuevas:
-        if tabla not in tablas_existentes:
-            continue
-        columnas_existentes = {c["name"] for c in inspector.get_columns(tabla)}
-        if columna not in columnas_existentes:
-            db.session.execute(text(f"ALTER TABLE {tabla} ADD COLUMN {columna} {tipo_sql}"))
-            cambio = True
-    if cambio:
-        db.session.commit()
-
-
-def _corregir_servicio_contrato_id_nullable():
-    """items_visita.servicio_contrato_id quedó NOT NULL desde la creación
-    original de la tabla, de antes de que existiera el ítem suelto (ver
-    ItemVisita, visitas.agregar_item, ordenes.nueva) -- el modelo ya lo
-    declara nullable, pero sin Alembic un cambio de columna nunca se aplicó
-    a las bases ya creadas, y un INSERT con ese campo en None revienta con
-    IntegrityError. En Postgres se resuelve con un ALTER simple. SQLite no
-    soporta modificar una restricción de columna existente -- en vez de
-    reconstruir la tabla entera (con el riesgo de tocar las FK de las 4
-    tablas que la referencian: formularios, fotos, observaciones,
-    ensayos_caudal), se parchea directo el SQL guardado en sqlite_master,
-    que no mueve una sola fila."""
-    from sqlalchemy import inspect, text
-
-    inspector = inspect(db.engine)
-    if "items_visita" not in inspector.get_table_names():
-        return
-    columnas = {c["name"]: c for c in inspector.get_columns("items_visita")}
-    col = columnas.get("servicio_contrato_id")
-    if not col or col["nullable"]:
-        return
-
-    if db.engine.dialect.name == "postgresql":
-        db.session.execute(text("ALTER TABLE items_visita ALTER COLUMN servicio_contrato_id DROP NOT NULL"))
-        db.session.commit()
-        return
-
-    sql_actual = db.session.execute(
-        text("SELECT sql FROM sqlite_master WHERE type='table' AND name='items_visita'")
-    ).scalar()
-    sql_nuevo = sql_actual.replace("servicio_contrato_id INTEGER NOT NULL", "servicio_contrato_id INTEGER")
-    if sql_nuevo == sql_actual:
-        return  # el texto no calzó como se esperaba -- mejor no tocar nada a ciegas
-
-    conn = db.engine.raw_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("PRAGMA writable_schema=1")
-        cursor.execute("UPDATE sqlite_master SET sql=? WHERE type='table' AND name='items_visita'", (sql_nuevo,))
-        conn.commit()
-        cursor.execute("PRAGMA writable_schema=0")
-        cursor.execute("PRAGMA schema_version")
-        version = cursor.fetchone()[0]
-        cursor.execute(f"PRAGMA schema_version={version + 1}")
-        conn.commit()
-    finally:
-        conn.close()
 
 
 def _seed_super_admin():

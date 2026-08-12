@@ -40,16 +40,21 @@ function initTabla(tabla) {
     }
 
     // --- Encabezados clickeables para ordenar ---
-    columnas.forEach(function (th, indice) {
-        th.classList.add('th-ordenable');
-        th.dataset.dir = '';
-        const indicador = document.createElement('span');
-        indicador.className = 'indicador-orden';
-        th.appendChild(indicador);
-        th.addEventListener('click', function () {
-            ordenarPorColumna(tabla, indice, th);
+    // (si la página ya resuelve el orden por columna del lado del
+    // servidor —paginación real, ver app/templates/_paginacion.html—,
+    // marcada con data-orden-propio, no se pisa con este sort client-side)
+    if (!('ordenPropio' in tabla.dataset)) {
+        columnas.forEach(function (th, indice) {
+            th.classList.add('th-ordenable');
+            th.dataset.dir = '';
+            const indicador = document.createElement('span');
+            indicador.className = 'indicador-orden';
+            th.appendChild(indicador);
+            th.addEventListener('click', function () {
+                ordenarPorColumna(tabla, indice, th);
+            });
         });
-    });
+    }
 
     // --- Filas clickeables (<tr data-href="...">), sin interferir con
     // los links/botones/forms que ya haya adentro de la fila ---

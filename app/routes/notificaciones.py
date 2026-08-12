@@ -23,14 +23,23 @@ def _agrupar(notificaciones):
     return [grupos[clave] for clave in orden]
 
 
+TOPE_NO_LEIDAS = 150
+
+
 @notificaciones_bp.route("/")
 @rol_requerido("Administrador", "Jefe", "Técnico")
 def listar():
-    no_leidas = (
+    # Tope generoso en vez de paginación real: se agrupan por (tipo,
+    # cliente) antes de mostrarse (ver _agrupar), y paginar por fila
+    # cortaría un grupo a la mitad entre dos páginas. Un usuario que deja
+    # crecer esto más allá del tope tiene "Marcar todas como leídas" a
+    # mano — no hace falta más que eso.
+    no_leidas_query = (
         Notificacion.query.filter_by(destinatario_id=current_user.id, leido=False)
         .order_by(Notificacion.fecha_carga.desc())
-        .all()
     )
+    total_no_leidas = no_leidas_query.count()
+    no_leidas = no_leidas_query.limit(TOPE_NO_LEIDAS).all()
     leidas = (
         Notificacion.query.filter_by(destinatario_id=current_user.id, leido=True)
         .order_by(Notificacion.fecha_carga.desc())
@@ -38,7 +47,11 @@ def listar():
         .all()
     )
     return render_template(
-        "notificaciones/list.html", grupos_no_leidas=_agrupar(no_leidas), leidas=leidas
+        "notificaciones/list.html",
+        grupos_no_leidas=_agrupar(no_leidas),
+        leidas=leidas,
+        hay_mas_no_leidas=total_no_leidas > TOPE_NO_LEIDAS,
+        total_no_leidas=total_no_leidas,
     )
 
 
