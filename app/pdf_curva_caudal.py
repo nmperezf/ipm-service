@@ -89,15 +89,20 @@ def _grafico_curvas(gpm, presiones_fabrica, presiones_ensayo_ajustadas, presione
     presión en ft Head (lo que publica el fabricante), no PSI."""
     from app.utils import curva_suavizada
 
-    fabrica_ft = [p * FT_POR_PSI for p in presiones_fabrica]
+    # El punto de fábrica a 50% puede no existir (ver CurvaFabrica) -- se
+    # arma con None en su posición y se descarta antes de ajustar la
+    # parábola / dibujar el scatter, sin perder el resto de los índices.
+    fabrica_ft = [p * FT_POR_PSI if p is not None else None for p in presiones_fabrica]
     ajustada_ft = [p * FT_POR_PSI for p in presiones_ensayo_ajustadas]
     sin_ajustar_ft = [p * FT_POR_PSI for p in presiones_ensayo_sin_ajustar]
 
     fig, ax = plt.subplots(figsize=(9.4, 3.4), dpi=150)
 
-    xs_fabrica, ys_fabrica = curva_suavizada(gpm, fabrica_ft)
+    gpm_fab_validos = [g for g, p in zip(gpm, fabrica_ft) if p is not None]
+    fabrica_ft_validos = [p for p in fabrica_ft if p is not None]
+    xs_fabrica, ys_fabrica = curva_suavizada(gpm_fab_validos, fabrica_ft_validos)
     ax.plot(xs_fabrica, ys_fabrica, color="#14181F", linewidth=1.8, label="Curva de fábrica")
-    ax.scatter(gpm, fabrica_ft, color="#14181F", zorder=3, s=22)
+    ax.scatter(gpm_fab_validos, fabrica_ft_validos, color="#14181F", zorder=3, s=22)
 
     xs_sin_ajustar, ys_sin_ajustar = curva_suavizada(gpm, sin_ajustar_ft)
     ax.plot(xs_sin_ajustar, ys_sin_ajustar, color="#B5730A", linewidth=1.8, linestyle="--", label="Ensayo (sin ajustar)")
@@ -223,17 +228,27 @@ def generar_pdf_ensayo(ensayo):
     ))
     elementos.append(Spacer(1, 0.35 * cm))
 
-    tipo_bomba = (equipo.tipo_motor or "-") + (f" · {equipo.motor_potencia_hp} HP" if equipo.motor_potencia_hp else "")
     elementos.append(titulo_seccion("Identificación del ensayo"))
     elementos.append(Spacer(1, 0.2 * cm))
+    elementos.append(tabla_identificacion([("Lugar", f"{instalacion.cliente.nombre} — {instalacion.nombre}")], columnas=1))
+    elementos.append(Spacer(1, 0.1 * cm))
     elementos.append(tabla_identificacion([
-        ("Lugar", f"{instalacion.cliente.nombre} — {instalacion.nombre}"),
-        ("Modelo", equipo.modelo or "-"),
-        ("N° de serie", equipo.serie or "-"),
-        ("Tipo de bomba", tipo_bomba),
         ("Fecha", ensayo.fecha_ensayo.strftime("%d/%m/%Y")),
         ("Inspector", (ensayo.creado_por.nombre_completo or ensayo.creado_por.username) if ensayo.creado_por else "-"),
     ]))
+    elementos.append(Spacer(1, 0.15 * cm))
+    # Fila de 4 + fila de 4, mismo ancho de columna en las dos -- para que
+    # los datos de bomba y los de placa queden alineados en una grilla.
+    elementos.append(tabla_identificacion([
+        ("Tipo de bomba", equipo.tipo),
+        ("Modelo", equipo.modelo or "-"),
+        ("N° de serie", equipo.serie or "-"),
+        ("Caudal diseño", f"{equipo.caudal_nominal} GPM" if equipo.caudal_nominal else "-"),
+        ("PSI MAX", equipo.presion_maxima if equipo.presion_maxima else "-"),
+        ("PSIG", equipo.presion_diseno if equipo.presion_diseno else "-"),
+        ("PSI 1.5", equipo.presion_sobrecarga if equipo.presion_sobrecarga else "-"),
+        ("RPM nominal", equipo.rpm_nominal or "-"),
+    ], columnas=4))
 
     condiciones = []
     if ensayo.temperatura_ambiente is not None:
@@ -298,7 +313,9 @@ def generar_pdf_ensayo(ensayo):
     for i, pct in enumerate([0, 50, 100, 150]):
         gpm_txt = round(gpm_ensayo[i], 0) if gpm_ensayo[i] is not None else "-"
         caudal_cell = Paragraph(f"<b>{pct}%</b><br/><font size=6.2 color='{INK_FAINT_HEX}'>{gpm_txt} GPM</font>", celda)
-        fabrica_cell = Paragraph(con_ft(presiones_fabrica[i]) if presiones_fabrica else "-", celda_num)
+        fabrica_cell = Paragraph(
+            con_ft(presiones_fabrica[i]) if presiones_fabrica and presiones_fabrica[i] is not None else "-", celda_num
+        )
         neta_cell = Paragraph(con_ft(round(netas[i], 1)), celda_num)
         ajust_cell = Paragraph(con_ft(round(ajustadas[i], 1)), celda_num)
         variacion_txt = f"{variaciones[i]:+.1f}%" if variaciones[i] is not None else "-"
@@ -365,10 +382,13 @@ def generar_pdf_ensayo(ensayo):
     elementos.append(KeepTogether(bloque_criterios))
 
     # ---- Comentarios ----
+    # Siempre se reserva el espacio para esta sección, aunque no haya
+    # comentario cargado -- antes desaparecía del todo y parecía que no
+    # había lugar para escribir uno.
+    elementos.append(Spacer(1, 0.75 * cm))
+    elementos.append(titulo_seccion("Comentarios"))
+    elementos.append(Spacer(1, 0.35 * cm))
     if ensayo.comentarios:
-        elementos.append(Spacer(1, 0.75 * cm))
-        elementos.append(titulo_seccion("Comentarios"))
-        elementos.append(Spacer(1, 0.35 * cm))
         caja_comentario = Table(
             [[Paragraph(ensayo.comentarios.replace("\n", "<br/>"), celda)]], colWidths=[ANCHO_CONTENIDO],
         )
@@ -380,6 +400,8 @@ def generar_pdf_ensayo(ensayo):
             ("LEFTPADDING", (0, 0), (-1, -1), 10),
         ]))
         elementos.append(caja_comentario)
+    else:
+        elementos.append(Paragraph("Sin comentarios.", nota_style))
 
     # ---- Validación del Jefe/Administrador (independiente del cálculo) ----
     elementos.append(Spacer(1, 0.9 * cm))

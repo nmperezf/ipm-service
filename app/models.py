@@ -1204,9 +1204,14 @@ class Equipo(db.Model):
 
 class CurvaFabrica(db.Model):
     """Curva de referencia del fabricante para una bomba puntual (Equipo con
-    tipo='Bomba'): presión neta a 0/50/100/150% del caudal nominal, todas
-    medidas a la misma RPM (rpm_nominal). Es 1 a 1 con el equipo — cargarla
-    de nuevo sobrescribe la anterior, no se versiona."""
+    tipo='Bomba'): presión neta a 0/100/150% del caudal nominal, todas
+    medidas a la misma RPM (rpm_nominal). Los 3 puntos salen directo de los
+    datos de placa del equipo (PSI MAX, PSIG, PSI 1.5) — no hay punto de
+    50% porque la placa no lo trae; el punto alcanza para ajustar la
+    parábola de la curva (2° grado, 3 coeficientes) igual que con 4 puntos.
+    punto_50_presion queda nullable solo por curvas viejas que ya lo tenían
+    cargado a mano. Es 1 a 1 con el equipo — cargarla de nuevo sobrescribe
+    la anterior, no se versiona."""
 
     __tablename__ = "curvas_fabrica"
 
@@ -1214,7 +1219,7 @@ class CurvaFabrica(db.Model):
     equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), unique=True, nullable=False)
     rpm_nominal = db.Column(db.Integer, nullable=False)
     punto_0_presion = db.Column(db.Float, nullable=False)
-    punto_50_presion = db.Column(db.Float, nullable=False)
+    punto_50_presion = db.Column(db.Float, nullable=True)
     punto_100_presion = db.Column(db.Float, nullable=False)
     punto_150_presion = db.Column(db.Float, nullable=False)
     # Potencia de placa del fabricante en cada punto — opcional (no todos
@@ -1231,7 +1236,8 @@ class CurvaFabrica(db.Model):
 
     def puntos(self):
         """([0, 50, 100, 150], [presiones netas]) — mismo orden que
-        EnsayoCaudal.puntos_netos(), para poder comparar índice a índice."""
+        EnsayoCaudal.puntos_netos(), para poder comparar índice a índice.
+        El de 50% puede venir en None (curvas nuevas no lo cargan)."""
         return (
             [0, 50, 100, 150],
             [self.punto_0_presion, self.punto_50_presion, self.punto_100_presion, self.punto_150_presion],

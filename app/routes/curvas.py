@@ -17,6 +17,11 @@ curvas_bp = Blueprint("curvas", __name__, url_prefix="/equipos")
 
 PUNTOS = ["0", "50", "100", "150"]
 
+# La curva de fábrica ya no pide el punto de 50% (ver CurvaFabrica en
+# models.py) — solo estos 3, que además son los que ya están en los datos
+# de placa del equipo (PSI MAX, PSIG, PSI 1.5).
+PUNTOS_FABRICA = ["0", "100", "150"]
+
 
 def _verificar_es_bomba(equipo):
     if equipo.tipo not in TIPOS_BOMBA_PRINCIPAL:
@@ -76,9 +81,9 @@ def curva_fabrica(equipo_id):
     if request.method == "POST":
         try:
             rpm_nominal = int(request.form["rpm_nominal"])
-            valores = {p: float(request.form[f"punto_{p}_presion"]) for p in PUNTOS}
+            valores = {p: float(request.form[f"punto_{p}_presion"]) for p in PUNTOS_FABRICA}
         except (KeyError, ValueError):
-            flash("Completá la RPM y las 4 presiones con valores numéricos válidos.", "danger")
+            flash("Completá la RPM y las 3 presiones con valores numéricos válidos.", "danger")
             return render_template("equipos/formulario_curva_fabrica.html", equipo=equipo, curva=None)
 
         if rpm_nominal <= 0:
@@ -86,7 +91,7 @@ def curva_fabrica(equipo_id):
             return render_template("equipos/formulario_curva_fabrica.html", equipo=equipo, curva=None)
 
         potencias = {}
-        for p in PUNTOS:
+        for p in PUNTOS_FABRICA:
             valor = request.form.get(f"punto_{p}_potencia_kw", "").strip()
             potencias[p] = float(valor) if valor else None
 
@@ -96,13 +101,15 @@ def curva_fabrica(equipo_id):
             db.session.add(curva)
         curva.rpm_nominal = rpm_nominal
         curva.punto_0_presion = valores["0"]
-        curva.punto_50_presion = valores["50"]
         curva.punto_100_presion = valores["100"]
         curva.punto_150_presion = valores["150"]
+        # Ya no se pide el punto de 50% (ver PUNTOS_FABRICA) -- si la curva
+        # venía de antes con uno cargado a mano, se retira acá.
+        curva.punto_50_presion = None
         curva.punto_0_potencia_kw = potencias["0"]
-        curva.punto_50_potencia_kw = potencias["50"]
         curva.punto_100_potencia_kw = potencias["100"]
         curva.punto_150_potencia_kw = potencias["150"]
+        curva.punto_50_potencia_kw = None
         db.session.commit()
         flash(f"Curva de fábrica de '{equipo.nombre}' guardada.", "success")
         return redirect(url_for("equipos.detalle", equipo_id=equipo.id))
@@ -389,7 +396,11 @@ def ensayo_detalle(equipo_id, ensayo_id):
             caudales = [0, 50, 100, 150]
             eje_x_label = "Caudal (%)"
         _, presiones_fabrica = equipo.curva_fabrica.puntos()
-        xs_fabrica, ys_fabrica = curva_suavizada(caudales, presiones_fabrica)
+        # El punto de 50% de fábrica puede no existir (ver CurvaFabrica) --
+        # se ajusta la parábola solo con los puntos que sí están.
+        caudales_fab = [c for c, p in zip(caudales, presiones_fabrica) if p is not None]
+        presiones_fab_validas = [p for p in presiones_fabrica if p is not None]
+        xs_fabrica, ys_fabrica = curva_suavizada(caudales_fab, presiones_fab_validas)
         xs_ensayo, ys_ensayo = curva_suavizada(caudales, ajustadas)
         xs_sin_ajustar, ys_sin_ajustar = curva_suavizada(caudales, sin_ajustar)
         grafico = {

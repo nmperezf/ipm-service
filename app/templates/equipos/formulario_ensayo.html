@@ -28,15 +28,24 @@
             <div class="row g-2 mb-1 small text-muted">
                 <div class="col-auto">Lugar: <strong class="text-body">{{ equipo.instalacion.cliente.nombre }} — {{ equipo.instalacion.nombre }}</strong></div>
             </div>
-            <div class="row g-3 mb-3 align-items-end">
-                <div class="col-auto small text-muted">Modelo: <strong class="text-body">{{ equipo.modelo or '-' }}</strong></div>
-                <div class="col-auto small text-muted">N° de serie: <strong class="text-body">{{ equipo.serie or '-' }}</strong></div>
-                <div class="col-auto small text-muted">Tipo de bomba: <strong class="text-body">{{ equipo.tipo_motor or '-' }}{% if equipo.motor_potencia_hp %} · {{ equipo.motor_potencia_hp }} HP{% endif %}</strong></div>
+            <div class="row g-3 mb-1 align-items-end">
                 <div class="col-auto">
                     <label class="form-label small mb-0">Fecha</label>
                     <input type="date" name="fecha_ensayo" class="form-control form-control-sm" required value="{{ ensayo.fecha_ensayo.isoformat() if ensayo else '' }}">
                 </div>
                 <div class="col-auto small text-muted">Inspector: <strong class="text-body">{{ (ensayo.creado_por.nombre_completo or ensayo.creado_por.username) if ensayo and ensayo.creado_por else (current_user.nombre_completo or current_user.username) }}</strong></div>
+            </div>
+            <div class="row g-2 mb-1 small text-muted">
+                <div class="col-3">Tipo de bomba: <strong class="text-body">{{ equipo.tipo }}</strong></div>
+                <div class="col-3">Modelo: <strong class="text-body">{{ equipo.modelo or '-' }}</strong></div>
+                <div class="col-3">N° de serie: <strong class="text-body">{{ equipo.serie or '-' }}</strong></div>
+                <div class="col-3">Caudal diseño: <strong class="text-body">{{ equipo.caudal_nominal if equipo.caudal_nominal else '-' }} GPM</strong></div>
+            </div>
+            <div class="row g-2 mb-3 small text-muted">
+                <div class="col-3">PSI MAX: <strong class="text-body">{{ equipo.presion_maxima if equipo.presion_maxima else '-' }}</strong></div>
+                <div class="col-3">PSIG: <strong class="text-body">{{ equipo.presion_diseno if equipo.presion_diseno else '-' }}</strong></div>
+                <div class="col-3">PSI 1.5: <strong class="text-body">{{ equipo.presion_sobrecarga if equipo.presion_sobrecarga else '-' }}</strong></div>
+                <div class="col-3">RPM nominal: <strong class="text-body">{{ equipo.rpm_nominal or '-' }}</strong></div>
             </div>
 
             <div class="seccion-titulo-doc">Condiciones de prueba</div>
@@ -76,8 +85,8 @@
                         <td>{{ p }}%</td>
                         <td>{{ (equipo.caudal_nominal * factor)|round(0) if equipo.caudal_nominal else '-' }}</td>
                         <td>{{ curva.rpm_nominal }}</td>
-                        <td style="background: var(--surface-muted);">{{ presion }}</td>
-                        <td class="col-opcional" style="background: var(--surface-muted);">{{ (presion * 2.307)|round(1) }}</td>
+                        <td style="background: var(--surface-muted);">{{ presion if presion is not none else '-' }}</td>
+                        <td class="col-opcional" style="background: var(--surface-muted);">{{ (presion * 2.307)|round(1) if presion is not none else '-' }}</td>
                         <td style="background: var(--surface-muted);">{{ potencia if potencia is not none else '-' }}</td>
                     </tr>
                     {% endfor %}
@@ -210,7 +219,12 @@ const PSI_A_FT = 2.307;
 const PUNTOS = ['0', '50', '100', '150'];
 const curvaFabrica = {
     rpmNominal: {{ curva.rpm_nominal }},
-    presiones: [{{ curva.punto_0_presion }}, {{ curva.punto_50_presion }}, {{ curva.punto_100_presion }}, {{ curva.punto_150_presion }}],
+    presiones: [
+        {{ curva.punto_0_presion if curva.punto_0_presion is not none else 'null' }},
+        {{ curva.punto_50_presion if curva.punto_50_presion is not none else 'null' }},
+        {{ curva.punto_100_presion if curva.punto_100_presion is not none else 'null' }},
+        {{ curva.punto_150_presion if curva.punto_150_presion is not none else 'null' }}
+    ],
     gpm: [
         {{ (equipo.caudal_nominal * 0) if equipo.caudal_nominal else 0 }},
         {{ (equipo.caudal_nominal * 0.5) if equipo.caudal_nominal else 0 }},
@@ -291,7 +305,7 @@ function actualizarGrafico(netas, adjs) {
             data: {
                 labels,
                 datasets: [
-                    { label: 'Curva de fábrica', data: curvaFabrica.presiones, borderColor: '#1A2233', backgroundColor: '#1A2233', tension: .35, pointRadius: 4, borderWidth: 2.5 },
+                    { label: 'Curva de fábrica', data: curvaFabrica.presiones, borderColor: '#1A2233', backgroundColor: '#1A2233', tension: .35, pointRadius: 4, borderWidth: 2.5, spanGaps: true },
                     { label: 'Ensayo sin ajustar', data: netas, borderColor: '#B5730A', backgroundColor: '#B5730A', borderDash: [6, 4], tension: .35, pointRadius: 4, borderWidth: 2 },
                     { label: 'Ensayo ajustado a RPM nominal', data: adjs, borderColor: '#E2131D', backgroundColor: '#E2131D', tension: .35, pointRadius: 4, borderWidth: 2.5 },
                 ],

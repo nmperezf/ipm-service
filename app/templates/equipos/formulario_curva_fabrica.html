@@ -10,46 +10,43 @@
                 Presión neta (descarga - succión) del fabricante en cada punto de caudal, todas medidas a la misma RPM. Es
                 la referencia contra la que se validan los ensayos de campo (NFPA 25). Cargarla de nuevo pisa la anterior.
             </p>
+            {% if not curva and (equipo.presion_maxima or equipo.presion_diseno or equipo.presion_sobrecarga or equipo.rpm_nominal) %}
+            <div class="alert alert-info small mb-3">
+                Pre-cargado desde los datos de placa del equipo (PSI MAX, PSIG, PSI 1.5 y RPM nominal) — revisá y corregí si la curva real del fabricante difiere.
+            </div>
+            {% endif %}
 
             <form method="POST" class="mt-3">
                 <div class="row">
                     <div class="col-md-4 mb-3">
                         <label class="form-label">RPM nominal</label>
                         <input type="number" name="rpm_nominal" class="form-control form-control-lg" required min="1"
-                               value="{{ curva.rpm_nominal if curva else '' }}">
+                               value="{{ curva.rpm_nominal if curva else (equipo.rpm_nominal or '') }}">
                     </div>
                 </div>
 
                 <div class="row">
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Presión neta @ 0%</label>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Presión neta @ 0% <span class="text-muted small">(PSI MAX)</span></label>
                         <div class="input-group">
                             <input type="number" step="any" name="punto_0_presion" class="form-control form-control-lg" required
-                                   value="{{ curva.punto_0_presion if curva else '' }}">
+                                   value="{{ curva.punto_0_presion if curva else (equipo.presion_maxima or '') }}">
                             <span class="input-group-text">PSI</span>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Presión neta @ 50%</label>
-                        <div class="input-group">
-                            <input type="number" step="any" name="punto_50_presion" class="form-control form-control-lg" required
-                                   value="{{ curva.punto_50_presion if curva else '' }}">
-                            <span class="input-group-text">PSI</span>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Presión neta @ 100% (nominal)</label>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Presión neta @ 100% <span class="text-muted small">(PSIG, nominal)</span></label>
                         <div class="input-group">
                             <input type="number" step="any" name="punto_100_presion" class="form-control form-control-lg" required
-                                   value="{{ curva.punto_100_presion if curva else '' }}">
+                                   value="{{ curva.punto_100_presion if curva else (equipo.presion_diseno or '') }}">
                             <span class="input-group-text">PSI</span>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <label class="form-label">Presión neta @ 150%</label>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label">Presión neta @ 150% <span class="text-muted small">(PSI 1.5)</span></label>
                         <div class="input-group">
                             <input type="number" step="any" name="punto_150_presion" class="form-control form-control-lg" required
-                                   value="{{ curva.punto_150_presion if curva else '' }}">
+                                   value="{{ curva.punto_150_presion if curva else (equipo.presion_sobrecarga or '') }}">
                             <span class="input-group-text">PSI</span>
                         </div>
                     </div>
@@ -57,28 +54,21 @@
 
                 <div class="row">
                     <div class="col-12 mb-1"><label class="form-label mb-0 text-muted small">Potencia de placa (kW, opcional)</label></div>
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-4 mb-3">
                         <div class="input-group">
                             <input type="number" step="any" name="punto_0_potencia_kw" class="form-control" placeholder="0%"
                                    value="{{ curva.punto_0_potencia_kw if curva and curva.punto_0_potencia_kw is not none else '' }}">
                             <span class="input-group-text">kW</span>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
-                        <div class="input-group">
-                            <input type="number" step="any" name="punto_50_potencia_kw" class="form-control" placeholder="50%"
-                                   value="{{ curva.punto_50_potencia_kw if curva and curva.punto_50_potencia_kw is not none else '' }}">
-                            <span class="input-group-text">kW</span>
-                        </div>
-                    </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-4 mb-3">
                         <div class="input-group">
                             <input type="number" step="any" name="punto_100_potencia_kw" class="form-control" placeholder="100%"
                                    value="{{ curva.punto_100_potencia_kw if curva and curva.punto_100_potencia_kw is not none else '' }}">
                             <span class="input-group-text">kW</span>
                         </div>
                     </div>
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-4 mb-3">
                         <div class="input-group">
                             <input type="number" step="any" name="punto_150_potencia_kw" class="form-control" placeholder="150%"
                                    value="{{ curva.punto_150_potencia_kw if curva and curva.punto_150_potencia_kw is not none else '' }}">

@@ -70,11 +70,20 @@
                 <div class="col-auto">Lugar: <strong class="text-body">{{ equipo.instalacion.cliente.nombre }} — {{ equipo.instalacion.nombre }}</strong></div>
             </div>
             <div class="row g-2 mb-3 small text-muted">
-                <div class="col-auto">Modelo: <strong class="text-body">{{ equipo.modelo or '-' }}</strong></div>
-                <div class="col-auto">N° de serie: <strong class="text-body">{{ equipo.serie or '-' }}</strong></div>
-                <div class="col-auto">Tipo de bomba: <strong class="text-body">{{ equipo.tipo_motor or '-' }}{% if equipo.motor_potencia_hp %} · {{ equipo.motor_potencia_hp }} HP{% endif %}</strong></div>
                 <div class="col-auto">Fecha: <strong class="text-body">{{ ensayo.fecha_ensayo.strftime('%d/%m/%Y') }}</strong></div>
                 <div class="col-auto">Inspector: <strong class="text-body">{{ (ensayo.creado_por.nombre_completo or ensayo.creado_por.username) if ensayo.creado_por else '-' }}</strong></div>
+            </div>
+            <div class="row g-2 mb-1 small text-muted">
+                <div class="col-3">Tipo de bomba: <strong class="text-body">{{ equipo.tipo }}</strong></div>
+                <div class="col-3">Modelo: <strong class="text-body">{{ equipo.modelo or '-' }}</strong></div>
+                <div class="col-3">N° de serie: <strong class="text-body">{{ equipo.serie or '-' }}</strong></div>
+                <div class="col-3">Caudal diseño: <strong class="text-body">{{ equipo.caudal_nominal if equipo.caudal_nominal else '-' }} GPM</strong></div>
+            </div>
+            <div class="row g-2 mb-3 small text-muted">
+                <div class="col-3">PSI MAX: <strong class="text-body">{{ equipo.presion_maxima if equipo.presion_maxima else '-' }}</strong></div>
+                <div class="col-3">PSIG: <strong class="text-body">{{ equipo.presion_diseno if equipo.presion_diseno else '-' }}</strong></div>
+                <div class="col-3">PSI 1.5: <strong class="text-body">{{ equipo.presion_sobrecarga if equipo.presion_sobrecarga else '-' }}</strong></div>
+                <div class="col-3">RPM nominal: <strong class="text-body">{{ equipo.rpm_nominal or '-' }}</strong></div>
             </div>
 
             {% if ensayo.temperatura_ambiente is not none or ensayo.presion_atmosferica_mbar is not none or ensayo.presion_succion_estatica is not none or ensayo.normativa_aplicable %}
@@ -105,8 +114,8 @@
                         <td>{{ p }}%</td>
                         <td>{{ (equipo.caudal_nominal * factor)|round(0) if equipo.caudal_nominal else '-' }}</td>
                         <td>{{ curva.rpm_nominal }}</td>
-                        <td>{{ presion }}</td>
-                        <td class="col-opcional">{{ (presion * 2.307)|round(1) }}</td>
+                        <td>{{ presion if presion is not none else '-' }}</td>
+                        <td class="col-opcional">{{ (presion * 2.307)|round(1) if presion is not none else '-' }}</td>
                         <td>{{ potencia if potencia is not none else '-' }}</td>
                     </tr>
                     {% endfor %}
