@@ -93,7 +93,7 @@ def _grafico_curvas(gpm, presiones_fabrica, presiones_ensayo_ajustadas, presione
     ajustada_ft = [p * FT_POR_PSI for p in presiones_ensayo_ajustadas]
     sin_ajustar_ft = [p * FT_POR_PSI for p in presiones_ensayo_sin_ajustar]
 
-    fig, ax = plt.subplots(figsize=(9.8, 2.15), dpi=150)
+    fig, ax = plt.subplots(figsize=(9.4, 3.4), dpi=150)
 
     xs_fabrica, ys_fabrica = curva_suavizada(gpm, fabrica_ft)
     ax.plot(xs_fabrica, ys_fabrica, color="#14181F", linewidth=1.8, label="Curva de fábrica")
@@ -326,7 +326,7 @@ def generar_pdf_ensayo(ensayo):
     if curva_fabrica:
         netas_redondeadas = [round(n, 1) for n in netas]
         grafico_buffer = _grafico_curvas(gpm_fabrica, presiones_fabrica, ajustadas, netas_redondeadas)
-        elementos.append(Image(grafico_buffer, width=ANCHO_CONTENIDO, height=3.9 * cm))
+        elementos.append(Image(grafico_buffer, width=ANCHO_CONTENIDO, height=6.5 * cm))
     else:
         elementos.append(Paragraph("Sin curva de fábrica cargada para graficar.", normal))
 
