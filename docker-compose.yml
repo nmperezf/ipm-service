@@ -1,0 +1,13 @@
+services:
+  # Postgres descartable para probar migraciones antes de pushear -- SQLite
+  # es permisivo con cosas que Postgres rechaza (ej. "BOOLEAN DEFAULT 0",
+  # el bug que dejó la migración de producción sin aplicar el 14/08/2026).
+  # Ver README.md, sección "Migraciones de base de datos".
+  db_test:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ipm
+      POSTGRES_PASSWORD: ipm
+      POSTGRES_DB: ipm_test
+    ports:
+      - "5433:5432"

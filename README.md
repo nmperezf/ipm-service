@@ -160,6 +160,17 @@ de modelo, y aplicalo con:
 flask --app run.py db upgrade
 ```
 
+**Probar contra Postgres antes de pushear** (no solo contra el SQLite
+local): SQLite es permisivo con cosas que Postgres rechaza en seco — por
+ejemplo `BOOLEAN DEFAULT 0` en vez de `DEFAULT false`, el bug exacto que
+dejó producción con la migración sin aplicar el 14/08/2026. Con Docker:
+```bash
+docker compose up -d db_test
+DATABASE_URL=postgresql://ipm:ipm@localhost:5433/ipm_test flask --app run.py db upgrade
+```
+Si el `upgrade` pasa ahí, va a pasar en Railway. `docker compose down -v`
+para tirar la base descartable después.
+
 **Despliegue (Railway):** el `Procfile` corre `python release.py` como
 fase de `release`, antes de levantar el proceso `web`. Ese script no es
 solo `flask db upgrade`: primero revisa si la base ya tiene tablas pero
@@ -167,9 +178,22 @@ todavía no tiene el historial de Alembic (`alembic_version`) — el caso de
 la base de Railway ya desplegada — y si es así, la marca como "ya al día"
 con la migración inicial sin tocar ni una tabla, antes de aplicar el
 upgrade. En cualquier otro caso (base nueva, o una que ya tiene historial
-de Alembic) simplemente aplica las migraciones pendientes. No hace falta
-ningún paso manual: el primer deploy con este cambio se autodetecta y se
-resuelve solo.
+de Alembic) simplemente aplica las migraciones pendientes.
+
+El 14/08/2026 esa fase de `release` falló en silencio en producción (no
+se pudo confirmar todavía por qué — Railway no bloqueó el deploy del
+proceso `web` igual) y la app quedó sirviendo tráfico con un schema
+desactualizado durante días, hasta que una query nueva pisó una columna
+que no existía y empezó a tirar 500. Por eso el `Procfile` ahora tiene un
+paso extra antes de `gunicorn`:
+```
+web: python verificar_schema.py && gunicorn run:app --bind 0.0.0.0:$PORT
+```
+`verificar_schema.py` compara la revisión de Alembic aplicada contra el
+head de `migrations/`; si no coinciden, termina con código de salida
+distinto de 0 y el `&&` corta la cadena — el deploy queda visiblemente
+caído en vez de servir tráfico en silencio con el schema viejo. El mismo
+chequeo corre en local al hacer `python run.py`.
 
 ## Tablas ordenables y filtrables
 

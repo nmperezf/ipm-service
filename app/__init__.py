@@ -157,6 +157,49 @@ def create_app():
     return app
 
 
+def verificar_schema_al_dia():
+    """Compara la revisión de Alembic aplicada en la base contra el head de
+    migrations/ -- si no coinciden, tira RuntimeError. Requiere un contexto
+    de app activo (usa db.engine).
+
+    Existe porque el 14/08/2026 la migración de "visibilidad" nunca se
+    aplicó en producción (la fase "release" de Railway venía fallando en
+    silencio) y la app siguió sirviendo tráfico igual, con el schema viejo,
+    hasta que una query pisó la columna que faltaba y tiró 500 al azar para
+    los usuarios. Preferible un deploy visiblemente caído a ese silencio.
+
+    A propósito NO se llama desde create_app(): tanto release.py (que es
+    justamente el que aplica las migraciones) como los tests pasan por
+    create_app() sin haber corrido Alembic todavía (los tests arman el
+    esquema con db.create_all(), no con migraciones). Se llama explícitamente
+    desde verificar_schema.py, un paso aparte antes de levantar gunicorn
+    (ver Procfile) -- y desde run.py para pegar el mismo chequeo en local."""
+    import os
+
+    from alembic.config import Config as AlembicConfig
+    from alembic.script import ScriptDirectory
+
+    migrations_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "migrations")
+    alembic_cfg = AlembicConfig()
+    alembic_cfg.set_main_option("script_location", migrations_dir)
+    heads_esperados = set(ScriptDirectory.from_config(alembic_cfg).get_heads())
+
+    from sqlalchemy import text
+
+    with db.engine.connect() as conn:
+        try:
+            heads_actuales = {fila[0] for fila in conn.execute(text("SELECT version_num FROM alembic_version"))}
+        except Exception:
+            heads_actuales = set()
+
+    if heads_actuales != heads_esperados:
+        raise RuntimeError(
+            "La base de datos no está al día con las migraciones "
+            f"(aplicado: {heads_actuales or 'ninguna'} / esperado: {heads_esperados}). "
+            "Corré 'python release.py' antes de levantar la app -- ver Procfile."
+        )
+
+
 def _seed_super_admin():
     """Si todavía no existe ningún usuario, crea un Super Admin por
     defecto — sin esto, un instalación nueva no tendría con qué iniciar
