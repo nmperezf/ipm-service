@@ -63,6 +63,11 @@ CLASIFICACIONES_OBSERVACION = [
     "Comentario",
 ]
 
+# Interna: nota de uso interno (nunca llega al portal del cliente ni a los
+# PDF que se le entregan, sin importar su estado_revision). Cliente: sigue
+# el circuito de siempre (llega al cliente una vez Aprobada).
+VISIBILIDADES_OBSERVACION = ["Cliente", "Interna"]
+
 # Estado por punto de un checklist de inspección (campo tipo "estado" en el
 # schema de TipoFormulario) -- distinto de CLASIFICACIONES_OBSERVACION, que
 # es la clasificación de la deficiencia que un punto en "observado" o
@@ -216,7 +221,7 @@ class Cliente(db.Model):
             o
             for inst in self.instalaciones
             for o in inst.deficiencias
-            if not o.resuelto and o.estado_revision == "Aprobada"
+            if not o.resuelto and o.estado_revision == "Aprobada" and o.visibilidad != "Interna"
         ]
         return {
             clasif: sum(1 for o in abiertas if o.clasificacion == clasif)
@@ -872,6 +877,36 @@ class Foto(db.Model):
         return f"<Foto {self.nombre_archivo}>"
 
 
+class Documento(db.Model):
+    """Documento suelto ligado a una instalación: informe de alineación,
+    trabajo especial u otro archivo puntual (PDF, Word, Excel, imagen) que
+    no encaja en el circuito de visita/checklist. No pasa por OT, firma
+    digital ni portal de cliente -- es un adjunto con metadata mínima que
+    aparece como una fila más en el histórico técnico (ver
+    historial._filas_historial), con su propio link de descarga."""
+
+    __tablename__ = "documentos"
+
+    id = db.Column(db.Integer, primary_key=True)
+    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False, index=True)
+    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True, index=True)
+    titulo = db.Column(db.String(200), nullable=False)
+    descripcion = db.Column(db.Text)
+    fecha_documento = db.Column(db.Date, default=date.today, nullable=False)  # fecha real del informe, no la de carga
+    nombre_archivo = db.Column(db.String(300), nullable=False)  # ruta relativa dentro de UPLOAD_FOLDER
+    subido_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
+    fecha_carga = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    instalacion = db.relationship(
+        "Instalacion", backref=db.backref("documentos", lazy=True, cascade="all, delete-orphan")
+    )
+    equipo = db.relationship("Equipo", backref="documentos")
+    subido_por = db.relationship("Usuario", backref="documentos_subidos", foreign_keys=[subido_por_id])
+
+    def __repr__(self):
+        return f"<Documento {self.titulo}>"
+
+
 # ---------------------------------------------------------------------------
 # Observaciones (deficiencias / desactivaciones) — dashboard de novedades
 # ---------------------------------------------------------------------------
@@ -894,6 +929,12 @@ class Observacion(db.Model):
     cierre de una visita queda bloqueado mientras tenga observaciones
     Pendientes.
 
+    visibilidad: independiente del control de calidad de arriba. Interna
+    es para notas de manejo interno (ej. "avisar a compras", "cliente
+    complicado con el pago") que nunca deben llegar al cliente, aunque se
+    apruebe — se excluyen a mano en cada punto que arma algo para el
+    portal o los PDF de cliente (ver VISIBILIDADES_OBSERVACION).
+
     ultima_visita_confirmada_id / fecha_ultima_confirmacion: rastro de que
     la deficiencia se siguió viendo en visitas posteriores a la que la
     detectó, sin ser un paso extra para el técnico — se completa solo al
@@ -912,6 +953,7 @@ class Observacion(db.Model):
     resuelto = db.Column(db.Boolean, default=False, nullable=False)
     fecha_resolucion = db.Column(db.Date, nullable=True)
     estado_revision = db.Column(db.String(20), default="Pendiente", nullable=False)  # Pendiente / Aprobada
+    visibilidad = db.Column(db.String(20), default="Cliente", nullable=False)  # ver VISIBILIDADES_OBSERVACION
     creado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
     aprobado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
     fecha_aprobacion = db.Column(db.Date, nullable=True)

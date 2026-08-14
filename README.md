@@ -54,6 +54,14 @@ resolución. Además tienen un **estado de revisión** (Pendiente/Aprobada)
 como control de calidad — ver la sección "Login, roles y multiempresa"
 para el detalle completo del circuito.
 
+Independiente de ese control de calidad, cada observación tiene una
+**visibilidad**: **Cliente** (default, sigue el circuito de siempre) o
+**Interna** — para notas de manejo interno (ej. "avisar a compras",
+"cliente complicado con el pago") que nunca deben llegar al cliente, ni
+aunque se aprueben. El staff (Administrador/Jefe/Técnico) siempre ve
+todo, con una etiqueta "Interna" para distinguirlas; se excluyen del
+portal del cliente y del PDF de devolución.
+
 ## Órdenes de trabajo en PDF
 
 Cada OT se puede descargar en PDF (botón "Descargar PDF" en su detalle):
@@ -61,6 +69,17 @@ datos generales, el checklist de servicios si es preventiva, los repuestos
 usados, y espacio para firma de técnico y cliente. Se genera con
 `reportlab` (ya incluido en `requirements.txt`), sin dependencias del
 sistema operativo.
+
+## Documentos sueltos (informes de alineación, trabajos especiales, etc.)
+
+Para un informe puntual que ya tenés armado (alineación láser, trabajo
+especial, certificado, u otro archivo que no corresponde a una visita con
+checklist) — desde el menú "Más" de la ficha de instalación, "Cargar
+documento": título, archivo (PDF/Word/Excel/imagen), fecha real del
+documento y, opcionalmente, a qué equipo corresponde. No pasa por OT,
+firma digital ni portal de cliente — es un adjunto liviano que aparece
+como una fila más en el histórico técnico, con su propio link de
+descarga.
 
 ## Servicios tipo (catálogo por empresa)
 
@@ -203,8 +222,8 @@ de página.
 app/
   models.py               -> Cliente, Instalacion, Contrato, ServicioContrato,
                               Visita, ItemVisita, TipoFormulario, Formulario,
-                              Foto, Observacion, Equipo, OrdenTrabajo,
-                              Repuesto, RepuestoUsado, Recordatorio
+                              Foto, Documento, Observacion, Equipo,
+                              OrdenTrabajo, Repuesto, RepuestoUsado, Recordatorio
   utils.py                 -> actualización compartida de estados vencidos
   routes/
     dashboard.py            -> pantalla principal
@@ -215,6 +234,7 @@ app/
     visitas.py                   -> editar/eliminar, marcar items cumplido/pendiente
     formularios.py                 -> formularios dinámicos por servicio/equipo
     fotos.py                        -> evidencia fotográfica
+    documentos.py                    -> documentos sueltos (informes puntuales)
     observaciones.py                 -> deficiencias/desactivaciones
     historial.py                      -> histórico técnico por instalación + export CSV
     planificacion.py                   -> calendario mensual

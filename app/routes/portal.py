@@ -44,7 +44,10 @@ def _panel_instalacion(instalacion, hoy):
         (
             o
             for o in instalacion.deficiencias
-            if not o.resuelto and o.estado_revision == "Aprobada" and o.clasificacion == "Deficiencia crítica"
+            if not o.resuelto
+            and o.estado_revision == "Aprobada"
+            and o.visibilidad != "Interna"
+            and o.clasificacion == "Deficiencia crítica"
         ),
         key=lambda o: o.fecha_carga,
         reverse=True,
@@ -60,7 +63,9 @@ def _panel_instalacion(instalacion, hoy):
         ids_items = [it.id for it in visita_cerrada.items]
         deficiencias_visita = (
             Observacion.query.filter(
-                Observacion.item_visita_id.in_(ids_items), Observacion.estado_revision == "Aprobada"
+                Observacion.item_visita_id.in_(ids_items),
+                Observacion.estado_revision == "Aprobada",
+                Observacion.visibilidad != "Interna",
             ).all()
             if ids_items
             else []
@@ -135,7 +140,10 @@ def deficiencias(clasificacion):
             o
             for inst in cliente.instalaciones
             for o in inst.deficiencias
-            if not o.resuelto and o.estado_revision == "Aprobada" and o.clasificacion == clasificacion
+            if not o.resuelto
+            and o.estado_revision == "Aprobada"
+            and o.visibilidad != "Interna"
+            and o.clasificacion == clasificacion
         ),
         key=lambda o: o.fecha_carga,
         reverse=True,
@@ -182,7 +190,7 @@ def historico():
             o
             for inst in cliente.instalaciones
             for o in inst.deficiencias
-            if o.estado_revision == "Aprobada" and not o.resuelto
+            if o.estado_revision == "Aprobada" and o.visibilidad != "Interna" and not o.resuelto
         ),
         key=lambda o: o.fecha_carga,
         reverse=True,
@@ -204,7 +212,7 @@ def observaciones_resueltas():
             o
             for inst in cliente.instalaciones
             for o in inst.deficiencias
-            if o.estado_revision == "Aprobada" and o.resuelto
+            if o.estado_revision == "Aprobada" and o.visibilidad != "Interna" and o.resuelto
         ),
         key=lambda o: o.fecha_resolucion,
         reverse=True,
@@ -305,7 +313,8 @@ def equipo_detalle(equipo_id):
     grupos = filas_checklist(formularios)
 
     deficiencias_abiertas = [
-        o for o in equipo.deficiencias if not o.resuelto and o.estado_revision == "Aprobada"
+        o for o in equipo.deficiencias
+        if not o.resuelto and o.estado_revision == "Aprobada" and o.visibilidad != "Interna"
     ]
 
     ultimos_ensayos = []

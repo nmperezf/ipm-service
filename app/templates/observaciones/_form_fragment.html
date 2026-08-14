@@ -29,6 +29,15 @@
         <div class="form-text">Dejala vacía para usar la fecha de hoy, o cargá una fecha pasada si estás migrando historial.</div>
     </div>
     <div class="mb-3">
+        <label class="form-label">Visibilidad</label>
+        <select name="visibilidad" class="form-select">
+            {% for v in visibilidades %}
+            <option value="{{ v }}" {% if v == 'Cliente' %}selected{% endif %}>{{ v }}</option>
+            {% endfor %}
+        </select>
+        <div class="form-text">Interna: queda como nota de uso interno, nunca la ve el cliente aunque se apruebe.</div>
+    </div>
+    <div class="mb-3">
         <label class="form-label d-block">Fotos (opcional)</label>
         <div class="selector-foto-doc" data-multiple>
             <div class="d-flex gap-2 flex-wrap">

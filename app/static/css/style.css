@@ -744,6 +744,7 @@ html.sidebar-oculta .sidebar-footer .sidebar-link {
 .badge-Reprogramado { background: #F1EAFB; color: #6B32C9; }
 .badge-Activo { background: #E5F4EC; color: #1F8A54; }
 .badge-Renovado { background: #EAF1FA; color: #1A2233; }
+.badge-Interna { background: #F1F2F4; color: #5B6673; }
 
 .badge-Asignada { background: #EAF1FA; color: #1A2233; }
 .badge-Pausada { background: #FDF2E3; color: #A8630A; }

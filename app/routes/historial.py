@@ -5,7 +5,7 @@ from flask import Blueprint, Response, render_template
 from flask import request
 
 from app.auth_utils import rol_requerido, verificar_acceso_cliente
-from app.models import Instalacion, Observacion
+from app.models import Documento, Instalacion, Observacion
 
 historial_bp = Blueprint("historial", __name__, url_prefix="/historial")
 
@@ -63,6 +63,26 @@ def _filas_historial(instalacion):
                     "visita_id": visita.id,
                 }
             )
+    # Documentos sueltos (informes de alineación, trabajos especiales, etc.)
+    # -- no son una visita, se listan aparte con su propio link de descarga.
+    for doc in instalacion.documentos:
+        filas.append(
+            {
+                "fecha": doc.fecha_documento,
+                "contrato": "-",
+                "servicio": doc.titulo,
+                "estado_item": "-",
+                "estado_visita": "Documento",
+                "tecnico": doc.subido_por.nombre_completo if doc.subido_por else "-",
+                "observaciones": doc.descripcion or "",
+                "formularios": 0,
+                "fotos": 1,  # el documento en sí, para que la columna "Documentos" lo cuente
+                "visita_id": None,
+                "tipo": "documento",
+                "documento_id": doc.id,
+                "documento_archivo": doc.nombre_archivo,
+            }
+        )
     return sorted(filas, key=lambda f: f["fecha"], reverse=True)
 
 

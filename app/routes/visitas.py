@@ -28,7 +28,7 @@ from app.models import (
 from app.notificaciones import notificar_gestion, notificar_tecnico_asignado
 from app.pdf_checklist_tecnico import categorias_de_visita, generar_pdf_checklist_tecnico
 from app.pdf_devolucion import generar_pdf_devolucion
-from app.utils import equipos_por_categoria, es_ajax, filas_checklist, parse_fecha, resumen_visita_por_categoria
+from app.utils import equipos_por_categoria, es_ajax, parse_fecha, resumen_visita_por_categoria
 
 visitas_bp = Blueprint("visitas", __name__, url_prefix="/visitas")
 
@@ -179,11 +179,6 @@ def detalle(visita_id):
         key=lambda o: (o.clasificacion != "Deficiencia crítica", o.fecha_carga),
     )
 
-    formularios_visita = sorted(
-        (f for item in visita.items for f in item.formularios), key=lambda f: f.fecha_creacion
-    )
-    grupos_checklist = filas_checklist(formularios_visita, incluir_equipo=True)
-
     return render_template(
         "visitas/detail.html",
         visita=visita,
@@ -191,7 +186,6 @@ def detalle(visita_id):
         equipos_bomba_por_item=equipos_bomba_por_item,
         equipos_agrupados=equipos_por_categoria(visita.instalacion),
         deficiencias_abiertas=deficiencias_abiertas,
-        grupos_checklist=grupos_checklist,
         categorias_pdf=categorias_de_visita(visita) if visita.cerrada else [],
     )
 
@@ -486,7 +480,9 @@ def pdf_devolucion(visita_id):
     ids_items = [it.id for it in visita.items]
     deficiencias = (
         Observacion.query.filter(
-            Observacion.item_visita_id.in_(ids_items), Observacion.estado_revision == "Aprobada"
+            Observacion.item_visita_id.in_(ids_items),
+            Observacion.estado_revision == "Aprobada",
+            Observacion.visibilidad != "Interna",
         ).all()
         if ids_items
         else []
@@ -497,7 +493,7 @@ def pdf_devolucion(visita_id):
         (
             o
             for o in visita.instalacion.deficiencias
-            if not o.resuelto and o.id not in ids_deficiencias_visita
+            if not o.resuelto and o.id not in ids_deficiencias_visita and o.visibilidad != "Interna"
         ),
         key=lambda o: (o.clasificacion != "Deficiencia crítica", o.fecha_carga),
     )

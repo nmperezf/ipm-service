@@ -5,6 +5,7 @@ from app import db
 from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_escritura_cliente, verificar_visita_editable
 from app.models import Equipo, Formulario, Foto, ItemVisita, Observacion, TipoFormulario, categoria_de_tipo_equipo
 from app.pdf_reporte import generar_pdf_reporte_equipos
+from app.utils import es_ajax
 
 formularios_bp = Blueprint("formularios", __name__, url_prefix="/formularios")
 
@@ -365,7 +366,8 @@ def detalle(formulario_id):
         Foto.campo_formulario.isnot(None),
     ).all():
         fotos_por_campo.setdefault(foto.campo_formulario, []).append(foto)
-    return render_template("visitas/formulario_detail.html", formulario=formulario, fotos_por_campo=fotos_por_campo)
+    template = "visitas/_formulario_modal.html" if es_ajax() else "visitas/formulario_detail.html"
+    return render_template(template, formulario=formulario, fotos_por_campo=fotos_por_campo)
 
 
 @formularios_bp.route("/<int:formulario_id>/eliminar", methods=["POST"])

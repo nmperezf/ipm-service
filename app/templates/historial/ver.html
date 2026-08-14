@@ -8,7 +8,7 @@
             <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}">&larr; {{ instalacion.nombre }}</a></p>
 
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
-                <p class="text-muted mb-0">{{ instalacion.nombre }} — {{ instalacion.cliente.nombre }}. Registro completo de todas las visitas, servicios, formularios y evidencia fotográfica. Para modificar un registro, entrá a la visita correspondiente.</p>
+                <p class="text-muted mb-0">{{ instalacion.nombre }} — {{ instalacion.cliente.nombre }}. Registro completo de todas las visitas, servicios, formularios, evidencia fotográfica y documentos sueltos. Para modificar un registro, entrá a la visita correspondiente.</p>
                 <a href="{{ url_for('historial.exportar_csv', instalacion_id=instalacion.id) }}" class="btn btn-outline-dark btn-sm"><i class="bi bi-download me-1"></i>Exportar CSV</a>
             </div>
 
@@ -19,7 +19,7 @@
                 <tbody>
                     {% for obs in observaciones %}
                     <tr>
-                        <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+                        <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span>{% if obs.visibilidad == 'Interna' %} <span class="badge badge-Interna">Interna</span>{% endif %}</td>
                         <td>{{ obs.equipo.nombre if obs.equipo else '-' }}</td>
                         <td>{{ obs.descripcion }}</td>
                         <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
@@ -58,7 +58,7 @@
             <div class="table-responsive">
             <table class="table table-sm table-hover data-table">
                 <thead>
-                    <tr><th>Fecha</th><th>Contrato</th><th>Servicio</th><th>Estado servicio</th><th>Estado visita</th><th>Técnico</th><th>Formularios</th><th>Fotos</th><th></th></tr>
+                    <tr><th>Fecha</th><th>Contrato</th><th>Servicio</th><th>Técnico</th><th>Formularios</th><th>Documentos</th><th></th></tr>
                 </thead>
                 <tbody>
                     {% for f in filas %}
@@ -66,19 +66,22 @@
                         <td>{{ f.fecha.strftime('%d/%m/%Y') }}</td>
                         <td>{{ f.contrato }}</td>
                         <td>{{ f.servicio }}</td>
-                        <td>
-                            {% if f.estado_item != '-' %}
-                            <span class="badge badge-{{ f.estado_item.replace(' ', '.') }}">{{ f.estado_item }}</span>
-                            {% else %}-{% endif %}
-                        </td>
-                        <td><span class="badge badge-{{ f.estado_visita.replace(' ', '.') }}">{{ f.estado_visita }}</span></td>
                         <td>{{ f.tecnico or '-' }}</td>
                         <td>{{ f.formularios }}</td>
                         <td>{{ f.fotos }}</td>
-                        <td><a href="{{ url_for('visitas.detalle', visita_id=f.visita_id) }}" class="btn btn-sm btn-outline-secondary">Ver / Editar</a></td>
+                        <td>
+                            {% if f.tipo == 'documento' %}
+                            <a href="{{ url_for('documentos.ver', nombre_archivo=f.documento_archivo) }}" class="btn btn-sm btn-outline-secondary" target="_blank">Descargar</a>
+                            <form method="POST" action="{{ url_for('documentos.eliminar', documento_id=f.documento_id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar este documento?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                            </form>
+                            {% else %}
+                            <a href="{{ url_for('visitas.detalle', visita_id=f.visita_id) }}" class="btn btn-sm btn-outline-secondary">Ver / Editar</a>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% else %}
-                    <tr><td colspan="9"><div class="estado-vacio-doc"><i class="bi bi-clock-history"></i><p class="mb-0">Esta instalación todavía no tiene historial cargado.</p></div></td></tr>
+                    <tr><td colspan="7"><div class="estado-vacio-doc"><i class="bi bi-clock-history"></i><p class="mb-0">Esta instalación todavía no tiene historial cargado.</p></div></td></tr>
                     {% endfor %}
                 </tbody>
             </table>

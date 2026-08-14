@@ -10,7 +10,15 @@ from app.auth_utils import (
     verificar_escritura_cliente,
     verificar_visita_editable,
 )
-from app.models import CLASIFICACIONES_OBSERVACION, Equipo, Foto, Instalacion, ItemVisita, Observacion
+from app.models import (
+    CLASIFICACIONES_OBSERVACION,
+    VISIBILIDADES_OBSERVACION,
+    Equipo,
+    Foto,
+    Instalacion,
+    ItemVisita,
+    Observacion,
+)
 from app.notificaciones import notificar_gestion, notificar_usuario
 from app.routes.fotos import _extension_permitida, _guardar_archivo
 from app.utils import crear_presupuesto, es_ajax, parse_fecha
@@ -38,6 +46,9 @@ def nueva(instalacion_id):
     if request.method == "POST":
         clasificacion = request.form["clasificacion"]
         requiere_presupuesto = bool(request.form.get("requiere_presupuesto")) and clasificacion in CLASIFICACIONES_CON_PRESUPUESTO
+        visibilidad = request.form.get("visibilidad")
+        if visibilidad not in VISIBILIDADES_OBSERVACION:
+            visibilidad = "Cliente"
 
         observacion = Observacion(
             instalacion_id=instalacion.id,
@@ -47,6 +58,7 @@ def nueva(instalacion_id):
             descripcion=request.form["descripcion"],
             fecha_carga=parse_fecha(request.form.get("fecha_carga"), date.today()),
             estado_revision="Pendiente",
+            visibilidad=visibilidad,
             creado_por_id=current_user.id,
             requiere_presupuesto=requiere_presupuesto,
         )
@@ -106,6 +118,7 @@ def nueva(instalacion_id):
         equipo=equipo,
         clasificaciones=CLASIFICACIONES_OBSERVACION,
         clasificaciones_con_presupuesto=CLASIFICACIONES_CON_PRESUPUESTO,
+        visibilidades=VISIBILIDADES_OBSERVACION,
     )
 
 
@@ -133,12 +146,18 @@ def editar(observacion_id):
         observacion.clasificacion = request.form["clasificacion"]
         observacion.descripcion = request.form["descripcion"]
         observacion.fecha_carga = parse_fecha(request.form.get("fecha_carga"), observacion.fecha_carga)
+        visibilidad = request.form.get("visibilidad")
+        if visibilidad in VISIBILIDADES_OBSERVACION:
+            observacion.visibilidad = visibilidad
         db.session.commit()
         flash("Observación actualizada.", "success")
         return redirect(request.referrer or url_for("instalaciones.detalle", instalacion_id=observacion.instalacion_id))
 
     return render_template(
-        "observaciones/editar.html", observacion=observacion, clasificaciones=CLASIFICACIONES_OBSERVACION
+        "observaciones/editar.html",
+        observacion=observacion,
+        clasificaciones=CLASIFICACIONES_OBSERVACION,
+        visibilidades=VISIBILIDADES_OBSERVACION,
     )
 
 

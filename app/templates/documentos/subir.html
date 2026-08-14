@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Cargar documento - {{ instalacion.nombre }}{% endblock %}
+{% block content %}
+<div class="pagina-ancha">
+    <h1>Cargar documento</h1>
+    <div class="tarjeta-doc angosta">
+            <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}">&larr; {{ instalacion.nombre }}</a></p>
+            <p class="text-muted">
+                Para un informe puntual (alineación, trabajo especial, certificado, u otro documento) que no
+                corresponde a una visita con checklist — queda listado en el histórico técnico con su archivo
+                para descargar.
+            </p>
+
+            <form method="POST" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label class="form-label">Título</label>
+                    <input type="text" name="titulo" class="form-control" placeholder="Ej: Informe de alineación láser - Bomba 2" required>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Archivo</label>
+                    <input type="file" name="archivo" class="form-control" accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg" required>
+                    <div class="form-text">PDF, Word, Excel o imagen.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Equipo (opcional)</label>
+                    <select name="equipo_id" class="form-select">
+                        <option value="">General (no es de un equipo puntual)</option>
+                        {% for equipo in equipos %}
+                        <option value="{{ equipo.id }}" {% if equipo_preseleccionado == equipo.id %}selected{% endif %}>{{ equipo.nombre }} ({{ equipo.tipo }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Fecha del documento</label>
+                    <input type="date" name="fecha_documento" class="form-control" value="{{ hoy }}">
+                    <div class="form-text">La fecha real del informe, no necesariamente la de hoy.</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Descripción (opcional)</label>
+                    <textarea name="descripcion" class="form-control" rows="3" placeholder="Notas adicionales sobre el documento..."></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Cargar documento</button>
+                <a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}" class="btn btn-link">Cancelar</a>
+            </form>
+
+    </div>
+</div>
+{% endblock %}

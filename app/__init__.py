@@ -83,6 +83,7 @@ def create_app():
     from app.routes.visitas import visitas_bp
     from app.routes.formularios import formularios_bp
     from app.routes.fotos import fotos_bp
+    from app.routes.documentos import documentos_bp
     from app.routes.historial import historial_bp
     from app.routes.observaciones import observaciones_bp
     from app.routes.presupuestos import presupuestos_bp
@@ -110,6 +111,7 @@ def create_app():
     app.register_blueprint(visitas_bp)
     app.register_blueprint(formularios_bp)
     app.register_blueprint(fotos_bp)
+    app.register_blueprint(documentos_bp)
     app.register_blueprint(historial_bp)
     app.register_blueprint(observaciones_bp)
     app.register_blueprint(presupuestos_bp)

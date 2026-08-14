@@ -23,6 +23,15 @@
                     <label class="form-label">Fecha</label>
                     <input type="date" name="fecha_carga" class="form-control" value="{{ observacion.fecha_carga.isoformat() }}">
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">Visibilidad</label>
+                    <select name="visibilidad" class="form-select">
+                        {% for v in visibilidades %}
+                        <option value="{{ v }}" {% if observacion.visibilidad == v %}selected{% endif %}>{{ v }}</option>
+                        {% endfor %}
+                    </select>
+                    <div class="form-text">Interna: queda como nota de uso interno, nunca la ve el cliente aunque se apruebe.</div>
+                </div>
                 <button type="submit" class="btn btn-primary">Guardar cambios</button>
                 <a href="{{ url_for('instalaciones.detalle', instalacion_id=observacion.instalacion_id) }}" class="btn btn-link">Cancelar</a>
             </form>

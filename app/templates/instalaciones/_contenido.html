@@ -19,6 +19,7 @@
                             <li><a class="dropdown-item" href="{{ url_for('equipos.nuevo', instalacion_id=instalacion.id) }}" data-modal-form><i class="bi bi-hdd-stack me-2"></i>Agregar equipo</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('fotos.subir_manual', instalacion_id=instalacion.id) }}"><i class="bi bi-camera me-2"></i>Subir foto</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('instalaciones.fotos', instalacion_id=instalacion.id) }}"><i class="bi bi-images me-2"></i>Banco de fotos</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('documentos.subir', instalacion_id=instalacion.id) }}"><i class="bi bi-file-earmark-arrow-up me-2"></i>Cargar documento</a></li>
                         </ul>
                     </div>
                 </div>
@@ -70,23 +71,19 @@
                     {% if not bloques_hoja_ruta %}
                     <p class="text-muted">Todavía no hay visitas programadas para esta instalación.</p>
                     {% endif %}
-                    {% for bloque in bloques_hoja_ruta %}
-                    <p style="font-family:var(--font-display); font-size:.72rem; font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--ink-muted); margin: {{ '0' if loop.first else '1.1rem' }} 0 .5rem;">{{ bloque.titulo }}</p>
                     <ul class="lista-agenda-doc">
+                        {% for bloque in bloques_hoja_ruta %}
                         {% for visita in bloque.visitas %}
                         <li>
-                            <a class="item-agenda-doc" href="{{ url_for('visitas.detalle', visita_id=visita.id) }}">
+                            <div class="item-agenda-doc">
                                 <span class="fecha">{{ visita.fecha.strftime('%d/%m') }}</span>
-                                <span class="nombre">
-                                    {{ visita.nombre_tecnico }}
-                                    <span class="cliente">{{ visita.items|map(attribute='nombre_mostrado')|join(', ') if visita.items else 'Sin servicios cargados' }}</span>
-                                </span>
-                                <span class="badge badge-{{ visita.estado.replace(' ', '.') }}">{{ visita.estado }}</span>
-                            </a>
+                                <span class="nombre">{{ visita.items|map(attribute='nombre_mostrado')|join(', ') if visita.items else 'Sin servicios cargados' }}</span>
+                                <a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Ver visita</a>
+                            </div>
                         </li>
                         {% endfor %}
+                        {% endfor %}
                     </ul>
-                    {% endfor %}
 
                 </div>
 
@@ -138,6 +135,7 @@
                             <div class="obs-lateral{{ ' obs-lateral-critica' if obs.clasificacion == 'Deficiencia crítica' }}">
                                 <div class="obs-lateral-cab">
                                     <span>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}{% if obs.equipo %} · {{ obs.equipo.nombre }}{% endif %}</span>
+                                    {% if obs.visibilidad == 'Interna' %}<span class="badge badge-Interna">Interna</span>{% endif %}
                                     {% if obs.estado_revision == 'Aprobada' %}<span class="badge badge-Cumplido">Aprobada</span>{% else %}<span class="badge badge-Pendiente">Pendiente</span>{% endif %}
                                 </div>
                                 <div class="obs-lateral-desc">{{ obs.descripcion }}</div>
