@@ -65,6 +65,7 @@
                 ejecutarScripts(cont);
                 reinicializarAyudantes(cont);
                 enlazarDisparadores(cont);
+                enlazarGraficos(cont);
                 cont.dispatchEvent(new CustomEvent('contenido-refrescado'));
             });
     }
@@ -141,6 +142,32 @@
         });
     }
 
+    // Botones que abren contenido YA presente en la página (ej. "Ver
+    // gráfico" en _grupo_checklist.html) en vez de pedirlo por AJAX: el
+    // contenido vive oculto en el hermano siguiente. Igual que
+    // enlazarDisparadores, hay que volver a llamarla después de copiar un
+    // bloque con innerHTML (ej. el modal de preview de equipo en
+    // instalaciones/equipos_categoria.html) porque esa copia no arrastra
+    // los listeners ya enganchados.
+    function enlazarGraficos(root) {
+        (root || document).querySelectorAll('[data-abrir-grafico]').forEach(function (el) {
+            // Flag en una propiedad JS, no en el dataset: un data-* queda
+            // en el HTML y sobrevive a un innerHTML-copy (ej. el modal de
+            // preview de equipo), haciendo creer que ese nodo -- que en
+            // realidad nunca tuvo el addEventListener de abajo, clonar no
+            // clona listeners -- ya estaba enganchado.
+            if (el._graficoListo) return;
+            el._graficoListo = true;
+            el.addEventListener('click', function () {
+                var origen = el.nextElementSibling;
+                if (!origen) return;
+                titulo.textContent = origen.dataset.modalTitulo || 'Gráfico';
+                cuerpo.innerHTML = origen.innerHTML;
+                backdrop.classList.add('abierta');
+            });
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', function () {
         backdrop = document.getElementById('modal-form-backdrop');
         if (!backdrop) return;
@@ -150,11 +177,13 @@
         window.cerrarModalFormulario = cerrarModal;
         window.abrirModalFormulario = cargarFormulario;
         window.mostrarToast = mostrarToast;
+        window.enlazarGraficosChecklist = enlazarGraficos;
         backdrop.addEventListener('click', function (e) { if (e.target === backdrop) cerrarModal(); });
         document.addEventListener('keydown', function (e) {
             if (e.key === 'Escape' && backdrop.classList.contains('abierta')) cerrarModal();
         });
 
         enlazarDisparadores(document);
+        enlazarGraficos(document);
     });
 })();

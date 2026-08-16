@@ -51,8 +51,19 @@
     </div>
 
     {% if grupo.campos_numericos %}
-    <details class="grafico-desplegable">
-        <summary>📈 Ver gráfico</summary>
+    {# El gráfico abre en el modal genérico de base.html (#modal-form-backdrop)
+       en vez de navegar a nada -- reutiliza esa infraestructura (y no un
+       modal propio) porque cuando esto se anida dentro del modal de
+       preview de equipo (instalaciones/equipos_categoria.html), un modal
+       nuevo ahí adentro quedaría atrapado por el transform del modal
+       contenedor. #modal-form-backdrop es un hermano a nivel de <body>
+       (definido una sola vez en base.html), así que no tiene ese problema
+       aunque el botón que lo abre esté, él sí, anidado. El contenido va
+       oculto al lado del botón (ver modal-form.js: enlazarGraficos toma
+       el hermano siguiente al hacer clic) para no pegarle otra vez a la
+       base de datos con una ruta aparte. #}
+    <button type="button" class="btn-grafico-checklist" data-abrir-grafico>📈 Ver gráfico</button>
+    <div class="grafico-cuerpo-oculto" hidden data-modal-titulo="{{ grupo.tipo_formulario.nombre }} — evolución">
         <div class="grafico-cuerpo">
             {% for campo in grupo.campos_numericos %}
             <div class="grafico-campo">
@@ -71,6 +82,6 @@
             </div>
             {% endfor %}
         </div>
-    </details>
+    </div>
     {% endif %}
 </div>

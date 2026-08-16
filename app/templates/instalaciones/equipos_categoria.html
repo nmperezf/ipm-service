@@ -122,6 +122,10 @@
             titulo.textContent = origen.dataset.titulo;
             cuerpo.innerHTML = origen.innerHTML;
             backdrop.classList.add('abierta');
+            // El botón "Ver gráfico" (dentro de _grupo_checklist.html) se
+            // engancha en modal-form.js -- la copia por innerHTML no
+            // arrastra ese listener, hay que rehacerla acá.
+            if (window.enlazarGraficosChecklist) window.enlazarGraficosChecklist(cuerpo);
         });
     });
 

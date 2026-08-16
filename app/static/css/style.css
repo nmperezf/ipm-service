@@ -2119,19 +2119,16 @@ details.bloque-equipo .ir-ficha { display: inline-block; margin-bottom: .8rem; f
 .tarjeta-carga-checklist-detalle .fila-punto-checklist .label { color: var(--ink); font-weight: 600; }
 .tarjeta-carga-checklist-detalle .fila-punto-checklist .valor { white-space: normal; max-width: 55%; }
 
-/* Gráfico como <details> inline en vez de modal: esto se anida a veces
-   dentro de OTRO modal ya abierto (preview de equipo en
-   instalaciones/equipos_categoria.html), donde un modal-backdrop-doc
-   con position:fixed quedaría atrapado por el transform del modal
-   contenedor en vez de posicionarse contra la ventana. */
-details.grafico-desplegable { margin-top: .5rem; }
-details.grafico-desplegable summary {
-    display: inline-flex; align-items: center; gap: .3rem; font-size: .72rem; font-weight: 700;
-    color: var(--bs-info); cursor: pointer; list-style: none;
+/* Botón que abre el gráfico en el modal genérico de base.html -- ver el
+   comentario en _grupo_checklist.html sobre por qué es ese modal
+   compartido y no uno propio. */
+.btn-grafico-checklist {
+    display: inline-flex; align-items: center; gap: .3rem; margin-top: .5rem;
+    font-size: .72rem; font-weight: 700; color: var(--bs-info);
+    background: none; border: none; padding: 0; cursor: pointer;
 }
-details.grafico-desplegable summary::-webkit-details-marker { display: none; }
-details.grafico-desplegable summary:hover { text-decoration: underline; }
-.grafico-cuerpo { padding-top: .8rem; }
+.btn-grafico-checklist:hover { text-decoration: underline; }
+.grafico-cuerpo { padding-top: .3rem; }
 .grafico-campo { margin-bottom: 1.2rem; }
 .grafico-campo:last-child { margin-bottom: 0; }
 .grafico-campo .label { font-size: .82rem; font-weight: 600; margin-bottom: .3rem; }
