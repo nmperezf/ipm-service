@@ -56,6 +56,11 @@
                     <label class="form-label">Nombre completo</label>
                     <input type="text" name="nombre_completo" class="form-control" value="{{ usuario.nombre_completo or '' }}">
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">Matrícula / certificación profesional</label>
+                    <input type="text" name="matricula_profesional" class="form-control" placeholder="Ej: CIP #84920" value="{{ usuario.matricula_profesional or '' }}">
+                    <div class="form-text">Opcional — se imprime debajo de la firma en el informe de sala de bombas.</div>
+                </div>
 
                 {% if usuario %}
                 <div class="form-check mb-3">

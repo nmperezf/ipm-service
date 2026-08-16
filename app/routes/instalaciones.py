@@ -32,6 +32,9 @@ def nueva(cliente_id):
             nombre=request.form["nombre"],
             direccion=request.form.get("direccion"),
             observaciones=request.form.get("observaciones"),
+            aseguradora=request.form.get("aseguradora", "").strip() or None,
+            numero_poliza=request.form.get("numero_poliza", "").strip() or None,
+            tag_sala_bombas=request.form.get("tag_sala_bombas", "").strip() or None,
         )
         db.session.add(instalacion)
         db.session.commit()
@@ -152,6 +155,9 @@ def editar(instalacion_id):
         instalacion.nombre = request.form["nombre"]
         instalacion.direccion = request.form.get("direccion")
         instalacion.observaciones = request.form.get("observaciones")
+        instalacion.aseguradora = request.form.get("aseguradora", "").strip() or None
+        instalacion.numero_poliza = request.form.get("numero_poliza", "").strip() or None
+        instalacion.tag_sala_bombas = request.form.get("tag_sala_bombas", "").strip() or None
         db.session.commit()
         mensaje = f"Instalación '{instalacion.nombre}' actualizada."
         if es_ajax():

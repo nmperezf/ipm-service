@@ -26,9 +26,9 @@ from app.models import (
     categorias_equipo_agrupadas,
 )
 from app.notificaciones import notificar_gestion, notificar_tecnico_asignado
-from app.pdf_checklist_tecnico import categorias_de_visita, generar_pdf_checklist_tecnico
+from app.pdf_checklist_tecnico import categoria_de_formulario, categorias_de_visita, generar_pdf_checklist_tecnico
 from app.pdf_devolucion import generar_pdf_devolucion
-from app.utils import equipos_por_categoria, es_ajax, parse_fecha, resumen_visita_por_categoria
+from app.utils import equipos_por_categoria, es_ajax, parse_fecha, parse_hora, resumen_visita_por_categoria
 
 visitas_bp = Blueprint("visitas", __name__, url_prefix="/visitas")
 
@@ -179,6 +179,19 @@ def detalle(visita_id):
         key=lambda o: (o.clasificacion != "Deficiencia crítica", o.fecha_carga),
     )
 
+    # Ítems con al menos un checklist cargado de una categoría que tiene
+    # informe oficial armado (hoy: Sala de bombas, ver
+    # pdf_informe_sala_bombas.py) -- el botón "Informe oficial" en el
+    # template usa esto en vez de item.servicio.categoria porque un ítem
+    # suelto (sin contrato, servicio_contrato_id=None) también puede tener
+    # checklists de esa categoría cargados (ver
+    # formularios._secciones_categoria, que no exige un paquete).
+    items_con_informe = set()
+    if visita.cerrada:
+        for it in visita.items:
+            if any(categoria_de_formulario(f) == "Sala de bombas" for f in it.formularios):
+                items_con_informe.add(it.id)
+
     return render_template(
         "visitas/detail.html",
         visita=visita,
@@ -187,6 +200,7 @@ def detalle(visita_id):
         equipos_agrupados=equipos_por_categoria(visita.instalacion),
         deficiencias_abiertas=deficiencias_abiertas,
         categorias_pdf=categorias_de_visita(visita) if visita.cerrada else [],
+        items_con_informe=items_con_informe,
     )
 
 
@@ -327,6 +341,10 @@ def enviar_revision(visita_id):
         firma_tecnico = request.form.get("firma_tecnico")
         if firma_tecnico:
             visita.firma_tecnico = firma_tecnico
+        visita.nombre_representante_cliente = request.form.get("nombre_representante_cliente", "").strip() or None
+        visita.cargo_representante_cliente = request.form.get("cargo_representante_cliente", "").strip() or None
+        visita.hora_inicio = parse_hora(request.form.get("hora_inicio"))
+        visita.hora_termino = parse_hora(request.form.get("hora_termino"))
         # La OT no tiene un estado propio editable mientras esté ligada a
         # una visita (ver ordenes.actualizar_campo) -- se sincroniza sola
         # con la fase de la visita, para no terminar con dos estados

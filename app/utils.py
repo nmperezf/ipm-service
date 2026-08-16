@@ -41,6 +41,21 @@ def parse_fecha(valor, por_defecto=None, silencioso=False):
         raise
 
 
+def parse_hora(valor, por_defecto=None, silencioso=True):
+    """Convierte un string "HH:MM" (el formato de <input type="time">) a
+    time. Sin valor, devuelve por_defecto. Silencioso por defecto (a
+    diferencia de parse_fecha) porque hora_inicio/hora_termino son siempre
+    opcionales -- un valor mal formado no debería tirar un 500."""
+    if not valor:
+        return por_defecto
+    try:
+        return datetime.strptime(valor, "%H:%M").time()
+    except ValueError:
+        if silencioso:
+            return por_defecto
+        raise
+
+
 def es_ajax():
     """True cuando el pedido viene del JS de ventana flotante (ver
     static/js/modal-form.js), no de una navegación de página completa —
@@ -95,6 +110,48 @@ def crear_presupuesto(observacion, usuario_id):
             with db.session.begin_nested():
                 db.session.add(presupuesto)
             return presupuesto
+        except IntegrityError as exc:
+            ultimo_error = exc
+    raise ultimo_error
+
+
+def obtener_o_crear_informe(item_visita, categoria, usuario_id):
+    """InformeGenerado de (item_visita, categoria): si ya existe, lo
+    reutiliza tal cual (mismo número en cada re-descarga del PDF); si no,
+    le asigna el próximo número correlativo INF-AAAA-NNNN por empresa y
+    año. No hace commit: queda a cargo del caller. Mismo patrón que
+    crear_presupuesto (reintenta si dos altas chocan en el mismo segundo)."""
+    from app.models import InformeGenerado
+
+    existente = InformeGenerado.query.filter_by(item_visita_id=item_visita.id, categoria=categoria).first()
+    if existente:
+        return existente
+
+    empresa_id = item_visita.visita.instalacion.cliente.empresa_id
+    anio = date.today().year
+    prefijo = f"INF-{anio}-"
+
+    ultimo_error = None
+    for _ in range(3):
+        ultimo = (
+            InformeGenerado.query.filter(
+                InformeGenerado.numero.like(f"{prefijo}%"), InformeGenerado.empresa_id == empresa_id
+            )
+            .order_by(InformeGenerado.numero.desc())
+            .first()
+        )
+        numero = int(ultimo.numero.rsplit("-", 1)[-1]) + 1 if ultimo else 1
+        informe = InformeGenerado(
+            item_visita_id=item_visita.id,
+            categoria=categoria,
+            numero=f"{prefijo}{numero:04d}",
+            empresa_id=empresa_id,
+            generado_por_id=usuario_id,
+        )
+        try:
+            with db.session.begin_nested():
+                db.session.add(informe)
+            return informe
         except IntegrityError as exc:
             ultimo_error = exc
     raise ultimo_error

@@ -12,6 +12,68 @@
                 tendencia no cambian en nada.
             </p>
 
+            {% macro puntos_checklist(tipo, campos, equipo_id, datos) %}
+            {% for campo in campos %}
+            {% set con_estado = campo.tipo == 'estado' or campo.con_estado %}
+            {% set valor_actual = datos.get(campo.campo) %}
+            {% set base_id = tipo.id ~ '__' ~ equipo_id ~ '__' ~ campo.campo %}
+            {% set estado_previo = valor_actual.estado if con_estado and valor_actual else '' %}
+
+            <div class="item-check">
+                <div class="item-check-info">
+                    <div class="item-check-punto">{{ campo.label }}</div>
+                    {% if campo.descripcion %}<div class="item-check-desc">{{ campo.descripcion }}</div>{% endif %}
+                    {% if campo.requiere_foto %}
+                    <div class="widget-foto-campo" data-equipo="{{ equipo_id }}" data-campo="{{ campo.campo }}"
+                         data-url-subir="{{ url_for('fotos.subir', item_id=item.id) }}"
+                         data-url-eliminar-plantilla="{{ url_for('fotos.eliminar', foto_id=0) }}">
+                        <div class="miniaturas-foto-campo">
+                            {% for foto in fotos_por_campo.get((equipo_id, campo.campo), []) %}
+                            <div class="miniatura-foto" data-foto-id="{{ foto.id }}">
+                                <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" target="_blank"><img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" alt=""></a>
+                                <button type="button" class="quitar" title="Quitar">✕</button>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <label class="btn-foto-campo"><i class="bi bi-camera me-1"></i>Foto
+                            <input type="file" accept="image/*" class="d-none">
+                        </label>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if campo.tipo != 'estado' %}
+                <div class="valor-input{{ ' texto' if campo.tipo == 'texto' }}">
+                    {% if campo.tipo == 'numero' %}
+                    <input type="number" step="any" name="campo__{{ base_id }}" value="{{ (valor_actual.valor if con_estado and valor_actual else valor_actual) if (valor_actual is not none) else '' }}">
+                    {% if campo.unidad %}<span class="unidad">{{ campo.unidad }}</span>{% endif %}
+                    {% else %}
+                    <input type="text" name="campo__{{ base_id }}" value="{{ (valor_actual.valor if con_estado and valor_actual else valor_actual) or '' }}">
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if con_estado %}
+                <div class="grupo-estado" data-nota="nota-{{ base_id }}">
+                    {% for est in ESTADOS_CHECKLIST %}
+                    <button type="button" class="{{ est }}{{ ' activo' if estado_previo == est }}" onclick="marcarEstadoChecklist(this,'{{ est }}')">{{ ESTADOS_CHECKLIST_LABEL[est] }}</button>
+                    {% endfor %}
+                </div>
+                <input type="hidden" class="estado-hidden" name="estado__{{ base_id }}" value="{{ estado_previo }}">
+                {% endif %}
+            </div>
+
+            {% if con_estado %}
+            <div class="fila-nota-carga{{ (' visible ' ~ estado_previo) if estado_previo in ('observado', 'deficiencia') }}" id="nota-{{ base_id }}">
+                <div class="nota-caja">
+                    <div class="nota-etiqueta">{{ 'Descripción de la deficiencia' if estado_previo == 'deficiencia' else 'Nota' }}</div>
+                    <textarea name="nota__{{ base_id }}" placeholder="Describí lo observado...">{{ valor_actual.nota if valor_actual else '' }}</textarea>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+            {% endmacro %}
+
             <form method="POST">
             {% for seccion in secciones %}
             <div class="seccion-eq-carga">
@@ -20,72 +82,18 @@
                     {% if seccion.tipo.referencia_normativa %}<div class="seccion-eq-carga-ref">{{ seccion.tipo.referencia_normativa }}</div>{% endif %}
                 </div>
 
+                {% if seccion.tipo.por_equipo %}
                 {% for equipo in seccion.equipos %}
                 {% set datos = seccion.formularios[equipo.id].datos() if equipo.id in seccion.formularios else {} %}
                 {% if seccion.equipos|length > 1 %}
                 <div class="subgrupo-titulo-carga">{{ equipo.nombre }}{% if equipo.ubicacion %} · {{ equipo.ubicacion }}{% endif %}</div>
                 {% endif %}
-
-                {% for campo in seccion.campos %}
-                {% set con_estado = campo.tipo == 'estado' or campo.con_estado %}
-                {% set valor_actual = datos.get(campo.campo) %}
-                {% set base_id = seccion.tipo.id ~ '__' ~ equipo.id ~ '__' ~ campo.campo %}
-                {% set estado_previo = valor_actual.estado if con_estado and valor_actual else '' %}
-
-                <div class="item-check">
-                    <div class="item-check-info">
-                        <div class="item-check-punto">{{ campo.label }}</div>
-                        {% if campo.descripcion %}<div class="item-check-desc">{{ campo.descripcion }}</div>{% endif %}
-                        {% if campo.requiere_foto %}
-                        <div class="widget-foto-campo" data-equipo="{{ equipo.id }}" data-campo="{{ campo.campo }}"
-                             data-url-subir="{{ url_for('fotos.subir', item_id=item.id) }}"
-                             data-url-eliminar-plantilla="{{ url_for('fotos.eliminar', foto_id=0) }}">
-                            <div class="miniaturas-foto-campo">
-                                {% for foto in fotos_por_campo.get((equipo.id, campo.campo), []) %}
-                                <div class="miniatura-foto" data-foto-id="{{ foto.id }}">
-                                    <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" target="_blank"><img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" alt=""></a>
-                                    <button type="button" class="quitar" title="Quitar">✕</button>
-                                </div>
-                                {% endfor %}
-                            </div>
-                            <label class="btn-foto-campo"><i class="bi bi-camera me-1"></i>Foto
-                                <input type="file" accept="image/*" class="d-none">
-                            </label>
-                        </div>
-                        {% endif %}
-                    </div>
-
-                    {% if campo.tipo != 'estado' %}
-                    <div class="valor-input{{ ' texto' if campo.tipo == 'texto' }}">
-                        {% if campo.tipo == 'numero' %}
-                        <input type="number" step="any" name="campo__{{ base_id }}" value="{{ (valor_actual.valor if con_estado and valor_actual else valor_actual) if (valor_actual is not none) else '' }}">
-                        {% if campo.unidad %}<span class="unidad">{{ campo.unidad }}</span>{% endif %}
-                        {% else %}
-                        <input type="text" name="campo__{{ base_id }}" value="{{ (valor_actual.valor if con_estado and valor_actual else valor_actual) or '' }}">
-                        {% endif %}
-                    </div>
-                    {% endif %}
-
-                    {% if con_estado %}
-                    <div class="grupo-estado" data-nota="nota-{{ base_id }}">
-                        {% for est in ESTADOS_CHECKLIST %}
-                        <button type="button" class="{{ est }}{{ ' activo' if estado_previo == est }}" onclick="marcarEstadoChecklist(this,'{{ est }}')">{{ ESTADOS_CHECKLIST_LABEL[est] }}</button>
-                        {% endfor %}
-                    </div>
-                    <input type="hidden" class="estado-hidden" name="estado__{{ base_id }}" value="{{ estado_previo }}">
-                    {% endif %}
-                </div>
-
-                {% if con_estado %}
-                <div class="fila-nota-carga{{ (' visible ' ~ estado_previo) if estado_previo in ('observado', 'deficiencia') }}" id="nota-{{ base_id }}">
-                    <div class="nota-caja">
-                        <div class="nota-etiqueta">{{ 'Descripción de la deficiencia' if estado_previo == 'deficiencia' else 'Nota' }}</div>
-                        <textarea name="nota__{{ base_id }}" placeholder="Describí lo observado...">{{ valor_actual.nota if valor_actual else '' }}</textarea>
-                    </div>
-                </div>
+                {{ puntos_checklist(seccion.tipo, seccion.campos, equipo.id, datos) }}
+                {% endfor %}
+                {% else %}
+                {% set datos = seccion.formulario_general.datos() if seccion.formulario_general else {} %}
+                {{ puntos_checklist(seccion.tipo, seccion.campos, 0, datos) }}
                 {% endif %}
-                {% endfor %}
-                {% endfor %}
             </div>
             {% endfor %}
 

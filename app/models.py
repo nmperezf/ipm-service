@@ -274,6 +274,12 @@ class Instalacion(db.Model):
     direccion = db.Column(db.String(250))
     fecha_alta = db.Column(db.Date, default=date.today, nullable=False)
     observaciones = db.Column(db.Text)
+    # Datos para el informe de sala de bombas (ver InformeGenerado) -- una
+    # sala de bombas por instalación, mismo techo que ya tiene el resto de
+    # la app (los equipos tampoco se agrupan por sala física hoy).
+    aseguradora = db.Column(db.String(150), nullable=True)
+    numero_poliza = db.Column(db.String(60), nullable=True)  # texto, no numérico: suele llevar letras/guiones
+    tag_sala_bombas = db.Column(db.String(60), nullable=True)
 
     contratos = db.relationship(
         "Contrato", backref="instalacion", lazy=True, cascade="all, delete-orphan"
@@ -529,6 +535,13 @@ class Visita(db.Model):
     cerrada_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
     firma_cliente = db.Column(db.Text, nullable=True)  # imagen en base64 (data URI), capturada al enviar a revisión
     firma_tecnico = db.Column(db.Text, nullable=True)  # ídem, firma del técnico que hizo el servicio
+    # Nombre/cargo de quien firma del lado del cliente -- la firma de arriba
+    # es solo el trazo, esto es lo que se imprime debajo en el informe de
+    # sala de bombas. Se cargan junto al canvas de firma_cliente.
+    nombre_representante_cliente = db.Column(db.String(150), nullable=True)
+    cargo_representante_cliente = db.Column(db.String(150), nullable=True)
+    hora_inicio = db.Column(db.Time, nullable=True)
+    hora_termino = db.Column(db.Time, nullable=True)
 
     # Nota para el cliente: la carga el Administrador/Jefe, visible en el
     # portal del cliente junto a la fecha en que se escribió.
@@ -829,6 +842,45 @@ class Formulario(db.Model):
 
     def __repr__(self):
         return f"<Formulario {self.tipo_formulario.nombre if self.tipo_formulario else ''}>"
+
+
+class InformeGenerado(db.Model):
+    """Informe oficial combinado (ej. NFPA 25 — Sala de bombas) para una
+    categoría dentro de un ítem de visita: junta los checklists ya
+    cargados vía checklist_categoria, el ensayo de curva de caudal más
+    reciente y las observaciones, en un solo PDF (ver
+    app/pdf_informe_sala_bombas.py). No duplica esos datos, solo les pone
+    número de documento y un dictamen final.
+
+    numero se asigna una sola vez, la primera vez que se descarga el PDF
+    para este (item_visita, categoria) -- después se reutiliza el mismo
+    registro en cada re-descarga, mismo criterio que Presupuesto/OT (ver
+    crear_presupuesto en app/utils.py).
+
+    dictamen es el veredicto final, redactado a mano por Administrador/Jefe
+    -- la app nunca calcula un "aprobado/no aprobado" automático acá, mismo
+    criterio que EnsayoCaudal.resultado_manual."""
+
+    __tablename__ = "informes_generados"
+    __table_args__ = (db.UniqueConstraint("item_visita_id", "categoria", name="uq_informe_item_categoria"),)
+
+    id = db.Column(db.Integer, primary_key=True)
+    item_visita_id = db.Column(db.Integer, db.ForeignKey("items_visita.id"), nullable=False, index=True)
+    categoria = db.Column(db.String(60), nullable=False)  # "Sala de bombas"
+    numero = db.Column(db.String(30), unique=True, nullable=False)  # "INF-2026-0001"
+    # Desnormalizado (igual que Presupuesto.empresa_id) para poder buscar
+    # "el último número de este año" sin un join item_visita->visita->
+    # instalacion->cliente->empresa en cada alta.
+    empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=False, index=True)
+    dictamen = db.Column(db.Text, nullable=True)
+    generado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
+    fecha_generacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    item_visita = db.relationship("ItemVisita", backref=db.backref("informes_generados", cascade="all, delete-orphan"))
+    generado_por = db.relationship("Usuario")
+
+    def __repr__(self):
+        return f"<InformeGenerado {self.numero}>"
 
 
 # ---------------------------------------------------------------------------
@@ -1771,6 +1823,10 @@ class Usuario(UserMixin, db.Model):
     empresa_id = db.Column(db.Integer, db.ForeignKey("empresas.id"), nullable=True, index=True)
     cliente_id = db.Column(db.Integer, db.ForeignKey("clientes.id"), nullable=True, index=True)
     activo = db.Column(db.Boolean, default=True, nullable=False)
+    # Credencial del inspector (ej. "CIP #84920") -- se imprime debajo de su
+    # firma en el informe de sala de bombas, solo tiene sentido para
+    # Técnico/Jefe/Administrador.
+    matricula_profesional = db.Column(db.String(100), nullable=True)
 
     empresa = db.relationship("Empresa", backref="usuarios")
     cliente = db.relationship("Cliente", backref=db.backref("usuario", uselist=False))

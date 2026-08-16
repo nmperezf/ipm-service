@@ -59,6 +59,18 @@
                     <textarea name="notas_cierre" class="form-control" rows="4" placeholder="Contale al Jefe cómo fue la visita, por qué quedó algo pendiente, cualquier cosa a destacar..."></textarea>
                 </div>
 
+                <div class="row g-3 mb-3">
+                    <div class="col-auto">
+                        <label class="form-label">Hora de inicio</label>
+                        <input type="time" name="hora_inicio" class="form-control" value="{{ visita.hora_inicio.strftime('%H:%M') if visita.hora_inicio else '' }}">
+                    </div>
+                    <div class="col-auto">
+                        <label class="form-label">Hora de término</label>
+                        <input type="time" name="hora_termino" class="form-control" value="{{ visita.hora_termino.strftime('%H:%M') if visita.hora_termino else '' }}">
+                    </div>
+                    <div class="form-text">Opcional — se usa en el informe oficial de sala de bombas, si corresponde.</div>
+                </div>
+
                 <div class="mb-3">
                     <label class="form-label">Firma del cliente</label>
                     <div>
@@ -67,6 +79,16 @@
                     <button type="button" id="limpiar-firma" class="btn btn-sm btn-outline-secondary mt-2">Limpiar firma</button>
                     <input type="hidden" name="firma_cliente" id="firma_cliente_input">
                     <div class="form-text">Pasale el dispositivo al cliente para que firme acá arriba, con el dedo o el mouse — es la firma que va a quedar en el PDF de devolución.</div>
+                    <div class="row g-3 mt-1">
+                        <div class="col-md-6">
+                            <label class="form-label">Nombre de quien firma</label>
+                            <input type="text" name="nombre_representante_cliente" class="form-control" value="{{ visita.nombre_representante_cliente or '' }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Cargo</label>
+                            <input type="text" name="cargo_representante_cliente" class="form-control" value="{{ visita.cargo_representante_cliente or '' }}">
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mb-3">

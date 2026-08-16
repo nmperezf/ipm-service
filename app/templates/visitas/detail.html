@@ -193,6 +193,19 @@
                         {% endfor %}
                     </div>
 
+                    {% if item.id in items_con_informe %}
+                    <div class="d-flex flex-wrap gap-2 mb-2">
+                        <a href="{{ url_for('formularios.informe_categoria_pdf', item_id=item.id, categoria='Sala de bombas') }}" class="btn btn-outline-dark btn-sm" target="_blank">
+                            <i class="bi bi-file-earmark-pdf me-1"></i>Informe oficial — Sala de bombas
+                        </a>
+                        {% if current_user.rol in ('Administrador', 'Jefe') %}
+                        <a href="{{ url_for('formularios.informe_dictamen', item_id=item.id, categoria='Sala de bombas') }}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-pencil me-1"></i>Redactar dictamen
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
                     {% if puede_editar %}
                     {% if hay_tipos_formulario %}
                     <div class="d-flex flex-wrap gap-2 mb-3">

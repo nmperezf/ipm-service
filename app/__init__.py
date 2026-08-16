@@ -249,7 +249,7 @@ def _seed_catalogo_nfpa():
     Las referencias de norma/sección son orientativas -- conviene
     verificarlas contra la edición de NFPA 25 realmente adoptada antes de
     usarlas en un documento de cumplimiento."""
-    from app.models import Empresa, ServicioTipo
+    from app.models import Cliente, Empresa, ServicioTipo, TipoFormulario
 
     def crear(empresa_id, nombre, tipo_equipo, referencia, campos, por_equipo=True, oculto=False, categoria=None):
         if ServicioTipo.query.filter_by(empresa_id=empresa_id, nombre=nombre).first():
@@ -436,7 +436,26 @@ def _seed_catalogo_nfpa():
         crear(eid, "Inspección semanal — Motobomba", "Motobomba", "NFPA 25 · §8.3 Inspección semanal — motor diésel", campos_motobomba, oculto=True)
         crear(eid, "Inspección — Reserva de agua", "Reserva de agua", "NFPA 25 · §9.2 Inspección de tanques", campos_reserva_agua, oculto=True)
         crear(eid, "Inspecciones y pruebas en sala de bombas", None, None, [], por_equipo=False, categoria="Sala de bombas")
-        crear(eid, "Señales de supervisión y falla — Sala de bombas", None, "NFPA 25 · §4.6 — Señales de supervisión y falla", campos_senales, por_equipo=False)
+        crear(eid, "Señales de supervisión y falla — Sala de bombas", "Bomba jockey", "NFPA 25 · §4.6 — Señales de supervisión y falla", campos_senales, por_equipo=False)
+
+        # Backfill: versiones ya seedeadas antes de que tipo_equipo_aplicable
+        # se completara acá arriba (bug: quedaba en None) -- sin esto, este
+        # checklist no aparece agrupado bajo "Sala de bombas" en ningún
+        # lado (categoria_de_tipo_equipo(None) da None) y su botón "+"
+        # aparece suelto en cualquier ítem de cualquier visita, no solo los
+        # de sala de bombas. Se corrige también la copia ya importada de
+        # cada cliente (TipoFormulario), no solo el catálogo de empresa.
+        NOMBRE_SENALES = "Señales de supervisión y falla — Sala de bombas"
+        ServicioTipo.query.filter(
+            ServicioTipo.empresa_id == eid,
+            ServicioTipo.nombre == NOMBRE_SENALES,
+            ServicioTipo.tipo_equipo_aplicable.is_(None),
+        ).update({"tipo_equipo_aplicable": "Bomba jockey"}, synchronize_session=False)
+        TipoFormulario.query.filter(
+            TipoFormulario.cliente_id.in_(db.session.query(Cliente.id).filter(Cliente.empresa_id == eid)),
+            TipoFormulario.nombre == NOMBRE_SENALES,
+            TipoFormulario.tipo_equipo_aplicable.is_(None),
+        ).update({"tipo_equipo_aplicable": "Bomba jockey"}, synchronize_session=False)
 
         # crear() no toca un ServicioTipo que ya existía (de una corrida
         # anterior de este seed, antes de que existiera el paquete) -- acá

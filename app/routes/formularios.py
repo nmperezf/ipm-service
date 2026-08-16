@@ -3,9 +3,19 @@ from flask_login import current_user
 
 from app import db
 from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_escritura_cliente, verificar_visita_editable
-from app.models import Equipo, Formulario, Foto, ItemVisita, Observacion, TipoFormulario, categoria_de_tipo_equipo
+from app.models import (
+    TIPOS_BOMBA_PRINCIPAL,
+    Equipo,
+    Formulario,
+    Foto,
+    ItemVisita,
+    Observacion,
+    TipoFormulario,
+    categoria_de_tipo_equipo,
+)
+from app.pdf_informe_sala_bombas import generar_pdf_informe_categoria
 from app.pdf_reporte import generar_pdf_reporte_equipos
-from app.utils import es_ajax
+from app.utils import es_ajax, obtener_o_crear_informe
 
 formularios_bp = Blueprint("formularios", __name__, url_prefix="/formularios")
 
@@ -140,23 +150,16 @@ def _crear_observacion_de_punto(item, equipo, campo_label, estado, nota):
     db.session.add(observacion)
 
 
-@formularios_bp.route("/checklist-categoria/<int:item_id>/<categoria>", methods=["GET", "POST"])
-@rol_requerido("Administrador", "Jefe", "Técnico")
-def checklist_categoria(item_id, categoria):
-    """Pantalla combinada para una categoría entera (ej. Sala de bombas):
-    junta los tipos de formulario 'por equipo' de esa categoría con los
-    equipos reales de la instalación que les corresponden, para
-    completarlos de una sola carga -- pero cada equipo se guarda como su
-    propio Formulario, igual que si se hubiera cargado por separado, así
-    que su ficha individual, el histórico por categoría y el gráfico de
-    valores numéricos no cambian en nada."""
-    item = ItemVisita.query.get_or_404(item_id)
-    verificar_escritura_cliente(item.visita.instalacion.cliente)
-    verificar_visita_editable(item.visita)
+def _secciones_categoria(item, categoria):
+    """Arma la lista de secciones de una categoría entera (ej. Sala de
+    bombas) para un ítem de visita: junta los TipoFormulario de esa
+    categoría (por equipo o de sala completa) con lo ya cargado. Compartida
+    entre la pantalla de carga combinada (checklist_categoria) y el informe
+    oficial (formularios.informe_categoria_pdf) para que las dos lean
+    exactamente los mismos datos por el mismo camino."""
     instalacion = item.visita.instalacion
-
     tipos = (
-        TipoFormulario.query.filter_by(cliente_id=instalacion.cliente_id, por_equipo=True)
+        TipoFormulario.query.filter_by(cliente_id=instalacion.cliente_id)
         .order_by(TipoFormulario.orden, TipoFormulario.nombre)
         .all()
     )
@@ -172,15 +175,44 @@ def checklist_categoria(item_id, categoria):
     for tipo in tipos:
         if categoria_de_tipo_equipo(tipo.tipo_equipo_aplicable) != categoria:
             continue
-        equipos = [e for e in instalacion.equipos if e.activo and e.tipo == tipo.tipo_equipo_aplicable]
-        if not equipos:
-            continue
-        formularios_por_equipo = {
-            f.equipo_id: f
-            for f in Formulario.query.filter_by(item_visita_id=item.id, tipo_formulario_id=tipo.id).all()
-        }
-        secciones.append({"tipo": tipo, "campos": tipo.campos(), "equipos": equipos, "formularios": formularios_por_equipo})
+        if tipo.por_equipo:
+            equipos = [e for e in instalacion.equipos if e.activo and e.tipo == tipo.tipo_equipo_aplicable]
+            if not equipos:
+                continue
+            formularios_por_equipo = {
+                f.equipo_id: f
+                for f in Formulario.query.filter_by(item_visita_id=item.id, tipo_formulario_id=tipo.id).all()
+            }
+            secciones.append({"tipo": tipo, "campos": tipo.campos(), "equipos": equipos, "formularios": formularios_por_equipo})
+        else:
+            # Checklist de sala completa (ej. protocolo de retiro): no se
+            # liga a un equipo puntual, un solo Formulario por visita
+            # (equipo_id=None) -- el sentinel "0" en el nombre del campo
+            # del form (ver POST más abajo) deja reusar el mismo parseo
+            # que el resto de las secciones sin inventar otro esquema.
+            formulario_general = Formulario.query.filter_by(
+                item_visita_id=item.id, tipo_formulario_id=tipo.id, equipo_id=None
+            ).first()
+            secciones.append({"tipo": tipo, "campos": tipo.campos(), "equipos": [], "formularios": {}, "formulario_general": formulario_general})
+    return secciones
 
+
+@formularios_bp.route("/checklist-categoria/<int:item_id>/<categoria>", methods=["GET", "POST"])
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def checklist_categoria(item_id, categoria):
+    """Pantalla combinada para una categoría entera (ej. Sala de bombas):
+    junta los tipos de formulario 'por equipo' de esa categoría con los
+    equipos reales de la instalación que les corresponden, para
+    completarlos de una sola carga -- pero cada equipo se guarda como su
+    propio Formulario, igual que si se hubiera cargado por separado, así
+    que su ficha individual, el histórico por categoría y el gráfico de
+    valores numéricos no cambian en nada."""
+    item = ItemVisita.query.get_or_404(item_id)
+    verificar_escritura_cliente(item.visita.instalacion.cliente)
+    verificar_visita_editable(item.visita)
+    instalacion = item.visita.instalacion
+
+    secciones = _secciones_categoria(item, categoria)
     if not secciones:
         abort(404)
 
@@ -197,7 +229,12 @@ def checklist_categoria(item_id, categoria):
         guardados = 0
         for seccion in secciones:
             tipo = seccion["tipo"]
-            for equipo in seccion["equipos"]:
+            # Sección de sala completa: un solo pase con equipo=None (0 es
+            # el sentinel usado en el nombre del campo, ver template) en
+            # vez de loopear equipos reales.
+            equipos_a_guardar = seccion["equipos"] if tipo.por_equipo else [None]
+            for equipo in equipos_a_guardar:
+                equipo_id_campo = equipo.id if equipo else 0
                 datos = {}
                 algun_valor = False
                 for campo in seccion["campos"]:
@@ -207,7 +244,7 @@ def checklist_categoria(item_id, categoria):
                     valor_dato = None
                     tiene_valor = False
                     if campo["tipo"] != "estado":
-                        prefijo = f"campo__{tipo.id}__{equipo.id}__{nombre_campo}"
+                        prefijo = f"campo__{tipo.id}__{equipo_id_campo}__{nombre_campo}"
                         if campo["tipo"] == "multi_seleccion":
                             valor_dato = request.form.getlist(prefijo)
                         else:
@@ -215,8 +252,8 @@ def checklist_categoria(item_id, categoria):
                         tiene_valor = bool(valor_dato)
 
                     if con_estado:
-                        estado_valor = request.form.get(f"estado__{tipo.id}__{equipo.id}__{nombre_campo}", "")
-                        nota = request.form.get(f"nota__{tipo.id}__{equipo.id}__{nombre_campo}", "").strip()
+                        estado_valor = request.form.get(f"estado__{tipo.id}__{equipo_id_campo}__{nombre_campo}", "")
+                        nota = request.form.get(f"nota__{tipo.id}__{equipo_id_campo}__{nombre_campo}", "").strip()
                         if estado_valor or tiene_valor:
                             algun_valor = True
                             datos[nombre_campo] = {"valor": valor_dato or None, "estado": estado_valor, "nota": nota}
@@ -229,16 +266,20 @@ def checklist_categoria(item_id, categoria):
                         datos[nombre_campo] = valor_dato
 
                 if not algun_valor:
-                    continue  # equipo sin tocar, no crea un formulario vacío
+                    continue  # sin tocar, no crea un formulario vacío
 
-                formulario = seccion["formularios"].get(equipo.id)
+                if equipo:
+                    formulario = seccion["formularios"].get(equipo.id)
+                else:
+                    formulario = seccion.get("formulario_general")
                 if not formulario:
-                    formulario = Formulario(item_visita_id=item.id, tipo_formulario_id=tipo.id, equipo_id=equipo.id)
+                    formulario = Formulario(item_visita_id=item.id, tipo_formulario_id=tipo.id, equipo_id=equipo.id if equipo else None)
                     db.session.add(formulario)
                 formulario.set_datos(datos)
-                for obs in equipo.deficiencias:
-                    if not obs.resuelto:
-                        obs.confirmar_vigencia(item.visita_id, current_user.id)
+                if equipo:
+                    for obs in equipo.deficiencias:
+                        if not obs.resuelto:
+                            obs.confirmar_vigencia(item.visita_id, current_user.id)
                 guardados += 1
 
         db.session.commit()
@@ -249,6 +290,100 @@ def checklist_categoria(item_id, categoria):
         "visitas/checklist_categoria_form.html",
         item=item, categoria=categoria, secciones=secciones, instalacion=instalacion,
         fotos_por_campo=fotos_por_campo,
+    )
+
+
+@formularios_bp.route("/informe-categoria/<int:item_id>/<categoria>/dictamen", methods=["GET", "POST"])
+@rol_requerido("Administrador", "Jefe")
+def informe_dictamen(item_id, categoria):
+    """El veredicto final del informe lo redacta a mano Administrador/Jefe
+    -- mismo criterio que EnsayoCaudal.resultado_manual: la app nunca
+    calcula un 'aprobado/no aprobado' automático para un documento
+    oficial, solo muestra el estado de cada punto."""
+    item = ItemVisita.query.get_or_404(item_id)
+    verificar_escritura_cliente(item.visita.instalacion.cliente)
+    if not item.visita.cerrada:
+        flash("El dictamen se redacta una vez que la visita está cerrada.", "danger")
+        return redirect(url_for("visitas.detalle", visita_id=item.visita_id))
+
+    informe = obtener_o_crear_informe(item, categoria, current_user.id)
+    db.session.commit()
+
+    if request.method == "POST":
+        informe.dictamen = request.form.get("dictamen", "").strip() or None
+        db.session.commit()
+        flash("Dictamen guardado.", "success")
+        return redirect(url_for("formularios.informe_categoria_pdf", item_id=item.id, categoria=categoria))
+
+    return render_template("visitas/informe_dictamen_form.html", item=item, categoria=categoria, informe=informe)
+
+
+@formularios_bp.route("/informe-categoria/<int:item_id>/<categoria>/pdf")
+@rol_requerido("Administrador", "Jefe", "Técnico", "Cliente")
+def informe_categoria_pdf(item_id, categoria):
+    """Informe oficial combinado de una categoría (ej. Sala de bombas):
+    junta los checklists ya cargados (ver _secciones_categoria), el
+    ensayo de curva de caudal más reciente de cada bomba principal/
+    respaldo y las observaciones, en un solo PDF con número de documento
+    y dictamen. No es una carga nueva -- se arma a partir de lo que ya
+    está guardado."""
+    item = ItemVisita.query.get_or_404(item_id)
+    verificar_acceso_cliente(item.visita.instalacion.cliente)
+    if not item.visita.cerrada:
+        if current_user.rol == "Cliente":
+            abort(404)
+        flash("Este informe se genera una vez que la visita está cerrada.", "danger")
+        return redirect(url_for("visitas.detalle", visita_id=item.visita_id))
+
+    secciones = _secciones_categoria(item, categoria)
+    if not secciones:
+        abort(404)
+
+    instalacion = item.visita.instalacion
+    equipos_categoria = {e for seccion in secciones for e in seccion["equipos"]}
+    equipos_categoria_ids = {e.id for e in equipos_categoria}
+
+    ensayos = {}
+    for equipo in equipos_categoria:
+        if equipo.tipo not in TIPOS_BOMBA_PRINCIPAL:
+            continue
+        mas_reciente = sorted(equipo.ensayos_caudal, key=lambda e: e.fecha_ensayo, reverse=True)
+        if mas_reciente:
+            ensayos[equipo] = mas_reciente[0]
+
+    ids_items = [it.id for it in item.visita.items]
+    # Incluye equipo_id IS NULL para no perder las deficiencias que salen
+    # de un checklist de sala completa (ej. protocolo de retiro), que no
+    # se ligan a un equipo puntual -- ver _secciones_categoria.
+    observaciones = (
+        Observacion.query.filter(
+            Observacion.item_visita_id.in_(ids_items),
+            db.or_(Observacion.equipo_id.in_(equipos_categoria_ids), Observacion.equipo_id.is_(None)),
+            Observacion.estado_revision == "Aprobada",
+            Observacion.visibilidad != "Interna",
+        ).all()
+        if ids_items else []
+    )
+    ids_obs_visita = {o.id for o in observaciones}
+    observaciones_vigentes = [
+        o for o in instalacion.deficiencias
+        if not o.resuelto and o.id not in ids_obs_visita
+        and o.equipo_id in equipos_categoria_ids and o.visibilidad != "Interna"
+    ]
+    observaciones_todas = sorted(
+        observaciones + observaciones_vigentes,
+        key=lambda o: (o.clasificacion != "Deficiencia crítica", o.fecha_carga),
+    )
+
+    informe = obtener_o_crear_informe(item, categoria, current_user.id)
+    db.session.commit()
+
+    pdf_bytes = generar_pdf_informe_categoria(item, categoria, secciones, ensayos, observaciones_todas, informe)
+    nombre_archivo = f"Informe_{categoria.replace(' ', '_')}_{instalacion.nombre.replace(' ', '_')}_{item.visita.fecha.isoformat()}.pdf"
+    return Response(
+        pdf_bytes,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f"inline; filename={nombre_archivo}", "Cache-Control": "no-store"},
     )
 
 

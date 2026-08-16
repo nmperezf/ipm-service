@@ -14,6 +14,23 @@
         <label class="form-label">Observaciones</label>
         <textarea name="observaciones" class="form-control" rows="3">{{ instalacion.observaciones or '' }}</textarea>
     </div>
+
+    <h6 class="text-muted">Datos para el informe de sala de bombas (opcional)</h6>
+    <div class="row">
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Aseguradora</label>
+            <input type="text" name="aseguradora" class="form-control" value="{{ instalacion.aseguradora or '' }}">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">N° de póliza</label>
+            <input type="text" name="numero_poliza" class="form-control" value="{{ instalacion.numero_poliza or '' }}">
+        </div>
+        <div class="col-md-4 mb-3">
+            <label class="form-label">Tag / identificador de sala de bombas</label>
+            <input type="text" name="tag_sala_bombas" class="form-control" value="{{ instalacion.tag_sala_bombas or '' }}">
+        </div>
+    </div>
+
     <button type="submit" class="btn btn-dark">Guardar</button>
     <a href="{{ url_for('clientes.detalle', cliente_id=cliente.id) }}" class="btn btn-link">Cancelar</a>
 </form>

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Dictamen — {{ categoria }}{% endblock %}
+{% block content %}
+<div class="pagina-ancha">
+    <h1>Dictamen del informe — {{ categoria }}</h1>
+    <div class="tarjeta-doc angosta">
+
+            <p class="mb-1"><a href="{{ url_for('visitas.detalle', visita_id=item.visita_id) }}">&larr; Volver a la visita</a></p>
+            <p class="text-muted">
+                {{ item.visita.instalacion.nombre }} — informe <strong>{{ informe.numero }}</strong>. El resto del
+                documento (checklists, ensayos, deficiencias) se arma solo a partir de lo ya cargado — acá solo se
+                redacta el veredicto final que va a leer el cliente o la aseguradora.
+            </p>
+
+            <form method="POST" class="mt-3">
+                <div class="mb-3">
+                    <label class="form-label">Dictamen</label>
+                    <textarea name="dictamen" class="form-control" rows="5" placeholder="Ej: Sistema operativo y conforme. Se detectó 1 deficiencia no crítica, sin impacto en la capacidad de respuesta del sistema.">{{ informe.dictamen or '' }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-dark">Guardar y ver informe</button>
+                <a href="{{ url_for('formularios.informe_categoria_pdf', item_id=item.id, categoria=categoria) }}" class="btn btn-link" target="_blank">Ver informe sin guardar cambios</a>
+            </form>
+
+    </div>
+</div>
+{% endblock %}

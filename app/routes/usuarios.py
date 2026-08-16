@@ -92,6 +92,7 @@ def nuevo():
         usuario = Usuario(
             username=nombre_usuario,
             nombre_completo=request.form.get("nombre_completo"),
+            matricula_profesional=request.form.get("matricula_profesional", "").strip() or None,
             rol=rol,
             empresa_id=empresa_id,
             cliente_id=cliente_seleccionado.id if cliente_seleccionado else None,
@@ -130,6 +131,7 @@ def editar(usuario_id):
 
     if request.method == "POST":
         usuario.nombre_completo = request.form.get("nombre_completo")
+        usuario.matricula_profesional = request.form.get("matricula_profesional", "").strip() or None
         usuario.activo = bool(request.form.get("activo"))
         password_nueva = request.form.get("password")
         if password_nueva:
