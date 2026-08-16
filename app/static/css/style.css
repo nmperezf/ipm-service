@@ -2072,7 +2072,6 @@ details.bloque-equipo .ir-ficha { display: inline-block; margin-bottom: .8rem; f
 
 .grupo-checklist { margin-bottom: 1rem; }
 .grupo-checklist:last-child { margin-bottom: 0; }
-.grupo-checklist > .tipo-nombre { font-size: .74rem; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--ink-faint); margin-bottom: .35rem; }
 
 /* Un checklist cargado se lee de arriba a abajo (un punto por fila), no
    de izquierda a derecha -- con 10-12 puntos por tipo (ej. Electrobomba)
@@ -2081,9 +2080,28 @@ details.bloque-equipo .ir-ficha { display: inline-block; margin-bottom: .8rem; f
    tarjeta, con sus puntos apilados verticalmente adentro. */
 .lista-cargas-checklist { display: flex; flex-direction: column; gap: .6rem; }
 .tarjeta-carga-checklist { background: var(--surface-muted); border: 1px solid var(--border); border-radius: .5rem; padding: .5rem .75rem; font-size: .84rem; }
-.cab-carga-checklist { display: flex; justify-content: space-between; gap: 1rem; padding-bottom: .3rem; margin-bottom: .2rem; border-bottom: 1px solid var(--border-strong); }
-.cab-carga-checklist .fecha { font-family: var(--font-mono); font-size: .76rem; color: var(--ink-muted); }
-.cab-carga-checklist .equipo { font-weight: 600; font-size: .8rem; }
+
+/* Cada carga del histórico arranca colapsada, mostrando solo el título del
+   checklist y la fecha -- antes se listaba siempre expandida con todos los
+   puntos visibles, que en el modal de preview del equipo (donde puede
+   haber varias cargas) quedaba enorme para lo que era, en general, solo
+   chequear que existiera. */
+.carga-checklist-desplegable { border: 1px solid var(--border); border-radius: .5rem; overflow: hidden; }
+.carga-checklist-desplegable summary {
+    display: flex; align-items: center; justify-content: space-between; gap: .75rem;
+    padding: .5rem .75rem; cursor: pointer; list-style: none; font-size: .84rem;
+    background: var(--surface-muted);
+}
+.carga-checklist-desplegable summary::-webkit-details-marker { display: none; }
+.carga-checklist-desplegable summary:hover { background: var(--border); }
+.carga-checklist-desplegable summary .titulo { font-weight: 600; }
+.carga-checklist-desplegable summary .titulo::before { content: '▸ '; display: inline-block; color: var(--ink-faint); font-size: .7rem; }
+.carga-checklist-desplegable[open] summary .titulo::before { content: '▾ '; }
+.carga-checklist-desplegable summary .meta { display: flex; align-items: center; gap: .5rem; flex-shrink: 0; }
+.carga-checklist-desplegable summary .equipo { font-size: .76rem; color: var(--ink-muted); }
+.carga-checklist-desplegable summary .fecha { font-family: var(--font-mono); font-size: .76rem; color: var(--ink-muted); }
+.carga-checklist-desplegable .tarjeta-carga-checklist { border: none; border-radius: 0; border-top: 1px solid var(--border-strong); margin: 0; }
+
 .fila-punto-checklist { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 1rem; padding: .3rem 0; border-bottom: 1px solid var(--border); }
 .fila-punto-checklist:last-child { border-bottom: none; }
 .fila-punto-checklist .label { color: var(--ink-muted); }
