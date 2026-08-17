@@ -6,7 +6,7 @@ from flask import Flask, render_template
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy.exc import OperationalError
+from sqlalchemy.exc import OperationalError, ProgrammingError
 
 db = SQLAlchemy()
 migrate = Migrate()
@@ -147,11 +147,19 @@ def create_app():
             _seed_tipos_equipo()
             _seed_catalogo_nfpa()
             _seed_clientes_demo()
-        except OperationalError:
-            # El esquema todavía no existe (falta correr "flask db upgrade")
-            # — pasa la primera vez que se clona el repo, y durante los
-            # comandos "flask db init/migrate". Se resuelve solo en el
-            # próximo arranque, una vez aplicadas las migraciones.
+        except (OperationalError, ProgrammingError):
+            # El esquema todavía no está al día (falta correr "flask db
+            # upgrade") — pasa la primera vez que se clona el repo, durante
+            # los comandos "flask db init/migrate", y en release.py (que
+            # llama a create_app() ANTES de aplicar las migraciones). Se
+            # resuelve solo en el próximo arranque, una vez aplicadas.
+            # SQLite tira OperationalError tanto para tabla como columna
+            # faltante; Postgres tira esa misma OperationalError para tabla
+            # faltante pero ProgrammingError (UndefinedColumn) para columna
+            # faltante -- sin este segundo tipo, un modelo con una columna
+            # nueva todavía no migrada tira acá un 500 crudo en vez de
+            # resolverse solo (pasó con matricula_profesional en Postgres:
+            # ni release.py ni verificar_schema.py llegaban a correr).
             db.session.rollback()
 
     return app
