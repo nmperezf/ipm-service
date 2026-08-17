@@ -1,0 +1,9 @@
+# Railway no ejecuta automáticamente la línea "release:" de un Procfile
+# (eso es una convención de Heroku) -- sin este archivo, "python
+# release.py" nunca corría, y la base quedaba congelada en la última
+# migración aplicada a mano, sin importar cuántas veces se desplegara.
+# "preDeployCommand" es el equivalente real en Railway: corre una vez,
+# antes de arrancar el contenedor del proceso "web" (ver Procfile), con
+# las mismas variables de entorno del servicio (DATABASE_URL incluida).
+[deploy]
+preDeployCommand = ["python release.py"]
