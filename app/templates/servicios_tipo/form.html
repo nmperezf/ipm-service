@@ -65,6 +65,14 @@
                                 {% endfor %}
                             </select>
                         </div>
+                        <div class="form-check mt-2">
+                            <input type="checkbox" name="incluir_en_carga_combinada" class="form-check-input" id="incluir_en_carga_combinada"
+                                   {% if not servicio or servicio.incluir_en_carga_combinada %}checked{% endif %}>
+                            <label class="form-check-label" for="incluir_en_carga_combinada">
+                                Incluir en la carga combinada por categoría (ej. "Cargar checklist de Sala de bombas")
+                            </label>
+                            <div class="form-text">Desmarcalo si este checklist no debería sumarse junto con el resto de su categoría de equipo — ej. un mantenimiento anual con desarme, que no es una inspección de rutina.</div>
+                        </div>
                     </div>
                 </div>
 

@@ -6,10 +6,12 @@
     <div class="tarjeta-doc angosta">
             <p class="mb-1"><a href="{{ url_for('visitas.detalle', visita_id=formulario.item_visita.visita_id) }}">&larr; Volver a la visita</a></p>
 
+            {% if puede_editar %}
             <div class="d-flex justify-content-end mb-2">
                 <a href="{{ url_for('formularios.nuevo', item_id=formulario.item_visita_id, tipo_formulario_id=formulario.tipo_formulario_id, equipo_id=formulario.equipo_id) }}"
                    class="btn btn-outline-secondary btn-sm">Editar</a>
             </div>
+            {% endif %}
             <p class="text-muted">
                 Servicio: {{ formulario.item_visita.nombre_mostrado }}
                 {% if formulario.equipo %} &middot; Equipo: {{ formulario.equipo.nombre }}{% endif %} &middot;
@@ -52,10 +54,12 @@
                 {% endfor %}
             </div>
 
+            {% if puede_editar %}
             <form method="POST" action="{{ url_for('formularios.eliminar', formulario_id=formulario.id) }}"
                   onsubmit="return confirm('¿Eliminar este checklist? Esta acción no se puede deshacer.');">
                 <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar checklist</button>
             </form>
+            {% endif %}
 
     </div>
 </div>

@@ -3,9 +3,25 @@ from flask_login import current_user
 
 from app import db
 from app.auth_utils import rol_requerido
-from app.models import Notificacion
+from app.models import Mensaje, Notificacion
 
 notificaciones_bp = Blueprint("notificaciones", __name__, url_prefix="/notificaciones")
+
+ORDEN_PRIORIDAD_MENSAJE = {"Urgente": 0, "Alta": 1, "Media": 2, "Baja": 3}
+
+
+def _mensajes_abiertos():
+    """Mensajes internos sin resolver donde el usuario logueado participa
+    -- mismo query que arma dashboard.py para su propio widget de
+    Mensajes, reutilizado acá para mostrarlos junto a las notificaciones
+    en la campanita (ver _resumen_modal.html)."""
+    return sorted(
+        Mensaje.query.filter(
+            (Mensaje.remitente_id == current_user.id) | (Mensaje.destinatario_id == current_user.id),
+            Mensaje.resuelto == False,  # noqa: E712
+        ).order_by(Mensaje.fecha_carga.desc()).all(),
+        key=lambda m: ORDEN_PRIORIDAD_MENSAJE.get(m.prioridad, 2),
+    )
 
 
 def _agrupar(notificaciones):
@@ -66,7 +82,11 @@ def resumen():
         .limit(20)
         .all()
     )
-    return render_template("notificaciones/_resumen_modal.html", grupos_no_leidas=_agrupar(no_leidas))
+    return render_template(
+        "notificaciones/_resumen_modal.html",
+        grupos_no_leidas=_agrupar(no_leidas),
+        mensajes_abiertos=_mensajes_abiertos(),
+    )
 
 
 @notificaciones_bp.route("/<int:notificacion_id>/ir")

@@ -562,6 +562,130 @@ html.sidebar-oculta .sidebar-footer .sidebar-link {
     justify-content: center;
 }
 
+/* Grupos desplegables de la navbar (Planificación/Clientes/Configuración) --
+   mismo componente collapse de Bootstrap que ya usa el navbar-toggler y la
+   carga combinada de checklists (.seccion-eq-carga-cab-toggle). Comparten
+   .sidebar-link/.nav-link (pasado como {{ clase }}) para heredar color y
+   tipografía; acá solo se agrega el layout del toggle y el indent de los
+   hijos. */
+.nav-toggle-grupo {
+    cursor: pointer;
+    justify-content: space-between;
+}
+.nav-toggle-grupo > i.bi:first-child {
+    margin-right: .75rem;
+}
+.icono-chevron-nav {
+    font-size: .7rem;
+    opacity: .55;
+    transition: transform .15s ease;
+    margin-left: auto;
+}
+.nav-toggle-grupo.collapsed .icono-chevron-nav {
+    transform: rotate(-90deg);
+}
+html.sidebar-oculta .icono-chevron-nav {
+    display: none;
+}
+.nav-subgrupo {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.nav-sublink {
+    padding-left: 2.65rem !important;
+    font-size: .87rem !important;
+}
+html.sidebar-oculta .nav-item-grupo .nav-subgrupo {
+    display: none !important;
+}
+
+/* Buscador global de la topbar/menú mobile -- panel flotante con fetch a
+   /buscar (ver app/routes/busqueda.py), mismo patrón que la campanita de
+   notificaciones. */
+.buscador-global {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: .5rem;
+    background: var(--surface-muted);
+    border: 1px solid var(--border);
+    border-radius: .6rem;
+    padding: .45rem .75rem;
+    min-width: 260px;
+    color: var(--ink-faint);
+}
+.buscador-global i.bi-search {
+    font-size: .85rem;
+    flex-shrink: 0;
+}
+.input-busqueda-global {
+    border: none;
+    background: none;
+    outline: none;
+    font-size: .85rem;
+    color: var(--ink);
+    width: 100%;
+}
+.input-busqueda-global::placeholder {
+    color: var(--ink-faint);
+}
+.panel-busqueda-global {
+    display: none;
+    position: absolute;
+    top: calc(100% + .4rem);
+    left: 0;
+    right: 0;
+    min-width: 320px;
+    max-height: 60vh;
+    overflow-y: auto;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: .7rem;
+    box-shadow: 0 12px 32px rgba(0,0,0,.18);
+    padding: .6rem;
+    z-index: 1050;
+}
+.panel-busqueda-global.abierto {
+    display: block;
+}
+.grupo-resultado-busqueda + .grupo-resultado-busqueda {
+    margin-top: .6rem;
+}
+.etiqueta-grupo-busqueda {
+    font-family: var(--font-mono);
+    font-size: .64rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--ink-faint);
+    padding: 0 .4rem .3rem;
+}
+.lista-resultado-busqueda {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.lista-resultado-busqueda a {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: .5rem;
+    padding: .4rem .4rem;
+    border-radius: .4rem;
+    color: var(--ink);
+    text-decoration: none;
+    font-size: .87rem;
+}
+.lista-resultado-busqueda a:hover {
+    background: var(--surface-muted);
+}
+.meta-resultado-busqueda {
+    font-size: .74rem;
+    color: var(--ink-faint);
+    white-space: nowrap;
+}
+
 /* Franja utilitaria (tema + notificaciones) arriba del contenido en desktop
    — con la navbar de arriba oculta a partir de 992px, esto es lo que la
    reemplaza. Angostar/expandir el menú se maneja desde el propio botón
@@ -1281,6 +1405,33 @@ html[data-bs-theme="dark"] .chip-secondary { background: #232734; color: #8A93A0
    ========================================================================== */
 
 .pagina-ancha { padding: 1.15rem 2rem 2rem; max-width: 1800px; margin: 0 auto; }
+
+/* Migas de pan (Cliente → Instalación → …), reemplazan el link único
+   "&larr; padre" que tenían antes Instalación/Equipo/Contrato/Visita --
+   ver app/templates/_migas.html. */
+.migas-pan {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: .35rem;
+    font-size: .84rem;
+    margin-bottom: .5rem;
+}
+.migas-pan a {
+    color: var(--ink-muted);
+    text-decoration: none;
+}
+.migas-pan a:hover {
+    color: var(--ink);
+    text-decoration: underline;
+}
+.separador-migas {
+    color: var(--ink-faint);
+}
+.miga-actual {
+    color: var(--ink);
+    font-weight: 600;
+}
 
 /* Tarjeta de contenido suelta, para usar dentro de .pagina-ancha (formularios,
    fichas) en lugar del recuadro centrado de 1100px de .hoja-doc. */
@@ -2155,13 +2306,20 @@ details.bloque-equipo .ir-ficha { display: inline-block; margin-bottom: .8rem; f
 .seccion-eq-carga-tit { font-family: var(--font-display); font-weight: 700; font-size: 1.02rem; }
 .seccion-eq-carga-ref { font-family: var(--font-mono); font-size: .68rem; color: var(--ink-faint); margin-top: .15rem; }
 
+/* Encabezado clickeable que colapsa/expande la sección -- arranca cerrada
+   si todavía no tiene nada cargado, para no obligar a scrollear un
+   paquete entero (ej. Sala de bombas) para llegar a lo que falta. */
+.seccion-eq-carga-cab-toggle { display: flex; align-items: center; gap: .6rem; cursor: pointer; user-select: none; }
+.icono-chevron-carga { font-size: .85rem; color: var(--ink-faint); transition: transform .15s ease; flex-shrink: 0; }
+.seccion-eq-carga-cab-toggle.collapsed .icono-chevron-carga { transform: rotate(-90deg); }
+
 .subgrupo-titulo-carga {
     font-family: var(--font-mono); font-size: .64rem; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
     color: var(--ink-faint); padding: .65rem 1.3rem .2rem; background: var(--surface-muted);
 }
 
 .item-check { display: grid; grid-template-columns: 1fr auto auto; align-items: start; gap: 1rem; padding: .9rem 1.3rem; border-bottom: 1px solid var(--border); }
-.seccion-eq-carga > .item-check:last-of-type { border-bottom: none; }
+.seccion-eq-carga .item-check:last-of-type { border-bottom: none; }
 .item-check-info { min-width: 0; }
 .item-check-punto { font-weight: 600; font-size: .87rem; line-height: 1.35; }
 .item-check-desc { font-size: .77rem; color: var(--ink-muted); line-height: 1.45; margin-top: .2rem; max-width: 46ch; }

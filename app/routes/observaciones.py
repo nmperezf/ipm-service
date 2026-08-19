@@ -116,6 +116,8 @@ def nueva(instalacion_id):
         instalacion=instalacion,
         item=item,
         equipo=equipo,
+        equipos=[e for e in instalacion.equipos if e.activo],
+        equipo_preseleccionado=equipo.id if equipo else None,
         clasificaciones=CLASIFICACIONES_OBSERVACION,
         clasificaciones_con_presupuesto=CLASIFICACIONES_CON_PRESUPUESTO,
         visibilidades=VISIBILIDADES_OBSERVACION,

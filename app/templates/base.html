@@ -21,34 +21,62 @@
 </head>
 <body class="{% if current_user.is_authenticated %}con-nav-inferior{% endif %}">
 
-{% macro nav_items(clase, con_grupos=False) %}
+{% macro nav_grupo(clase, prefijo, id_grupo, icono, etiqueta, activo) %}
+<li class="nav-item nav-item-grupo">
+    <a class="{{ clase }} nav-toggle-grupo{{ ' activo' if activo }}" href="#" data-bs-toggle="collapse"
+       data-bs-target="#{{ prefijo }}-{{ id_grupo }}" role="button"
+       aria-expanded="{{ 'true' if activo else 'false' }}" aria-controls="{{ prefijo }}-{{ id_grupo }}">
+        <i class="bi {{ icono }}"></i><span class="rotulo-sidebar">{{ etiqueta }}</span>
+        <i class="bi bi-chevron-down icono-chevron-nav"></i>
+    </a>
+    <ul class="collapse{{ ' show' if activo }} nav-subgrupo" id="{{ prefijo }}-{{ id_grupo }}">
+        {{ caller() }}
+    </ul>
+</li>
+{% endmacro %}
+
+{% macro nav_items(clase, prefijo, con_grupos=False) %}
 {% if con_grupos %}<li class="grupo-label">Operación</li>{% endif %}
 <li class="nav-item"><a class="{{ clase }}" href="{{ url_for('dashboard.inicio') }}" title="Inicio"><i class="bi bi-house"></i><span class="rotulo-sidebar">Inicio</span></a></li>
 {% if current_user.is_authenticated and current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('clientes.listar') }}" title="Clientes"><i class="bi bi-people"></i><span class="rotulo-sidebar">Clientes</span></a></li>
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('planificacion.calendario') }}" title="Calendario"><i class="bi bi-calendar3"></i><span class="rotulo-sidebar">Calendario</span></a></li>
+
+{% call nav_grupo(clase, prefijo, 'planificacion', 'bi-calendar3', 'Planificación', request.blueprint in ('planificacion', 'coordinacion')) %}
+<li class="nav-item"><a class="{{ clase }} nav-sublink" href="{{ url_for('planificacion.calendario') }}"><span class="rotulo-sidebar">Calendario</span></a></li>
 {% if current_user.rol in ('Administrador', 'Jefe') %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('coordinacion.index') }}" title="Coordinación"><i class="bi bi-telephone"></i><span class="rotulo-sidebar">Coordinación</span></a></li>
+<li class="nav-item"><a class="{{ clase }} nav-sublink" href="{{ url_for('coordinacion.index') }}"><span class="rotulo-sidebar">Coordinación</span></a></li>
 {% endif %}
+{% endcall %}
+
+{% call nav_grupo(clase, prefijo, 'clientes', 'bi-people', 'Clientes', request.blueprint in ('clientes', 'servicios_tipo', 'tipos_equipo')) %}
+<li class="nav-item"><a class="{{ clase }} nav-sublink" href="{{ url_for('clientes.listar') }}"><span class="rotulo-sidebar">Clientes</span></a></li>
+{% if current_user.rol in ('Administrador', 'Jefe') %}
+<li class="nav-item"><a class="{{ clase }} nav-sublink" href="{{ url_for('servicios_tipo.listar') }}"><span class="rotulo-sidebar">Servicios tipo</span></a></li>
+{% endif %}
+<li class="nav-item"><a class="{{ clase }} nav-sublink" href="{{ url_for('tipos_equipo.listar') }}"><span class="rotulo-sidebar">Tipos de equipo</span></a></li>
+{% endcall %}
+
 <li class="nav-item"><a class="{{ clase }}" href="{{ url_for('ordenes.listar') }}" title="Órdenes de trabajo"><i class="bi bi-clipboard-check"></i><span class="rotulo-sidebar">Órdenes de trabajo</span></a></li>
 <li class="nav-item"><a class="{{ clase }}" href="{{ url_for('inventario.dashboard') }}" title="Inventario"><i class="bi bi-box-seam"></i><span class="rotulo-sidebar">Inventario</span></a></li>
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('formularios.hub') }}" title="Formularios"><i class="bi bi-clipboard-check"></i><span class="rotulo-sidebar">Formularios</span></a></li>
-<li class="nav-item">
-    <a class="{{ clase }} position-relative" href="{{ url_for('notificaciones.listar') }}" title="Notificaciones">
-        <i class="bi bi-bell"></i><span class="rotulo-sidebar">Notificaciones</span>
-        {% if notificaciones_no_leidas %}<span class="punto-no-leido" title="{{ notificaciones_no_leidas }} sin leer"></span>{% endif %}
-    </a>
-</li>
 {% endif %}
 {% if current_user.is_authenticated and current_user.rol in ('Administrador', 'Jefe', 'Super Admin') %}
 {% if con_grupos %}<li class="grupo-label">Administración</li>{% endif %}
-<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('usuarios.listar') }}" title="Usuarios"><i class="bi bi-person-badge"></i><span class="rotulo-sidebar">Usuarios</span></a></li>
+{% call nav_grupo(clase, prefijo, 'configuracion', 'bi-gear', 'Configuración', request.endpoint == 'usuarios.mi_cuenta' or request.endpoint == 'empresas.mi_empresa' or (request.blueprint == 'usuarios' and request.endpoint != 'usuarios.mi_cuenta')) %}
+<li class="nav-item"><a class="{{ clase }} nav-sublink" href="{{ url_for('usuarios.mi_cuenta') }}"><span class="rotulo-sidebar">Mi cuenta</span></a></li>
+{% if current_user.rol in ('Administrador', 'Jefe') %}
+<li class="nav-item"><a class="{{ clase }} nav-sublink" href="{{ url_for('empresas.mi_empresa') }}"><span class="rotulo-sidebar">Datos de la empresa</span></a></li>
+{% endif %}
+<li class="nav-item"><a class="{{ clase }} nav-sublink" href="{{ url_for('usuarios.listar') }}"><span class="rotulo-sidebar">Usuarios</span></a></li>
+{% endcall %}
 {% endif %}
 {% if current_user.is_authenticated and current_user.rol == 'Super Admin' %}
 <li class="nav-item"><a class="{{ clase }}" href="{{ url_for('empresas.listar') }}" title="Empresas"><i class="bi bi-building"></i><span class="rotulo-sidebar">Empresas</span></a></li>
 {% endif %}
+{% if current_user.is_authenticated and current_user.rol == 'Técnico' %}
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('usuarios.mi_cuenta') }}" title="Mi cuenta"><i class="bi bi-person-circle"></i><span class="rotulo-sidebar">Mi cuenta</span></a></li>
+{% endif %}
 {% if current_user.is_authenticated and current_user.rol == 'Cliente' %}
 <li class="nav-item"><a class="{{ clase }}" href="{{ url_for('portal.historico') }}" title="Histórico técnico"><i class="bi bi-clock-history"></i><span class="rotulo-sidebar">Histórico técnico</span></a></li>
+<li class="nav-item"><a class="{{ clase }}" href="{{ url_for('usuarios.mi_cuenta') }}" title="Mi cuenta"><i class="bi bi-person-circle"></i><span class="rotulo-sidebar">Mi cuenta</span></a></li>
 {% endif %}
 {% endmacro %}
 
@@ -75,8 +103,15 @@
         </div>
 
         <div class="collapse navbar-collapse d-lg-none" id="nav">
+            {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+            <div class="buscador-global mb-2" data-buscador-global>
+                <i class="bi bi-search"></i>
+                <input type="text" class="input-busqueda-global" placeholder="Buscar cliente, instalación, equipo, OT..." autocomplete="off">
+                <div class="panel-busqueda-global"></div>
+            </div>
+            {% endif %}
             <ul class="navbar-nav me-auto">
-                {{ nav_items('nav-link') }}
+                {{ nav_items('nav-link', 'mob') }}
             </ul>
             <ul class="navbar-nav">
                 <li class="nav-item"><span class="nav-link"><i class="bi bi-person-circle"></i> {{ current_user.nombre_completo or current_user.username }} <small class="text-white-50">({{ current_user.rol }})</small></span></li>
@@ -101,7 +136,7 @@
         </button>
     </div>
     <ul class="sidebar-nav">
-        {{ nav_items('sidebar-link', con_grupos=True) }}
+        {{ nav_items('sidebar-link', 'side', con_grupos=True) }}
     </ul>
     <div class="sidebar-footer">
         <a class="sidebar-link" href="{{ url_for('auth.logout') }}" title="Cerrar sesión"><i class="bi bi-box-arrow-right"></i><span class="rotulo-sidebar">Cerrar sesión</span></a>
@@ -110,6 +145,13 @@
 
 <div class="zona-contenido">
     <div class="barra-utilitaria">
+        {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+        <div class="buscador-global" data-buscador-global>
+            <i class="bi bi-search"></i>
+            <input type="text" class="input-busqueda-global" placeholder="Buscar cliente, instalación, equipo, OT..." autocomplete="off">
+            <div class="panel-busqueda-global"></div>
+        </div>
+        {% endif %}
         <div class="flex-grow-1"></div>
         <button type="button" class="btn-utilitario theme-toggle-trigger" title="Cambiar tema" aria-label="Cambiar entre modo claro y oscuro">
             <i class="bi bi-moon-stars-fill theme-toggle-icon"></i>
@@ -224,6 +266,7 @@
 <script src="{{ url_for('static', filename='js/evitar-doble-envio.js') }}"></script>
 <script src="{{ url_for('static', filename='js/confirmar-password.js') }}"></script>
 <script src="{{ url_for('static', filename='js/modal-form.js') }}"></script>
+<script src="{{ url_for('static', filename='js/busqueda-global.js') }}" data-url-buscar="{{ url_for('busqueda.buscar') if current_user.is_authenticated and current_user.rol in ('Administrador', 'Jefe', 'Técnico') else '' }}"></script>
 <script>
     (function () {
         var root = document.documentElement;

@@ -168,12 +168,21 @@ def _secciones_categoria(item, categoria):
     # categoria) muestra solo el tipo que se importó con su mismo nombre --
     # no el resto de checklists que compartan tipo de equipo (ver el mismo
     # criterio en visitas.detalle).
-    if item.servicio and not item.servicio.categoria:
+    es_paquete = not (item.servicio and not item.servicio.categoria)
+    if not es_paquete:
         tipos = [t for t in tipos if t.nombre == item.servicio.nombre]
 
     secciones = []
     for tipo in tipos:
         if categoria_de_tipo_equipo(tipo.tipo_equipo_aplicable) != categoria:
+            continue
+        # incluir_en_carga_combinada solo aplica cuando de verdad se está
+        # armando la pantalla combinada de varios tipos (paquete) -- un
+        # servicio puntual (ej. un mantenimiento anual contratado por su
+        # cuenta, no como parte de "Inspecciones y pruebas") ya viene
+        # acotado a un solo tipo arriba y tiene que poder cargarse igual,
+        # aunque ese mismo tipo esté marcado para no entrar a un paquete.
+        if es_paquete and not tipo.incluir_en_carga_combinada:
             continue
         if tipo.por_equipo:
             equipos = [e for e in instalacion.equipos if e.activo and e.tipo == tipo.tipo_equipo_aplicable]
@@ -493,7 +502,8 @@ def nuevo(item_id, tipo_formulario_id):
 @rol_requerido("Administrador", "Jefe", "Técnico")
 def detalle(formulario_id):
     formulario = Formulario.query.get_or_404(formulario_id)
-    verificar_acceso_cliente(formulario.item_visita.visita.instalacion.cliente)
+    visita = formulario.item_visita.visita
+    verificar_acceso_cliente(visita.instalacion.cliente)
     fotos_por_campo = {}
     for foto in Foto.query.filter(
         Foto.item_visita_id == formulario.item_visita_id,
@@ -501,8 +511,14 @@ def detalle(formulario_id):
         Foto.campo_formulario.isnot(None),
     ).all():
         fotos_por_campo.setdefault(foto.campo_formulario, []).append(foto)
+    # Mismo criterio que visitas/detail.html: una vez que la visita salió de
+    # la fase "Abierta" (enviada a revisión), un Técnico ya no puede tocar
+    # sus formularios -- ocultar el botón evita el 403 confuso de intentar
+    # editar/eliminar algo que el backend (verificar_visita_editable) igual
+    # va a rechazar.
+    puede_editar = not visita.cerrada and not (current_user.rol == "Técnico" and visita.fase != "Abierta")
     template = "visitas/_formulario_modal.html" if es_ajax() else "visitas/formulario_detail.html"
-    return render_template(template, formulario=formulario, fotos_por_campo=fotos_por_campo)
+    return render_template(template, formulario=formulario, fotos_por_campo=fotos_por_campo, puede_editar=puede_editar)
 
 
 @formularios_bp.route("/<int:formulario_id>/eliminar", methods=["POST"])

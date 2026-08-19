@@ -2,7 +2,12 @@
 {% block title %}{{ equipo.nombre }}{% endblock %}
 {% block content %}
 <div class="pagina-ancha">
-    <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=equipo.instalacion_id) }}">&larr; {{ equipo.instalacion.nombre }}</a></p>
+    {% set migas = [
+        (equipo.instalacion.cliente.nombre, url_for('clientes.detalle', cliente_id=equipo.instalacion.cliente_id)),
+        (equipo.instalacion.nombre, url_for('instalaciones.detalle', instalacion_id=equipo.instalacion_id)),
+        (equipo.nombre, none),
+    ] %}
+    {% include "_migas.html" %}
 
     <div class="cab-instalacion">
         <div>

@@ -22,6 +22,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.lib.units import cm
+from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import SimpleDocTemplate
 
@@ -90,12 +91,28 @@ def estilo_tabla_encabezado():
     )
 
 
-def _crear_canvas_numerado(tipo_doc):
+def _proporcion_imagen(path, por_defecto=_LOGO_PROPORCION):
+    """ancho/alto real del archivo -- el logo genérico ya viene con esa
+    proporción hardcodeada (_LOGO_PROPORCION), pero un logo de empresa
+    subido por el usuario puede tener cualquier forma."""
+    try:
+        ancho_px, alto_px = ImageReader(path).getSize()
+        return ancho_px / alto_px
+    except Exception:
+        return por_defecto
+
+
+def _crear_canvas_numerado(tipo_doc, logo_path=None):
     """Clase de Canvas que dibuja la franja negra + filete rojo + pie en
     cada hoja, con "Página X de Y". reportlab no sabe cuántas hojas va a
     tener el documento hasta terminar de armarlo, así que hay que guardar
     el estado de cada hoja según se van cerrando y recién completar el
-    total al final — es el idiom estándar de reportlab para esto."""
+    total al final — es el idiom estándar de reportlab para esto.
+
+    logo_path: logo propio de la empresa que generó el documento (ver
+    Empresa.logo), ya resuelto a una ruta absoluta por construir(). Si no
+    se pasa, o el archivo no existe, cae al logo genérico de IPM Manager."""
+    logo_path = logo_path if logo_path and os.path.exists(logo_path) else _LOGO_PATH
 
     class _CanvasNumerado(Canvas):
         def __init__(self, *args, **kwargs):
@@ -128,12 +145,15 @@ def _crear_canvas_numerado(tipo_doc):
 
             self.setFillColor(INK)
             self.roundRect(x, y_base, ALTO_MASTHEAD, ALTO_MASTHEAD, 1, stroke=0, fill=1)
-            if os.path.exists(_LOGO_PATH):
+            try:
                 pad = 0.05 * cm
                 alto_logo = ALTO_MASTHEAD - 2 * pad
-                ancho_logo = alto_logo * _LOGO_PROPORCION
+                # Cap de ancho: un logo de empresa muy horizontal no debería
+                # desbordar el chip -- el genérico nunca lo pisa porque su
+                # proporción ya es casi cuadrada, pero uno subido a mano sí.
+                ancho_logo = min(alto_logo * _proporcion_imagen(logo_path), ALTO_MASTHEAD * 1.6)
                 self.drawImage(
-                    _LOGO_PATH,
+                    logo_path,
                     x + (ALTO_MASTHEAD - ancho_logo) / 2,
                     y_base + pad,
                     width=ancho_logo,
@@ -141,6 +161,8 @@ def _crear_canvas_numerado(tipo_doc):
                     mask="auto",
                     preserveAspectRatio=True,
                 )
+            except Exception:
+                pass  # logo corrupto/formato no soportado -- no tirar el PDF entero por esto
             x += ALTO_MASTHEAD + 0.25 * cm
 
             self.setFillColor(INK_MUTED)
@@ -187,8 +209,16 @@ def crear_documento(buffer, pagesize=A4, margen_izq=None, margen_der=None):
     )
 
 
-def construir(doc, elementos, tipo_doc):
+def construir(doc, elementos, tipo_doc, empresa=None):
     """Reemplaza a doc.build(elementos): arma el documento con el
     encabezado/pie comunes ya enganchados. tipo_doc es lo que se muestra
-    a la derecha de la franja negra (ej. "Orden de trabajo")."""
-    doc.build(elementos, canvasmaker=_crear_canvas_numerado(tipo_doc))
+    a la derecha de la franja negra (ej. "Orden de trabajo"). empresa (ver
+    modelo Empresa): si tiene logo propio subido, se usa en vez del
+    genérico de IPM Manager -- cada generador la pasa como
+    instalacion.cliente.empresa (o el camino que tenga a mano)."""
+    logo_path = None
+    if empresa and empresa.logo:
+        from flask import current_app
+
+        logo_path = os.path.join(current_app.config["UPLOAD_FOLDER"], empresa.logo)
+    doc.build(elementos, canvasmaker=_crear_canvas_numerado(tipo_doc, logo_path=logo_path))

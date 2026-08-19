@@ -416,5 +416,5 @@ def generar_pdf_ensayo(ensayo):
         [("Estado", ensayo.estado_revision), ("Validado por", validado_por), ("Fecha", fecha_val)], columnas=3,
     ))
 
-    construir(doc, elementos, tipo_doc="Ensayo de curva de caudal")
+    construir(doc, elementos, tipo_doc="Ensayo de curva de caudal", empresa=instalacion.cliente.empresa)
     return buffer.getvalue()

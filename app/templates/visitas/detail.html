@@ -5,7 +5,12 @@
     <h1>Visita del {{ visita.fecha.strftime('%d/%m/%Y') }}</h1>
     <div class="tarjeta-doc">
 
-            <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=visita.instalacion_id) }}">&larr; {{ visita.instalacion.nombre }}</a></p>
+            {% set migas = [
+                (visita.instalacion.cliente.nombre, url_for('clientes.detalle', cliente_id=visita.instalacion.cliente_id)),
+                (visita.instalacion.nombre, url_for('instalaciones.detalle', instalacion_id=visita.instalacion_id)),
+                ('Visita del ' ~ visita.fecha.strftime('%d/%m/%Y'), none),
+            ] %}
+            {% include "_migas.html" %}
 
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
                 <div class="d-flex gap-2 flex-wrap">

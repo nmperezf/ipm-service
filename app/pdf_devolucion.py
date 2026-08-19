@@ -143,5 +143,5 @@ def generar_pdf_devolucion(visita, resumen_categorias, deficiencias, observacion
     )
     elementos.append(firmas)
 
-    construir(doc, elementos, tipo_doc="Reporte de visita")
+    construir(doc, elementos, tipo_doc="Reporte de visita", empresa=instalacion.cliente.empresa)
     return buffer.getvalue()

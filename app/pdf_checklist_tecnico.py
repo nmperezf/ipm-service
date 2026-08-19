@@ -7,7 +7,9 @@ import io
 from reportlab.lib.units import cm
 from reportlab.platypus import Paragraph, Spacer, Table, TableStyle
 
-from app.models import ESTADOS_CHECKLIST_LABEL, categoria_de_tipo_equipo
+from reportlab.lib.styles import ParagraphStyle
+
+from app.models import CATEGORIAS_EQUIPO_ORDEN, ESTADOS_CHECKLIST_LABEL, categoria_de_tipo_equipo
 from app.pdf_base import ACCENT_SOFT, construir, crear_documento, estilo_tabla_encabezado, estilos
 
 
@@ -83,25 +85,43 @@ def generar_pdf_checklist_tecnico(visita, categoria=None):
     )
     elementos.append(Spacer(1, 0.5 * cm))
 
+    # Orden de categoría: mismo criterio que categorias_equipo_agrupadas()
+    # (Sala de bombas, ECA, BIE, Otros) -- lo que no matchea ningún tipo de
+    # equipo cargado en el catálogo (huérfano) queda al final.
+    def _indice_categoria(f):
+        cat = categoria_de_formulario(f)
+        return CATEGORIAS_EQUIPO_ORDEN.index(cat) if cat in CATEGORIAS_EQUIPO_ORDEN else len(CATEGORIAS_EQUIPO_ORDEN)
+
     formularios = sorted(
         (
             f for item in visita.items for f in item.formularios
             if categoria is None or categoria_de_formulario(f) == categoria
         ),
-        key=lambda f: ((f.equipo.nombre if f.equipo else ""), f.tipo_formulario.nombre),
+        key=lambda f: (_indice_categoria(f), (f.equipo.nombre if f.equipo else ""), f.tipo_formulario.nombre),
     )
 
     if not formularios:
         elementos.append(Paragraph("No se cargaron checklists en esta visita.", normal))
-        construir(doc, elementos, tipo_doc="Checklist técnico")
+        construir(doc, elementos, tipo_doc="Checklist técnico", empresa=instalacion.cliente.empresa)
         return buffer.getvalue()
 
+    # Con el documento completo (categoria=None), se separa además por
+    # categoría de equipo (Sala de bombas / ECA / BIE) con su propio
+    # subtítulo -- antes quedaba todo en un solo bloque ordenado solo por
+    # nombre de equipo, mezclando sistemas distintos.
+    titulo_categoria = ParagraphStyle("PDFCategoria", parent=titulo, fontSize=14, spaceBefore=18, spaceAfter=8)
+    categoria_actual = object()  # sentinel: nunca es igual a una categoría real, fuerza el primer subtítulo
     por_equipo = {}
     for f in formularios:
+        if categoria is None:
+            cat_f = categoria_de_formulario(f) or "Otros checklists"
+            if cat_f != categoria_actual:
+                categoria_actual = cat_f
+                elementos.append(Paragraph(cat_f, titulo_categoria))
         clave = f.equipo.nombre if f.equipo else "Checklist general"
-        por_equipo.setdefault(clave, []).append(f)
+        por_equipo.setdefault((categoria_actual, clave), []).append(f)
 
-    for nombre_equipo, lista in por_equipo.items():
+    for (_, nombre_equipo), lista in por_equipo.items():
         elementos.append(Paragraph(nombre_equipo, h2))
         referencias = {f.tipo_formulario.referencia_normativa for f in lista if f.tipo_formulario.referencia_normativa}
         for ref in referencias:
@@ -129,5 +149,5 @@ def generar_pdf_checklist_tecnico(visita, categoria=None):
         elementos.append(tabla)
         elementos.append(Spacer(1, 0.6 * cm))
 
-    construir(doc, elementos, tipo_doc="Checklist técnico")
+    construir(doc, elementos, tipo_doc="Checklist técnico", empresa=instalacion.cliente.empresa)
     return buffer.getvalue()

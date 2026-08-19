@@ -93,7 +93,7 @@ def generar_pdf_reporte_equipos(item, tipo, formularios):
 
     if not formularios:
         elementos.append(Paragraph("Todavía no hay checklists completados para este reporte.", styles["normal"]))
-        construir(doc, elementos, tipo_doc="Reporte de equipos")
+        construir(doc, elementos, tipo_doc="Reporte de equipos", empresa=instalacion.cliente.empresa)
         return buffer.getvalue()
 
     if tiene_fotos:
@@ -101,7 +101,7 @@ def generar_pdf_reporte_equipos(item, tipo, formularios):
     else:
         _armar_tabla_ancha(elementos, formularios, campos, celda_texto)
 
-    construir(doc, elementos, tipo_doc="Reporte de equipos")
+    construir(doc, elementos, tipo_doc="Reporte de equipos", empresa=instalacion.cliente.empresa)
     return buffer.getvalue()
 
 

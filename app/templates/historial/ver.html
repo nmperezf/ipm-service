@@ -58,7 +58,7 @@
             <div class="table-responsive">
             <table class="table table-sm table-hover data-table">
                 <thead>
-                    <tr><th>Fecha</th><th>Contrato</th><th>Servicio</th><th>Técnico</th><th>Formularios</th><th>Documentos</th><th></th></tr>
+                    <tr><th>Fecha</th><th>Contrato</th><th>Servicio</th><th>Técnico</th><th>Formularios</th><th>Fotos</th><th></th></tr>
                 </thead>
                 <tbody>
                     {% for f in filas %}
@@ -69,16 +69,7 @@
                         <td>{{ f.tecnico or '-' }}</td>
                         <td>{{ f.formularios }}</td>
                         <td>{{ f.fotos }}</td>
-                        <td>
-                            {% if f.tipo == 'documento' %}
-                            <a href="{{ url_for('documentos.ver', nombre_archivo=f.documento_archivo) }}" class="btn btn-sm btn-outline-secondary" target="_blank">Descargar</a>
-                            <form method="POST" action="{{ url_for('documentos.eliminar', documento_id=f.documento_id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar este documento?');">
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
-                            </form>
-                            {% else %}
-                            <a href="{{ url_for('visitas.detalle', visita_id=f.visita_id) }}" class="btn btn-sm btn-outline-secondary">Ver / Editar</a>
-                            {% endif %}
-                        </td>
+                        <td><a href="{{ url_for('visitas.detalle', visita_id=f.visita_id) }}" class="btn btn-sm btn-outline-secondary">Ver / Editar</a></td>
                     </tr>
                     {% else %}
                     <tr><td colspan="7"><div class="estado-vacio-doc"><i class="bi bi-clock-history"></i><p class="mb-0">Esta instalación todavía no tiene historial cargado.</p></div></td></tr>
@@ -87,6 +78,60 @@
             </table>
             </div>
 
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2" style="margin-top:1.5rem;">
+                <div class="seccion-titulo-doc mb-0">Documentación y reportes técnicos</div>
+                <div class="buscador-doc" style="max-width:280px;">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    <input type="text" id="buscador-documentos" placeholder="Buscar por título o descripción...">
+                </div>
+            </div>
+            <div class="table-responsive">
+            <table class="table table-sm table-hover">
+                <thead>
+                    <tr><th>Fecha</th><th>Título</th><th>Descripción</th><th>Subido por</th><th></th></tr>
+                </thead>
+                <tbody id="lista-documentos">
+                    {% for doc in documentos %}
+                    <tr class="fila-documento" data-buscar="{{ (doc.titulo ~ ' ' ~ (doc.descripcion or ''))|lower }}">
+                        <td>{{ doc.fecha_documento.strftime('%d/%m/%Y') }}</td>
+                        <td>{{ doc.titulo }}</td>
+                        <td>{{ doc.descripcion or '-' }}</td>
+                        <td>{{ doc.subido_por.nombre_completo if doc.subido_por else '-' }}</td>
+                        <td>
+                            <a href="{{ url_for('documentos.ver', nombre_archivo=doc.nombre_archivo) }}" class="btn btn-sm btn-outline-secondary" target="_blank">Descargar</a>
+                            <form method="POST" action="{{ url_for('documentos.eliminar', documento_id=doc.id) }}" class="d-inline" onsubmit="return confirm('¿Eliminar este documento?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr><td colspan="5"><div class="estado-vacio-doc"><i class="bi bi-file-earmark-text"></i><p class="mb-0">Todavía no hay documentos cargados.</p></div></td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            <p class="text-muted text-center py-2 d-none" id="documentos-sin-resultados">Ningún documento coincide con la búsqueda.</p>
+
     </div>
 </div>
+
+<script>
+(function () {
+    var buscador = document.getElementById('buscador-documentos');
+    if (!buscador) return;
+    var filas = Array.prototype.slice.call(document.querySelectorAll('#lista-documentos .fila-documento'));
+    var sinResultados = document.getElementById('documentos-sin-resultados');
+
+    buscador.addEventListener('input', function () {
+        var texto = (buscador.value || '').toLowerCase().trim();
+        var visibles = 0;
+        filas.forEach(function (fila) {
+            var visible = !texto || fila.dataset.buscar.indexOf(texto) !== -1;
+            fila.style.display = visible ? '' : 'none';
+            if (visible) visibles++;
+        });
+        sinResultados.classList.toggle('d-none', visibles > 0 || !texto);
+    });
+})();
+</script>
 {% endblock %}

@@ -10,7 +10,19 @@
 
 <form method="POST" class="mt-3" enctype="multipart/form-data">
     {% if item %}<input type="hidden" name="item_id" value="{{ item.id }}">{% endif %}
-    {% if equipo %}<input type="hidden" name="equipo_id" value="{{ equipo.id }}">{% endif %}
+    {% if equipo %}
+    <input type="hidden" name="equipo_id" value="{{ equipo.id }}">
+    {% else %}
+    <div class="mb-3">
+        <label class="form-label">Equipo (opcional)</label>
+        <select name="equipo_id" class="form-select">
+            <option value="">General (no es de un equipo puntual)</option>
+            {% for eq in equipos %}
+            <option value="{{ eq.id }}" {% if equipo_preseleccionado == eq.id %}selected{% endif %}>{{ eq.nombre }} ({{ eq.tipo }})</option>
+            {% endfor %}
+        </select>
+    </div>
+    {% endif %}
     <div class="mb-3">
         <label class="form-label">Clasificación</label>
         <select name="clasificacion" id="clasificacion" class="form-select" required onchange="toggleRequierePresupuesto()">

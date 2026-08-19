@@ -93,5 +93,5 @@ def generar_pdf_ot(ot):
     )
     elementos.append(firmas)
 
-    construir(doc, elementos, tipo_doc="Orden de trabajo")
+    construir(doc, elementos, tipo_doc="Orden de trabajo", empresa=ot.instalacion.cliente.empresa)
     return buffer.getvalue()

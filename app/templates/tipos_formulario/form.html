@@ -79,6 +79,14 @@
                             </select>
                             {% if tipo_equipo_sugerido %}<div class="form-text">Sugerido a partir del equipo desde el que veniste. Cambialo si no corresponde.</div>{% endif %}
                         </div>
+                        <div class="form-check mt-2">
+                            <input type="checkbox" name="incluir_en_carga_combinada" class="form-check-input" id="incluir_en_carga_combinada"
+                                   {% if not tipo or tipo.incluir_en_carga_combinada %}checked{% endif %}>
+                            <label class="form-check-label" for="incluir_en_carga_combinada">
+                                Incluir en la carga combinada por categoría (ej. "Cargar checklist de Sala de bombas")
+                            </label>
+                            <div class="form-text">Desmarcalo si este checklist no debería sumarse junto con el resto de su categoría de equipo — ej. un mantenimiento anual con desarme, que no es una inspección de rutina.</div>
+                        </div>
                     </div>
                 </div>
 

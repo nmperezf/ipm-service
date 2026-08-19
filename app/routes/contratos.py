@@ -159,6 +159,7 @@ def nuevo_servicio(contrato_id):
         miembros = [
             st for st in ServicioTipo.query.filter_by(empresa_id=servicio_tipo.empresa_id, por_equipo=True).all()
             if categoria_de_tipo_equipo(st.tipo_equipo_aplicable) == servicio_tipo.categoria
+            and st.incluir_en_carga_combinada
         ]
         for miembro in miembros:
             TipoFormulario.desde_catalogo(miembro, cliente.id)

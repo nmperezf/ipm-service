@@ -1,0 +1,31 @@
+{% if resultados is none %}
+<p class="text-muted mb-0 small">Escribí al menos 2 caracteres para buscar.</p>
+{% else %}
+{% set total = resultados.values()|map('length')|sum %}
+{% if total == 0 %}
+<p class="text-muted mb-0">Sin resultados para "{{ q }}".</p>
+{% else %}
+{% for tipo, items in resultados.items() %}
+{% if items %}
+<div class="grupo-resultado-busqueda">
+    <div class="etiqueta-grupo-busqueda">{{ tipo }}</div>
+    <ul class="lista-resultado-busqueda">
+        {% for item in items %}
+        <li>
+            {% if tipo == 'Clientes' %}
+            <a href="{{ url_for('clientes.detalle', cliente_id=item.id) }}">{{ item.nombre }}</a>
+            {% elif tipo == 'Instalaciones' %}
+            <a href="{{ url_for('instalaciones.detalle', instalacion_id=item.id) }}">{{ item.nombre }}<span class="meta-resultado-busqueda">{{ item.cliente.nombre }}</span></a>
+            {% elif tipo == 'Equipos' %}
+            <a href="{{ url_for('equipos.detalle', equipo_id=item.id) }}">{{ item.nombre }}<span class="meta-resultado-busqueda">{{ item.instalacion.nombre }}</span></a>
+            {% elif tipo == 'Órdenes de trabajo' %}
+            <a href="{{ url_for('ordenes.detalle', ot_id=item.id) }}">{{ item.numero }}<span class="meta-resultado-busqueda">{{ item.instalacion.nombre }}</span></a>
+            {% endif %}
+        </li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+{% endfor %}
+{% endif %}
+{% endif %}

@@ -711,6 +711,14 @@ class TipoFormulario(db.Model):
     # sería alfabético por nombre, que no necesariamente sigue una
     # secuencia operativa lógica (ej. reserva de agua antes que la bomba).
     orden = db.Column(db.Integer, default=0, nullable=False)
+    # Si este tipo entra a la pantalla combinada de carga de su categoría
+    # de equipo (ej. "Sala de bombas" -- ver formularios._secciones_categoria).
+    # Sin este flag, CUALQUIER checklist cuyo tipo_equipo_aplicable caiga en
+    # esa categoría se sumaba ahí, aunque no tuviera nada que ver (ej. un
+    # mantenimiento anual con desarme mezclado con las inspecciones
+    # semanales/mensuales de rutina). Default True para no romper lo que ya
+    # funciona; se desmarca a mano en los que no correspondan.
+    incluir_en_carga_combinada = db.Column(db.Boolean, default=True, nullable=False)
 
     cliente = db.relationship("Cliente", backref=db.backref("tipos_formulario", cascade="all, delete-orphan"))
 
@@ -759,6 +767,7 @@ class TipoFormulario(db.Model):
             referencia_normativa=servicio_tipo.referencia_normativa,
             orden=servicio_tipo.orden,
             schema_json=servicio_tipo.schema_json,
+            incluir_en_carga_combinada=servicio_tipo.incluir_en_carga_combinada,
         )
         db.session.add(tipo_formulario)
         return tipo_formulario
@@ -805,6 +814,14 @@ class ServicioTipo(db.Model):
     # paquete. Sigue existiendo normalmente para definir su propio checklist
     # (ver TipoFormulario.desde_catalogo, contratos.nuevo_servicio).
     oculto = db.Column(db.Boolean, default=False, nullable=False)
+    # Si este ServicioTipo entra como "miembro" cuando se agrega a un
+    # contrato un paquete de su misma categoría (ver nuevo_servicio) y a la
+    # pantalla combinada de carga de esa categoría (ver
+    # TipoFormulario.incluir_en_carga_combinada, que copia este valor al
+    # importarse). Sin esto, cualquier checklist con un tipo_equipo_aplicable
+    # de esa categoría se sumaba igual, aunque no correspondiera (ej. un
+    # mantenimiento anual con desarme junto a las inspecciones de rutina).
+    incluir_en_carga_combinada = db.Column(db.Boolean, default=True, nullable=False)
 
     empresa = db.relationship("Empresa", backref=db.backref("servicios_tipo", cascade="all, delete-orphan"))
 
@@ -1793,6 +1810,11 @@ class Empresa(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nombre = db.Column(db.String(150), nullable=False)
     activo = db.Column(db.Boolean, default=True, nullable=False)
+    # Ruta relativa dentro de UPLOAD_FOLDER, mismo criterio que
+    # Documento.nombre_archivo/Foto.nombre_archivo -- se usa en el
+    # encabezado de los PDF que genera esta empresa (ver app/pdf_base.py)
+    # en vez del logo genérico de IPM Manager.
+    logo = db.Column(db.String(300), nullable=True)
 
     def __repr__(self):
         return f"<Empresa {self.nombre}>"

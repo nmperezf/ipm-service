@@ -71,6 +71,7 @@ def nuevo(cliente_id):
             referencia_normativa=request.form.get("referencia_normativa") or None,
             orden=request.form.get("orden", type=int, default=0),
             schema_json=json.dumps(campos),
+            incluir_en_carga_combinada=bool(request.form.get("incluir_en_carga_combinada")),
         )
         db.session.add(tipo_formulario)
         db.session.commit()
@@ -125,6 +126,7 @@ def editar(tipo_id):
         tipo_formulario.referencia_normativa = request.form.get("referencia_normativa") or None
         tipo_formulario.orden = request.form.get("orden", type=int, default=0)
         tipo_formulario.schema_json = json.dumps(campos)
+        tipo_formulario.incluir_en_carga_combinada = bool(request.form.get("incluir_en_carga_combinada"))
         db.session.commit()
         flash(f"Tipo de formulario '{tipo_formulario.nombre}' actualizado.", "success")
         return redirect(request.form.get("volver_a") or volver_a)

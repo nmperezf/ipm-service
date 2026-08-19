@@ -63,27 +63,15 @@ def _filas_historial(instalacion):
                     "visita_id": visita.id,
                 }
             )
-    # Documentos sueltos (informes de alineación, trabajos especiales, etc.)
-    # -- no son una visita, se listan aparte con su propio link de descarga.
-    for doc in instalacion.documentos:
-        filas.append(
-            {
-                "fecha": doc.fecha_documento,
-                "contrato": "-",
-                "servicio": doc.titulo,
-                "estado_item": "-",
-                "estado_visita": "Documento",
-                "tecnico": doc.subido_por.nombre_completo if doc.subido_por else "-",
-                "observaciones": doc.descripcion or "",
-                "formularios": 0,
-                "fotos": 1,  # el documento en sí, para que la columna "Documentos" lo cuente
-                "visita_id": None,
-                "tipo": "documento",
-                "documento_id": doc.id,
-                "documento_archivo": doc.nombre_archivo,
-            }
-        )
     return sorted(filas, key=lambda f: f["fecha"], reverse=True)
+
+
+def _documentos_historial(instalacion):
+    """Documentos sueltos (informes de alineación, trabajos especiales,
+    etc.) de una instalación -- no son una visita, se listan en su propia
+    sección de 'Documentación y reportes técnicos', separados de las
+    visitas y servicios."""
+    return sorted(instalacion.documentos, key=lambda d: d.fecha_documento, reverse=True)
 
 
 @historial_bp.route("/<int:instalacion_id>")
@@ -92,9 +80,10 @@ def ver(instalacion_id):
     instalacion = Instalacion.query.get_or_404(instalacion_id)
     verificar_acceso_cliente(instalacion.cliente)
     filas = _filas_historial(instalacion)
+    documentos = _documentos_historial(instalacion)
     observaciones = sorted(instalacion.deficiencias, key=lambda o: o.fecha_carga, reverse=True)
     return render_template(
-        "historial/ver.html", instalacion=instalacion, filas=filas, observaciones=observaciones
+        "historial/ver.html", instalacion=instalacion, filas=filas, documentos=documentos, observaciones=observaciones
     )
 
 
@@ -104,6 +93,7 @@ def exportar_csv(instalacion_id):
     instalacion = Instalacion.query.get_or_404(instalacion_id)
     verificar_acceso_cliente(instalacion.cliente)
     filas = _filas_historial(instalacion)
+    documentos = _documentos_historial(instalacion)
 
     buffer = io.StringIO()
     writer = csv.writer(buffer)
@@ -122,6 +112,20 @@ def exportar_csv(instalacion_id):
                 f["observaciones"],
                 f["formularios"],
                 f["fotos"],
+            ]
+        )
+    for doc in documentos:
+        writer.writerow(
+            [
+                doc.fecha_documento.strftime("%d/%m/%Y"),
+                "-",
+                doc.titulo,
+                "-",
+                "Documento",
+                doc.subido_por.nombre_completo if doc.subido_por else "-",
+                doc.descripcion or "",
+                0,
+                1,
             ]
         )
 

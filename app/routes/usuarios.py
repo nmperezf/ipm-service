@@ -1,11 +1,39 @@
 from flask import Blueprint, abort, flash, redirect, render_template, request, url_for
-from flask_login import current_user
+from flask_login import current_user, login_required
 
 from app import db
 from app.auth_utils import rol_requerido
 from app.models import Cliente, Empresa, Usuario
 
 usuarios_bp = Blueprint("usuarios", __name__, url_prefix="/usuarios")
+
+
+@usuarios_bp.route("/mi-cuenta", methods=["GET", "POST"])
+@login_required
+def mi_cuenta():
+    """Autogestión de la propia cuenta -- cualquier rol logueado, siempre
+    sobre current_user (nunca recibe un id por URL, así que no hace falta
+    chequeo de pertenencia). A diferencia de usuarios.editar (que resetea
+    la contraseña de otro sin pedir nada más, porque ya lo hace alguien con
+    permiso para administrar usuarios), acá el cambio de contraseña exige
+    la actual -- es la propia cuenta, nadie más valida esto."""
+    if request.method == "POST":
+        current_user.nombre_completo = request.form.get("nombre_completo", "").strip() or None
+        password_actual = request.form.get("password_actual", "")
+        password_nueva = request.form.get("password_nueva", "")
+        password_confirmar = request.form.get("password_confirmar", "")
+        if password_nueva or password_confirmar:
+            if not current_user.check_password(password_actual):
+                flash("La contraseña actual no es correcta.", "danger")
+                return redirect(url_for("usuarios.mi_cuenta"))
+            if password_nueva != password_confirmar:
+                flash("La contraseña nueva y su confirmación no coinciden.", "danger")
+                return redirect(url_for("usuarios.mi_cuenta"))
+            current_user.set_password(password_nueva)
+        db.session.commit()
+        flash("Tus datos se actualizaron.", "success")
+        return redirect(url_for("usuarios.mi_cuenta"))
+    return render_template("usuarios/mi_cuenta.html")
 
 # El Super Admin puede crear cualquier rol, para cualquier empresa (incluido
 # otro Super Admin — es quien administra la plataforma entera). El

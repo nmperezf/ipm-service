@@ -285,5 +285,5 @@ def generar_pdf_informe_categoria(item, categoria, secciones, ensayos, observaci
     ]))
     elementos.append(firmas)
 
-    construir(doc, elementos, tipo_doc=f"Informe — {categoria}")
+    construir(doc, elementos, tipo_doc=f"Informe — {categoria}", empresa=instalacion.cliente.empresa)
     return buffer.getvalue()

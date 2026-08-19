@@ -33,3 +33,26 @@
     {% endfor %}
 </div>
 {% endif %}
+
+{% if mensajes_abiertos %}
+<div class="seccion-titulo-doc" style="margin-top:1rem;">Mensajes internos</div>
+<ul class="lista-expandible">
+    {% for m in mensajes_abiertos %}
+    <li>
+        <a class="fila-expandible" href="{{ url_for('dashboard.inicio', _anchor='mensaje-' ~ m.id) }}">
+            <span class="cuerpo">
+                <div class="desc">{{ m.titulo }}</div>
+                <div class="meta">
+                    {% if m.es_para_mi %}Recordatorio personal
+                    {% elif m.remitente_id == current_user.id %}Para {{ m.destinatario.nombre_completo or m.destinatario.username }}
+                    {% else %}De {{ m.remitente.nombre_completo or m.remitente.username }}{% endif %}
+                    · {{ m.fecha_carga.strftime('%d/%m/%Y') }}
+                </div>
+            </span>
+            <span class="badge badge-{{ m.prioridad }}">{{ m.prioridad }}</span>
+        </a>
+    </li>
+    {% endfor %}
+</ul>
+<p class="mt-2 mb-0"><a href="{{ url_for('dashboard.inicio') }}" class="small">Ver mensajes →</a></p>
+{% endif %}

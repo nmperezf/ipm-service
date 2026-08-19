@@ -1,0 +1,11 @@
+{# Breadcrumb genérico: 'migas' es una lista de (etiqueta, url) -- el
+   último par se muestra sin link (la página en la que estás). Se incluye
+   con {% include "_migas.html" %} después de armar 'migas' con {% set %}
+   en cada ficha (ver instalaciones/_contenido.html, equipos/detalle.html,
+   contratos/detail.html, visitas/detail.html). #}
+<nav class="migas-pan" aria-label="breadcrumb">
+    {% for etiqueta, url in migas %}
+    {%- if not loop.last %}<a href="{{ url }}">{{ etiqueta }}</a><span class="separador-migas">/</span
+    >{% else %}<span class="miga-actual">{{ etiqueta }}</span>{% endif -%}
+    {% endfor %}
+</nav>

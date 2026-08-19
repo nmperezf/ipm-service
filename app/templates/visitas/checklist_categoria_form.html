@@ -76,12 +76,20 @@
 
             <form method="POST">
             {% for seccion in secciones %}
+            {% set tiene_datos = seccion.formularios or seccion.formulario_general %}
+            {% set id_seccion = 'seccion-carga-' ~ loop.index %}
             <div class="seccion-eq-carga">
-                <div class="seccion-eq-carga-cab">
-                    <div class="seccion-eq-carga-tit">{{ seccion.tipo.nombre }}</div>
-                    {% if seccion.tipo.referencia_normativa %}<div class="seccion-eq-carga-ref">{{ seccion.tipo.referencia_normativa }}</div>{% endif %}
+                <div class="seccion-eq-carga-cab seccion-eq-carga-cab-toggle{{ '' if tiene_datos else ' collapsed' }}"
+                     data-bs-toggle="collapse" data-bs-target="#{{ id_seccion }}" role="button"
+                     aria-expanded="{{ 'true' if tiene_datos else 'false' }}" aria-controls="{{ id_seccion }}">
+                    <i class="bi bi-chevron-down icono-chevron-carga"></i>
+                    <div>
+                        <div class="seccion-eq-carga-tit">{{ seccion.tipo.nombre }}</div>
+                        {% if seccion.tipo.referencia_normativa %}<div class="seccion-eq-carga-ref">{{ seccion.tipo.referencia_normativa }}</div>{% endif %}
+                    </div>
                 </div>
 
+                <div class="collapse{{ ' show' if tiene_datos }}" id="{{ id_seccion }}">
                 {% if seccion.tipo.por_equipo %}
                 {% for equipo in seccion.equipos %}
                 {% set datos = seccion.formularios[equipo.id].datos() if equipo.id in seccion.formularios else {} %}
@@ -94,6 +102,7 @@
                 {% set datos = seccion.formulario_general.datos() if seccion.formulario_general else {} %}
                 {{ puntos_checklist(seccion.tipo, seccion.campos, 0, datos) }}
                 {% endif %}
+                </div>
             </div>
             {% endfor %}
 

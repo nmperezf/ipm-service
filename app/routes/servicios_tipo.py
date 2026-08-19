@@ -59,6 +59,7 @@ def nuevo():
             orden=request.form.get("orden", type=int, default=0),
             es_curva_caudal=es_curva_caudal,
             schema_json=json.dumps(campos),
+            incluir_en_carga_combinada=bool(request.form.get("incluir_en_carga_combinada")),
         )
         db.session.add(servicio)
         db.session.commit()
@@ -89,6 +90,7 @@ def editar(servicio_id):
         servicio.orden = request.form.get("orden", type=int, default=0)
         servicio.es_curva_caudal = es_curva_caudal
         servicio.schema_json = json.dumps(campos)
+        servicio.incluir_en_carga_combinada = bool(request.form.get("incluir_en_carga_combinada"))
         db.session.commit()
         flash(
             f"Servicio tipo '{servicio.nombre}' actualizado. Los clientes que ya lo habían importado "

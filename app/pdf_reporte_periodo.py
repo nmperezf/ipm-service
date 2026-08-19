@@ -111,5 +111,5 @@ def generar_pdf_reporte_periodo(cliente, fecha_desde, fecha_hasta, resumen_servi
     else:
         elementos.append(Paragraph("No hay deficiencias abiertas para este cliente.", normal))
 
-    construir(doc, elementos, tipo_doc="Reporte de cumplimiento")
+    construir(doc, elementos, tipo_doc="Reporte de cumplimiento", empresa=cliente.empresa)
     return buffer.getvalue()

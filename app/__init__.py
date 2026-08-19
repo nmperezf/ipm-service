@@ -100,6 +100,7 @@ def create_app():
     from app.routes.servicios_tipo import servicios_tipo_bp
     from app.routes.curvas import curvas_bp
     from app.routes.coordinacion import coordinacion_bp
+    from app.routes.busqueda import busqueda_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -127,6 +128,7 @@ def create_app():
     app.register_blueprint(servicios_tipo_bp)
     app.register_blueprint(curvas_bp)
     app.register_blueprint(coordinacion_bp)
+    app.register_blueprint(busqueda_bp)
 
     @app.errorhandler(404)
     def error_404(error):
@@ -259,13 +261,15 @@ def _seed_catalogo_nfpa():
     usarlas en un documento de cumplimiento."""
     from app.models import Cliente, Empresa, ServicioTipo, TipoFormulario
 
-    def crear(empresa_id, nombre, tipo_equipo, referencia, campos, por_equipo=True, oculto=False, categoria=None):
+    def crear(empresa_id, nombre, tipo_equipo, referencia, campos, por_equipo=True, oculto=False, categoria=None,
+              incluir_en_carga_combinada=True):
         if ServicioTipo.query.filter_by(empresa_id=empresa_id, nombre=nombre).first():
             return
         db.session.add(ServicioTipo(
             empresa_id=empresa_id, nombre=nombre, por_equipo=por_equipo,
             tipo_equipo_aplicable=tipo_equipo, referencia_normativa=referencia,
             schema_json=json.dumps(campos), oculto=oculto, categoria=categoria,
+            incluir_en_carga_combinada=incluir_en_carga_combinada,
         ))
 
     def punto_estado(campo, label, descripcion, foto=False):
@@ -479,14 +483,42 @@ def _seed_catalogo_nfpa():
         crear(eid, "Inspección + prueba — ECA", "ECA", "NFPA 25 · Cap. 13 §13.3.3 — Prueba de válvula y dispositivos de supervisión/alarma (frecuencia varía según edición adoptada)", campos_eca_inspeccion_prueba)
         crear(eid, "Inspección — BIE", "BIE", "NFPA 25 · Cap. 6 (Standpipe and Hose Systems)", campos_bie)
 
+        # incluir_en_carga_combinada=False: son mantenimientos anuales con
+        # desarme, no inspecciones de rutina -- sin esto quedaban mezclados
+        # con "Inspecciones y pruebas en sala de bombas" en la pantalla
+        # combinada de carga solo por compartir tipo de equipo.
         crear(eid, "Mantenimiento anual — Bomba (desarme) — Electrobomba", "Electrobomba",
-              "Mantenimiento preventivo anual con desarme — extremo hidráulico", campos_bomba_desarme)
+              "Mantenimiento preventivo anual con desarme — extremo hidráulico", campos_bomba_desarme,
+              incluir_en_carga_combinada=False)
         crear(eid, "Mantenimiento anual — Bomba (desarme) — Motobomba", "Motobomba",
-              "Mantenimiento preventivo anual con desarme — extremo hidráulico", campos_bomba_desarme)
+              "Mantenimiento preventivo anual con desarme — extremo hidráulico", campos_bomba_desarme,
+              incluir_en_carga_combinada=False)
         crear(eid, "Mantenimiento anual — Motor eléctrico (desarme)", "Electrobomba",
-              "Mantenimiento preventivo anual con desarme — motor eléctrico", campos_motor_electrico)
+              "Mantenimiento preventivo anual con desarme — motor eléctrico", campos_motor_electrico,
+              incluir_en_carga_combinada=False)
         crear(eid, "Mantenimiento anual — Motor diésel (desarme)", "Motobomba",
-              "Mantenimiento preventivo anual con desarme — motor diésel", campos_motor_diesel)
+              "Mantenimiento preventivo anual con desarme — motor diésel", campos_motor_diesel,
+              incluir_en_carga_combinada=False)
+        # Backfill: empresas que ya tenían estos 4 corridos de una corrida
+        # anterior del seed quedaron con incluir_en_carga_combinada=True
+        # (el default de la columna) -- crear() no las toca porque ya
+        # existen por nombre, así que se corrigen acá aparte. Se corrige
+        # también la copia ya importada de cada cliente (TipoFormulario),
+        # igual que el backfill de tipo_equipo_aplicable de más arriba.
+        NOMBRES_MANTENIMIENTO_DESARME = [
+            "Mantenimiento anual — Bomba (desarme) — Electrobomba",
+            "Mantenimiento anual — Bomba (desarme) — Motobomba",
+            "Mantenimiento anual — Motor eléctrico (desarme)",
+            "Mantenimiento anual — Motor diésel (desarme)",
+        ]
+        ServicioTipo.query.filter(
+            ServicioTipo.empresa_id == eid,
+            ServicioTipo.nombre.in_(NOMBRES_MANTENIMIENTO_DESARME),
+        ).update({"incluir_en_carga_combinada": False}, synchronize_session=False)
+        TipoFormulario.query.filter(
+            TipoFormulario.cliente_id.in_(db.session.query(Cliente.id).filter(Cliente.empresa_id == eid)),
+            TipoFormulario.nombre.in_(NOMBRES_MANTENIMIENTO_DESARME),
+        ).update({"incluir_en_carga_combinada": False}, synchronize_session=False)
 
     db.session.commit()
 
