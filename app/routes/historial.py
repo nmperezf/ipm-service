@@ -98,7 +98,7 @@ def exportar_csv(instalacion_id):
     buffer = io.StringIO()
     writer = csv.writer(buffer)
     writer.writerow(
-        ["Fecha", "Contrato", "Servicio", "Estado servicio", "Estado visita", "Técnico", "Observaciones", "Formularios", "Fotos"]
+        ["Fecha", "Servicio contratado", "Servicio", "Estado servicio", "Estado visita", "Técnico", "Observaciones", "Formularios", "Fotos"]
     )
     for f in filas:
         writer.writerow(

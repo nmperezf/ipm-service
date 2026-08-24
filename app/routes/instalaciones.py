@@ -85,6 +85,11 @@ def detalle(instalacion_id):
         (o for o in instalacion.deficiencias if not o.resuelto),
         key=lambda o: (o.clasificacion != "Deficiencia crítica", o.fecha_carga),
     )
+    observaciones_anteriores = sorted(
+        (o for o in instalacion.deficiencias if o.resuelto),
+        key=lambda o: o.fecha_resolucion or o.fecha_carga,
+        reverse=True,
+    )
 
     contexto = dict(
         instalacion=instalacion,
@@ -95,6 +100,7 @@ def detalle(instalacion_id):
         contratos_activos=sum(1 for c in contratos if c.estado == "Activo"),
         proxima_visita=proxima_visita,
         observaciones_abiertas=observaciones_abiertas,
+        observaciones_anteriores=observaciones_anteriores,
     )
     template = "instalaciones/_contenido.html" if es_ajax() else "instalaciones/detail.html"
     return render_template(template, **contexto)
@@ -113,6 +119,17 @@ def fotos(instalacion_id):
         instalacion.fotos, key=lambda f: f.fecha_toma or f.fecha_subida.date(), reverse=True
     )
     return render_template("instalaciones/fotos.html", instalacion=instalacion, fotos=fotos_ordenadas)
+
+
+@instalaciones_bp.route("/<int:instalacion_id>/equipos")
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def equipos_lista(instalacion_id):
+    """Categorías de equipos (Bomba/ECA/BIE) de la instalación, cada una
+    con su cantidad -- entrada a instalaciones.equipos_categoria."""
+    instalacion = Instalacion.query.get_or_404(instalacion_id)
+    verificar_acceso_cliente(instalacion.cliente)
+    categorias = equipos_por_categoria(instalacion)
+    return render_template("instalaciones/equipos_lista.html", instalacion=instalacion, categorias=categorias)
 
 
 @instalaciones_bp.route("/<int:instalacion_id>/informacion/<categoria>")

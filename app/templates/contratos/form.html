@@ -1,22 +1,22 @@
 {% extends "base.html" %}
-{% block title %}Nuevo contrato{% endblock %}
+{% block title %}Nuevo servicio contratado{% endblock %}
 {% block content %}
 <div class="pagina-ancha">
-    <h1>Nuevo contrato</h1>
+    <h1>Nuevo servicio contratado</h1>
     <div class="tarjeta-doc angosta">
-            <p class="text-muted">{{ instalacion.nombre }} &middot; Los contratos duran 1 año. Una vez creado, agregá los servicios (con su frecuencia); cada mes vas a poder <a href="{{ url_for('coordinacion.index') }}">coordinar con el cliente</a> la fecha real de la visita, agrupando en la misma visita los servicios que coincidan.</p>
+            <p class="text-muted">{{ instalacion.nombre }} &middot; Los servicios contratados duran 1 año. Una vez creado, agregá los servicios (con su frecuencia); cada mes vas a poder <a href="{{ url_for('coordinacion.index') }}">coordinar con el cliente</a> la fecha real de la visita, agrupando en la misma visita los servicios que coincidan.</p>
 
             <form method="POST" class="mt-3">
                 <div class="mb-3">
-                    <label class="form-label">Nombre del contrato</label>
-                    <input type="text" name="nombre" class="form-control" required placeholder="Ej: Contrato 2026">
+                    <label class="form-label">Nombre del servicio contratado</label>
+                    <input type="text" name="nombre" class="form-control" required placeholder="Ej: Servicio contratado 2026">
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Mes de inicio</label>
                     <input type="month" name="mes_inicio" class="form-control" required>
                     <div class="form-text">El día exacto de cada visita se define más adelante (cuando el cliente confirme), editando esa visita puntual. La fecha de fin se calcula automáticamente (mes de inicio + 1 año).</div>
                 </div>
-                <button type="submit" class="btn btn-primary">Crear contrato</button>
+                <button type="submit" class="btn btn-primary">Crear servicio contratado</button>
                 <a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}" class="btn btn-link">Cancelar</a>
             </form>
 

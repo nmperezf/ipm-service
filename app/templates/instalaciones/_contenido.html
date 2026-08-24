@@ -10,7 +10,7 @@
                     {% if instalacion.direccion %}<p class="text-muted mb-0">{{ instalacion.direccion }}</p>{% endif %}
                 </div>
                 <div class="d-flex gap-2 flex-wrap">
-                    <a href="{{ url_for('contratos.nuevo', instalacion_id=instalacion.id) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Contrato</a>
+                    <a href="{{ url_for('contratos.nuevo', instalacion_id=instalacion.id) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo servicio</a>
                     <a href="{{ url_for('visitas.nueva', instalacion_id=instalacion.id) }}" data-modal-form class="btn btn-dark btn-sm"><i class="bi bi-calendar-plus me-1"></i>Visita manual</a>
                     <div class="dropdown">
                         <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -18,6 +18,8 @@
                         </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item" href="{{ url_for('instalaciones.editar', instalacion_id=instalacion.id) }}" data-modal-form><i class="bi bi-pencil me-2"></i>Editar instalación</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('contratos.listar_por_instalacion', instalacion_id=instalacion.id) }}"><i class="bi bi-file-earmark-text me-2"></i>Servicios contratados</a></li>
+                            <li><a class="dropdown-item" href="{{ url_for('instalaciones.equipos_lista', instalacion_id=instalacion.id) }}"><i class="bi bi-hdd-stack me-2"></i>Equipos</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('historial.ver', instalacion_id=instalacion.id) }}"><i class="bi bi-clock-history me-2"></i>Histórico técnico</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('observaciones.nueva', instalacion_id=instalacion.id) }}" data-modal-form><i class="bi bi-exclamation-triangle me-2"></i>Nueva observación</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('equipos.nuevo', instalacion_id=instalacion.id) }}" data-modal-form><i class="bi bi-hdd-stack me-2"></i>Agregar equipo</a></li>
@@ -36,7 +38,7 @@
                 </div>
                 <div class="stat{{ ' calmo' if contratos_activos == 0 }}">
                     <span class="num">{{ contratos_activos }}</span>
-                    <span class="etiqueta">Contrato{{ 's' if contratos_activos != 1 }} activo{{ 's' if contratos_activos != 1 }}</span>
+                    <span class="etiqueta">Servicio{{ 's' if contratos_activos != 1 }} contratado{{ 's' if contratos_activos != 1 }} activo{{ 's' if contratos_activos != 1 }}</span>
                 </div>
                 <div class="stat{{ '' if proxima_visita else ' calmo' }}">
                     <span class="num">{{ proxima_visita.fecha.strftime('%d/%m') if proxima_visita else '-' }}</span>
@@ -51,80 +53,6 @@
             <div class="grid-inicio">
                 <div class="columna-principal">
 
-                    <div class="seccion-titulo-doc">Contratos</div>
-                    <div class="table-responsive">
-                    <table class="table table-sm data-table">
-                        <thead><tr><th>Contrato</th><th>Vigencia</th><th>Servicios</th><th>Estado</th><th></th></tr></thead>
-                        <tbody>
-                            {% for contrato in contratos %}
-                            <tr>
-                                <td><a href="{{ url_for('contratos.detalle', contrato_id=contrato.id) }}">{{ contrato.nombre }}</a></td>
-                                <td>{{ contrato.fecha_inicio.strftime('%m/%Y') }} - {{ contrato.fecha_fin.strftime('%m/%Y') }}</td>
-                                <td>{{ contrato.servicios|length }}</td>
-                                <td><span class="badge badge-{{ contrato.estado.replace(' ', '.') }}">{{ contrato.estado }}</span></td>
-                                <td><a href="{{ url_for('contratos.editar', contrato_id=contrato.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a></td>
-                            </tr>
-                            {% else %}
-                            <tr><td colspan="5" class="text-muted text-center py-3">Sin contratos cargados todavía.</td></tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                    </div>
-
-                    <div class="seccion-titulo-doc">Hoja de ruta</div>
-                    {% if not bloques_hoja_ruta %}
-                    <p class="text-muted">Todavía no hay visitas programadas para esta instalación.</p>
-                    {% endif %}
-                    <ul class="lista-agenda-doc">
-                        {% for bloque in bloques_hoja_ruta %}
-                        {% for visita in bloque.visitas %}
-                        <li>
-                            <div class="item-agenda-doc">
-                                <span class="fecha">{{ visita.fecha.strftime('%d/%m') }}</span>
-                                <span class="nombre">{{ visita.items|map(attribute='nombre_mostrado')|join(', ') if visita.items else 'Sin servicios cargados' }}</span>
-                                <a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Ver visita</a>
-                            </div>
-                        </li>
-                        {% endfor %}
-                        {% endfor %}
-                    </ul>
-
-                </div>
-
-                <div class="columna-lateral">
-
-                    <details class="card-expandible" open>
-                        <summary>
-                            <span class="num">{{ total_equipos }}</span>
-                            <span class="textos">
-                                <span class="etiqueta">Equipos</span>
-                                <span class="sub">agrupados por categoría</span>
-                            </span>
-                            <span class="flecha">▶</span>
-                        </summary>
-                        {% if not categorias %}
-                        <div class="estado-vacio-doc" style="padding: 0 .85rem 1rem;">
-                            <p class="mb-2">Todavía no hay equipos cargados.</p>
-                            <a href="{{ url_for('equipos.nuevo', instalacion_id=instalacion.id) }}" data-modal-form class="btn btn-dark btn-sm"><i class="bi bi-plus-lg me-1"></i>Equipo</a>
-                        </div>
-                        {% else %}
-                        <ul class="lista-expandible">
-                            {% for categoria, equipos_cat in categorias %}
-                            <li>
-                                <a class="fila-expandible" href="{{ url_for('instalaciones.equipos_categoria', instalacion_id=instalacion.id, categoria=categoria) }}">
-                                    <span class="cuerpo">
-                                        <div class="desc">{{ categoria }}</div>
-                                        <div class="meta">{{ equipos_cat|length }} equipo{{ 's' if equipos_cat|length != 1 }}</div>
-                                    </span>
-                                    <span class="ir">Ver →</span>
-                                </a>
-                            </li>
-                            {% endfor %}
-                        </ul>
-                        {% endif %}
-                    </details>
-
-                    {% if observaciones_abiertas %}
                     <details class="card-expandible critico" open>
                         <summary>
                             <span class="num">{{ observaciones_abiertas|length }}</span>
@@ -134,13 +62,18 @@
                             </span>
                             <span class="flecha">▶</span>
                         </summary>
+                        {% if not observaciones_abiertas %}
+                        <p class="text-muted" style="padding: 0 .85rem .8rem;">Sin observaciones abiertas.</p>
+                        {% else %}
                         <div class="lista-obs-lateral">
                             {% for obs in observaciones_abiertas %}
                             <div class="obs-lateral{{ ' obs-lateral-critica' if obs.clasificacion == 'Deficiencia crítica' }}">
                                 <div class="obs-lateral-cab">
                                     <span>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}{% if obs.equipo %} · {{ obs.equipo.nombre }}{% endif %}</span>
-                                    {% if obs.visibilidad == 'Interna' %}<span class="badge badge-Interna">Interna</span>{% endif %}
-                                    {% if obs.estado_revision == 'Aprobada' %}<span class="badge badge-Cumplido">Aprobada</span>{% else %}<span class="badge badge-Pendiente">Pendiente</span>{% endif %}
+                                    <span class="obs-lateral-badges">
+                                        {% if obs.visibilidad == 'Interna' %}<span class="badge badge-Interna">Interna</span>{% endif %}
+                                        {% if obs.estado_revision == 'Aprobada' %}<span class="badge badge-Cumplido">Aprobada</span>{% else %}<span class="badge badge-Pendiente">Pendiente</span>{% endif %}
+                                    </span>
                                 </div>
                                 <div class="obs-lateral-desc">{{ obs.descripcion }}</div>
                                 <div class="obs-lateral-acciones">
@@ -167,8 +100,70 @@
                             </div>
                             {% endfor %}
                         </div>
+                        {% endif %}
                     </details>
+
+                    <details class="card-expandible">
+                        <summary>
+                            <span class="num">{{ observaciones_anteriores|length }}</span>
+                            <span class="textos">
+                                <span class="etiqueta">Observaciones anteriores</span>
+                                <span class="sub">ya resueltas</span>
+                            </span>
+                            <span class="flecha">▶</span>
+                        </summary>
+                        {% if not observaciones_anteriores %}
+                        <p class="text-muted" style="padding: 0 .85rem .8rem;">Sin observaciones anteriores.</p>
+                        {% else %}
+                        <div class="lista-obs-lateral">
+                            {% for obs in observaciones_anteriores %}
+                            <div class="obs-lateral">
+                                <div class="obs-lateral-cab">
+                                    <span>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}{% if obs.equipo %} · {{ obs.equipo.nombre }}{% endif %}</span>
+                                    <span class="obs-lateral-badges">
+                                        {% if obs.visibilidad == 'Interna' %}<span class="badge badge-Interna">Interna</span>{% endif %}
+                                        <span class="badge badge-Cumplido">Resuelta{{ ' ' + obs.fecha_resolucion.strftime('%d/%m/%Y') if obs.fecha_resolucion }}</span>
+                                    </span>
+                                </div>
+                                <div class="obs-lateral-desc">{{ obs.descripcion }}</div>
+                                <div class="obs-lateral-acciones">
+                                    <form method="POST" action="{{ url_for('observaciones.reabrir', observacion_id=obs.id) }}" class="d-inline">
+                                        <button type="submit" class="btn btn-sm btn-outline-secondary">Reabrir</button>
+                                    </form>
+                                    {% if current_user.rol in ('Administrador', 'Jefe') %}
+                                    <form method="POST" action="{{ url_for('observaciones.eliminar', observacion_id=obs.id) }}" class="d-inline"
+                                          onsubmit="return confirm('¿Eliminar esta observación? No se puede deshacer.');">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">Eliminar</button>
+                                    </form>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </details>
+
+                    <div class="seccion-titulo-doc">Hoja de ruta</div>
+                    {% if not bloques_hoja_ruta %}
+                    <p class="text-muted">Todavía no hay visitas programadas para esta instalación.</p>
                     {% endif %}
+                    <ul class="lista-agenda-doc">
+                        {% for bloque in bloques_hoja_ruta %}
+                        {% for visita in bloque.visitas %}
+                        <li>
+                            <div class="item-agenda-doc">
+                                <span class="fecha">{{ visita.fecha.strftime('%d/%m') }}</span>
+                                <span class="nombre">{{ visita.items|map(attribute='nombre_mostrado')|join(', ') if visita.items else 'Sin servicios cargados' }}</span>
+                                <a href="{{ url_for('visitas.detalle', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary">Ver visita</a>
+                            </div>
+                        </li>
+                        {% endfor %}
+                        {% endfor %}
+                    </ul>
+
+                </div>
+
+                <div class="columna-lateral">
 
                     {% set fotos_generales = instalacion.fotos|selectattr('equipo_id', 'none')|list %}
                     {% if fotos_generales %}
@@ -198,6 +193,6 @@
             </div>
 
             <form method="POST" action="{{ url_for('instalaciones.eliminar', instalacion_id=instalacion.id) }}" class="mt-4 form-confirmar-password" data-sin-bloqueo
-                  data-mensaje="¿Eliminar '{{ instalacion.nombre }}'? Se borran también sus contratos, visitas y equipos. Esta acción no se puede deshacer.">
+                  data-mensaje="¿Eliminar '{{ instalacion.nombre }}'? Se borran también sus servicios contratados, visitas y equipos. Esta acción no se puede deshacer.">
                 <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar instalación</button>
             </form>

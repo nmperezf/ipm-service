@@ -304,7 +304,7 @@ def eliminar(ot_id):
     if ot.visita_id:
         flash(
             f"La OT {ot.numero} está ligada a una visita planificada; para eliminarla, eliminá la visita "
-            "(o el contrato) en vez de la OT directamente.",
+            "(o el servicio contratado) en vez de la OT directamente.",
             "danger",
         )
         return redirect(url_for("ordenes.detalle", ot_id=ot.id))

@@ -153,8 +153,10 @@
                     <div class="obs-lateral{{ ' obs-lateral-critica' if obs.clasificacion == 'Deficiencia crítica' }}">
                         <div class="obs-lateral-cab">
                             <span>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</span>
-                            {% if obs.visibilidad == 'Interna' %}<span class="badge badge-Interna">Interna</span>{% endif %}
-                            {% if obs.estado_revision == 'Aprobada' %}<span class="badge badge-Cumplido">Aprobada</span>{% else %}<span class="badge badge-Pendiente">Pendiente</span>{% endif %}
+                            <span class="obs-lateral-badges">
+                                {% if obs.visibilidad == 'Interna' %}<span class="badge badge-Interna">Interna</span>{% endif %}
+                                {% if obs.estado_revision == 'Aprobada' %}<span class="badge badge-Cumplido">Aprobada</span>{% else %}<span class="badge badge-Pendiente">Pendiente</span>{% endif %}
+                            </span>
                         </div>
                         <div class="obs-lateral-desc">{{ obs.descripcion }}</div>
                         <div class="obs-lateral-acciones">

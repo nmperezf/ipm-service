@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Servicios contratados - {{ instalacion.nombre }}{% endblock %}
+{% block content %}
+<div class="pagina-ancha">
+    <h1>Servicios contratados de la instalación</h1>
+    <div class="tarjeta-doc">
+
+            <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}">&larr; {{ instalacion.nombre }}</a></p>
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+                <p class="text-muted mb-0">{{ contratos|length }} servicio{{ 's' if contratos|length != 1 }} contratado{{ 's' if contratos|length != 1 }} en total.</p>
+                <a href="{{ url_for('contratos.nuevo', instalacion_id=instalacion.id) }}" class="btn btn-outline-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nuevo servicio</a>
+            </div>
+
+            {% if not contratos %}
+            <div class="estado-vacio-doc">
+                <i class="bi bi-file-earmark-text"></i>
+                <p>Esta instalación todavía no tiene servicios contratados cargados.</p>
+                <a href="{{ url_for('contratos.nuevo', instalacion_id=instalacion.id) }}" class="btn btn-dark btn-sm"><i class="bi bi-plus-lg me-1"></i>Cargar el primero</a>
+            </div>
+            {% else %}
+            <div class="table-responsive">
+            <table class="table table-sm table-hover data-table">
+                <thead><tr><th>Servicio contratado</th><th>Vigencia</th><th>Servicios</th><th>Estado</th><th></th></tr></thead>
+                <tbody>
+                    {% for contrato in contratos %}
+                    <tr>
+                        <td><a href="{{ url_for('contratos.detalle', contrato_id=contrato.id) }}">{{ contrato.nombre }}</a></td>
+                        <td>{{ contrato.fecha_inicio.strftime('%m/%Y') }} - {{ contrato.fecha_fin.strftime('%m/%Y') }}</td>
+                        <td>{{ contrato.servicios|length }}</td>
+                        <td><span class="badge badge-{{ contrato.estado.replace(' ', '.') }}">{{ contrato.estado }}</span></td>
+                        <td><a href="{{ url_for('contratos.editar', contrato_id=contrato.id) }}" class="btn btn-sm btn-outline-secondary">Editar</a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            </div>
+            {% endif %}
+
+    </div>
+</div>
+{% endblock %}

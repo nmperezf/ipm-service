@@ -26,6 +26,15 @@
         formModal.addEventListener('submit', function (e) {
             e.preventDefault();
             if (!formPendiente || !inputEl.value) return;
+            // El form real queda con data-sin-bloqueo (si no, este mismo
+            // listener se reengancharía en bucle con el envío real de abajo),
+            // así que acá hay que evitar el doble-toque a mano: con mala
+            // señal, un segundo toque en "Eliminar" antes de que la página
+            // navegue vuelve a disparar este submit y manda un segundo POST
+            // real, que llega a un registro que el primero ya borró (404).
+            var botonConfirmar = formModal.querySelector('button[type="submit"]');
+            if (botonConfirmar && botonConfirmar.disabled) return;
+            if (botonConfirmar) botonConfirmar.disabled = true;
             var oculto = document.createElement('input');
             oculto.type = 'hidden';
             oculto.name = 'password';
@@ -40,6 +49,13 @@
             formPendiente.dataset.passwordConfirmado = '1';
             if (formPendiente.requestSubmit) formPendiente.requestSubmit();
             else formPendiente.submit();
+        });
+
+        // Si se cancela el modal (o la próxima eliminación arranca en otro
+        // form), el botón tiene que volver a quedar habilitado.
+        document.getElementById('modal-confirmar-password').addEventListener('hidden.bs.modal', function () {
+            var botonConfirmar = formModal.querySelector('button[type="submit"]');
+            if (botonConfirmar) botonConfirmar.disabled = false;
         });
         return true;
     }

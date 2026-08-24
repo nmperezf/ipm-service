@@ -7,7 +7,7 @@
 
             <p class="mb-1"><a href="{{ url_for('servicios_tipo.listar') }}">&larr; Servicios tipo</a></p>
             <p class="text-muted">
-                Es el catálogo de la empresa: al elegir este servicio desde un contrato, se le arma al cliente
+                Es el catálogo de la empresa: al elegir este servicio desde un servicio contratado, se le arma al cliente
                 su propio formulario a partir de este base — de ahí en más, la copia del cliente es independiente.
             </p>
 
@@ -151,7 +151,7 @@ function opcionesTiposCampo() {
     return tipos.map(function (t) { return '<option value="' + t[0] + '">' + t[1] + '</option>'; }).join('');
 }
 
-function agregarFila(campo) {
+function agregarFila(campo, filaAnterior) {
     campo = campo || { campo: '', tipo: 'texto', label: '', opciones: [], norma: '', descripcion: '', unidad: '', con_estado: false, requiere_foto: false };
     const tbody = document.getElementById('cuerpo-campos');
     const fila = document.createElement('tr');
@@ -172,12 +172,25 @@ function agregarFila(campo) {
         (campo.descripcion || '').replace(/"/g, '&quot;') + '"></td>' +
         '<td><input type="text" name="campo_norma" class="form-control form-control-sm" placeholder="Ej: NFPA 25 §8.3.1" value="' +
         (campo.norma || '').replace(/"/g, '&quot;') + '"></td>' +
-        '<td><button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest(\'tr\').remove()">Quitar</button></td>';
-    tbody.appendChild(fila);
+        '<td class="text-nowrap">' +
+        '<button type="button" class="btn btn-sm btn-outline-secondary" title="Insertar campo debajo" onclick="insertarFilaDespues(this)"><i class="bi bi-plus-lg"></i></button> ' +
+        '<button type="button" class="btn btn-sm btn-outline-danger" onclick="this.closest(\'tr\').remove()">Quitar</button></td>';
+    if (filaAnterior) {
+        filaAnterior.after(fila);
+    } else {
+        tbody.appendChild(fila);
+    }
     fila.querySelector('select[name="campo_tipo"]').value = campo.tipo || 'texto';
     fila.querySelector('select[name="campo_con_estado"]').value = campo.con_estado ? '1' : '';
     fila.querySelector('select[name="campo_requiere_foto"]').value = campo.requiere_foto ? '1' : '';
     toggleCamposSegunTipo(fila.querySelector('select[name="campo_tipo"]'));
+    return fila;
+}
+
+function insertarFilaDespues(boton) {
+    const filaActual = boton.closest('tr');
+    const nuevaFila = agregarFila(null, filaActual);
+    nuevaFila.querySelector('input[name="campo_label"]').focus();
 }
 
 function toggleCamposSegunTipo(select) {
@@ -198,7 +211,7 @@ document.addEventListener('DOMContentLoaded', function () {
     toggleCurvaCaudal();
     const iniciales = JSON.parse(document.getElementById('campos-iniciales').textContent);
     if (iniciales.length) {
-        iniciales.forEach(agregarFila);
+        iniciales.forEach(function (campo) { agregarFila(campo); });
     } else {
         agregarFila();
     }

@@ -74,7 +74,7 @@
                 </div>
                 <div class="card-atencion ok">
                     <span class="num">{{ cumplido_anual_pct }}%</span>
-                    <span class="etiqueta">Cumplido (año de contrato)</span>
+                    <span class="etiqueta">Cumplido (año de servicios contratados)</span>
                 </div>
                 <div class="card-atencion ok">
                     <span class="num">{{ indicadores.cumplimiento_pct }}%</span>
@@ -90,7 +90,7 @@
 
             {% if current_user.rol in ('Administrador', 'Jefe') %}
             <form method="POST" action="{{ url_for('clientes.eliminar', cliente_id=cliente.id) }}" class="mt-4 form-confirmar-password" data-sin-bloqueo
-                  data-mensaje="¿Eliminar '{{ cliente.nombre }}'? Se borran también todas sus instalaciones, contratos, visitas y equipos. Esta acción no se puede deshacer.">
+                  data-mensaje="¿Eliminar '{{ cliente.nombre }}'? Se borran también todas sus instalaciones, servicios contratados, visitas y equipos. Esta acción no se puede deshacer.">
                 <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar cliente</button>
             </form>
             {% endif %}

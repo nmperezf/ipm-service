@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Mi contrato{% endblock %}
+{% block title %}Mis servicios contratados{% endblock %}
 {% block content %}
 <div class="pagina-ancha">
-    <h1>Mi contrato</h1>
+    <h1>Mis servicios contratados</h1>
     <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('portal.inicio') }}">&larr; {{ cliente.nombre }}</a></p>
@@ -12,7 +12,7 @@
             {% if not bloque.contratos %}
             <div class="estado-vacio-doc">
                 <i class="bi bi-file-earmark-text"></i>
-                <p class="mb-0">Todavía no hay contratos cargados en esta instalación.</p>
+                <p class="mb-0">Todavía no hay servicios contratados cargados en esta instalación.</p>
             </div>
             {% endif %}
             {% for contrato in bloque.contratos %}
@@ -42,7 +42,7 @@
                     </table>
                     </div>
                     {% else %}
-                    <p class="text-muted small mb-0 mt-3">Sin servicios cargados en este contrato.</p>
+                    <p class="text-muted small mb-0 mt-3">Sin servicios cargados en este servicio contratado.</p>
                     {% endif %}
                 </div>
             </div>

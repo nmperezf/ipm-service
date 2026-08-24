@@ -53,13 +53,22 @@ def nuevo(instalacion_id):
         db.session.add(contrato)
         db.session.commit()
         flash(
-            f"Contrato '{contrato.nombre}' creado (vigente hasta {contrato.fecha_fin.strftime('%m/%Y')}). "
+            f"Servicio contratado '{contrato.nombre}' creado (vigente hasta {contrato.fecha_fin.strftime('%m/%Y')}). "
             "Ahora agregá los servicios contratados. Cada mes vas a poder coordinar con el cliente "
             "la fecha real de la visita desde la pantalla de Coordinación.",
             "success",
         )
         return redirect(url_for("contratos.detalle", contrato_id=contrato.id))
     return render_template("contratos/form.html", instalacion=instalacion, contrato=None)
+
+
+@contratos_bp.route("/instalacion/<int:instalacion_id>")
+@rol_requerido("Administrador", "Jefe", "Técnico")
+def listar_por_instalacion(instalacion_id):
+    instalacion = Instalacion.query.get_or_404(instalacion_id)
+    verificar_acceso_cliente(instalacion.cliente)
+    contratos = sorted(instalacion.contratos, key=lambda c: c.fecha_inicio, reverse=True)
+    return render_template("contratos/listar.html", instalacion=instalacion, contratos=contratos)
 
 
 @contratos_bp.route("/<int:contrato_id>")
@@ -116,7 +125,7 @@ def editar(contrato_id):
         contrato.estado = request.form.get("estado", contrato.estado)
         contrato.activo = bool(request.form.get("activo"))
         db.session.commit()
-        flash(f"Contrato '{contrato.nombre}' actualizado.", "success")
+        flash(f"Servicio contratado '{contrato.nombre}' actualizado.", "success")
         return redirect(url_for("contratos.detalle", contrato_id=contrato.id))
     return render_template(
         "contratos/editar.html", contrato=contrato, estados=ESTADOS_CONTRATO
@@ -133,7 +142,7 @@ def eliminar(contrato_id):
     instalacion_id = contrato.instalacion_id
     db.session.delete(contrato)
     db.session.commit()
-    flash(f"Contrato '{contrato.nombre}' eliminado.", "info")
+    flash(f"Servicio contratado '{contrato.nombre}' eliminado.", "info")
     return redirect(url_for("instalaciones.detalle", instalacion_id=instalacion_id))
 
 
@@ -192,7 +201,7 @@ def nuevo_servicio(contrato_id):
     else:
         flash(
             f"Servicio '{servicio.nombre}' agregado, pero no cae ningún mes dentro de lo que queda del año "
-            "de contrato (el mes de inicio elegido + la frecuencia excede la fecha de fin del contrato).",
+            "del servicio contratado (el mes de inicio elegido + la frecuencia excede su fecha de fin).",
             "warning",
         )
     return redirect(url_for("contratos.detalle", contrato_id=contrato.id))

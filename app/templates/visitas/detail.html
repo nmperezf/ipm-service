@@ -58,7 +58,7 @@
 
             <p>
                 <strong>Técnico:</strong> {{ visita.nombre_tecnico }}<br>
-                <strong>Contrato:</strong> {{ visita.contrato.nombre if visita.contrato else 'Visita manual (sin contrato)' }}<br>
+                <strong>Servicio contratado:</strong> {{ visita.contrato.nombre if visita.contrato else 'Visita manual (sin servicio contratado)' }}<br>
                 {% if visita.orden_trabajo %}<strong>Orden de trabajo:</strong> <a href="{{ url_for('ordenes.detalle', ot_id=visita.orden_trabajo.id) }}">{{ visita.orden_trabajo.numero }}</a><br>{% endif %}
                 <strong>Observaciones generales:</strong> {{ visita.observaciones or '-' }}<br>
                 {% if visita.nota_cliente %}<strong>Nota para el cliente:</strong> {{ visita.nota_cliente }} <small class="text-muted">({{ visita.nota_cliente_fecha.strftime('%d/%m/%Y') if visita.nota_cliente_fecha else '' }})</small><br>{% endif %}

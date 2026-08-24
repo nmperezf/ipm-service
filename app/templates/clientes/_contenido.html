@@ -87,7 +87,7 @@
                         {% if current_user.rol in ('Administrador', 'Jefe') %}
                         <a href="{{ url_for('clientes.reporte_periodo', cliente_id=cliente.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-file-earmark-bar-graph me-1"></i>Reporte</a>
                         <form method="POST" action="{{ url_for('clientes.eliminar', cliente_id=cliente.id) }}" class="d-inline form-confirmar-password" data-sin-bloqueo
-                              data-mensaje="¿Eliminar '{{ cliente.nombre }}'? Se borran también todas sus instalaciones, contratos, visitas y equipos. Esta acción no se puede deshacer.">
+                              data-mensaje="¿Eliminar '{{ cliente.nombre }}'? Se borran también todas sus instalaciones, servicios contratados, visitas y equipos. Esta acción no se puede deshacer.">
                             <button type="submit" class="btn btn-sm btn-outline-danger"><i class="bi bi-trash me-1"></i>Eliminar</button>
                         </form>
                         {% endif %}
@@ -145,7 +145,7 @@
                             </div>
                             <div class="proxima">Próxima visita: <strong>{{ inst_proxima.strftime('%d/%m/%Y') if inst_proxima else 'sin programar' }}</strong></div>
                             <div class="tooltip-preview-doc">
-                                <div class="fila-tt"><span class="l">Contrato</span><span class="v">{{ inst_contrato.nombre if inst_contrato else 'Sin contrato activo' }}</span></div>
+                                <div class="fila-tt"><span class="l">Servicio contratado</span><span class="v">{{ inst_contrato.nombre if inst_contrato else 'Sin servicio contratado activo' }}</span></div>
                                 <div class="fila-tt"><span class="l">Última visita</span><span class="v">{{ inst_ultima_visita.fecha.strftime('%d/%m/%Y') if inst_ultima_visita else 'Sin visitas' }}</span></div>
                                 {% if inst_ultima_visita %}<div class="fila-tt"><span class="l">Técnico</span><span class="v">{{ inst_ultima_visita.nombre_tecnico }}</span></div>{% endif %}
                             </div>
@@ -213,7 +213,7 @@
                         </div>
                         <div class="card-atencion ok">
                             <span class="num">{{ cumplimiento }}%</span>
-                            <span class="etiqueta">Cumplido (año de contrato)</span>
+                            <span class="etiqueta">Cumplido (año de servicios contratados)</span>
                         </div>
                         <div class="card-atencion ok">
                             <span class="num">{{ indicadores.cumplimiento_pct }}%</span>

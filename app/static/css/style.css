@@ -1571,6 +1571,7 @@ a.fila-log:hover { box-shadow: var(--shadow-doc); color: inherit; }
 .fila-log .flecha { color: var(--ink-faint); flex-shrink: 0; }
 
 details.card-expandible { padding: 0; display: block; }
+.columna-principal details.card-expandible { margin-bottom: .8rem; }
 details.card-expandible summary {
     cursor: pointer; padding: .6rem .85rem; list-style: none; display: flex; align-items: center; gap: .8rem;
 }
@@ -1652,8 +1653,9 @@ html[data-bs-theme="dark"] .desglose-clasif .mini-chip { background: rgba(255,25
 .obs-lateral { border-left: 3px solid var(--border-strong); background: var(--surface-muted); border-radius: 0 .4rem .4rem 0; padding: .5rem .7rem; font-size: .8rem; }
 .obs-lateral-critica { border-left-color: var(--accent); }
 .obs-lateral-cab { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-bottom: .3rem; font-family: var(--font-mono); font-size: .68rem; color: var(--ink-muted); }
+.obs-lateral-badges { display: flex; align-items: center; gap: .35rem; }
 .obs-lateral-desc { margin-bottom: .5rem; }
-.obs-lateral-acciones { display: flex; gap: .35rem; flex-wrap: wrap; }
+.obs-lateral-acciones { display: flex; justify-content: flex-end; gap: .35rem; flex-wrap: wrap; }
 .obs-lateral-acciones .btn { font-size: .7rem; padding: .2rem .5rem; }
 
 .tira-fotos-lateral { display: flex; gap: .4rem; flex-wrap: wrap; }

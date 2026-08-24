@@ -307,7 +307,7 @@ def eliminar_item(item_id):
     verificar_escritura_cliente(visita.instalacion.cliente)
     verificar_visita_editable(visita)
     if item.servicio_contrato_id or item.formularios or item.fotos or item.ensayos_caudal:
-        flash("Ese ítem ya tiene datos cargados o viene del contrato — no se puede eliminar.", "danger")
+        flash("Ese ítem ya tiene datos cargados o viene de un servicio contratado — no se puede eliminar.", "danger")
         return redirect(url_for("visitas.detalle", visita_id=visita.id))
     nombre = item.nombre_mostrado
     db.session.delete(item)
