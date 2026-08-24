@@ -3,7 +3,7 @@ from flask_login import current_user
 from sqlalchemy import func
 
 from app import db
-from app.auth_utils import rol_requerido
+from app.auth_utils import rol_requerido, verificar_password_confirmacion
 from app.models import ESTADOS_PRESUPUESTO, Presupuesto
 from app.utils import PAGINA_TAMANO, parse_orden
 
@@ -93,3 +93,18 @@ def detalle(presupuesto_id):
         presupuesto=presupuesto,
         siguientes_estados=TRANSICIONES_VALIDAS.get(presupuesto.estado, []),
     )
+
+
+@presupuestos_bp.route("/<int:presupuesto_id>/eliminar", methods=["POST"])
+@rol_requerido("Administrador", "Jefe")
+def eliminar(presupuesto_id):
+    presupuesto = Presupuesto.query.get_or_404(presupuesto_id)
+    if presupuesto.empresa_id != current_user.empresa_id:
+        abort(403)
+    if not verificar_password_confirmacion():
+        return redirect(url_for("presupuestos.detalle", presupuesto_id=presupuesto.id))
+    codigo = presupuesto.codigo
+    db.session.delete(presupuesto)
+    db.session.commit()
+    flash(f"Presupuesto {codigo} eliminado.", "info")
+    return redirect(url_for("presupuestos.listar"))

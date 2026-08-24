@@ -92,6 +92,13 @@
             </table>
             </div>
 
+            {% if current_user.rol in ('Administrador', 'Jefe') %}
+            <form method="POST" action="{{ url_for('presupuestos.eliminar', presupuesto_id=presupuesto.id) }}" class="mt-4 form-confirmar-password" data-sin-bloqueo
+                  data-mensaje="¿Eliminar el presupuesto '{{ presupuesto.codigo }}'? Se borra también su historial de cambios de estado. Esta acción no se puede deshacer.">
+                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar presupuesto</button>
+            </form>
+            {% endif %}
+
     </div>
 </div>
 {% endblock %}

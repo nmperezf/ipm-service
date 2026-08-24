@@ -47,10 +47,11 @@
 {% endif %}
 {% endcall %}
 
-{% call nav_grupo(clase, prefijo, 'clientes', 'bi-people', 'Clientes', request.blueprint in ('clientes', 'servicios_tipo', 'tipos_equipo')) %}
+{% call nav_grupo(clase, prefijo, 'clientes', 'bi-people', 'Clientes', request.blueprint in ('clientes', 'servicios_tipo', 'tipos_equipo', 'presupuestos')) %}
 <li class="nav-item"><a class="{{ clase }} nav-sublink" href="{{ url_for('clientes.listar') }}"><span class="rotulo-sidebar">Clientes</span></a></li>
 {% if current_user.rol in ('Administrador', 'Jefe') %}
 <li class="nav-item"><a class="{{ clase }} nav-sublink" href="{{ url_for('servicios_tipo.listar') }}"><span class="rotulo-sidebar">Servicios tipo</span></a></li>
+<li class="nav-item"><a class="{{ clase }} nav-sublink" href="{{ url_for('presupuestos.listar') }}"><span class="rotulo-sidebar">Presupuestos</span></a></li>
 {% endif %}
 <li class="nav-item"><a class="{{ clase }} nav-sublink" href="{{ url_for('tipos_equipo.listar') }}"><span class="rotulo-sidebar">Tipos de equipo</span></a></li>
 {% endcall %}
