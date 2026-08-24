@@ -33,7 +33,6 @@
                                 {% if valor and valor.estado %}
                                     {%- if valor.valor is not none and valor.valor != '' %}<span class="valor-con-estado">{{ valor.valor }}{% if campo.unidad %} {{ campo.unidad }}{% endif %}</span> {% endif -%}
                                     <span class="badge-estado {{ valor.estado }}">{{ ESTADOS_CHECKLIST_LABEL.get(valor.estado, valor.estado) }}</span>
-                                    {%- if valor.nota %}<div class="text-muted small mt-1">{{ valor.nota }}</div>{% endif -%}
                                 {% else %}-{% endif %}
                             {%- elif valor is iterable and valor is not string -%}
                                 {{ valor|join(', ') if valor else '-' }}
@@ -41,6 +40,9 @@
                                 {{ valor if valor else '-' }}
                             {%- endif -%}
                         </span>
+                        {% if con_estado and valor and valor.nota %}
+                        <div class="nota-punto-checklist">{{ valor.nota }}</div>
+                        {% endif %}
                         {% if fotos_por_formulario[f.id].get(campo.campo) %}
                         <div class="miniaturas-punto-checklist">
                             {% for foto in fotos_por_formulario[f.id][campo.campo] %}

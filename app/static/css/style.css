@@ -2259,6 +2259,7 @@ details.bloque-equipo .ir-ficha { display: inline-block; margin-bottom: .8rem; f
 .fila-punto-checklist:last-child { border-bottom: none; }
 .fila-punto-checklist .label { color: var(--ink-muted); }
 .fila-punto-checklist .valor { text-align: right; white-space: nowrap; }
+.nota-punto-checklist { flex-basis: 100%; text-align: left; color: var(--ink-muted); font-size: .85em; margin-top: .2rem; }
 .miniaturas-punto-checklist { flex-basis: 100%; display: flex; gap: .3rem; justify-content: flex-end; margin-top: .3rem; flex-wrap: wrap; }
 .miniaturas-punto-checklist img { width: 36px; height: 36px; object-fit: cover; border-radius: .3rem; border: 1px solid var(--border); display: block; }
 

@@ -61,6 +61,21 @@ def _fila_valores(valor, campo):
     return _fmt(valor.get("valor")), estado_label, valor.get("nota") or ""
 
 
+def _valor_y_estado_unificados(texto_valor, estado_label):
+    """Une las columnas Valor y Estado en una sola: si el punto tiene un
+    valor cargado (numérico o texto) y quedó Conforme, mostrar el valor
+    solo -- repetir "Conforme" al lado es redundante. Si no quedó
+    Conforme, se mantiene la etiqueta junto al valor para no perder la
+    señal de que algo está mal."""
+    if estado_label == "-":
+        return texto_valor
+    if texto_valor == "-":
+        return estado_label
+    if estado_label == "Conforme":
+        return texto_valor
+    return f"{texto_valor} — {estado_label}"
+
+
 def generar_pdf_checklist_tecnico(visita, categoria=None):
     """categoria=None arma el documento completo, con todo lo cargado en
     la visita; con una categoría (ver categorias_de_visita) arma uno
@@ -127,7 +142,7 @@ def generar_pdf_checklist_tecnico(visita, categoria=None):
         for ref in referencias:
             elementos.append(Paragraph(ref, subtitulo))
 
-        filas = [["Punto", "Valor", "Estado", "Nota"]]
+        filas = [["Punto", "Valor / Estado", "Nota"]]
         resaltado = []
         for f in lista:
             datos = f.datos()
@@ -135,14 +150,13 @@ def generar_pdf_checklist_tecnico(visita, categoria=None):
                 texto_valor, estado_label, nota = _fila_valores(datos.get(campo["campo"]), campo)
                 filas.append([
                     Paragraph(campo["label"], celda),
-                    texto_valor,
-                    estado_label,
+                    _valor_y_estado_unificados(texto_valor, estado_label),
                     Paragraph(nota, celda) if nota else "-",
                 ])
                 if estado_label == "Deficiencia":
                     resaltado.append(("BACKGROUND", (0, len(filas) - 1), (-1, len(filas) - 1), ACCENT_SOFT))
 
-        tabla = Table(filas, colWidths=[6.4 * cm, 2.6 * cm, 2.6 * cm, 5.8 * cm])
+        tabla = Table(filas, colWidths=[6.4 * cm, 5.2 * cm, 5.8 * cm])
         tabla.setStyle(estilo_tabla_encabezado())
         if resaltado:
             tabla.setStyle(TableStyle(resaltado))
