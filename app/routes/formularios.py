@@ -134,7 +134,7 @@ def _crear_observacion_de_punto(item, equipo, campo_label, estado, nota):
     """Un punto de checklist marcado Observado o Deficiencia con una nota
     genera una Observación automáticamente, ligada a ese equipo puntual --
     mismo circuito de revisión que una carga manual (Pendiente hasta que
-    Administrador/Jefe la apruebe). N/A y Aprobado no generan nada."""
+    Administrador/Jefe la apruebe). N/A y Conforme no generan nada."""
     if not nota or estado not in ("observado", "deficiencia"):
         return
     clasificacion = "Deficiencia no crítica" if estado == "deficiencia" else "Comentario"
@@ -504,21 +504,47 @@ def detalle(formulario_id):
     formulario = Formulario.query.get_or_404(formulario_id)
     visita = formulario.item_visita.visita
     verificar_acceso_cliente(visita.instalacion.cliente)
-    fotos_por_campo = {}
-    for foto in Foto.query.filter(
-        Foto.item_visita_id == formulario.item_visita_id,
-        Foto.equipo_id == formulario.equipo_id,
-        Foto.campo_formulario.isnot(None),
-    ).all():
-        fotos_por_campo.setdefault(foto.campo_formulario, []).append(foto)
     # Mismo criterio que visitas/detail.html: una vez que la visita salió de
     # la fase "Abierta" (enviada a revisión), un Técnico ya no puede tocar
     # sus formularios -- ocultar el botón evita el 403 confuso de intentar
     # editar/eliminar algo que el backend (verificar_visita_editable) igual
     # va a rechazar.
     puede_editar = not visita.cerrada and not (current_user.rol == "Técnico" and visita.fase != "Abierta")
-    template = "visitas/_formulario_modal.html" if es_ajax() else "visitas/formulario_detail.html"
-    return render_template(template, formulario=formulario, fotos_por_campo=fotos_por_campo, puede_editar=puede_editar)
+
+    if es_ajax():
+        fotos_por_campo = {}
+        for foto in Foto.query.filter(
+            Foto.item_visita_id == formulario.item_visita_id,
+            Foto.equipo_id == formulario.equipo_id,
+            Foto.campo_formulario.isnot(None),
+        ).all():
+            fotos_por_campo.setdefault(foto.campo_formulario, []).append(foto)
+        return render_template(
+            "visitas/_formulario_modal.html", formulario=formulario, fotos_por_campo=fotos_por_campo, puede_editar=puede_editar
+        )
+
+    # Página completa: se ven todos los formularios de este mismo ítem uno
+    # detrás de otro (el mismo listado que aparece como botones en
+    # visitas/detail.html), no solo el que se clickeó -- si no, esta página
+    # no agregaba nada sobre el modal.
+    formularios_item = sorted(formulario.item_visita.formularios, key=lambda f: f.fecha_creacion)
+    fotos_todas = Foto.query.filter(
+        Foto.item_visita_id == formulario.item_visita_id,
+        Foto.campo_formulario.isnot(None),
+    ).all()
+    fotos_por_formulario = {}
+    for f in formularios_item:
+        fotos_campo = {}
+        for foto in fotos_todas:
+            if foto.equipo_id == f.equipo_id:
+                fotos_campo.setdefault(foto.campo_formulario, []).append(foto)
+        fotos_por_formulario[f.id] = fotos_campo
+
+    return render_template(
+        "visitas/formulario_detail.html",
+        formulario=formulario, formularios=formularios_item,
+        fotos_por_formulario=fotos_por_formulario, puede_editar=puede_editar,
+    )
 
 
 @formularios_bp.route("/<int:formulario_id>/eliminar", methods=["POST"])

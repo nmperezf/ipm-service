@@ -38,7 +38,7 @@
 </div>
 
 <p class="mt-3 mb-0">
-    <a href="{{ url_for('formularios.detalle', formulario_id=formulario.id) }}" class="btn btn-sm btn-outline-secondary">
+    <a href="{{ url_for('formularios.detalle', formulario_id=formulario.id) }}#formulario-{{ formulario.id }}" class="btn btn-sm btn-outline-secondary">
         {{ 'Abrir página completa (editar / eliminar) →' if puede_editar else 'Abrir página completa →' }}
     </a>
 </p>

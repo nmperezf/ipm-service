@@ -253,7 +253,7 @@ def _seed_tipos_equipo():
 
 def _seed_catalogo_nfpa():
     """Catálogo de checklists de inspección NFPA 25 (con estado por punto:
-    Aprobado/Observado/Deficiencia/N-A) para sala de bombas, ECA y BIE --
+    Conforme/Observado/Deficiencia/N-A) para sala de bombas, ECA y BIE --
     se arma una vez por empresa; cada cliente los importa desde acá (ver
     TipoFormulario.desde_catalogo) en vez de tener que armarlos a mano.
     Las referencias de norma/sección son orientativas -- conviene

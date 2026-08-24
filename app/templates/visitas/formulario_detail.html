@@ -1,65 +1,68 @@
 {% extends "base.html" %}
-{% block title %}{{ formulario.tipo_formulario.nombre }}{% endblock %}
+{% block title %}{{ formulario.item_visita.nombre_mostrado }}{% endblock %}
 {% block content %}
 <div class="pagina-ancha">
-    <h1>{{ formulario.tipo_formulario.nombre }}</h1>
+    <h1>{{ formulario.item_visita.nombre_mostrado }}</h1>
     <div class="tarjeta-doc angosta">
             <p class="mb-1"><a href="{{ url_for('visitas.detalle', visita_id=formulario.item_visita.visita_id) }}">&larr; Volver a la visita</a></p>
+            <p class="text-muted small mb-4">{{ formularios|length }} formulario{{ 's' if formularios|length != 1 }} cargado{{ 's' if formularios|length != 1 }} para este ítem.</p>
 
-            {% if puede_editar %}
-            <div class="d-flex justify-content-end mb-2">
-                <a href="{{ url_for('formularios.nuevo', item_id=formulario.item_visita_id, tipo_formulario_id=formulario.tipo_formulario_id, equipo_id=formulario.equipo_id) }}"
-                   class="btn btn-outline-secondary btn-sm">Editar</a>
-            </div>
-            {% endif %}
-            <p class="text-muted">
-                Servicio: {{ formulario.item_visita.nombre_mostrado }}
-                {% if formulario.equipo %} &middot; Equipo: {{ formulario.equipo.nombre }}{% endif %} &middot;
-                Registrado el {{ formulario.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}
-            </p>
-
-            <div class="tarjeta-carga-checklist tarjeta-carga-checklist-detalle">
-                {% for campo in formulario.tipo_formulario.campos() %}
-                {% set con_estado = campo.tipo == 'estado' or campo.con_estado %}
-                {% set valor = formulario.datos().get(campo.campo) %}
-                <div class="fila-punto-checklist">
-                    <span class="label">
-                        {{ campo.label }}
-                        {% if campo.descripcion %}<br><span class="text-muted small">{{ campo.descripcion }}</span>{% endif %}
-                        {% if campo.norma %}<br><span class="badge bg-light text-dark border" style="font-weight:500;">{{ campo.norma }}</span>{% endif %}
-                    </span>
-                    <span class="valor">
-                        {%- if con_estado -%}
-                            {% if valor and valor.estado %}
-                                {%- if valor.valor is not none and valor.valor != '' %}<span class="valor-con-estado">{{ valor.valor }}{% if campo.unidad %} {{ campo.unidad }}{% endif %}</span> {% endif -%}
-                                <span class="badge-estado {{ valor.estado }}">{{ ESTADOS_CHECKLIST_LABEL.get(valor.estado, valor.estado) }}</span>
-                                {%- if valor.nota %}<div class="text-muted small mt-1">{{ valor.nota }}</div>{% endif -%}
-                            {% else %}-{% endif %}
-                        {%- elif valor is iterable and valor is not string -%}
-                            {{ valor|join(', ') if valor else '-' }}
-                        {%- else -%}
-                            {{ valor if valor else '-' }}
-                        {%- endif -%}
-                    </span>
-                    {% if fotos_por_campo.get(campo.campo) %}
-                    <div class="miniaturas-punto-checklist">
-                        {% for foto in fotos_por_campo[campo.campo] %}
-                        <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" class="foto-lightbox">
-                            <img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" alt="">
-                        </a>
-                        {% endfor %}
-                    </div>
+            {% for f in formularios %}
+            <div id="formulario-{{ f.id }}"{% if f.id == formulario.id %} class="formulario-destacado"{% endif %}>
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-1">
+                    <h5 class="mb-0">{{ f.tipo_formulario.nombre }}{% if f.equipo %} — {{ f.equipo.nombre }}{% endif %}</h5>
+                    {% if puede_editar %}
+                    <a href="{{ url_for('formularios.nuevo', item_id=f.item_visita_id, tipo_formulario_id=f.tipo_formulario_id, equipo_id=f.equipo_id) }}"
+                       class="btn btn-outline-secondary btn-sm">Editar</a>
                     {% endif %}
                 </div>
-                {% endfor %}
-            </div>
+                <p class="text-muted small">Registrado el {{ f.fecha_creacion.strftime('%d/%m/%Y %H:%M') }}</p>
 
-            {% if puede_editar %}
-            <form method="POST" action="{{ url_for('formularios.eliminar', formulario_id=formulario.id) }}"
-                  onsubmit="return confirm('¿Eliminar este checklist? Esta acción no se puede deshacer.');">
-                <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar checklist</button>
-            </form>
-            {% endif %}
+                <div class="tarjeta-carga-checklist tarjeta-carga-checklist-detalle">
+                    {% for campo in f.tipo_formulario.campos() %}
+                    {% set con_estado = campo.tipo == 'estado' or campo.con_estado %}
+                    {% set valor = f.datos().get(campo.campo) %}
+                    <div class="fila-punto-checklist">
+                        <span class="label">
+                            {{ campo.label }}
+                            {% if campo.descripcion %}<br><span class="text-muted small">{{ campo.descripcion }}</span>{% endif %}
+                            {% if campo.norma %}<br><span class="badge bg-light text-dark border" style="font-weight:500;">{{ campo.norma }}</span>{% endif %}
+                        </span>
+                        <span class="valor">
+                            {%- if con_estado -%}
+                                {% if valor and valor.estado %}
+                                    {%- if valor.valor is not none and valor.valor != '' %}<span class="valor-con-estado">{{ valor.valor }}{% if campo.unidad %} {{ campo.unidad }}{% endif %}</span> {% endif -%}
+                                    <span class="badge-estado {{ valor.estado }}">{{ ESTADOS_CHECKLIST_LABEL.get(valor.estado, valor.estado) }}</span>
+                                    {%- if valor.nota %}<div class="text-muted small mt-1">{{ valor.nota }}</div>{% endif -%}
+                                {% else %}-{% endif %}
+                            {%- elif valor is iterable and valor is not string -%}
+                                {{ valor|join(', ') if valor else '-' }}
+                            {%- else -%}
+                                {{ valor if valor else '-' }}
+                            {%- endif -%}
+                        </span>
+                        {% if fotos_por_formulario[f.id].get(campo.campo) %}
+                        <div class="miniaturas-punto-checklist">
+                            {% for foto in fotos_por_formulario[f.id][campo.campo] %}
+                            <a href="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" class="foto-lightbox">
+                                <img src="{{ url_for('fotos.ver', nombre_archivo=foto.nombre_archivo) }}" alt="">
+                            </a>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if puede_editar %}
+                <form method="POST" action="{{ url_for('formularios.eliminar', formulario_id=f.id) }}" class="mt-2"
+                      onsubmit="return confirm('¿Eliminar este checklist? Esta acción no se puede deshacer.');">
+                    <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar checklist</button>
+                </form>
+                {% endif %}
+            </div>
+            {% if not loop.last %}<hr class="my-4">{% endif %}
+            {% endfor %}
 
     </div>
 </div>

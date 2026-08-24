@@ -2262,15 +2262,18 @@ details.bloque-equipo .ir-ficha { display: inline-block; margin-bottom: .8rem; f
 .miniaturas-punto-checklist { flex-basis: 100%; display: flex; gap: .3rem; justify-content: flex-end; margin-top: .3rem; flex-wrap: wrap; }
 .miniaturas-punto-checklist img { width: 36px; height: 36px; object-fit: cover; border-radius: .3rem; border: 1px solid var(--border); display: block; }
 
-/* Ficha de UN checklist puntual (formularios.detalle): mismo lenguaje que
-   la lista compacta de arriba, pero acá el punto es el protagonista (hay
-   uno solo cargado en la página, no una lista para escanear) -- la
-   etiqueta va en primer plano y el valor puede ocupar varias líneas
-   (descripción del punto, nota de la deficiencia completa, no acortada). */
+/* Ficha de checklist(s) de un ítem (formularios.detalle): mismo lenguaje
+   que la lista compacta de arriba, pero acá el punto es el protagonista --
+   la etiqueta va en primer plano y el valor puede ocupar varias líneas
+   (descripción del punto, nota de la deficiencia completa, no acortada).
+   Se ven todos los formularios de ese ítem uno detrás de otro; el que se
+   clickeó desde el modal queda resaltado con .formulario-destacado. */
 .tarjeta-carga-checklist-detalle { font-size: .88rem; }
 .tarjeta-carga-checklist-detalle .fila-punto-checklist { align-items: flex-start; }
 .tarjeta-carga-checklist-detalle .fila-punto-checklist .label { color: var(--ink); font-weight: 600; }
 .tarjeta-carga-checklist-detalle .fila-punto-checklist .valor { white-space: normal; max-width: 55%; }
+
+.formulario-destacado { border-left: 3px solid var(--accent); background: var(--accent-soft); border-radius: 0 .5rem .5rem 0; padding: .75rem .9rem; }
 
 /* Botón que abre el gráfico en el modal genérico de base.html -- ver el
    comentario en _grupo_checklist.html sobre por qué es ese modal

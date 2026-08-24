@@ -356,7 +356,7 @@ TIPOS_CAMPO = [
     ("booleano", "Sí / No"),
     ("seleccion", "Selección (una opción)"),
     ("multi_seleccion", "Checklist (varias opciones)"),
-    ("estado", "Punto de inspección (Aprobado/Observado/Deficiencia/N-A)"),
+    ("estado", "Punto de inspección (Conforme/Observado/Deficiencia/N-A)"),
 ]
 
 

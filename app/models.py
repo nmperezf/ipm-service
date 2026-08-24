@@ -75,7 +75,7 @@ VISIBILIDADES_OBSERVACION = ["Cliente", "Interna"]
 # app/routes/formularios.py).
 ESTADOS_CHECKLIST = ["aprobado", "observado", "deficiencia", "na"]
 ESTADOS_CHECKLIST_LABEL = {
-    "aprobado": "Aprobado",
+    "aprobado": "Conforme",
     "observado": "Observado",
     "deficiencia": "Deficiencia",
     "na": "N/A",
@@ -698,7 +698,7 @@ class TipoFormulario(db.Model):
     # tipo: numero | texto | multi_seleccion | estado (punto de inspección sin
     # valor propio, solo estado -- ver ESTADOS_CHECKLIST). con_estado=true en un
     # campo numero/texto le agrega ADEMÁS el control de estado (ej. "Presión de
-    # descarga" con su valor Y un Aprobado/Observado/Deficiencia/N-A al lado).
+    # descarga" con su valor Y un Conforme/Observado/Deficiencia/N-A al lado).
     # Un campo con estado (tipo=estado o con_estado=true) guarda
     # {"valor": <escalar o None>, "estado": <ver ESTADOS_CHECKLIST>, "nota": texto}
     # en vez de un escalar plano.

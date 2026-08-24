@@ -144,8 +144,8 @@
             </div>
             {% if panel.ultima.pdf_visible %}
             <div class="d-flex gap-2 flex-wrap mt-3">
-                <a href="{{ url_for('visitas.pdf_devolucion', visita_id=panel.ultima.visita.id) }}" class="btn btn-dark btn-sm" target="_blank"><i class="bi bi-download me-1"></i>PDF de devolución</a>
-                <a href="{{ url_for('visitas.checklist_tecnico_pdf', visita_id=panel.ultima.visita.id) }}" class="btn btn-outline-dark btn-sm" target="_blank"><i class="bi bi-download me-1"></i>Checklist técnico</a>
+                <a href="{{ url_for('visitas.pdf_devolucion', visita_id=panel.ultima.visita.id) }}" class="btn btn-dark btn-sm" target="_blank"><i class="bi bi-download me-1"></i>PDF de comentarios</a>
+                <a href="{{ url_for('visitas.checklist_tecnico_pdf', visita_id=panel.ultima.visita.id) }}" class="btn btn-outline-dark btn-sm" target="_blank"><i class="bi bi-download me-1"></i>PDF Completo</a>
             </div>
             {% endif %}
         </div>

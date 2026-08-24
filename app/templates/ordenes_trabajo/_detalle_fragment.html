@@ -43,7 +43,7 @@
         <div class="sub-fase-ot">Revisá lo que cargó en la visita y cerrala si está todo OK.</div>
         {% else %}
         <div class="texto-fase-ot">Cerrada — trabajo terminado</div>
-        <div class="sub-fase-ot">Cerrada el {{ ot.visita.fecha_cierre.strftime('%d/%m/%Y') if ot.visita.fecha_cierre else '-' }}{% if ot.visita.cerrada_por %} por {{ ot.visita.cerrada_por.nombre_completo or ot.visita.cerrada_por.username }}{% endif %}. Ya se puede descargar el PDF de devolución.</div>
+        <div class="sub-fase-ot">Cerrada el {{ ot.visita.fecha_cierre.strftime('%d/%m/%Y') if ot.visita.fecha_cierre else '-' }}{% if ot.visita.cerrada_por %} por {{ ot.visita.cerrada_por.nombre_completo or ot.visita.cerrada_por.username }}{% endif %}. Ya se puede descargar el PDF de comentarios.</div>
         {% endif %}
     </div>
     {% if fase == 'En revisión' and current_user.rol in ('Administrador', 'Jefe') %}

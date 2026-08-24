@@ -519,7 +519,7 @@ def pdf_devolucion(visita_id):
     pdf_bytes = generar_pdf_devolucion(
         visita, resumen_visita_por_categoria(visita), deficiencias, observaciones_vigentes
     )
-    nombre_archivo = f"Devolucion_{visita.instalacion.nombre.replace(' ', '_')}_{visita.fecha.isoformat()}.pdf"
+    nombre_archivo = f"Comentarios_{visita.instalacion.nombre.replace(' ', '_')}_{visita.fecha.isoformat()}.pdf"
     return Response(
         pdf_bytes,
         mimetype="application/pdf",

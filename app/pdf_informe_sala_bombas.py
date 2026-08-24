@@ -22,7 +22,7 @@ INK_FAINT_HEX = "#9AA1AC"
 INK_MUTED_HEX = "#5B6773"
 
 COLOR_ESTADO_HEX = {
-    "Aprobado": "#1F8A54",
+    "Conforme": "#1F8A54",
     "Observado": "#B5730A",
     "Deficiencia": "#E2131D",
     "N/A": "#9AA1AC",

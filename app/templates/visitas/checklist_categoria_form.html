@@ -129,7 +129,7 @@ function marcarEstadoChecklist(btn, estado) {
         nota.querySelector('.nota-etiqueta').textContent = estado === 'deficiencia' ? 'Descripción de la deficiencia' : 'Nota';
     }
 }
-// Puntos sin estado previo (checklist nuevo) arrancan en "Aprobado" -- se
+// Puntos sin estado previo (checklist nuevo) arrancan en "Conforme" -- se
 // puede cambiar con un clic, igual que en el mockup que se validó.
 document.querySelectorAll('.estado-hidden').forEach(function (hidden) {
     if (hidden.value) return;

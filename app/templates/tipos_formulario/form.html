@@ -192,7 +192,7 @@ function toggleCamposSegunTipo(select) {
     const inputUnidad = fila.querySelector('input[name="campo_unidad"]');
     inputUnidad.style.display = select.value === 'numero' ? 'block' : 'none';
 
-    // "estado" es en sí mismo un punto de inspección (Aprobado/Observado/...)
+    // "estado" es en sí mismo un punto de inspección (Conforme/Observado/...)
     // -- "con estado" no aplica ahí, solo tiene sentido para agregarle ESE
     // control a un campo numero/texto que además tiene su propio valor.
     // Ocultar el <select> en sí (no el <td> que lo contiene): esconder la

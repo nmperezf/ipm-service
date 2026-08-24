@@ -1,5 +1,5 @@
 """PDF técnico del checklist de una visita: cada punto cargado con su
-valor, estado (Aprobado/Observado/Deficiencia/N-A) y nota -- pensado como
+valor, estado (Conforme/Observado/Deficiencia/N-A) y nota -- pensado como
 respaldo/registro de cumplimiento, a diferencia del PDF de devolución
 (pdf_devolucion.py), que es el resumen ejecutivo para el cliente."""
 import io
