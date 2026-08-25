@@ -98,7 +98,7 @@ def nuevo():
         if rol in ("Administrador", "Jefe", "Técnico"):
             if es_super_admin:
                 empresa_id = request.form.get("empresa_id", type=int)
-                if not empresa_id or not Empresa.query.get(empresa_id):
+                if not empresa_id or not db.session.get(Empresa, empresa_id):
                     flash("Elegí una empresa válida para este usuario.", "danger")
                     return render_template(
                         "usuarios/form.html", usuario=None, clientes=clientes, roles=roles_disponibles,
@@ -111,7 +111,7 @@ def nuevo():
         if rol == "Cliente":
             cliente_id = request.form.get("cliente_id")
             if cliente_id:
-                cliente_seleccionado = Cliente.query.get(int(cliente_id))
+                cliente_seleccionado = db.session.get(Cliente, int(cliente_id))
                 if not cliente_seleccionado:
                     abort(403)
                 if not es_super_admin and cliente_seleccionado.empresa_id != current_user.empresa_id:

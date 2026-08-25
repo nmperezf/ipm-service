@@ -122,6 +122,23 @@ def tecnicos_de_la_empresa(empresa_id=None):
     ).order_by(Usuario.nombre_completo).all()
 
 
+def validar_tecnico_asignado(tecnico_id, empresa_id):
+    """Valida un técnico recibido desde un formulario contra el tenant."""
+    if not tecnico_id:
+        return None
+    from app.models import Usuario
+
+    tecnico = Usuario.query.filter(
+        Usuario.id == tecnico_id,
+        Usuario.empresa_id == empresa_id,
+        Usuario.rol.in_(["Técnico", "Jefe", "Administrador"]),
+        Usuario.activo == True,  # noqa: E712
+    ).first()
+    if not tecnico:
+        abort(400)
+    return tecnico.id
+
+
 def destinatarios_posibles_mensaje():
     """A quién le puede escribir un Mensaje el usuario logueado: cualquier
     otro Administrador/Jefe/Técnico activo de su misma empresa."""

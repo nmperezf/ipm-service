@@ -4,7 +4,7 @@ import tempfile
 
 import pytest
 
-from app.models import Documento, Observacion, Usuario
+from app.models import Cliente, Documento, Empresa, Instalacion, Observacion, Usuario
 from tests.conftest import login
 
 
@@ -85,6 +85,38 @@ class TestDocumentos:
         doc = Documento.query.one()
         client.post(f"/documentos/{doc.id}/eliminar", follow_redirects=True)
         assert Documento.query.count() == 0
+
+    def test_no_se_puede_descargar_documento_de_otra_empresa(self, client, db, usuario_jefe):
+        otra_empresa = Empresa(nombre="Otra Empresa")
+        db.session.add(otra_empresa)
+        db.session.flush()
+        otro_cliente = Cliente(nombre="Otro Cliente", empresa_id=otra_empresa.id, activo=True)
+        db.session.add(otro_cliente)
+        db.session.flush()
+        otra_instalacion = Instalacion(cliente_id=otro_cliente.id, nombre="Otra Instalación")
+        db.session.add(otra_instalacion)
+        db.session.flush()
+        documento = Documento(
+            instalacion_id=otra_instalacion.id,
+            titulo="Privado",
+            nombre_archivo="2/2/2/documentos/privado.pdf",
+            subido_por_id=usuario_jefe.id,
+        )
+        db.session.add(documento)
+        db.session.commit()
+
+        login(client, usuario_jefe)
+        respuesta = client.get(f"/documentos/ver/{documento.nombre_archivo}")
+
+        assert respuesta.status_code == 403
+
+    def test_post_sin_csrf_se_rechaza_cuando_esta_activo(self, client, app):
+        app.config["CSRF_ENABLED"] = True
+        try:
+            respuesta = client.post("/login", data={"username": "nadie", "password": "nada"})
+            assert respuesta.status_code == 400
+        finally:
+            app.config["CSRF_ENABLED"] = False
 
 
 class TestVisibilidadObservaciones:

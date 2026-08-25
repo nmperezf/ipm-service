@@ -18,11 +18,12 @@ class Config:
 
     SQLALCHEMY_DATABASE_URI = _url_base_de_datos()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-    SECRET_KEY = os.environ.get("SECRET_KEY", "dev-secret-key-cambiar-en-produccion")
+    SECRET_KEY = os.environ.get("SECRET_KEY")
+    CSRF_ENABLED = os.environ.get("CSRF_ENABLED", "1") == "1"
 
     # Configurable por variable de entorno para poder apuntar a un volumen
     # persistente (o, el día de mañana, a otro host) sin tocar código.
-    UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", os.path.join(basedir, "app", "static", "uploads"))
+    UPLOAD_FOLDER = os.environ.get("UPLOAD_FOLDER", os.path.join(basedir, "app", "uploads"))
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB por request
     EXTENSIONES_PERMITIDAS = {"png", "jpg", "jpeg", "gif", "webp"}
     EXTENSIONES_DOCUMENTOS = {"pdf", "doc", "docx", "xls", "xlsx", "png", "jpg", "jpeg"}

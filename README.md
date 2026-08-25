@@ -195,6 +195,22 @@ distinto de 0 y el `&&` corta la cadena — el deploy queda visiblemente
 caído en vez de servir tráfico en silencio con el schema viejo. El mismo
 chequeo corre en local al hacer `python run.py`.
 
+**Variables obligatorias de producción:**
+
+- `SECRET_KEY`: clave aleatoria larga y privada; la aplicación no arranca
+  si falta.
+- `UPLOAD_FOLDER`: directorio persistente fuera de `app/static`, por ejemplo
+  un volumen montado en `/data/uploads`.
+- `INITIAL_ADMIN_PASSWORD`: contraseña temporal para crear el primer Super
+  Admin en una base sin usuarios. Se usa solo durante el primer arranque y
+  no tiene un valor por defecto.
+- `INITIAL_ADMIN_USERNAME`: opcional; por defecto es `admin`.
+
+Después del primer arranque conviene quitar `INITIAL_ADMIN_PASSWORD` del
+entorno y cambiar la contraseña desde **Mi cuenta**. Los archivos que ya
+existían en `app/static/uploads` deben copiarse manualmente al directorio
+persistente configurado en `UPLOAD_FOLDER`.
+
 ## Tablas ordenables y filtrables
 
 Todas las tablas de listado de la app (clientes, contratos, visitas,

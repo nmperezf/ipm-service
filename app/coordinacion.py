@@ -111,7 +111,7 @@ def coordinar_solicitud(solicitud, fecha, notas, usuario):
     solicitud.fecha_coordinada = fecha
     solicitud.notas = notas
     solicitud.coordinado_por_id = usuario.id
-    solicitud.fecha_coordinacion = datetime.utcnow()
+    solicitud.fecha_coordinacion = datetime.now()
 
     db.session.add(
         CoordinacionAudit(

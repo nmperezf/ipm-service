@@ -1,6 +1,7 @@
 import json
+import secrets
 
-from flask import Flask, render_template
+from flask import Flask, abort, render_template, request, session
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -14,6 +15,23 @@ login_manager = LoginManager()
 def create_app():
     app = Flask(__name__)
     app.config.from_object("app.config.Config")
+    if not app.config["SECRET_KEY"]:
+        raise RuntimeError("SECRET_KEY debe estar configurada antes de iniciar la aplicación")
+
+    @app.context_processor
+    def inyectar_csrf():
+        if "csrf_token" not in session:
+            session["csrf_token"] = secrets.token_urlsafe(32)
+        return {"csrf_token": session["csrf_token"]}
+
+    @app.before_request
+    def proteger_csrf():
+        if not app.config["CSRF_ENABLED"] or request.method not in {"POST", "PUT", "PATCH", "DELETE"}:
+            return None
+        token = request.form.get("csrf_token") or request.headers.get("X-CSRF-Token")
+        if not token or token != session.get("csrf_token"):
+            abort(400, description="Token CSRF inválido o ausente")
+        return None
 
     db.init_app(app)
     migrate.init_app(app, db)
@@ -26,7 +44,7 @@ def create_app():
     def load_user(user_id):
         from app.models import Usuario
 
-        return Usuario.query.get(int(user_id))
+        return db.session.get(Usuario, int(user_id))
 
     @app.before_request
     def exigir_login():
@@ -35,6 +53,8 @@ def create_app():
 
         # Rutas que quedan afuera del login obligatorio
         endpoints_publicos = {"auth.login", "static"}
+        if request.endpoint == "static" and request.path.startswith("/static/uploads/"):
+            abort(404)
         if request.endpoint in endpoints_publicos or request.endpoint is None:
             return None
         if not current_user.is_authenticated:
@@ -216,11 +236,18 @@ def _seed_super_admin():
     if Usuario.query.first():
         return
 
-    admin = Usuario(username="admin", nombre_completo="Super Administrador", rol="Super Admin")
-    admin.set_password("admin123")
+    import os
+
+    password = os.environ.get("INITIAL_ADMIN_PASSWORD")
+    if not password:
+        print("No se creó el Super Admin inicial: configurá INITIAL_ADMIN_PASSWORD para el primer arranque.")
+        return
+
+    admin = Usuario(username=os.environ.get("INITIAL_ADMIN_USERNAME", "admin"), nombre_completo="Super Administrador", rol="Super Admin")
+    admin.set_password(password)
     db.session.add(admin)
     db.session.commit()
-    print("Usuario Super Admin creado por defecto -> usuario: admin / contraseña: admin123 (cambiala)")
+    print(f"Usuario Super Admin inicial creado -> usuario: {admin.username}")
 
 
 def _seed_tipos_equipo():

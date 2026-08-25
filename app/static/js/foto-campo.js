@@ -29,7 +29,7 @@ function inicializarFotosCampo(root) {
             boton.addEventListener('click', function () {
                 if (!confirm('¿Quitar esta foto?')) return;
                 var url = urlEliminarPlantilla.replace('0', mini.dataset.fotoId);
-                fetch(url, { method: 'POST', headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                fetch(url, { method: 'POST', headers: window.ipmFetchHeaders() })
                     .then(function (r) { return r.json(); })
                     .then(function (data) {
                         if (data.ok) { mini.remove(); return; }
@@ -55,7 +55,7 @@ function inicializarFotosCampo(root) {
             boton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
             boton.classList.add('disabled');
 
-            fetch(urlSubir, { method: 'POST', body: datos, headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            fetch(urlSubir, { method: 'POST', body: datos, headers: window.ipmFetchHeaders() })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     boton.innerHTML = textoOriginal;

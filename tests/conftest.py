@@ -18,7 +18,7 @@ from app.models import Cliente, Empresa, Instalacion, Usuario
 @pytest.fixture(scope="session")
 def _flask_app():
     application = create_app()
-    application.config.update(TESTING=True, WTF_CSRF_ENABLED=False)
+    application.config.update(TESTING=True, WTF_CSRF_ENABLED=False, CSRF_ENABLED=False)
     yield application
     os.close(_db_fd)
     os.unlink(_db_path)

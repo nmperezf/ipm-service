@@ -3,7 +3,7 @@ from flask_login import current_user
 
 from app import db
 from app.auth_utils import rol_requerido
-from app.models import Mensaje, Usuario
+from app.models import Cliente, Mensaje, Usuario
 from app.notificaciones import notificar_usuario
 
 mensajes_bp = Blueprint("mensajes", __name__, url_prefix="/mensajes")
@@ -26,12 +26,15 @@ def nuevo():
         abort(403)
     es_para_mi = destinatario.id == current_user.id
     cliente_id = request.form.get("cliente_id") or None
+    cliente = db.session.get(Cliente, int(cliente_id)) if cliente_id else None
+    if cliente_id and (not cliente or cliente.empresa_id != current_user.empresa_id):
+        abort(403)
     mensaje = Mensaje(
         empresa_id=current_user.empresa_id,
         remitente_id=current_user.id,
         destinatario_id=destinatario.id,
         titulo=request.form["titulo"],
-        cliente_id=int(cliente_id) if cliente_id else None,
+        cliente_id=cliente.id if cliente else None,
         prioridad=request.form.get("prioridad", "Media"),
     )
     db.session.add(mensaje)

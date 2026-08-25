@@ -37,11 +37,15 @@ def nueva(instalacion_id):
     instalacion = Instalacion.query.get_or_404(instalacion_id)
     verificar_escritura_cliente(instalacion.cliente)
     item_id = request.values.get("item_id", type=int)
-    item = ItemVisita.query.get(item_id) if item_id else None
+    item = db.session.get(ItemVisita, item_id) if item_id else None
     if item:
         verificar_visita_editable(item.visita)
     equipo_id = request.values.get("equipo_id", type=int)
-    equipo = Equipo.query.get(equipo_id) if equipo_id else None
+    equipo = db.session.get(Equipo, equipo_id) if equipo_id else None
+    if item and item.visita.instalacion_id != instalacion.id:
+        abort(400)
+    if equipo and equipo.instalacion_id != instalacion.id:
+        abort(400)
 
     if request.method == "POST":
         clasificacion = request.form["clasificacion"]

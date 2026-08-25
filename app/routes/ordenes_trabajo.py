@@ -4,7 +4,7 @@ from flask import Blueprint, Response, abort, flash, jsonify, redirect, render_t
 from flask_login import current_user
 
 from app import db
-from app.auth_utils import clientes_visibles, rol_requerido, tecnicos_de_la_empresa, verificar_acceso_cliente
+from app.auth_utils import clientes_visibles, rol_requerido, tecnicos_de_la_empresa, validar_tecnico_asignado, verificar_acceso_cliente
 from app.models import (
     ESTADOS_OT,
     Equipo,
@@ -119,7 +119,7 @@ def nueva():
     if request.method == "POST":
         instalacion = Instalacion.query.get_or_404(int(request.form["instalacion_id"]))
         verificar_acceso_cliente(instalacion.cliente)
-        tecnico_id = request.form.get("tecnico_id")
+        tecnico_id = validar_tecnico_asignado(request.form.get("tecnico_id", type=int), instalacion.cliente.empresa_id)
         tipo = request.form.get("tipo", "Correctivo")
         prioridad = request.form.get("prioridad", "Media")
         descripcion = request.form.get("descripcion")
@@ -142,7 +142,7 @@ def nueva():
                 tipo=tipo,
                 prioridad=prioridad,
                 estado="Pendiente",
-                tecnico_id=int(tecnico_id) if tecnico_id else None,
+                tecnico_id=tecnico_id,
                 descripcion=descripcion,
                 fecha_apertura=fecha_apertura,
             )
@@ -160,7 +160,7 @@ def nueva():
             tipo=tipo,
             prioridad=prioridad,
             estado="Pendiente",
-            tecnico_id=int(tecnico_id) if tecnico_id else None,
+            tecnico_id=tecnico_id,
             descripcion=descripcion,
             fecha_apertura=fecha_apertura,
         )
@@ -226,7 +226,7 @@ def actualizar_campo(ot_id):
         ot.prioridad = valor
     elif campo == "tecnico_id":
         tecnico_id_anterior = ot.tecnico_id
-        ot.tecnico_id = int(valor) if valor else None
+        ot.tecnico_id = validar_tecnico_asignado(int(valor) if valor else None, ot.instalacion.cliente.empresa_id)
         if ot.tecnico_id and ot.estado == "Pendiente":
             ot.estado = "Asignada"
         if ot.tecnico_id and ot.tecnico_id != tecnico_id_anterior:

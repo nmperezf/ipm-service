@@ -9,6 +9,7 @@ from app.auth_utils import (
     verificar_acceso_cliente,
     verificar_escritura_cliente,
     verificar_visita_editable,
+    validar_tecnico_asignado,
 )
 from app import db
 from app.models import (
@@ -92,14 +93,14 @@ def nueva(instalacion_id):
         db.session.add(visita)
         db.session.flush()
 
-        tecnico_id = request.form.get("tecnico_id")
+        tecnico_id = validar_tecnico_asignado(request.form.get("tecnico_id", type=int), instalacion.cliente.empresa_id)
         ot = OrdenTrabajo(
             instalacion_id=instalacion.id,
             visita_id=visita.id,
             tipo="Visita técnica",
             prioridad="Media",
             estado="Pendiente",
-            tecnico_id=int(tecnico_id) if tecnico_id else None,
+            tecnico_id=tecnico_id,
             descripcion=request.form.get("observaciones"),
             fecha_apertura=visita.fecha,
         )

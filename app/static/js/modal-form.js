@@ -96,7 +96,7 @@
             fetch(accion, {
                 method: 'POST',
                 body: new FormData(form),
-                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                headers: window.ipmFetchHeaders(),
             }).then(function (r) {
                 if (r.status === 400) {
                     return r.text().then(function (html) {

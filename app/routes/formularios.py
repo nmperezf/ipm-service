@@ -432,7 +432,7 @@ def nuevo(item_id, tipo_formulario_id):
     _verificar_tipo_del_cliente(item, tipo)
 
     equipo_id = request.values.get("equipo_id", type=int)
-    equipo = Equipo.query.get(equipo_id) if equipo_id else None
+    equipo = db.session.get(Equipo, equipo_id) if equipo_id else None
 
     if tipo.por_equipo and not equipo:
         return redirect(url_for("formularios.elegir_equipo", item_id=item.id, tipo_formulario_id=tipo.id))

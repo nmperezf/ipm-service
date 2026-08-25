@@ -9,7 +9,7 @@ from flask_login import current_user
 from werkzeug.utils import secure_filename
 
 from app import db
-from app.auth_utils import rol_requerido, verificar_escritura_cliente, verificar_visita_editable
+from app.auth_utils import rol_requerido, verificar_acceso_cliente, verificar_escritura_cliente, verificar_visita_editable
 from app.models import Equipo, Foto, Instalacion, ItemVisita, ORIGENES_FOTO
 from app.utils import es_ajax, parse_fecha
 
@@ -63,7 +63,7 @@ def subir(item_id):
         return redirect(url_for("visitas.detalle", visita_id=item.visita_id))
 
     equipo_id = request.form.get("equipo_id", type=int)
-    equipo = Equipo.query.get(equipo_id) if equipo_id else None
+    equipo = db.session.get(Equipo, equipo_id) if equipo_id else None
     if equipo and equipo.instalacion_id != instalacion.id:
         abort(400)
 
@@ -112,7 +112,7 @@ def subir_manual(instalacion_id):
             return redirect(url_for("fotos.subir_manual", instalacion_id=instalacion.id))
 
         equipo_id = request.form.get("equipo_id", type=int)
-        equipo = Equipo.query.get(equipo_id) if equipo_id else None
+        equipo = db.session.get(Equipo, equipo_id) if equipo_id else None
         if equipo and equipo.instalacion_id != instalacion.id:
             abort(400)
 
@@ -181,7 +181,6 @@ def eliminar(foto_id):
 
 @fotos_bp.route("/ver/<path:nombre_archivo>")
 def ver(nombre_archivo):
-    # El login global ya exige sesión iniciada; el nombre de archivo lleva
-    # un prefijo aleatorio (uuid4) no adivinable, así que no se agrega acá
-    # una verificación de pertenencia adicional por ahora.
+    foto = Foto.query.filter_by(nombre_archivo=nombre_archivo).first_or_404()
+    verificar_acceso_cliente(foto.instalacion.cliente)
     return send_from_directory(current_app.config["UPLOAD_FOLDER"], nombre_archivo)

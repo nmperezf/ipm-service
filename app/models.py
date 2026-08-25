@@ -452,7 +452,7 @@ class SolicitudCoordinacion(db.Model):
     coordinado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=True, index=True)
     fecha_coordinacion = db.Column(db.DateTime, nullable=True)
     visita_id = db.Column(db.Integer, db.ForeignKey("visitas.id"), nullable=True, index=True)
-    fecha_creacion = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    fecha_creacion = db.Column(db.DateTime, default=datetime.now, nullable=False)
 
     contrato = db.relationship("Contrato", backref=db.backref("solicitudes_coordinacion", cascade="all, delete-orphan"))
     coordinado_por = db.relationship("Usuario")
@@ -1138,7 +1138,7 @@ class Presupuesto(db.Model):
 
     @property
     def dias_abierto(self):
-        return (datetime.utcnow() - self.fecha_creacion).days
+        return (datetime.now() - self.fecha_creacion).days
 
     def cambiar_estado(self, nuevo_estado, usuario_id, nota=None):
         """Cambia de estado y deja rastro en el audit log. Al pasar a
@@ -1453,12 +1453,12 @@ class EnsayoCaudal(db.Model):
     def validar(self, usuario_id):
         self.estado_revision = "Validado"
         self.validado_por_id = usuario_id
-        self.fecha_validacion = datetime.utcnow()
+        self.fecha_validacion = datetime.now()
 
     def rechazar(self, usuario_id):
         self.estado_revision = "Rechazado"
         self.validado_por_id = usuario_id
-        self.fecha_validacion = datetime.utcnow()
+        self.fecha_validacion = datetime.now()
 
     def puntos_netos(self):
         return [self.presion_neta_punto_0, self.presion_neta_punto_50, self.presion_neta_punto_100, self.presion_neta_punto_150]

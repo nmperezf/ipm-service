@@ -10,6 +10,7 @@ from app.auth_utils import (
     clientes_visibles,
     rol_requerido,
     tecnicos_de_la_empresa,
+    validar_tecnico_asignado,
     verificar_acceso_cliente,
     verificar_password_confirmacion,
 )
@@ -121,7 +122,7 @@ def visita_rapida():
         db.session.add(visita)
         db.session.flush()
 
-        tecnico_id = request.form.get("tecnico_id")
+        tecnico_id = validar_tecnico_asignado(request.form.get("tecnico_id", type=int), current_user.empresa_id)
         if not tecnico_id and current_user.rol == "Técnico":
             tecnico_id = current_user.id
 
