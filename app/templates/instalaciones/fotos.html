@@ -6,7 +6,7 @@
     <div class="tarjeta-doc">
 
             <p class="mb-1"><a href="{{ url_for('instalaciones.detalle', instalacion_id=instalacion.id) }}">&larr; {{ instalacion.nombre }}</a></p>
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
                 <p class="text-muted mb-0">{{ fotos|length }} foto{{ 's' if fotos|length != 1 }} en total, de todos los equipos y visitas.</p>
                 <a href="{{ url_for('fotos.subir_manual', instalacion_id=instalacion.id) }}" class="btn btn-outline-info btn-sm"><i class="bi bi-camera me-1"></i>Foto</a>
             </div>

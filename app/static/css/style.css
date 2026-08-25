@@ -318,6 +318,10 @@ small, .small, .text-muted {
     text-align: center;
     margin-right: .3rem;
 }
+.ipm-navbar .nav-link .bi-clipboard-check,
+.ipm-navbar .nav-link .bi-box-seam {
+    margin-right: .45rem;
+}
 .theme-toggle-btn {
     background: none;
     border: none;
@@ -529,6 +533,14 @@ html.sidebar-oculta .grupo-label {
     width: 1.05em;
     text-align: center;
     opacity: .85;
+}
+/* bi-clipboard-check y bi-box-seam llenan mucho más su propia caja que el
+   resto de los íconos del menú (casas, calendarios, personas dejan aire de
+   sobra alrededor) -- con el mismo gap quedan visualmente más pegados al
+   texto que las demás opciones. */
+.sidebar-link .bi-clipboard-check,
+.sidebar-link .bi-box-seam {
+    margin-right: .15rem;
 }
 html.sidebar-oculta .sidebar-link {
     justify-content: center;

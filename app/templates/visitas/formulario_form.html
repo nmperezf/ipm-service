@@ -4,7 +4,7 @@
 <div class="pagina-ancha">
     <h1>{{ tipo.nombre }}</h1>
     <div class="tarjeta-doc angosta">
-            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-2">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
                 <p class="text-muted mb-0">{{ item.nombre_mostrado }}{% if equipo %} — {{ equipo.nombre }}{% endif %}</p>
                 <a href="{{ url_for('observaciones.nueva', instalacion_id=item.visita.instalacion_id, item_id=item.id, equipo_id=equipo.id if equipo else none) }}" class="btn btn-outline-warning btn-sm"><i class="bi bi-exclamation-triangle me-1"></i>Observación</a>
             </div>
