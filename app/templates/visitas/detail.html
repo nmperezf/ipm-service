@@ -13,7 +13,7 @@
             {% include "_migas.html" %}
 
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
-                <div class="d-flex gap-2 flex-wrap">
+                <div class="visita-acciones d-flex gap-2 flex-wrap">
                     <span class="badge badge-{{ visita.estado.replace(' ', '.') }} fs-6">{{ visita.estado }}</span>
                     <span class="badge badge-{{ 'Cumplido' if visita.fase == 'Cerrada' else ('Pendiente' if visita.fase == 'En revisión' else 'Programado') }} fs-6">{{ visita.fase }}</span>
                 </div>
@@ -76,24 +76,24 @@
             <div class="seccion-titulo-doc">Deficiencias abiertas de esta instalación</div>
             <p class="text-muted small mt-n2 mb-2">Cargadas en visitas anteriores (o en esta), todavía sin resolver — revisalas antes de dar la visita por terminada.</p>
             <div class="table-responsive">
-            <table class="table table-sm data-table">
+            <table class="table table-sm data-table tabla-tarjetas">
                 <thead><tr><th>Fecha</th><th>Clasificación</th><th>Equipo</th><th>Descripción</th><th>Revisión</th><th></th></tr></thead>
                 <tbody>
                     {% for obs in deficiencias_abiertas %}
                     <tr>
-                        <td>{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
-                        <td><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
-                        <td>{{ obs.equipo.nombre if obs.equipo else '-' }}</td>
-                        <td>
+                        <td data-label="Fecha">{{ obs.fecha_carga.strftime('%d/%m/%Y') }}</td>
+                        <td data-label="Clasificación"><span class="badge badge-{{ obs.clasificacion.replace(' ', '.') }}">{{ obs.clasificacion }}</span></td>
+                        <td data-label="Equipo">{{ obs.equipo.nombre if obs.equipo else '-' }}</td>
+                        <td data-label="Descripción">
                             {{ obs.descripcion }}
                             {% if obs.fecha_ultima_confirmacion %}<br><small class="text-muted">Vista por última vez el {{ obs.fecha_ultima_confirmacion.strftime('%d/%m/%Y') }}</small>{% endif %}
                         </td>
-                        <td>
+                        <td data-label="Revisión">
                             {% if obs.visibilidad == 'Interna' %}<span class="badge badge-Interna">Interna</span>{% endif %}
                             {% if obs.estado_revision == 'Aprobada' %}<span class="badge badge-Cumplido">Aprobada</span>
                             {% else %}<span class="badge badge-Pendiente">Pendiente de revisión</span>{% endif %}
                         </td>
-                        <td>
+                        <td data-label="Acciones">
                             {% if puede_editar %}
                             <form method="POST" action="{{ url_for('observaciones.resolver', observacion_id=obs.id) }}" class="d-inline">
                                 <button type="submit" class="btn btn-sm btn-outline-success">Marcar resuelta</button>

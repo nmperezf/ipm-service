@@ -6,7 +6,7 @@
     <h1>Inicio</h1>
     <div class="saludo-inicio">Hola, {{ current_user.nombre_completo or current_user.username }}<span class="fecha">— {{ hoy.strftime('%d/%m/%Y') }}</span></div>
 
-    <form method="GET" action="{{ url_for('dashboard.inicio') }}" class="mb-4" style="max-width: 480px;">
+    <form method="GET" action="{{ url_for('dashboard.inicio') }}" class="dashboard-busqueda mb-4" style="max-width: 480px;">
         <div class="input-group">
             <input type="text" name="q" class="form-control" placeholder="Buscar cliente por nombre..." value="{{ q }}">
             <button type="submit" class="btn btn-dark">Buscar</button>
