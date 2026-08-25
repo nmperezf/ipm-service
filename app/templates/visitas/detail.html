@@ -13,11 +13,12 @@
             {% include "_migas.html" %}
 
             <div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-4">
-                <div class="visita-acciones d-flex gap-2 flex-wrap">
+                <div class="visita-estado d-flex gap-2 flex-wrap">
                     <span class="badge badge-{{ visita.estado.replace(' ', '.') }} fs-6">{{ visita.estado }}</span>
                     <span class="badge badge-{{ 'Cumplido' if visita.fase == 'Cerrada' else ('Pendiente' if visita.fase == 'En revisión' else 'Programado') }} fs-6">{{ visita.fase }}</span>
                 </div>
-                <div class="d-flex gap-2 flex-wrap">
+                <div class="visita-acciones d-flex gap-2 flex-wrap">
+                    <div class="visita-acciones-estado d-flex gap-2 flex-wrap">
                     {% if visita.fase == 'Abierta' %}
                         {% if current_user.rol in ('Técnico', 'Administrador', 'Jefe') %}
                         <a href="{{ url_for('visitas.enviar_revision', visita_id=visita.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-send me-1"></i>Enviar a revisión</a>
@@ -27,6 +28,7 @@
                         <a href="{{ url_for('visitas.cerrar', visita_id=visita.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-lock me-1"></i>Cerrar visita</a>
                         {% endif %}
                     {% elif visita.fase == 'Cerrada' %}
+                        <div class="visita-acciones-documentos d-flex gap-2 flex-wrap">
                         <a href="{{ url_for('visitas.pdf_devolucion', visita_id=visita.id) }}" class="btn btn-sm btn-outline-dark" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>Descargar PDF de comentarios</a>
                         <a href="{{ url_for('visitas.checklist_tecnico_pdf', visita_id=visita.id) }}" class="btn btn-sm btn-outline-dark" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>PDF Completo</a>
                         {% if categorias_pdf %}
@@ -46,14 +48,18 @@
                             <button type="submit" class="btn btn-sm btn-outline-warning"><i class="bi bi-unlock me-1"></i>Reabrir visita</button>
                         </form>
                         {% endif %}
+                        </div>
                     {% endif %}
+                    </div>
 
+                    <div class="visita-acciones-secundarias d-flex gap-2 flex-wrap">
                     {% if current_user.rol in ('Administrador', 'Jefe') %}
                     <a href="{{ url_for('visitas.editar_nota_cliente', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-chat-left-text me-1"></i>Nota para el cliente</a>
                     {% endif %}
                     {% if visita.fase != 'Cerrada' %}
                     <a href="{{ url_for('visitas.editar', visita_id=visita.id) }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-pencil me-1"></i>Editar / Eliminar</a>
                     {% endif %}
+                    </div>
                 </div>
             </div>
 
