@@ -32,5 +32,40 @@
                 <button type="submit" class="btn btn-primary">Guardar</button>
             </form>
     </div>
+
+    {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+    <div class="tarjeta-doc angosta mt-3">
+        <div class="seccion-titulo-doc">Notificaciones push</div>
+        <p class="text-muted small" id="notif-push-estado">Comprobando estado…</p>
+        <button type="button" id="btn-notif-push" class="btn btn-outline-primary">Activar notificaciones</button>
+    </div>
+    {% endif %}
 </div>
+
+{% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+<div class="modal fade" id="modal-push-onboarding" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Notificaciones activadas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Un paso más para que Android no las bloquee en silencio cuando no tenés la app abierta: desactivá la optimización de batería para IPM Manager.</p>
+                <ol class="mb-0">
+                    <li>Configuración del celular</li>
+                    <li>Apps (o Aplicaciones)</li>
+                    <li>Elegí "IPM Manager"</li>
+                    <li>Batería</li>
+                    <li>Elegí "Sin restricciones"</li>
+                </ol>
+                <p class="text-muted small mt-2 mb-0">Los pasos exactos varían un poco según la marca del celular (Samsung, Xiaomi, etc.), pero el menú "Batería" dentro de la app siempre está.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

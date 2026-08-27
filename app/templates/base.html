@@ -287,6 +287,7 @@
 <script src="{{ url_for('static', filename='js/confirmar-password.js') }}"></script>
 <script src="{{ url_for('static', filename='js/modal-form.js') }}"></script>
 <script src="{{ url_for('static', filename='js/busqueda-global.js') }}" data-url-buscar="{{ url_for('busqueda.buscar') if current_user.is_authenticated and current_user.rol in ('Administrador', 'Jefe', 'Técnico') else '' }}"></script>
+<script src="{{ url_for('static', filename='js/push-notificaciones.js') }}"></script>
 <script>
     (function () {
         var root = document.documentElement;

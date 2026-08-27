@@ -1,0 +1,12 @@
+{
+  "appId": "com.ipmmanager.app",
+  "appName": "IPM Manager",
+  "webDir": "www",
+  "server": {
+    "url": "https://ipm-service-production.up.railway.app",
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#1B3A5C"
+  }
+}

@@ -1,0 +1,6 @@
+node_modules/
+
+# Credenciales de Firebase -- no son "secretas" en el sentido estricto (van
+# embebidas en cada APK igual), pero cada quien genera la suya desde su
+# propia consola de Firebase en vez de compartir una sola entre todos.
+android/app/google-services.json

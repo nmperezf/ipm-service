@@ -2,10 +2,20 @@
 commit) para que quede en la misma transacción que la acción que las
 dispara — el caller ya hace su propio db.session.commit()."""
 
-from flask import url_for
+from flask import g, url_for
 
 from app import db
 from app.models import Notificacion, Usuario
+
+
+def _marcar_pendiente_de_push(destinatario_id, tipo, cliente_id):
+    """Registra en g (vive solo durante este request) qué grupo (destinatario,
+    tipo, cliente) acaba de recibir una Notificacion nueva. Un hook
+    after_request en app/__init__.py revisa esto una vez terminada la vista
+    -- ahí ya corrió el commit() del caller -- y dispara el push agrupado
+    por FCM (ver app/push.py). Así ninguno de los ~11 sitios que llaman a
+    notificar_usuario/notificar_gestion necesita saber que el push existe."""
+    g.setdefault("_push_pendientes", []).append((destinatario_id, tipo, cliente_id))
 
 
 def notificar_usuario(destinatario, tipo, titulo, empresa_id, cliente_id=None, enlace=None, remitente=None):
@@ -25,6 +35,7 @@ def notificar_usuario(destinatario, tipo, titulo, empresa_id, cliente_id=None, e
             enlace=enlace,
         )
     )
+    _marcar_pendiente_de_push(destinatario.id, tipo, cliente_id)
 
 
 def notificar_gestion(empresa_id, tipo, titulo, cliente_id=None, enlace=None, remitente=None):
@@ -49,6 +60,7 @@ def notificar_gestion(empresa_id, tipo, titulo, cliente_id=None, enlace=None, re
                 enlace=enlace,
             )
         )
+        _marcar_pendiente_de_push(usuario.id, tipo, cliente_id)
 
 
 def notificar_tecnico_asignado(ot, remitente):

@@ -27,3 +27,11 @@ class Config:
     MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16 MB por request
     EXTENSIONES_PERMITIDAS = {"png", "jpg", "jpeg", "gif", "webp"}
     EXTENSIONES_DOCUMENTOS = {"pdf", "doc", "docx", "xls", "xlsx", "png", "jpg", "jpeg"}
+
+    # Push (Firebase Cloud Messaging) para la app Android empaquetada con
+    # Capacitor -- credencial de la cuenta de servicio de Firebase, contenido
+    # completo del JSON como texto (no un path a archivo, para no depender de
+    # que exista un volumen persistente en el hosting). Sin esto, el envío de
+    # push simplemente no hace nada (ver app/push.py) -- no es requisito para
+    # levantar la app, a diferencia de SECRET_KEY.
+    FIREBASE_CREDENTIALS_JSON = os.environ.get("FIREBASE_CREDENTIALS_JSON")

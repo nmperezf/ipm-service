@@ -1,7 +1,7 @@
 import json
 import secrets
 
-from flask import Flask, abort, render_template, request, session
+from flask import Flask, abort, g, render_template, request, session
 from flask_login import LoginManager
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
@@ -91,6 +91,22 @@ def create_app():
 
         return {"ESTADOS_CHECKLIST": ESTADOS_CHECKLIST, "ESTADOS_CHECKLIST_LABEL": ESTADOS_CHECKLIST_LABEL}
 
+    @app.after_request
+    def enviar_pushes_pendientes(response):
+        # notificar_usuario/notificar_gestion (app/notificaciones.py) dejan
+        # acá qué grupos (destinatario, tipo, cliente) recibieron una
+        # Notificacion nueva durante este request. Para cuando llegamos acá,
+        # la vista ya hizo su propio db.session.commit() -- recién ahí tiene
+        # sentido mandar el push (si hubo rollback, enviar_push_agrupado no
+        # encuentra nada y no manda nada).
+        pendientes = getattr(g, "_push_pendientes", None)
+        if pendientes:
+            from app.push import enviar_push_agrupado
+
+            for destinatario_id, tipo, cliente_id in set(pendientes):
+                enviar_push_agrupado(destinatario_id, tipo, cliente_id)
+        return response
+
     # Registro de blueprints (cada módulo queda desacoplado del resto)
     from app.routes.auth import auth_bp
     from app.routes.clientes import clientes_bp
@@ -119,6 +135,7 @@ def create_app():
     from app.routes.curvas import curvas_bp
     from app.routes.coordinacion import coordinacion_bp
     from app.routes.busqueda import busqueda_bp
+    from app.routes.push import push_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -147,6 +164,7 @@ def create_app():
     app.register_blueprint(curvas_bp)
     app.register_blueprint(coordinacion_bp)
     app.register_blueprint(busqueda_bp)
+    app.register_blueprint(push_bp)
 
     @app.errorhandler(404)
     def error_404(error):

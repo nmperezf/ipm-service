@@ -19,7 +19,13 @@ def login():
         usuario = Usuario.query.filter_by(username=username).first()
 
         if usuario and usuario.activo and usuario.check_password(password):
-            login_user(usuario)
+            # remember=True: sin esto, la sesión depende de una cookie sin
+            # fecha de expiración -- en un navegador de escritorio no se nota
+            # (el proceso del navegador rara vez "cierra" del todo), pero en
+            # la app Android el sistema mata el proceso todo el tiempo (modo
+            # Doze, poca memoria, etc.) y esa cookie se pierde en cada
+            # relanzamiento, pidiendo login de nuevo constantemente.
+            login_user(usuario, remember=True)
             flash(f"Bienvenido, {usuario.nombre_completo or usuario.username}.", "success")
             siguiente = request.args.get("next")
             partes = urlsplit(siguiente or "")

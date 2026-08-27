@@ -1785,6 +1785,25 @@ class Notificacion(db.Model):
         return f"<Notificacion {self.tipo} -> {self.destinatario_id}>"
 
 
+class PushToken(db.Model):
+    """Token de Firebase Cloud Messaging de un dispositivo -- se registra
+    desde la app Android (Capacitor) cuando el usuario activa las
+    notificaciones (ver app/routes/push.py). Un mismo usuario puede tener
+    varios tokens, uno por dispositivo."""
+
+    __tablename__ = "push_tokens"
+
+    id = db.Column(db.Integer, primary_key=True)
+    usuario_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False, index=True)
+    token = db.Column(db.String(255), nullable=False, unique=True)
+    fecha_creado = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    usuario = db.relationship("Usuario", backref=db.backref("push_tokens", cascade="all, delete-orphan"))
+
+    def __repr__(self):
+        return f"<PushToken usuario={self.usuario_id}>"
+
+
 # ---------------------------------------------------------------------------
 # Empresas y usuarios (multiempresa) — Fase 1: login y roles.
 # La Fase 2 agrega el aislamiento real de datos por empresa (empresa_id en
