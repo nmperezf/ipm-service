@@ -30,14 +30,14 @@
             return;
         }
 
-        function refrescar() {
+        function refrescar(textoExtra) {
             PushNotifications.checkPermissions().then(function (res) {
                 var activo = res.receive === 'granted';
                 boton.textContent = activo ? 'Notificaciones activadas' : 'Activar notificaciones';
                 if (estadoTexto) {
-                    estadoTexto.textContent = activo
+                    estadoTexto.textContent = textoExtra || (activo
                         ? 'Activadas en este dispositivo.'
-                        : 'Desactivadas en este dispositivo.';
+                        : 'Desactivadas en este dispositivo.');
                 }
             });
         }
@@ -45,11 +45,15 @@
         refrescar();
 
         PushNotifications.addListener('registration', function (token) {
-            llamarApi('/push/registrar', { token: token.value }).then(function () {
+            llamarApi('/push/registrar', { token: token.value }).then(function (r) {
+                if (!r.ok) throw new Error('registro-fallido');
                 if (modalOnboardingEl && localStorage.getItem('ipm-push-onboarded') !== '1') {
                     localStorage.setItem('ipm-push-onboarded', '1');
                     new bootstrap.Modal(modalOnboardingEl).show();
                 }
+                refrescar('Activadas y confirmadas con el servidor.');
+            }).catch(function () {
+                refrescar('El permiso está dado, pero no se pudo confirmar con el servidor. Probá tocar el botón de nuevo.');
             });
         });
 
@@ -65,20 +69,21 @@
             if (url) window.location.href = url;
         });
 
+        // Siempre reintenta el registro contra el servidor al tocar el
+        // botón, aunque el permiso del sistema ya esté concedido -- si el
+        // permiso se dio en un momento en que el servidor no respondía (o
+        // el registro falló por cualquier otro motivo), esta es la única
+        // forma de reintentarlo sin desinstalar la app.
         boton.addEventListener('click', function () {
             boton.disabled = true;
-            PushNotifications.checkPermissions().then(function (res) {
-                if (res.receive === 'granted') {
-                    alert('Ya están activadas. Para desactivarlas: Configuración del celular > Apps > IPM Manager > Notificaciones.');
-                    return null;
-                }
-                return PushNotifications.requestPermissions().then(function (res2) {
-                    if (res2.receive !== 'granted') throw new Error('permiso-denegado');
-                    return PushNotifications.register();
-                });
+            PushNotifications.requestPermissions().then(function (res) {
+                if (res.receive !== 'granted') throw new Error('permiso-denegado');
+                return PushNotifications.register();
             }).catch(function (e) {
                 if (!e || e.message !== 'permiso-denegado') {
                     alert('No se pudieron activar las notificaciones. Probá de nuevo.');
+                } else {
+                    alert('Bloqueaste las notificaciones para esta app -- para activarlas, habilitalas desde Configuración > Apps > IPM Manager > Notificaciones.');
                 }
             }).finally(function () {
                 boton.disabled = false;
