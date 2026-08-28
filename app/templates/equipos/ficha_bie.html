@@ -1,0 +1,234 @@
+{% extends "base.html" %}
+{% block title %}Ficha de inspección — {{ equipo.nombre }}{% endblock %}
+{% block content %}
+<div class="pagina-ancha">
+    {% set migas = [
+        (equipo.instalacion.cliente.nombre, url_for('clientes.detalle', cliente_id=equipo.instalacion.cliente_id)),
+        (equipo.instalacion.nombre, url_for('instalaciones.detalle', instalacion_id=equipo.instalacion_id)),
+        (equipo.nombre, url_for('equipos.detalle', equipo_id=equipo.id)),
+        ('Ficha de inspección', none),
+    ] %}
+    {% include "_migas.html" %}
+
+    <div class="cab-instalacion">
+        <div>
+            <h1 class="mb-0">Ficha de inspección — {{ equipo.nombre }}</h1>
+            <p class="text-muted mb-0">{{ equipo.ubicacion or '' }}</p>
+        </div>
+        <div class="d-flex gap-2 flex-wrap">
+            {% if equipo.inspecciones_bie %}
+            <a href="{{ url_for('bie.ficha_pdf', equipo_id=equipo.id) }}" class="btn btn-outline-dark btn-sm" target="_blank"><i class="bi bi-file-earmark-pdf me-1"></i>Descargar PDF</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="tarjeta-doc">
+        <form method="POST">
+            {% if item %}<input type="hidden" name="item_id" value="{{ item.id }}">{% endif %}
+
+            <div class="seccion-titulo-doc" style="margin-top:0">1 · Identificación y especificaciones de la boca</div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-8">
+                    <label class="form-label">Tipo de boca de incendio</label>
+                    <select name="tipo_bie" class="form-select">
+                        <option value="">-- Seleccionar --</option>
+                        {% for t in tipos_bie %}
+                        <option value="{{ t }}" {% if equipo.tipo_bie == t %}selected{% endif %}>{{ t }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Diámetro nominal</label>
+                    <div class="grupo-toggle-doc grupo-radio" data-name="diametro_nominal">
+                        {% for d in diametros_bie %}
+                        <button type="button" class="{{ 'activo' if equipo.diametro_nominal == d else '' }}" data-valor="{{ d }}">{{ d }}</button>
+                        {% endfor %}
+                    </div>
+                    <input type="hidden" name="diametro_nominal" value="{{ equipo.diametro_nominal or '' }}">
+                </div>
+            </div>
+
+            <div class="seccion-titulo-doc">2 · Tipo de puntero / lanza / boquilla</div>
+            <div class="selector-opciones grupo-radio" data-name="tipo_puntero">
+                {% for p in tipos_puntero %}
+                <div class="opcion-btn-doc {{ 'activa' if equipo.tipo_puntero == p else '' }}" data-valor="{{ p }}">
+                    <span class="titulo">{{ p }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <input type="hidden" name="tipo_puntero" value="{{ equipo.tipo_puntero or '' }}">
+
+            <div class="seccion-titulo-doc">3 · Compatibilidad de accesorios y estado del gabinete</div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Tipo de racor / acople</label>
+                    <select name="tipo_racor" class="form-select">
+                        <option value="">-- --</option>
+                        {% for r in tipos_racor %}
+                        <option value="{{ r }}" {% if equipo.tipo_racor == r %}selected{% endif %}>{{ r }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Estado del racor</label>
+                    <select name="estado_racor" class="form-select">
+                        <option value="">-- --</option>
+                        {% for e in estados_racor %}
+                        <option value="{{ e }}" {% if equipo.estado_racor == e %}selected{% endif %}>{{ e }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Manómetro — lectura estática (bar)</label>
+                    <input type="number" step="any" name="manometro_bar" class="form-control" value="{{ equipo.manometro_bar or '' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Llave de ajuste (spanner)</label>
+                    <div class="grupo-toggle-doc grupo-radio" data-name="llave_spanner">
+                        <button type="button" class="{{ 'activo' if equipo.llave_spanner else '' }}" data-valor="1">Presente</button>
+                        <button type="button" class="{{ 'activo' if equipo.llave_spanner is sameas false else '' }}" data-valor="0">Falta</button>
+                    </div>
+                    <input type="hidden" name="llave_spanner" value="{{ '1' if equipo.llave_spanner else '0' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Válvula de maniobra</label>
+                    <div class="grupo-toggle-doc grupo-radio" data-name="valvula_operable">
+                        <button type="button" class="{{ 'activo' if equipo.valvula_operable else '' }}" data-valor="1">Operable</button>
+                        <button type="button" class="{{ 'activo' if equipo.valvula_operable is sameas false else '' }}" data-valor="0">Trabada</button>
+                    </div>
+                    <input type="hidden" name="valvula_operable" value="{{ '1' if equipo.valvula_operable else '0' }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Estado del gabinete</label>
+                    <select name="estado_gabinete" class="form-select">
+                        <option value="">-- --</option>
+                        {% for g in estados_gabinete %}
+                        <option value="{{ g }}" {% if equipo.estado_gabinete == g %}selected{% endif %}>{{ g }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="nota-implicita">Si el diámetro cargado acá no coincide con el de la manguera asignada, se genera una observación automáticamente al guardar.</div>
+
+            <div class="seccion-titulo-doc">4 · Pruebas registradas</div>
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div class="subficha">
+                        <div class="subficha-titulo">4A · Última prueba de la boca</div>
+                        <div class="row g-2">
+                            <div class="col-7">
+                                <label class="form-label">Fecha de prueba</label>
+                                <input type="date" name="fecha_prueba_boca" class="form-control">
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label">Resultado</label>
+                                <select name="resultado_prueba_boca" class="form-select">
+                                    <option value="">-- --</option>
+                                    {% for r in resultados_prueba_boca %}
+                                    <option value="{{ r }}">{{ r }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="subficha">
+                        <div class="subficha-titulo">4B · Manguera asignada &amp; prueba hidrostática</div>
+                        {% set manguera = equipo.mangueras|selectattr('activa')|first %}
+                        {% if manguera %}
+                        <div class="dato-linea"><span class="k">N° de serie</span><span class="v">{{ manguera.numero_serie }}</span></div>
+                        <div class="dato-linea"><span class="k">Última PH</span><span class="v">{{ manguera.fecha_ultima_ph.strftime('%d/%m/%Y') if manguera.fecha_ultima_ph else '-' }}</span></div>
+                        <div class="dato-linea"><span class="k">Estado</span><span class="v">
+                            {% if manguera.estado_ph == 'En prueba' %}<span class="badge badge-Programado">En prueba</span>
+                            {% elif manguera.fecha_vencimiento_ph %}<span class="badge badge-{{ 'Cumplido' if manguera.estado_ph == 'Vigente' else ('Deficiencia.no.crítica' if manguera.estado_ph == 'Por vencer' else 'Vencido') }}">{{ manguera.fecha_vencimiento_ph.strftime('%d/%m/%Y') }}</span>
+                            {% else %}-{% endif %}
+                        </span></div>
+                        <a href="{{ url_for('mangueras.lista', instalacion_id=equipo.instalacion_id) }}" class="btn btn-outline-secondary btn-sm mt-2">Ver planilla de mangueras →</a>
+                        {% else %}
+                        <p class="text-muted small mb-2">Sin manguera asignada.</p>
+                        <a href="{{ url_for('mangueras.lista', instalacion_id=equipo.instalacion_id) }}" class="btn btn-outline-secondary btn-sm">Ir a la planilla de mangueras</a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="seccion-titulo-doc">5 · Veredicto final de la inspección en terreno</div>
+            <div class="veredicto-opciones-doc grupo-radio" data-name="veredicto">
+                <label class="opcion-radio-doc ok"><input type="radio" name="veredicto_visual" value="Apta / operativa" checked>✓ Apta / operativa</label>
+                <label class="opcion-radio-doc warn"><input type="radio" name="veredicto_visual" value="Con observaciones">⚠ Con observaciones</label>
+                <label class="opcion-radio-doc crit"><input type="radio" name="veredicto_visual" value="Fuera de servicio">✕ Fuera de servicio</label>
+            </div>
+            <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Fecha de inspección</label>
+                    <input type="date" name="fecha" class="form-control" value="{{ hoy }}" required>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Inspector responsable</label>
+                    <input type="text" class="form-control" value="{{ current_user.nombre_completo }}" disabled>
+                </div>
+            </div>
+            <div class="mb-3">
+                <label class="form-label">Dictamen / observaciones de terreno</label>
+                <textarea name="dictamen" class="form-control" rows="2"></textarea>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Guardar y confirmar inspección</button>
+            <a href="{{ url_for('visitas.detalle', visita_id=item.visita_id) if item else url_for('equipos.detalle', equipo_id=equipo.id) }}" class="btn btn-link">Cancelar</a>
+        </form>
+    </div>
+
+    {% if equipo.inspecciones_bie %}
+    <div class="seccion-titulo-doc">Historial de inspecciones</div>
+    <div class="tarjeta-doc">
+        <div class="table-responsive">
+        <table class="table table-sm mb-0">
+            <thead><tr><th>Fecha</th><th>Veredicto</th><th>Realizada por</th></tr></thead>
+            <tbody>
+                {% for insp in equipo.inspecciones_bie|sort(attribute='fecha', reverse=true) %}
+                <tr>
+                    <td>{{ insp.fecha.strftime('%d/%m/%Y') }}</td>
+                    <td><span class="badge badge-{{ 'Cumplido' if insp.veredicto == 'Apta / operativa' else ('Deficiencia.no.crítica' if insp.veredicto == 'Con observaciones' else 'Deficiencia.crítica') }}">{{ insp.veredicto }}</span></td>
+                    <td>{{ insp.realizado_por.nombre_completo }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.querySelectorAll('.grupo-radio').forEach(function (grupo) {
+    var nombre = grupo.dataset.name;
+    var oculto = document.querySelector('input[type=hidden][name="' + nombre + '"]');
+    var opciones = grupo.querySelectorAll('[data-valor]');
+    opciones.forEach(function (opcion) {
+        opcion.addEventListener('click', function () {
+            opciones.forEach(function (o) { o.classList.remove('activa', 'activo'); });
+            opcion.classList.add(opcion.classList.contains('opcion-btn-doc') ? 'activa' : 'activo');
+            if (oculto) { oculto.value = opcion.dataset.valor; }
+        });
+    });
+});
+document.querySelectorAll('.veredicto-opciones-doc .opcion-radio-doc').forEach(function (label) {
+    var radio = label.querySelector('input[type=radio]');
+    function actualizar() {
+        document.querySelectorAll('.veredicto-opciones-doc .opcion-radio-doc').forEach(function (l) { l.classList.remove('seleccionada'); });
+        if (radio.checked) { label.classList.add('seleccionada'); }
+    }
+    radio.addEventListener('change', actualizar);
+    actualizar();
+});
+document.querySelector('form').addEventListener('submit', function () {
+    var seleccionado = document.querySelector('.veredicto-opciones-doc input[type=radio]:checked');
+    var oculto = document.createElement('input');
+    oculto.type = 'hidden';
+    oculto.name = 'veredicto';
+    oculto.value = seleccionado ? seleccionado.value : '';
+    this.appendChild(oculto);
+});
+</script>
+{% endblock %}

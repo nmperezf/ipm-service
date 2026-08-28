@@ -143,6 +143,7 @@ def detalle(visita_id):
     # ensayo de cada una (ver curvas.ensayo_nuevo).
     formularios_por_item = {}
     equipos_bomba_por_item = {}
+    equipos_bie_por_item = {}
     for item in visita.items:
         if item.servicio and item.servicio.es_curva_caudal:
             tipo_filtro = item.servicio.tipo_equipo_aplicable
@@ -150,6 +151,17 @@ def detalle(visita_id):
             equipos_bomba_por_item[item.id] = [
                 e for e in visita.instalacion.equipos if e.activo and e.tipo in tipos_bomba
             ]
+            continue
+        # La BIE dejó de tener checklist genérico -- tiene su propia
+        # pantalla (ver app/routes/bie.py), igual que la curva de caudal de
+        # arriba. Un ítem suelto ya trae el equipo puntual; uno contratado
+        # (servicio_contrato con tipo_equipo_aplicable == "BIE") ofrece
+        # elegir entre las BIEs activas de la instalación.
+        if item.equipo and item.equipo.tipo == "BIE":
+            equipos_bie_por_item[item.id] = [item.equipo]
+            continue
+        if item.servicio and item.servicio.tipo_equipo_aplicable == "BIE":
+            equipos_bie_por_item[item.id] = [e for e in visita.instalacion.equipos if e.activo and e.tipo == "BIE"]
             continue
         if item.servicio and item.servicio.categoria:
             # Servicio "paquete" (ej. "Inspecciones y pruebas en sala de
@@ -198,6 +210,7 @@ def detalle(visita_id):
         visita=visita,
         formularios_por_item=formularios_por_item,
         equipos_bomba_por_item=equipos_bomba_por_item,
+        equipos_bie_por_item=equipos_bie_por_item,
         equipos_agrupados=equipos_por_categoria(visita.instalacion),
         deficiencias_abiertas=deficiencias_abiertas,
         categorias_pdf=categorias_de_visita(visita) if visita.cerrada else [],

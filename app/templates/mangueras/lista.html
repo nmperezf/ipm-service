@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Mangueras — {{ instalacion.nombre }}{% endblock %}
+{% block content %}
+<div class="pagina-ancha">
+    <div id="contenido-refrescable" data-fragmento-url="{{ url_for('mangueras.lista', instalacion_id=instalacion.id) }}">
+        {% include "mangueras/_contenido.html" %}
+    </div>
+</div>
+{% endblock %}

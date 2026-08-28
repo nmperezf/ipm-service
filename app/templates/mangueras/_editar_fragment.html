@@ -1,0 +1,43 @@
+<div data-modal-titulo="Editar manguera"></div>
+<p class="text-muted mb-1">{{ manguera.lugar_actual }}{% if manguera.equipo %} · {{ manguera.equipo.nombre }}{% endif %}</p>
+
+<form method="POST" class="mt-3">
+    <div class="mb-3">
+        <label class="form-label">N° de serie / identificación</label>
+        <input type="text" name="numero_serie" class="form-control" value="{{ manguera.numero_serie }}" required>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Diámetro</label>
+            <select name="diametro" class="form-select" required>
+                {% for d in diametros %}
+                <option value="{{ d }}" {% if manguera.diametro == d %}selected{% endif %}>{{ d }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Longitud (m)</label>
+            <input type="number" step="any" name="longitud_metros" class="form-control" value="{{ manguera.longitud_metros or '' }}">
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Material</label>
+        <select name="material" class="form-select">
+            <option value="">-- --</option>
+            {% for m in materiales %}
+            <option value="{{ m }}" {% if manguera.material == m %}selected{% endif %}>{{ m }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="form-check mb-3">
+        <input type="checkbox" name="activa" class="form-check-input" id="activa" {% if manguera.activa %}checked{% endif %}>
+        <label class="form-check-label" for="activa">Activa</label>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a href="{{ url_for('mangueras.lista', instalacion_id=instalacion.id) }}" class="btn btn-link">Cancelar</a>
+</form>
+
+<form method="POST" action="{{ url_for('mangueras.eliminar', instalacion_id=instalacion.id, manguera_id=manguera.id) }}" class="mt-4 form-confirmar-password" data-sin-bloqueo
+      data-mensaje="¿Eliminar la manguera '{{ manguera.numero_serie }}'? Se borra también su historial de pruebas, reubicaciones y notas. Esta acción no se puede deshacer.">
+    <button type="submit" class="btn btn-outline-danger btn-sm"><i class="bi bi-trash me-1"></i>Eliminar manguera</button>
+</form>

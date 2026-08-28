@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Nota — {{ manguera.numero_serie }}{% endblock %}
+{% block content %}
+<div class="pagina-ancha">
+    <h1>Agregar nota de mantenimiento</h1>
+    <div class="tarjeta-doc angosta">
+        {% include "mangueras/_nota_fragment.html" %}
+    </div>
+</div>
+{% endblock %}

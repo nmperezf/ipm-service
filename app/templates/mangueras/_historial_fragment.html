@@ -1,0 +1,20 @@
+<div data-modal-titulo="Historial de mantenimiento"></div>
+<p class="text-muted mb-2">{{ manguera.numero_serie }}{% if manguera.equipo %} · {{ manguera.equipo.nombre }}{% endif %}</p>
+
+<ul class="timeline-doc">
+    {% for ev in eventos %}
+    <li>
+        <span class="punto {{ ev.tipo }}"></span>
+        <div>
+            <span class="fecha">{{ ev.fecha.strftime('%d/%m/%Y') }}</span>
+            <div class="texto">{{ ev.texto }}</div>
+        </div>
+    </li>
+    {% else %}
+    <li><div class="texto text-muted">Todavía no hay eventos registrados para esta manguera.</div></li>
+    {% endfor %}
+</ul>
+
+{% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+<a href="{{ url_for('mangueras.nota', instalacion_id=instalacion.id, manguera_id=manguera.id) }}" data-modal-form class="btn btn-outline-secondary btn-sm mt-2">+ Agregar nota</a>
+{% endif %}

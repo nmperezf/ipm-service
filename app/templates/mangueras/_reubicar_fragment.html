@@ -1,0 +1,37 @@
+<div data-modal-titulo="Reubicar manguera"></div>
+<p class="text-muted mb-1">{{ manguera.numero_serie }} · lugar de origen: <strong>{{ manguera.lugar_origen }}</strong> (se conserva siempre)</p>
+
+<form method="POST" class="mt-3">
+    <div class="mb-3">
+        <label class="form-label">Nuevo destino</label>
+        <select name="destino_equipo_id" id="destino_equipo_id" class="form-select" onchange="toggleDestinoLibre()">
+            <option value="">-- Elegir --</option>
+            {% for e in bies %}
+            <option value="{{ e.id }}">{{ e.nombre }}{% if e.ubicacion %} — {{ e.ubicacion }}{% endif %}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3" id="wrapper-destino-libre" style="display:none">
+        <label class="form-label">o un destino especial</label>
+        <select name="destino_libre" class="form-select">
+            <option value="">-- --</option>
+            {% for d in destinos_especiales %}
+            <option value="{{ d }}">{{ d }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Motivo</label>
+        <input type="text" name="motivo" class="form-control" placeholder="Ej: reemplazo temporal mientras se espera manguera nueva">
+    </div>
+    <button type="submit" class="btn btn-primary">Confirmar reubicación</button>
+    <a href="{{ url_for('mangueras.lista', instalacion_id=instalacion.id) }}" class="btn btn-link">Cancelar</a>
+</form>
+
+<script>
+function toggleDestinoLibre() {
+    var tieneEquipo = document.getElementById('destino_equipo_id').value !== '';
+    document.getElementById('wrapper-destino-libre').style.display = tieneEquipo ? 'none' : 'block';
+}
+toggleDestinoLibre();
+</script>

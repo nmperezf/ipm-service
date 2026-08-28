@@ -68,6 +68,25 @@ CLASIFICACIONES_OBSERVACION = [
 # el circuito de siempre (llega al cliente una vez Aprobada).
 VISIBILIDADES_OBSERVACION = ["Cliente", "Interna"]
 
+TIPOS_BIE = ["Tipo 1", "Tipo 2", "Tipo 3", "Tipo 4", "Tipo 5"]  # ver IT05 (Uruguay)
+DIAMETROS_BIE = ["25mm", "45mm", "63mm", "75mm"]
+TIPOS_PUNTERO = [
+    "Triple efecto",
+    "VIPER regulable",
+    "Boquilla cónica fija",
+    "Chorro pleno",
+    "Pistola ergonómica",
+    "Otro / especial",
+]
+TIPOS_RACOR = ["Storz", "Barcelona", "Guillemin", "Rosca NST"]
+ESTADOS_RACOR = ["Óptimo", "Desgastado", "Faltante"]
+ESTADOS_GABINETE = ["Excelente / en regla", "Con daños menores", "Requiere reemplazo"]
+RESULTADOS_PRUEBA_BOCA = ["Aprobada", "Observada", "Rechazada"]
+VEREDICTOS_BIE = ["Apta / operativa", "Con observaciones", "Fuera de servicio"]
+MATERIALES_MANGUERA = ["Semirrígida EN 694", "Sintética poliéster", "Caucho / goma", "Doble chaqueta"]
+RESULTADOS_PH = ["Aprobada", "Rechazada"]
+DESTINOS_ESPECIALES_MANGUERA = ["Pañol de reserva", "Taller / en prueba"]
+
 # Estado por punto de un checklist de inspección (campo tipo "estado" en el
 # schema de TipoFormulario) -- distinto de CLASIFICACIONES_OBSERVACION, que
 # es la clasificación de la deficiencia que un punto en "observado" o
@@ -1300,12 +1319,175 @@ class Equipo(db.Model):
     motor_horas_uso = db.Column(db.Float, nullable=True)
     motor_estado_bateria = db.Column(db.String(100), nullable=True)
 
+    # Datos de gabinete de BIE, solo aplican para tipo == "BIE". Es el estado
+    # en caché que se ve al abrir la ficha de inspección (app/routes/bie.py);
+    # el historial completo de cada inspección vive en InspeccionBie.
+    tipo_bie = db.Column(db.String(80), nullable=True)  # ver TIPOS_BIE
+    diametro_nominal = db.Column(db.String(10), nullable=True)  # ver DIAMETROS_BIE
+    tipo_puntero = db.Column(db.String(40), nullable=True)  # ver TIPOS_PUNTERO
+    tipo_racor = db.Column(db.String(20), nullable=True)  # ver TIPOS_RACOR
+    estado_racor = db.Column(db.String(20), nullable=True)  # ver ESTADOS_RACOR
+    llave_spanner = db.Column(db.Boolean, nullable=True)
+    valvula_operable = db.Column(db.Boolean, nullable=True)
+    manometro_bar = db.Column(db.Float, nullable=True)
+    estado_gabinete = db.Column(db.String(30), nullable=True)  # ver ESTADOS_GABINETE
+
     equipos_hijos = db.relationship(
         "Equipo", backref=db.backref("manifold", remote_side=[id]), lazy=True
     )
 
     def __repr__(self):
         return f"<Equipo {self.tipo}: {self.nombre}>"
+
+
+# ---------------------------------------------------------------------------
+# BIE — ficha de inspección y mangueras (prueba hidrostática, reubicación)
+# ---------------------------------------------------------------------------
+
+
+class InspeccionBie(db.Model):
+    """Historial de la ficha de inspección de una BIE: una fila por cada vez
+    que se guarda la pantalla completa (equipos/ficha_bie.html)."""
+
+    __tablename__ = "inspecciones_bie"
+
+    id = db.Column(db.Integer, primary_key=True)
+    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=False, index=True)
+    item_visita_id = db.Column(db.Integer, db.ForeignKey("items_visita.id"), nullable=True)
+    fecha = db.Column(db.Date, nullable=False)
+    fecha_prueba_boca = db.Column(db.Date, nullable=True)
+    resultado_prueba_boca = db.Column(db.String(20), nullable=True)  # ver RESULTADOS_PRUEBA_BOCA
+    veredicto = db.Column(db.String(30), nullable=False)  # ver VEREDICTOS_BIE
+    dictamen = db.Column(db.Text, nullable=True)
+    observacion_id = db.Column(db.Integer, db.ForeignKey("observaciones.id"), nullable=True)
+    realizado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
+
+    equipo = db.relationship("Equipo", backref=db.backref("inspecciones_bie", cascade="all, delete-orphan"))
+    item_visita = db.relationship("ItemVisita", backref="inspecciones_bie")
+    observacion = db.relationship("Observacion")
+    realizado_por = db.relationship("Usuario")
+
+    def __repr__(self):
+        return f"<InspeccionBie equipo={self.equipo_id} {self.fecha}>"
+
+
+class Manguera(db.Model):
+    """Manguera de BIE. Vive a nivel instalación (no atada de forma fija a un
+    equipo) porque se puede reubicar entre BIEs o mandar a pañol/taller —
+    ver ReubicacionManguera. equipo_id es la BIE donde está instalada hoy;
+    si es None, ubicacion_libre indica dónde está (pañol/taller)."""
+
+    __tablename__ = "mangueras"
+
+    id = db.Column(db.Integer, primary_key=True)
+    instalacion_id = db.Column(db.Integer, db.ForeignKey("instalaciones.id"), nullable=False, index=True)
+    equipo_id = db.Column(db.Integer, db.ForeignKey("equipos.id"), nullable=True, index=True)
+    ubicacion_libre = db.Column(db.String(100), nullable=True)  # ver DESTINOS_ESPECIALES_MANGUERA
+    numero_serie = db.Column(db.String(50), nullable=False)
+    diametro = db.Column(db.String(10), nullable=False)  # ver DIAMETROS_BIE
+    longitud_metros = db.Column(db.Float, nullable=True)
+    material = db.Column(db.String(30), nullable=True)  # ver MATERIALES_MANGUERA
+    lugar_origen = db.Column(db.String(150), nullable=False)  # snapshot inmutable, capturado al crear
+    fecha_ultima_ph = db.Column(db.Date, nullable=True)
+    fecha_vencimiento_ph = db.Column(db.Date, nullable=True)  # = ultima_ph + 5 años
+    resultado_ultima_ph = db.Column(db.String(20), nullable=True)
+    activa = db.Column(db.Boolean, default=True, nullable=False)
+
+    instalacion = db.relationship("Instalacion", backref=db.backref("mangueras", cascade="all, delete-orphan"))
+    equipo = db.relationship("Equipo", backref="mangueras")
+
+    @property
+    def lugar_actual(self):
+        return self.equipo.ubicacion if self.equipo else (self.ubicacion_libre or "Sin ubicación")
+
+    @property
+    def reubicada(self):
+        return self.lugar_actual != self.lugar_origen
+
+    @property
+    def estado_ph(self):
+        # Mientras está en el taller, el estado que importa es que está en
+        # ensayo -- no si la última PH quedó vieja mientras tanto (eso ya
+        # está en trámite).
+        if not self.equipo_id and self.ubicacion_libre == "Taller / en prueba":
+            return "En prueba"
+        if not self.fecha_vencimiento_ph:
+            return "Sin probar"
+        dias = (self.fecha_vencimiento_ph - date.today()).days
+        if dias < 0:
+            return "Vencida"
+        if dias <= 30:
+            return "Por vencer"
+        return "Vigente"
+
+    def __repr__(self):
+        return f"<Manguera {self.numero_serie}>"
+
+
+class PruebaHidrostatica(db.Model):
+    """Historial de ensayos de presión hidrostática de una manguera (NFPA
+    1962: vigencia quinquenal)."""
+
+    __tablename__ = "pruebas_hidrostaticas"
+
+    id = db.Column(db.Integer, primary_key=True)
+    manguera_id = db.Column(db.Integer, db.ForeignKey("mangueras.id"), nullable=False, index=True)
+    fecha = db.Column(db.Date, nullable=False)
+    presion_aplicada = db.Column(db.Float, nullable=True)
+    tiempo_minutos = db.Column(db.Float, nullable=True)
+    resultado = db.Column(db.String(20), nullable=False)  # ver RESULTADOS_PH
+    certificado = db.Column(db.String(150), nullable=True)  # nº certificado / técnico
+    observacion_id = db.Column(db.Integer, db.ForeignKey("observaciones.id"), nullable=True)
+    realizado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
+
+    manguera = db.relationship("Manguera", backref=db.backref("pruebas", cascade="all, delete-orphan"))
+    observacion = db.relationship("Observacion")
+    realizado_por = db.relationship("Usuario")
+
+    def __repr__(self):
+        return f"<PruebaHidrostatica manguera={self.manguera_id} {self.fecha}>"
+
+
+class ReubicacionManguera(db.Model):
+    """Historial de movimientos de una manguera entre BIEs / pañol / taller.
+    origen y destino son snapshots de texto (no FKs) para que el historial
+    quede legible aunque el equipo destino se elimine después."""
+
+    __tablename__ = "reubicaciones_manguera"
+
+    id = db.Column(db.Integer, primary_key=True)
+    manguera_id = db.Column(db.Integer, db.ForeignKey("mangueras.id"), nullable=False, index=True)
+    fecha = db.Column(db.Date, nullable=False)
+    origen = db.Column(db.String(150), nullable=False)
+    destino = db.Column(db.String(150), nullable=False)
+    motivo = db.Column(db.Text, nullable=True)
+    realizado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
+
+    manguera = db.relationship("Manguera", backref=db.backref("reubicaciones", cascade="all, delete-orphan"))
+    realizado_por = db.relationship("Usuario")
+
+    def __repr__(self):
+        return f"<ReubicacionManguera manguera={self.manguera_id} {self.origen} -> {self.destino}>"
+
+
+class NotaMantenimientoManguera(db.Model):
+    """Nota libre de mantenimiento sobre una manguera (ej. reempalme de
+    racor, inspección visual) — se muestra junto con pruebas y reubicaciones
+    en el modal de historial."""
+
+    __tablename__ = "notas_mantenimiento_manguera"
+
+    id = db.Column(db.Integer, primary_key=True)
+    manguera_id = db.Column(db.Integer, db.ForeignKey("mangueras.id"), nullable=False, index=True)
+    fecha = db.Column(db.Date, nullable=False)
+    texto = db.Column(db.Text, nullable=False)
+    realizado_por_id = db.Column(db.Integer, db.ForeignKey("usuarios.id"), nullable=False)
+
+    manguera = db.relationship("Manguera", backref=db.backref("notas", cascade="all, delete-orphan"))
+    realizado_por = db.relationship("Usuario")
+
+    def __repr__(self):
+        return f"<NotaMantenimientoManguera manguera={self.manguera_id} {self.fecha}>"
 
 
 # ---------------------------------------------------------------------------

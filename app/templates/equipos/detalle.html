@@ -122,6 +122,56 @@
             </div>
             {% endif %}
 
+            {% if equipo.tipo == 'BIE' %}
+            {% set ultima_inspeccion = equipo.inspecciones_bie|sort(attribute='fecha', reverse=true)|first %}
+            <div class="seccion-titulo-doc">Inspección de BIE</div>
+            <div class="card mb-3">
+                <div class="card-body">
+                    {% if ultima_inspeccion %}
+                    <div class="row g-2 mb-2 small text-muted">
+                        <div class="col-auto">Último veredicto:
+                            <span class="badge badge-{{ 'Cumplido' if ultima_inspeccion.veredicto == 'Apta / operativa' else ('Deficiencia.no.crítica' if ultima_inspeccion.veredicto == 'Con observaciones' else 'Deficiencia.crítica') }}">{{ ultima_inspeccion.veredicto }}</span>
+                        </div>
+                        <div class="col-auto">Fecha: <strong class="text-body">{{ ultima_inspeccion.fecha.strftime('%d/%m/%Y') }}</strong></div>
+                    </div>
+                    {% else %}
+                    <p class="text-muted small mb-2">Todavía no tiene ninguna inspección cargada.</p>
+                    {% endif %}
+                    <div class="mb-3">
+                        <a href="{{ url_for('bie.ficha', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-clipboard-check me-1"></i>{{ 'Editar' if ultima_inspeccion else 'Cargar' }} ficha de inspección
+                        </a>
+                        <a href="{{ url_for('mangueras.lista', instalacion_id=equipo.instalacion_id) }}" class="btn btn-sm btn-outline-dark">
+                            <i class="bi bi-droplet-half me-1"></i>Ver planilla de mangueras
+                        </a>
+                        {% if ultima_inspeccion %}
+                        <a href="{{ url_for('bie.ficha_pdf', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-dark" target="_blank">
+                            <i class="bi bi-file-earmark-pdf me-1"></i>PDF
+                        </a>
+                        {% endif %}
+                    </div>
+
+                    {% set inspecciones_recientes = equipo.inspecciones_bie|sort(attribute='fecha', reverse=true) %}
+                    {% if inspecciones_recientes|length > 1 %}
+                    <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>Fecha</th><th>Veredicto</th><th>Realizada por</th></tr></thead>
+                        <tbody>
+                            {% for insp in inspecciones_recientes[:5] %}
+                            <tr>
+                                <td>{{ insp.fecha.strftime('%d/%m/%Y') }}</td>
+                                <td><span class="badge badge-{{ 'Cumplido' if insp.veredicto == 'Apta / operativa' else ('Deficiencia.no.crítica' if insp.veredicto == 'Con observaciones' else 'Deficiencia.crítica') }}">{{ insp.veredicto }}</span></td>
+                                <td>{{ insp.realizado_por.nombre_completo }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             <div class="seccion-titulo-doc">Histórico y trazabilidad</div>
             {% if not grupos %}
             <div class="estado-vacio-doc">

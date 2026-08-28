@@ -1486,6 +1486,53 @@ html[data-bs-theme="dark"] .chip-secondary { background: #232734; color: #8A93A0
 }
 .tarjeta-doc.angosta { max-width: 640px; }
 
+/* ---- Ficha de BIE: selector de opciones grandes (tipo de boca, puntero) y
+   grupo-toggle (diámetro, spanner, válvula) -- mismo lenguaje visual que el
+   resto de .tarjeta-doc, sin componente nuevo, solo botones tildados con
+   --brand. ------------------------------------------------------------- */
+.selector-opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: .6rem; margin-bottom: 1.1rem; }
+.opcion-btn-doc {
+    text-align: left; background: var(--surface); border: 1px solid var(--border-strong);
+    border-radius: .5rem; padding: .7rem .8rem; cursor: pointer; font-family: var(--font-body);
+    width: 100%;
+}
+.opcion-btn-doc .titulo { font-weight: 700; font-size: .86rem; display: block; }
+.opcion-btn-doc .desc { font-size: .74rem; color: var(--ink-muted); display: block; margin-top: .2rem; line-height: 1.35; }
+.opcion-btn-doc.activa { border-color: var(--brand); border-width: 2px; padding: .65rem .75rem; background: var(--surface-alt); }
+.opcion-btn-doc.activa .titulo::after { content: " ✓"; color: var(--brand); }
+
+.grupo-toggle-doc { display: inline-flex; border: 1px solid var(--border-strong); border-radius: .4rem; overflow: hidden; }
+.grupo-toggle-doc button { font-family: var(--font-mono); font-size: .82rem; font-weight: 600; padding: .45rem .8rem; background: var(--surface); border: none; border-right: 1px solid var(--border-strong); cursor: pointer; color: var(--ink-muted); }
+.grupo-toggle-doc button:last-child { border-right: none; }
+.grupo-toggle-doc button.activo { background: var(--brand); color: #fff; }
+
+.veredicto-opciones-doc { display: flex; gap: .6rem; flex-wrap: wrap; margin-bottom: 1rem; }
+.veredicto-opciones-doc .opcion-radio-doc { flex: 1; min-width: 160px; display: flex; align-items: center; gap: .5rem; border: 1px solid var(--border-strong); border-radius: .5rem; padding: .65rem .8rem; cursor: pointer; font-size: .86rem; font-weight: 600; }
+.veredicto-opciones-doc .opcion-radio-doc.ok { color: var(--ok); }
+.veredicto-opciones-doc .opcion-radio-doc.warn { color: var(--warn); }
+.veredicto-opciones-doc .opcion-radio-doc.crit { color: var(--accent); }
+.veredicto-opciones-doc .opcion-radio-doc.seleccionada { border-width: 2px; border-color: currentColor; background: var(--surface-alt); }
+
+.badge-reubicada { background: var(--info-soft); color: var(--info); font-size: .66rem; padding: .2em .5em; border-radius: .3rem; font-weight: 700; text-transform: uppercase; letter-spacing: .02em; margin-left: .4rem; }
+
+.subficha { background: var(--surface-alt); border: 1px solid var(--border); border-radius: .5rem; padding: .9rem 1rem; height: 100%; }
+.subficha .subficha-titulo { font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; font-weight: 700; color: var(--ink-muted); margin-bottom: .5rem; }
+.dato-linea { display: flex; justify-content: space-between; gap: .8rem; font-size: .84rem; padding: .3rem 0; border-bottom: 1px dashed var(--border); }
+.dato-linea:last-child { border-bottom: none; }
+.dato-linea .k { color: var(--ink-muted); }
+.dato-linea .v { font-weight: 600; text-align: right; }
+.nota-implicita { font-size: .78rem; color: var(--ink-muted); background: var(--surface-alt); border: 1px dashed var(--border-strong); border-radius: .4rem; padding: .6rem .8rem; margin: .3rem 0 1rem; }
+
+.timeline-doc { list-style: none; margin: 0; padding: 0; }
+.timeline-doc li { display: flex; gap: .8rem; padding: .6rem 0; border-bottom: 1px dashed var(--border); }
+.timeline-doc li:last-child { border-bottom: none; }
+.timeline-doc .punto { width: 8px; height: 8px; border-radius: 50%; margin-top: .4rem; flex-shrink: 0; }
+.timeline-doc .punto.ph { background: var(--info); }
+.timeline-doc .punto.reubicacion { background: var(--warn); }
+.timeline-doc .punto.nota { background: var(--ink-faint); }
+.timeline-doc .fecha { font-family: var(--font-mono); font-size: .72rem; color: var(--ink-faint); }
+.timeline-doc .texto { font-size: .84rem; }
+
 .grid-inicio { display: grid; grid-template-columns: 1fr; gap: 1rem; align-items: start; }
 @media (min-width: 1100px) {
     .grid-inicio { grid-template-columns: minmax(0, 1fr) 340px; }

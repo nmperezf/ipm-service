@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Nueva manguera{% endblock %}
+{% block content %}
+<div class="pagina-ancha">
+    <h1>Nueva manguera</h1>
+    <div class="tarjeta-doc angosta">
+        {% include "mangueras/_form_fragment.html" %}
+    </div>
+</div>
+{% endblock %}

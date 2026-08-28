@@ -136,6 +136,8 @@ def create_app():
     from app.routes.coordinacion import coordinacion_bp
     from app.routes.busqueda import busqueda_bp
     from app.routes.push import push_bp
+    from app.routes.bie import bie_bp
+    from app.routes.mangueras import mangueras_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
@@ -165,6 +167,8 @@ def create_app():
     app.register_blueprint(coordinacion_bp)
     app.register_blueprint(busqueda_bp)
     app.register_blueprint(push_bp)
+    app.register_blueprint(bie_bp)
+    app.register_blueprint(mangueras_bp)
 
     @app.errorhandler(404)
     def error_404(error):

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Registrar PH — {{ manguera.numero_serie }}{% endblock %}
+{% block content %}
+<div class="pagina-ancha">
+    <h1>Registrar prueba hidrostática</h1>
+    <div class="tarjeta-doc angosta">
+        {% include "mangueras/_ph_fragment.html" %}
+    </div>
+</div>
+{% endblock %}

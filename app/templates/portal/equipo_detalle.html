@@ -67,6 +67,35 @@
             </div>
             {% endif %}
 
+            {% if equipo.tipo == 'BIE' %}
+            <div class="seccion-titulo-doc">Inspección de BIE</div>
+            <div class="card mb-3">
+                <div class="card-body">
+                    {% if not ultimas_inspecciones_bie %}
+                    <div class="estado-vacio-doc">
+                        <i class="bi bi-clipboard-check"></i>
+                        <p class="mb-0">Todavía no hay inspecciones cargadas para este equipo.</p>
+                    </div>
+                    {% else %}
+                    <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead><tr><th>Fecha</th><th>Veredicto</th><th></th></tr></thead>
+                        <tbody>
+                            {% for insp in ultimas_inspecciones_bie %}
+                            <tr>
+                                <td>{{ insp.fecha.strftime('%d/%m/%Y') }}</td>
+                                <td><span class="badge badge-{{ 'Cumplido' if insp.veredicto == 'Apta / operativa' else ('Deficiencia.no.crítica' if insp.veredicto == 'Con observaciones' else 'Deficiencia.crítica') }}">{{ insp.veredicto }}</span></td>
+                                <td><a href="{{ url_for('bie.ficha_pdf', equipo_id=equipo.id) }}" class="btn btn-sm btn-outline-dark" target="_blank">PDF</a></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+
             {% if deficiencias_abiertas %}
             <div class="seccion-titulo-doc">Deficiencias abiertas</div>
             <div class="table-responsive">

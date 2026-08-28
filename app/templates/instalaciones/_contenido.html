@@ -20,6 +20,9 @@
                             <li><a class="dropdown-item" href="{{ url_for('instalaciones.editar', instalacion_id=instalacion.id) }}" data-modal-form><i class="bi bi-pencil me-2"></i>Editar instalación</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('contratos.listar_por_instalacion', instalacion_id=instalacion.id) }}"><i class="bi bi-file-earmark-text me-2"></i>Servicios contratados</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('instalaciones.equipos_lista', instalacion_id=instalacion.id) }}"><i class="bi bi-hdd-stack me-2"></i>Equipos</a></li>
+                            {% if instalacion.equipos|selectattr('tipo', 'equalto', 'BIE')|selectattr('activo')|list %}
+                            <li><a class="dropdown-item" href="{{ url_for('mangueras.lista', instalacion_id=instalacion.id) }}"><i class="bi bi-droplet-half me-2"></i>Mangueras (BIE)</a></li>
+                            {% endif %}
                             <li><a class="dropdown-item" href="{{ url_for('historial.ver', instalacion_id=instalacion.id) }}"><i class="bi bi-clock-history me-2"></i>Histórico técnico</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('observaciones.nueva', instalacion_id=instalacion.id) }}" data-modal-form><i class="bi bi-exclamation-triangle me-2"></i>Nueva observación</a></li>
                             <li><a class="dropdown-item" href="{{ url_for('equipos.nuevo', instalacion_id=instalacion.id) }}" data-modal-form><i class="bi bi-hdd-stack me-2"></i>Agregar equipo</a></li>

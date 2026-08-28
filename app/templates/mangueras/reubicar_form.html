@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Reubicar — {{ manguera.numero_serie }}{% endblock %}
+{% block content %}
+<div class="pagina-ancha">
+    <h1>Reubicar manguera</h1>
+    <div class="tarjeta-doc angosta">
+        {% include "mangueras/_reubicar_fragment.html" %}
+    </div>
+</div>
+{% endblock %}

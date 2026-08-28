@@ -1,0 +1,59 @@
+<div data-modal-titulo="Nueva manguera"></div>
+<p class="text-muted mb-1">{{ instalacion.nombre }}</p>
+
+<form method="POST" class="mt-3">
+    <div class="mb-3">
+        <label class="form-label">N° de serie / identificación</label>
+        <input type="text" name="numero_serie" class="form-control" required>
+    </div>
+    <div class="row">
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Diámetro</label>
+            <select name="diametro" class="form-select" required>
+                {% for d in diametros %}
+                <option value="{{ d }}">{{ d }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6 mb-3">
+            <label class="form-label">Longitud (m)</label>
+            <input type="number" step="any" name="longitud_metros" class="form-control">
+        </div>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">Material</label>
+        <select name="material" class="form-select">
+            <option value="">-- --</option>
+            {% for m in materiales %}
+            <option value="{{ m }}">{{ m }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3">
+        <label class="form-label">BIE donde está instalada</label>
+        <select name="equipo_id" id="equipo_id" class="form-select" onchange="toggleUbicacionLibre()">
+            <option value="">-- Sin asignar (pañol / taller) --</option>
+            {% for e in bies %}
+            <option value="{{ e.id }}">{{ e.nombre }}{% if e.ubicacion %} — {{ e.ubicacion }}{% endif %}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="mb-3" id="wrapper-ubicacion-libre">
+        <label class="form-label">Ubicación</label>
+        <select name="ubicacion_libre" class="form-select">
+            {% for d in destinos_especiales %}
+            <option value="{{ d }}">{{ d }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a href="{{ url_for('mangueras.lista', instalacion_id=instalacion.id) }}" class="btn btn-link">Cancelar</a>
+</form>
+
+<script>
+function toggleUbicacionLibre() {
+    var tieneEquipo = document.getElementById('equipo_id').value !== '';
+    document.getElementById('wrapper-ubicacion-libre').style.display = tieneEquipo ? 'none' : 'block';
+}
+toggleUbicacionLibre();
+</script>

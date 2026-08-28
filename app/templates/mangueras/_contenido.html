@@ -1,0 +1,87 @@
+{% set migas = [
+    (instalacion.cliente.nombre, url_for('clientes.detalle', cliente_id=instalacion.cliente_id)),
+    (instalacion.nombre, url_for('instalaciones.detalle', instalacion_id=instalacion.id)),
+    ('Mangueras', none),
+] %}
+{% include "_migas.html" %}
+
+<div class="cab-instalacion">
+    <div>
+        <h1 class="mb-0">Planilla de mangueras &amp; PH</h1>
+        <p class="text-muted mb-0">Control de ensayos quinquenales, asignación en BIEs y trazabilidad de reubicación</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+        <a href="{{ url_for('mangueras.nueva', instalacion_id=instalacion.id) }}" data-modal-form class="btn btn-primary btn-sm"><i class="bi bi-plus-lg me-1"></i>Nueva manguera</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="rail-stats mb-3">
+    <div class="stat{{ '' if stats.total else ' calmo' }}">
+        <span class="num">{{ stats.total }}</span>
+        <span class="etiqueta">Total en parque</span>
+    </div>
+    <div class="stat{{ '' if stats.vigentes else ' calmo' }}">
+        <span class="num">{{ stats.vigentes }}</span>
+        <span class="etiqueta">PH vigente</span>
+    </div>
+    <div class="stat{{ '' if stats.por_vencer else ' calmo' }}">
+        <span class="num">{{ stats.por_vencer }}</span>
+        <span class="etiqueta">Por vencer (&lt;30 días)</span>
+    </div>
+    <div class="stat{{ '' if stats.vencidas else ' calmo' }}">
+        <span class="num">{{ stats.vencidas }}</span>
+        <span class="etiqueta">PH vencida</span>
+    </div>
+</div>
+
+<div class="tarjeta-doc">
+    <div class="table-responsive">
+    <table class="table table-sm mb-0">
+        <thead>
+            <tr>
+                <th>Manguera / serie</th>
+                <th>BIE asignada</th>
+                <th>Lugar actual</th>
+                <th>Diámetro / long.</th>
+                <th>Última PH</th>
+                <th>Vencimiento PH</th>
+                <th>Estado</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for m in mangueras %}
+            <tr>
+                <td><strong>{{ m.numero_serie }}</strong><br><span class="text-muted small">{{ m.material or '-' }}</span></td>
+                <td>{{ m.equipo.nombre if m.equipo else '-' }}</td>
+                <td>{{ m.lugar_actual }}{% if m.reubicada %}<span class="badge-reubicada">Reubicada</span>{% endif %}</td>
+                <td>{{ m.diametro }}{% if m.longitud_metros %} · {{ m.longitud_metros }} m{% endif %}</td>
+                <td>{{ m.fecha_ultima_ph.strftime('%d/%m/%Y') if m.fecha_ultima_ph else '-' }}</td>
+                <td>{{ m.fecha_vencimiento_ph.strftime('%d/%m/%Y') if m.fecha_vencimiento_ph else '-' }}</td>
+                <td>
+                    {% if m.estado_ph == 'En prueba' %}<span class="badge badge-Programado">En prueba</span>
+                    {% elif m.estado_ph == 'Vigente' %}<span class="badge badge-Cumplido">Vigente</span>
+                    {% elif m.estado_ph == 'Por vencer' %}<span class="badge badge-Deficiencia.no.crítica">Por vencer</span>
+                    {% elif m.estado_ph == 'Vencida' %}<span class="badge badge-Vencido">Vencida</span>
+                    {% else %}<span class="badge badge-Pendiente">Sin probar</span>{% endif %}
+                </td>
+                <td class="text-nowrap">
+                    {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+                    <a href="{{ url_for('mangueras.registrar_ph', instalacion_id=instalacion.id, manguera_id=m.id) }}" data-modal-form class="btn btn-sm btn-outline-primary">PH</a>
+                    <a href="{{ url_for('mangueras.reubicar', instalacion_id=instalacion.id, manguera_id=m.id) }}" data-modal-form class="btn btn-sm btn-outline-secondary">Reubicar</a>
+                    {% endif %}
+                    <a href="{{ url_for('mangueras.historial', instalacion_id=instalacion.id, manguera_id=m.id) }}" data-modal-form class="btn btn-sm btn-outline-dark">Historial</a>
+                    {% if current_user.rol in ('Administrador', 'Jefe', 'Técnico') %}
+                    <a href="{{ url_for('mangueras.editar', instalacion_id=instalacion.id, manguera_id=m.id) }}" data-modal-form class="btn btn-sm btn-outline-secondary" title="Editar / eliminar"><i class="bi bi-pencil"></i></a>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="8"><div class="estado-vacio-doc"><i class="bi bi-droplet-half"></i><p class="mb-0">Todavía no hay mangueras cargadas en esta instalación.</p></div></td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
