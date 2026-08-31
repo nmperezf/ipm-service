@@ -1,7 +1,7 @@
 /* ==========================================================================
    IPM Service — sistema de diseño
    Paleta: negro/carbón (marca, acciones primarias) + rojo (acento y crítico)
-   Tipografía: Space Grotesk (títulos) / Inter (texto) / JetBrains Mono (datos)
+   Tipografía: Plus Jakarta Sans (títulos y texto) / JetBrains Mono (datos)
    ========================================================================== */
 
 :root {
@@ -27,8 +27,8 @@
     --plan: #6E56CF;
     --shadow-doc: 0 1px 2px rgba(20,24,31,.05), 0 8px 24px -16px rgba(20,24,31,.18);
 
-    --font-display: 'Space Grotesk', system-ui, sans-serif;
-    --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+    --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+    --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
     /* Overrides de variables de Bootstrap 5.3: esto retiñe utilidades como
@@ -1170,15 +1170,20 @@ html.sidebar-oculta .nav-item-grupo .nav-subgrupo {
     .login-form-wrap .sub { margin-bottom: 1.5rem; }
 }
 
-/* ---- Barra de navegación inferior en celular (mobile-first) --------------
+/* ---- Barra de navegación inferior en celular y tablet (mobile-first) -----
    Los accesos más usados, al alcance del pulgar — patrón estándar en apps
-   de uso en campo. Solo visible por debajo de 576px; en pantalla más
-   grande la navegación sigue siendo la barra de arriba de siempre. */
+   de uso en campo. Visible hasta 1024px (celular Y tablet táctil): abajo
+   de 992px ya no había sidebar (queda el navbar colapsable de arriba +
+   esta barra); entre 992 y 1024px el sidebar de escritorio SÍ aparecería
+   por el breakpoint "lg" de Bootstrap (992px), así que ese rango angosto
+   se corrige aparte más abajo para que una tablet táctil (768–1024px) no
+   herede una barra lateral pensada para mouse. A partir de 1025px sigue
+   el patrón de escritorio de siempre. */
 
 .nav-inferior {
     display: none;
 }
-@media (max-width: 575.98px) {
+@media (max-width: 1024px) {
     .nav-inferior {
         display: flex;
         position: fixed;
@@ -1201,6 +1206,8 @@ html.sidebar-oculta .nav-item-grupo .nav-subgrupo {
         font-weight: 600;
         color: var(--ink-muted);
         text-decoration: none;
+        min-height: 44px;
+        justify-content: center;
     }
     .nav-inferior a i {
         font-size: 1.15rem;
@@ -1212,6 +1219,41 @@ html.sidebar-oculta .nav-item-grupo .nav-subgrupo {
     body.con-nav-inferior {
         padding-bottom: 3.6rem;
     }
+}
+/* Tablet (576–1024px): mismos accesos, pero con más aire — dedos en vez de
+   mouse, y suele sostenerse con las dos manos en vez de con el pulgar. */
+@media (min-width: 576px) and (max-width: 1024px) {
+    .nav-inferior a {
+        padding: .7rem 0 .6rem;
+        font-size: .74rem;
+        min-height: 52px;
+    }
+    .nav-inferior a i {
+        font-size: 1.35rem;
+    }
+    body.con-nav-inferior {
+        padding-bottom: 4.4rem;
+    }
+}
+/* Banda angosta 992–1024px: acá Bootstrap ya mostraría el sidebar de
+   escritorio (su breakpoint "lg" corta en 992px) y escondería el navbar
+   colapsable de arriba -- se revierten los dos para que en ese rango siga
+   el mismo patrón "navbar arriba + accesos abajo" que el resto de la
+   franja táctil, en vez de mezclar sidebar de mouse con nav-inferior. */
+@media (min-width: 992px) and (max-width: 1024px) {
+    .app-shell { flex-direction: column !important; }
+    .sidebar-derecho { display: none !important; }
+    .ipm-navbar { display: block !important; }
+    /* .barra-utilitaria (tema/notificaciones) reemplaza al navbar de arriba
+       solo cuando ESE está oculto (≥992px) -- acá el navbar vuelve a
+       aparecer, así que hay que apagarla para no duplicar los íconos. */
+    .barra-utilitaria { display: none !important; }
+    /* El pie de página se clava a la izquierda del sidebar (izq: 264px) a
+       partir de 992px -- sin sidebar acá, queda flotando con un hueco
+       vacío a la izquierda y superpuesto al nav-inferior. Vuelve al flujo
+       normal, como en celular. */
+    .zona-contenido { padding-bottom: 0 !important; }
+    .ipm-footer { position: static !important; left: auto !important; right: auto !important; }
 }
 
 /* ==========================================================================
