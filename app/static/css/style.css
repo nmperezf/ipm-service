@@ -276,7 +276,7 @@ small, .small, .text-muted {
 /* ---- Navbar ------------------------------------------------------------ */
 
 .navbar.ipm-navbar {
-    background: #000000;
+    background: #334155;
     box-shadow: 0 1px 0 rgba(0,0,0,.08);
     border-bottom: 3px solid var(--accent);
     position: relative;
@@ -388,7 +388,7 @@ small, .small, .text-muted {
 
 .sidebar-derecho {
     flex-direction: column;
-    background: #000000;
+    background: #334155;
     width: 264px;
     flex-shrink: 0;
 }
@@ -1094,7 +1094,7 @@ html.sidebar-oculta .nav-item-grupo .nav-subgrupo {
 
 .ipm-footer {
     flex-shrink: 0;
-    background: #000000;
+    background: #334155;
     text-align: center;
     padding: 1rem;
 }
@@ -1128,7 +1128,7 @@ html.sidebar-oculta .nav-item-grupo .nav-subgrupo {
     .login-shell { flex-direction: row; }
 }
 .login-marca {
-    background: #000000;
+    background: #334155;
     color: #fff;
     flex-shrink: 0;
     padding: 2.2rem 2rem;
@@ -1260,8 +1260,9 @@ html.sidebar-oculta .nav-item-grupo .nav-subgrupo {
    Modo oscuro — se activa con <html data-bs-theme="dark"> (ver base.html,
    botón en la navbar + localStorage). Mismos tokens que :root, retiñe
    también las variables de Bootstrap para que inputs, dropdowns y modales
-   nativos se pinten solos. El navbar se queda negro en los dos modos: es
-   una decisión de marca, no una superficie que deba invertirse.
+   nativos se pinten solos. El navbar se queda en el gris de marca (#334155)
+   en los dos modos: es una decisión de marca, no una superficie que deba
+   invertirse.
    ========================================================================== */
 
 html[data-bs-theme="dark"] {
