@@ -26,18 +26,18 @@ from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.platypus import SimpleDocTemplate
 
-INK = colors.HexColor("#14181F")
-INK_MUTED = colors.HexColor("#5B6773")
-INK_FAINT = colors.HexColor("#9AA1AC")
-BORDE = colors.HexColor("#DEE2D8")
-BORDE_FUERTE = colors.HexColor("#C7CDC0")
-SURFACE_MUTED = colors.HexColor("#F4F6F8")
-ACCENT = colors.HexColor("#E2131D")
-ACCENT_SOFT = colors.HexColor("#FBEAE7")
-SLATE = colors.HexColor("#2B3D4F")
-SLATE_SOFT = colors.HexColor("#EDF1F3")
-VERDE = colors.HexColor("#1F8A54")
-VERDE_SUAVE = colors.HexColor("#E6F4EB")
+INK = colors.HexColor("#1E2530")
+INK_MUTED = colors.HexColor("#64748B")
+INK_FAINT = colors.HexColor("#94A3B8")
+BORDE = colors.HexColor("#E2E8F0")
+BORDE_FUERTE = colors.HexColor("#CBD5E1")
+SURFACE_MUTED = colors.HexColor("#F8FAFC")
+ACCENT = colors.HexColor("#EA580C")
+ACCENT_SOFT = colors.HexColor("#FDEAD9")
+SLATE = colors.HexColor("#334155")
+SLATE_SOFT = colors.HexColor("#EEF1F4")
+VERDE = colors.HexColor("#16A34A")
+VERDE_SUAVE = colors.HexColor("#DCFCE7")
 
 TAGLINE = "IPM Manager — Gestión de mantenimiento de sistemas contra incendio en Uruguay"
 

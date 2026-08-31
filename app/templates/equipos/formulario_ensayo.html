@@ -156,8 +156,8 @@
                     <canvas id="grafico-qh" height="110"></canvas>
                     <div class="d-flex gap-3 flex-wrap small text-muted mt-2">
                         <span><i class="d-inline-block" style="width:18px; height:3px; background:#1A2233;"></i> Curva de fábrica</span>
-                        <span><i class="d-inline-block" style="width:18px; height:0; border-top:2px dashed #B5730A;"></i> Ensayo sin ajustar</span>
-                        <span><i class="d-inline-block" style="width:18px; height:3px; background:#E2131D;"></i> Ensayo ajustado a RPM nominal</span>
+                        <span><i class="d-inline-block" style="width:18px; height:0; border-top:2px dashed #B45309;"></i> Ensayo sin ajustar</span>
+                        <span><i class="d-inline-block" style="width:18px; height:3px; background:#EA580C;"></i> Ensayo ajustado a RPM nominal</span>
                     </div>
                 </div>
             </div>
@@ -306,8 +306,8 @@ function actualizarGrafico(netas, adjs) {
                 labels,
                 datasets: [
                     { label: 'Curva de fábrica', data: curvaFabrica.presiones, borderColor: '#1A2233', backgroundColor: '#1A2233', tension: .35, pointRadius: 4, borderWidth: 2.5, spanGaps: true },
-                    { label: 'Ensayo sin ajustar', data: netas, borderColor: '#B5730A', backgroundColor: '#B5730A', borderDash: [6, 4], tension: .35, pointRadius: 4, borderWidth: 2 },
-                    { label: 'Ensayo ajustado a RPM nominal', data: adjs, borderColor: '#E2131D', backgroundColor: '#E2131D', tension: .35, pointRadius: 4, borderWidth: 2.5 },
+                    { label: 'Ensayo sin ajustar', data: netas, borderColor: '#B45309', backgroundColor: '#B45309', borderDash: [6, 4], tension: .35, pointRadius: 4, borderWidth: 2 },
+                    { label: 'Ensayo ajustado a RPM nominal', data: adjs, borderColor: '#EA580C', backgroundColor: '#EA580C', tension: .35, pointRadius: 4, borderWidth: 2.5 },
                 ],
             },
             options: {

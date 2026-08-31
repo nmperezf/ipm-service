@@ -22,9 +22,9 @@ INK_FAINT_HEX = "#9AA1AC"
 INK_MUTED_HEX = "#5B6773"
 
 COLOR_ESTADO_HEX = {
-    "Conforme": "#1F8A54",
-    "Observado": "#B5730A",
-    "Deficiencia": "#E2131D",
+    "Conforme": "#16A34A",
+    "Observado": "#B45309",
+    "Deficiencia": "#EA580C",
     "N/A": "#9AA1AC",
 }
 
@@ -200,7 +200,7 @@ def generar_pdf_informe_categoria(item, categoria, secciones, ensayos, observaci
                     criterio_0 = validacion.get("criterio_1") if validacion else None
                     if criterio_0:
                         estado_ok = criterio_0["paso"]
-                        color_ok = "#1F8A54" if estado_ok else "#E2131D"
+                        color_ok = "#16A34A" if estado_ok else "#EA580C"
                         texto_ok = "OK" if estado_ok else "NO CUMPLE"
                         bloque_churn.append(Paragraph(
                             f"Presión neta a churn: <b>{criterio_0['valor_ensayo']} PSI</b> "
@@ -228,7 +228,7 @@ def generar_pdf_informe_categoria(item, categoria, secciones, ensayos, observaci
             Paragraph("Descripción", celda_encabezado),
         ]]
         for o in observaciones:
-            color_hex = "#E2131D" if o.clasificacion == "Deficiencia crítica" else INK_MUTED_HEX
+            color_hex = "#EA580C" if o.clasificacion == "Deficiencia crítica" else INK_MUTED_HEX
             filas_obs.append([
                 Paragraph(f"<font color='{color_hex}'><b>{o.clasificacion}</b></font>", celda),
                 Paragraph(o.equipo.nombre if o.equipo else "-", celda),

@@ -168,8 +168,8 @@
                     <canvas id="grafico-ensayo" height="110"></canvas>
                     <div class="d-flex gap-3 flex-wrap small text-muted mt-2">
                         <span><i class="d-inline-block" style="width:18px; height:3px; background:#1A2233;"></i> Curva de fábrica</span>
-                        <span><i class="d-inline-block" style="width:18px; height:0; border-top:2px dashed #B5730A;"></i> Ensayo sin ajustar</span>
-                        <span><i class="d-inline-block" style="width:18px; height:3px; background:#E2131D;"></i> Ensayo ajustado a RPM nominal</span>
+                        <span><i class="d-inline-block" style="width:18px; height:0; border-top:2px dashed #B45309;"></i> Ensayo sin ajustar</span>
+                        <span><i class="d-inline-block" style="width:18px; height:3px; background:#EA580C;"></i> Ensayo ajustado a RPM nominal</span>
                     </div>
                 </div>
             </div>
@@ -259,22 +259,22 @@ new Chart(document.getElementById('grafico-ensayo'), {
             {
                 label: 'Ensayo (ajustado a RPM nominal)',
                 data: grafico.ensayo.suave_x.map(function (x, i) { return { x: x, y: grafico.ensayo.suave_y[i] }; }),
-                borderColor: '#E2131D', backgroundColor: '#E2131D', pointRadius: 0, borderWidth: 2,
+                borderColor: '#EA580C', backgroundColor: '#EA580C', pointRadius: 0, borderWidth: 2,
             },
             {
                 label: 'Ensayo (puntos)',
                 data: grafico.caudales.map(function (c, i) { return { x: c, y: grafico.ensayo.puntos[i] }; }),
-                borderColor: '#E2131D', backgroundColor: '#E2131D', showLine: false, pointRadius: 4,
+                borderColor: '#EA580C', backgroundColor: '#EA580C', showLine: false, pointRadius: 4,
             },
             {
                 label: 'Ensayo (sin ajustar)',
                 data: grafico.sin_ajustar.suave_x.map(function (x, i) { return { x: x, y: grafico.sin_ajustar.suave_y[i] }; }),
-                borderColor: '#B5730A', backgroundColor: '#B5730A', pointRadius: 0, borderWidth: 2, borderDash: [6, 4],
+                borderColor: '#B45309', backgroundColor: '#B45309', pointRadius: 0, borderWidth: 2, borderDash: [6, 4],
             },
             {
                 label: 'Ensayo sin ajustar (puntos)',
                 data: grafico.caudales.map(function (c, i) { return { x: c, y: grafico.sin_ajustar.puntos[i] }; }),
-                borderColor: '#B5730A', backgroundColor: '#B5730A', showLine: false, pointRadius: 4, pointStyle: 'triangle',
+                borderColor: '#B45309', backgroundColor: '#B45309', showLine: false, pointRadius: 4, pointStyle: 'triangle',
             },
         ],
     },

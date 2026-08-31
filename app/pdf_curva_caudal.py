@@ -101,16 +101,16 @@ def _grafico_curvas(gpm, presiones_fabrica, presiones_ensayo_ajustadas, presione
     gpm_fab_validos = [g for g, p in zip(gpm, fabrica_ft) if p is not None]
     fabrica_ft_validos = [p for p in fabrica_ft if p is not None]
     xs_fabrica, ys_fabrica = curva_suavizada(gpm_fab_validos, fabrica_ft_validos)
-    ax.plot(xs_fabrica, ys_fabrica, color="#14181F", linewidth=1.8, label="Curva de fábrica")
-    ax.scatter(gpm_fab_validos, fabrica_ft_validos, color="#14181F", zorder=3, s=22)
+    ax.plot(xs_fabrica, ys_fabrica, color="#1E2530", linewidth=1.8, label="Curva de fábrica")
+    ax.scatter(gpm_fab_validos, fabrica_ft_validos, color="#1E2530", zorder=3, s=22)
 
     xs_sin_ajustar, ys_sin_ajustar = curva_suavizada(gpm, sin_ajustar_ft)
-    ax.plot(xs_sin_ajustar, ys_sin_ajustar, color="#B5730A", linewidth=1.8, linestyle="--", label="Ensayo (sin ajustar)")
-    ax.scatter(gpm, sin_ajustar_ft, color="#B5730A", zorder=3, marker="^", s=22)
+    ax.plot(xs_sin_ajustar, ys_sin_ajustar, color="#B45309", linewidth=1.8, linestyle="--", label="Ensayo (sin ajustar)")
+    ax.scatter(gpm, sin_ajustar_ft, color="#B45309", zorder=3, marker="^", s=22)
 
     xs_ensayo, ys_ensayo = curva_suavizada(gpm, ajustada_ft)
-    ax.plot(xs_ensayo, ys_ensayo, color="#E2131D", linewidth=1.8, label="Ensayo (ajustado a RPM nominal)")
-    ax.scatter(gpm, ajustada_ft, color="#E2131D", zorder=3, s=22)
+    ax.plot(xs_ensayo, ys_ensayo, color="#EA580C", linewidth=1.8, label="Ensayo (ajustado a RPM nominal)")
+    ax.scatter(gpm, ajustada_ft, color="#EA580C", zorder=3, s=22)
 
     # Referencias NFPA 25 — no son datos medidos, son los dos puntos que
     # define la norma: el punto nominal (100% del caudal, a la presión
@@ -363,9 +363,9 @@ def generar_pdf_ensayo(ensayo):
             nombre = NOMBRES_CRITERIO.get(clave, clave)
             formulas.append(f"{nombre}: {criterio['descripcion']}")
             if criterio["paso"]:
-                estado_cell = Paragraph("<font color='#1F8A54'><b>OK</b></font>", celda)
+                estado_cell = Paragraph("<font color='#16A34A'><b>OK</b></font>", celda)
             else:
-                estado_cell = Paragraph("<font color='#E2131D'><b>NO CUMPLE</b></font>", celda)
+                estado_cell = Paragraph("<font color='#EA580C'><b>NO CUMPLE</b></font>", celda)
             filas_crit.append([
                 Paragraph(f"<b>{nombre}</b>", celda),
                 Paragraph(con_ft(criterio["valor_ensayo"]), celda_num),

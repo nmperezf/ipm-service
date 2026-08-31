@@ -78,7 +78,7 @@ class TestEnviarPushAgrupado:
         assert mensaje.notification.title == cliente.nombre
         assert mensaje.notification.body == "Observación nueva (Deficiencia crítica) — Bomba 1"
         assert mensaje.android.notification.tag == f"observacion_nueva-{cliente.id}"
-        assert mensaje.android.notification.color == "#E2131D"  # observacion_nueva -> severidad "critico"
+        assert mensaje.android.notification.color == "#EA580C"  # observacion_nueva -> severidad "critico"
 
     def test_grupo_de_varias_usa_cantidad_y_plural(self, app, db, empresa, cliente, usuario_jefe, monkeypatch):
         capturado = {}

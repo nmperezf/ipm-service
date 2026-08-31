@@ -22,10 +22,10 @@ from app.models import Notificacion, PushToken
 # el mismo (silueta monocromática, ver mobile/android/.../ic_stat_notification):
 # Android lo tiñe con este color, es el mecanismo nativo para esto.
 COLOR_POR_SEVERIDAD = {
-    "critico": "#E2131D",
-    "alerta": "#B5730A",
-    "ok": "#1F8A54",
-    "info": "#2C6E8C",
+    "critico": "#EA580C",
+    "alerta": "#B45309",
+    "ok": "#16A34A",
+    "info": "#2563EB",
 }
 
 _firebase_app = None

@@ -1,34 +1,34 @@
 /* ==========================================================================
    IPM Service — sistema de diseño
-   Paleta: negro/carbón (marca, acciones primarias) + rojo (acento y crítico)
-   Tipografía: Plus Jakarta Sans (títulos y texto) / JetBrains Mono (datos)
+   Paleta: gris industrial (marca) + naranja de seguridad (acento y crítico)
+   Tipografía: IBM Plex Sans Condensed (títulos) / IBM Plex Sans (texto) / JetBrains Mono (datos)
    ========================================================================== */
 
 :root {
-    --ink: #14181F;
-    --ink-muted: #565F6E;
-    --ink-faint: #9198A3;
+    --ink: #1E2530;
+    --ink-muted: #64748B;
+    --ink-faint: #94A3B8;
     --surface: #FFFFFF;
-    --surface-muted: #F3F4F0;
-    --surface-alt: #FAFAF8;
-    --border: #E1E3DB;
-    --border-strong: #CBCEC4;
+    --surface-muted: #EEF1F4;
+    --surface-alt: #F8FAFC;
+    --border: #E2E8F0;
+    --border-strong: #CBD5E1;
 
-    --brand: #14181F;
-    --brand-dark: #000000;
-    --accent: #E2131D;
-    --accent-soft: #FBEAE7;
-    --warn-soft: #FDF2E3;
-    --info-soft: #EAF1FA;
-    --ok-soft: #E5F4EC;
-    --warn: #B5730A;
-    --ok: #1F8A54;
-    --info: #2C6E8C;
+    --brand: #334155;
+    --brand-dark: #1E2530;
+    --accent: #EA580C;
+    --accent-soft: #FDEAD9;
+    --warn-soft: #FEF3C7;
+    --info-soft: #DBEAFE;
+    --ok-soft: #DCFCE7;
+    --warn: #B45309;
+    --ok: #16A34A;
+    --info: #2563EB;
     --plan: #6E56CF;
-    --shadow-doc: 0 1px 2px rgba(20,24,31,.05), 0 8px 24px -16px rgba(20,24,31,.18);
+    --shadow-doc: 0 1px 2px rgba(30,37,48,.05), 0 8px 24px -16px rgba(30,37,48,.18);
 
-    --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
-    --font-body: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-display: 'IBM Plex Sans Condensed', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Menlo, monospace;
 
     /* Overrides de variables de Bootstrap 5.3: esto retiñe utilidades como
@@ -36,31 +36,31 @@
        leen estas variables (via su versión -rgb). Los botones (.btn-*) NO
        las leen — Bootstrap los compila con sus propios colores fijos por
        variante, así que van recableados aparte más abajo. */
-    --bs-primary: #1A2233;
-    --bs-primary-rgb: 26, 34, 51;
-    --bs-secondary: #5B6673;
-    --bs-secondary-rgb: 91, 102, 115;
-    --bs-success: #1F8A54;
-    --bs-success-rgb: 31, 138, 84;
-    --bs-danger: #E2131D;
-    --bs-danger-rgb: 226, 19, 29;
-    --bs-warning: #B5730A;
-    --bs-warning-rgb: 181, 115, 10;
-    --bs-info: #2C6E8C;
-    --bs-info-rgb: 44, 110, 140;
-    --bs-dark: #1A2233;
-    --bs-light: #F4F6F8;
-    --bs-link-color: #1A2233;
-    --bs-link-color-rgb: 26, 34, 51;
+    --bs-primary: #334155;
+    --bs-primary-rgb: 51, 65, 85;
+    --bs-secondary: #64748B;
+    --bs-secondary-rgb: 100, 116, 139;
+    --bs-success: #16A34A;
+    --bs-success-rgb: 22, 163, 74;
+    --bs-danger: #EA580C;
+    --bs-danger-rgb: 234, 88, 12;
+    --bs-warning: #B45309;
+    --bs-warning-rgb: 180, 83, 9;
+    --bs-info: #2563EB;
+    --bs-info-rgb: 37, 99, 235;
+    --bs-dark: #334155;
+    --bs-light: #F8FAFC;
+    --bs-link-color: #334155;
+    --bs-link-color-rgb: 51, 65, 85;
     --bs-link-hover-color: #000000;
     --bs-link-hover-color-rgb: 0, 0, 0;
     --bs-border-radius: .5rem;
     --bs-border-radius-sm: .375rem;
     --bs-border-radius-lg: .65rem;
-    --bs-body-font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    --bs-body-color: #1A2233;
-    --bs-body-bg: #F4F6F8;
-    --bs-border-color: #E1E5EA;
+    --bs-body-font-family: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    --bs-body-color: #334155;
+    --bs-body-bg: #F8FAFC;
+    --bs-border-color: #E2E8F0;
 }
 
 /* ---- Recableado de botones ------------------------------------------------
@@ -872,34 +872,34 @@ html.sidebar-oculta .nav-item-grupo .nav-subgrupo {
 }
 
 .badge-Pendiente { background: #EEF1F4; color: #5B6673; }
-.badge-Programado { background: #EAF1FA; color: #1A2233; }
-.badge-En\.proceso, .badge-En\ proceso { background: #FDF2E3; color: #A8630A; }
-.badge-Realizado, .badge-Cumplido { background: #E5F4EC; color: #1F8A54; }
-.badge-Vencido { background: #FBEAE7; color: #E2131D; }
+.badge-Programado { background: #DBEAFE; color: #334155; }
+.badge-En\.proceso, .badge-En\ proceso { background: #FEF3C7; color: #B45309; }
+.badge-Realizado, .badge-Cumplido { background: #DCFCE7; color: #16A34A; }
+.badge-Vencido { background: #FDEAD9; color: #EA580C; }
 .badge-Cancelado { background: #F1F2F4; color: #7A828C; }
 .badge-Reprogramado { background: #F1EAFB; color: #6B32C9; }
-.badge-Activo { background: #E5F4EC; color: #1F8A54; }
-.badge-Renovado { background: #EAF1FA; color: #1A2233; }
+.badge-Activo { background: #DCFCE7; color: #16A34A; }
+.badge-Renovado { background: #DBEAFE; color: #334155; }
 .badge-Interna { background: #F1F2F4; color: #5B6673; }
 
-.badge-Asignada { background: #EAF1FA; color: #1A2233; }
-.badge-Pausada { background: #FDF2E3; color: #A8630A; }
-.badge-Finalizada { background: #E5F4EC; color: #1F8A54; }
+.badge-Asignada { background: #DBEAFE; color: #334155; }
+.badge-Pausada { background: #FEF3C7; color: #B45309; }
+.badge-Finalizada { background: #DCFCE7; color: #16A34A; }
 .badge-Cancelada { background: #F1F2F4; color: #7A828C; }
 
-.badge-Deficiencia\.crítica { background: #FBEAE7; color: #E2131D; }
-.badge-Deficiencia\.no\.crítica { background: #FDF2E3; color: #A8630A; }
+.badge-Deficiencia\.crítica { background: #FDEAD9; color: #EA580C; }
+.badge-Deficiencia\.no\.crítica { background: #FEF3C7; color: #B45309; }
 .badge-Desactivación { background: #F1F2F4; color: #5B6673; }
-.badge-Comentario { background: #EAF1FA; color: #1A2233; }
+.badge-Comentario { background: #DBEAFE; color: #334155; }
 
-.badge-Cotizado { background: #EAF1FA; color: #1A2233; }
-.badge-Aprobado { background: #E5F4EC; color: #1F8A54; }
-.badge-Rechazado { background: #FBEAE7; color: #E2131D; }
-.badge-Cerrado { background: #E5F4EC; color: #1F8A54; }
+.badge-Cotizado { background: #DBEAFE; color: #334155; }
+.badge-Aprobado { background: #DCFCE7; color: #16A34A; }
+.badge-Rechazado { background: #FDEAD9; color: #EA580C; }
+.badge-Cerrado { background: #DCFCE7; color: #16A34A; }
 
-.badge-Urgente { background: #FBEAE7; color: #E2131D; }
-.badge-Alta { background: #FDF2E3; color: #A8630A; }
-.badge-Media { background: #EAF1FA; color: #1A2233; }
+.badge-Urgente { background: #FDEAD9; color: #EA580C; }
+.badge-Alta { background: #FEF3C7; color: #B45309; }
+.badge-Media { background: #DBEAFE; color: #334155; }
 .badge-Baja { background: #F1F2F4; color: #7A828C; }
 
 .badge-sin_coordinar { background: var(--accent-soft); color: var(--accent); }
@@ -946,9 +946,9 @@ html.sidebar-oculta .nav-item-grupo .nav-subgrupo {
     overflow: hidden;
     text-overflow: ellipsis;
 }
-.chip-success { background: #E5F4EC; color: #1F8A54; }
-.chip-primary { background: #EAF1FA; color: #1A2233; }
-.chip-danger { background: #FBEAE7; color: #E2131D; }
+.chip-success { background: #DCFCE7; color: #16A34A; }
+.chip-primary { background: #DBEAFE; color: #334155; }
+.chip-danger { background: #FDEAD9; color: #EA580C; }
 .chip-secondary { background: #F1F2F4; color: #7A828C; }
 
 /* ---- Tablas ordenables/filtrables (data-table) --------------------------- */
@@ -1265,80 +1265,80 @@ html.sidebar-oculta .nav-item-grupo .nav-subgrupo {
    ========================================================================== */
 
 html[data-bs-theme="dark"] {
-    --ink: #EDEEEA;
-    --ink-muted: #9BA3AE;
-    --ink-faint: #5C6470;
-    --surface: #171B24;
-    --surface-muted: #10131A;
-    --surface-alt: #1B2029;
-    --border: #262B36;
-    --border-strong: #363D4B;
+    --ink: #F1F3F5;
+    --ink-muted: #9AA4AE;
+    --ink-faint: #6B7580;
+    --surface: #1D2227;
+    --surface-muted: #14181C;
+    --surface-alt: #20262C;
+    --border: #333B44;
+    --border-strong: #454F5A;
 
-    --brand: #8CA3D1;
-    --brand-dark: #ACC1E5;
-    --accent: #FF6161;
-    --accent-soft: #3A1418;
-    --warn-soft: #3A2A0E;
-    --info-soft: #18233A;
-    --ok-soft: #123324;
-    --warn: #F0A93E;
-    --ok: #34C77B;
-    --info: #4FA8D8;
+    --brand: #C7CDD4;
+    --brand-dark: #E2E6EA;
+    --accent: #F97316;
+    --accent-soft: #3A2211;
+    --warn-soft: #362905;
+    --info-soft: #10233F;
+    --ok-soft: #0F2A1A;
+    --warn: #F2B90C;
+    --ok: #22C55E;
+    --info: #60A5FA;
     --plan: #A88FE8;
-    --shadow-doc: 0 1px 2px rgba(0,0,0,.3), 0 8px 24px -16px rgba(0,0,0,.5);
+    --shadow-doc: 0 1px 2px rgba(0,0,0,.4), 0 12px 32px -16px rgba(0,0,0,.6);
 
-    --bs-primary: #8CA3D1;
-    --bs-primary-rgb: 140, 163, 209;
-    --bs-secondary: #9AA3B2;
-    --bs-secondary-rgb: 154, 163, 178;
-    --bs-success: #34C77B;
-    --bs-success-rgb: 52, 199, 123;
-    --bs-danger: #FF6161;
-    --bs-danger-rgb: 255, 97, 97;
-    --bs-warning: #F0A93E;
-    --bs-warning-rgb: 240, 169, 62;
-    --bs-info: #4FA8D8;
-    --bs-info-rgb: 79, 168, 216;
-    --bs-dark: #E8EAEE;
-    --bs-light: #1A2030;
-    --bs-link-color: #8CA3D1;
-    --bs-link-color-rgb: 140, 163, 209;
+    --bs-primary: #C7CDD4;
+    --bs-primary-rgb: 199, 205, 212;
+    --bs-secondary: #9AA4AE;
+    --bs-secondary-rgb: 154, 164, 174;
+    --bs-success: #22C55E;
+    --bs-success-rgb: 34, 197, 94;
+    --bs-danger: #F97316;
+    --bs-danger-rgb: 249, 115, 22;
+    --bs-warning: #F2B90C;
+    --bs-warning-rgb: 242, 185, 12;
+    --bs-info: #60A5FA;
+    --bs-info-rgb: 96, 165, 250;
+    --bs-dark: #F1F3F5;
+    --bs-light: #1D2227;
+    --bs-link-color: #C7CDD4;
+    --bs-link-color-rgb: 199, 205, 212;
     --bs-link-hover-color: #FFFFFF;
     --bs-link-hover-color-rgb: 255, 255, 255;
-    --bs-body-color: #E8EAEE;
-    --bs-body-bg: #10141D;
-    --bs-border-color: #2A3142;
-    --bs-tertiary-bg: #1A2030;
-    --bs-secondary-bg: #232B3B;
+    --bs-body-color: #F1F3F5;
+    --bs-body-bg: #14181C;
+    --bs-border-color: #333B44;
+    --bs-tertiary-bg: #1D2227;
+    --bs-secondary-bg: #262C33;
 }
 
 html[data-bs-theme="dark"] .btn-danger,
 html[data-bs-theme="dark"] .btn-outline-danger {
-    --bs-btn-hover-bg: #D93F3F;
-    --bs-btn-hover-border-color: #D93F3F;
-    --bs-btn-active-bg: #D93F3F;
-    --bs-btn-active-border-color: #D93F3F;
+    --bs-btn-hover-bg: #D9660A;
+    --bs-btn-hover-border-color: #D9660A;
+    --bs-btn-active-bg: #D9660A;
+    --bs-btn-active-border-color: #D9660A;
 }
 html[data-bs-theme="dark"] .btn-success,
 html[data-bs-theme="dark"] .btn-outline-success {
-    --bs-btn-hover-bg: #299F62;
-    --bs-btn-hover-border-color: #299F62;
-    --bs-btn-active-bg: #299F62;
-    --bs-btn-active-border-color: #299F62;
+    --bs-btn-hover-bg: #1CA34E;
+    --bs-btn-hover-border-color: #1CA34E;
+    --bs-btn-active-bg: #1CA34E;
+    --bs-btn-active-border-color: #1CA34E;
 }
 html[data-bs-theme="dark"] .btn-primary,
 html[data-bs-theme="dark"] .btn-dark {
-    --bs-btn-color: #10141D;
-    --bs-btn-hover-color: #10141D;
-    --bs-btn-active-color: #10141D;
+    --bs-btn-color: #14181C;
+    --bs-btn-hover-color: #14181C;
+    --bs-btn-active-color: #14181C;
 }
 html[data-bs-theme="dark"] .btn-outline-primary,
 html[data-bs-theme="dark"] .btn-outline-dark {
     /* Sin fondo, el texto tiene que quedar claro (var(--brand)); recién al
        hover/active se llena con var(--brand) y ahí sí necesita texto oscuro
        para no perder contraste — al revés que en modo claro. */
-    --bs-btn-hover-color: #10141D;
-    --bs-btn-active-color: #10141D;
+    --bs-btn-hover-color: #14181C;
+    --bs-btn-active-color: #14181C;
 }
 
 html[data-bs-theme="dark"] .card {
@@ -1363,43 +1363,43 @@ html[data-bs-theme="dark"] .calendario-dia.fuera-de-mes {
 html[data-bs-theme="dark"] .badge-Pendiente { background: #232B3B; color: #9AA3B2; }
 html[data-bs-theme="dark"] .badge-Programado { background: #18233A; color: #8FB3E8; }
 html[data-bs-theme="dark"] .badge-En\.proceso,
-html[data-bs-theme="dark"] .badge-En\ proceso { background: #3A2A0E; color: #F0A93E; }
+html[data-bs-theme="dark"] .badge-En\ proceso { background: #362905; color: #F2B90C; }
 html[data-bs-theme="dark"] .badge-Realizado,
 html[data-bs-theme="dark"] .badge-Cumplido { background: #123324; color: #4ADE96; }
-html[data-bs-theme="dark"] .badge-Vencido { background: #3A1418; color: #FF6B70; }
+html[data-bs-theme="dark"] .badge-Vencido { background: #3A2211; color: #F97316; }
 html[data-bs-theme="dark"] .badge-Cancelado { background: #232734; color: #8A93A0; }
 html[data-bs-theme="dark"] .badge-Reprogramado { background: #271B3D; color: #C09BF2; }
 html[data-bs-theme="dark"] .badge-Activo { background: #123324; color: #4ADE96; }
 html[data-bs-theme="dark"] .badge-Renovado { background: #18233A; color: #8FB3E8; }
 
 html[data-bs-theme="dark"] .badge-Asignada { background: #18233A; color: #8FB3E8; }
-html[data-bs-theme="dark"] .badge-Pausada { background: #3A2A0E; color: #F0A93E; }
+html[data-bs-theme="dark"] .badge-Pausada { background: #362905; color: #F2B90C; }
 html[data-bs-theme="dark"] .badge-Finalizada { background: #123324; color: #4ADE96; }
 html[data-bs-theme="dark"] .badge-Cancelada { background: #232734; color: #8A93A0; }
 
-html[data-bs-theme="dark"] .badge-Deficiencia\.crítica { background: #3A1418; color: #FF6B70; }
-html[data-bs-theme="dark"] .badge-Deficiencia\.no\.crítica { background: #3A2A0E; color: #F0A93E; }
+html[data-bs-theme="dark"] .badge-Deficiencia\.crítica { background: #3A2211; color: #F97316; }
+html[data-bs-theme="dark"] .badge-Deficiencia\.no\.crítica { background: #362905; color: #F2B90C; }
 html[data-bs-theme="dark"] .badge-Desactivación { background: #232734; color: #9AA3B2; }
 html[data-bs-theme="dark"] .badge-Comentario { background: #18233A; color: #8FB3E8; }
 
 html[data-bs-theme="dark"] .badge-Cotizado { background: #18233A; color: #8FB3E8; }
 html[data-bs-theme="dark"] .badge-Aprobado { background: #123324; color: #4ADE96; }
-html[data-bs-theme="dark"] .badge-Rechazado { background: #3A1418; color: #FF6B70; }
+html[data-bs-theme="dark"] .badge-Rechazado { background: #3A2211; color: #F97316; }
 html[data-bs-theme="dark"] .badge-Cerrado { background: #123324; color: #4ADE96; }
 
-html[data-bs-theme="dark"] .badge-Urgente { background: #3A1418; color: #FF6B70; }
-html[data-bs-theme="dark"] .badge-Alta { background: #3A2A0E; color: #F0A93E; }
+html[data-bs-theme="dark"] .badge-Urgente { background: #3A2211; color: #F97316; }
+html[data-bs-theme="dark"] .badge-Alta { background: #362905; color: #F2B90C; }
 html[data-bs-theme="dark"] .badge-Media { background: #18233A; color: #8FB3E8; }
 html[data-bs-theme="dark"] .badge-Baja { background: #232734; color: #8A93A0; }
 
 html[data-bs-theme="dark"] .chip-success { background: #123324; color: #4ADE96; }
 html[data-bs-theme="dark"] .chip-primary { background: #18233A; color: #8FB3E8; }
-html[data-bs-theme="dark"] .chip-danger { background: #3A1418; color: #FF6B70; }
+html[data-bs-theme="dark"] .chip-danger { background: #3A2211; color: #F97316; }
 html[data-bs-theme="dark"] .chip-secondary { background: #232734; color: #8A93A0; }
 
 /* ==========================================================================
    Sistema "hoja de documento" — consola clara con jerarquía tipográfica
-   (Space Grotesk para títulos, JetBrains Mono para datos) y filetes finos
+   (IBM Plex Sans Condensed para títulos, JetBrains Mono para datos) y filetes finos
    en vez de bandas negras. Es el formato para toda la app: cada pantalla
    nueva o migrada usa este mismo lenguaje.
    ========================================================================== */
